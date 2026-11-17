@@ -1,0 +1,474 @@
+{
+  "schema_version": 1,
+  "metadata": {
+    "machine": "Intel Core Ultra 7 258V; 8 cores",
+    "openvino": "2026.4.1-22982-e213a147257-releases/2026/4",
+    "gpu_driver": "intel-compute-runtime-26.35.39758.17-2.fc44.x86_64; intel-level-zero-26.35.39758.17-2.fc44.x86_64",
+    "npu_driver": "Intel user-space NPU 1.38.0; oneapi-level-zero-1.33.1-3.fc44.x86_64",
+    "date": "2026-11-08T09:36:01.005298+00:00",
+    "measured_paradee-8m-int8": "2026-11-08; max load1 1.53",
+    "measured_phonon-31m-en": "2026-11-08; max load1 4.08",
+    "measured_indic-tiny-en": "2026-11-08; max load1 2.17",
+    "measured_indic-tiny-hi": "2026-11-08; max load1 6.20",
+    "measured_indic-tiny-pa": "2026-11-08; max load1 6.20",
+    "measured_pocket-en": "2026-11-08; max load1 4.93",
+    "measured_supertonic-3": "2026-11-08; max load1 2.81",
+    "measured_kokoro-82m-int8": "2026-11-08; max load1 4.49"
+  },
+  "models": {
+    "pocket-en": {
+      "quality": 9,
+      "devices": {
+        "cpu": {
+          "supported": true,
+          "placement": {
+            "flow_lm_flow_int8": "cpu",
+            "flow_lm_main_int8": "cpu",
+            "mimi_decoder_int8": "cpu",
+            "text_conditioner": "cpu"
+          },
+          "recommended": true,
+          "first_audio_p95_s": 2.323428947,
+          "rtf_1x": 0.25981331020408166,
+          "rtf_2x": 0.512828465,
+          "load_s_cold": 0.407846307,
+          "load_s_cached": 0.278130689,
+          "speed_score": 3.4739535298609416,
+          "rtf_by_lanes": [
+            0.25355765384310913, 0.15284280807428724, 0.1382121134801085
+          ],
+          "best_lanes": 3,
+          "base_rss_mib": 9.640625,
+          "lane_rss_mib": 422.625
+        },
+        "npu": {
+          "supported": false,
+          "placement": {},
+          "recommended": false,
+          "first_audio_p95_s": null,
+          "rtf_1x": null,
+          "rtf_2x": null,
+          "load_s_cold": null,
+          "load_s_cached": null,
+          "speed_score": null,
+          "best_lanes": 1
+        },
+        "gpu": {
+          "supported": true,
+          "placement": {
+            "flow_lm_flow_int8": "cpu",
+            "flow_lm_main_int8": "cpu",
+            "mimi_decoder_int8": "cpu",
+            "text_conditioner": "gpu"
+          },
+          "recommended": false,
+          "first_audio_p95_s": 2.599728763,
+          "rtf_1x": 0.3458605609693878,
+          "rtf_2x": 0.790654943283582,
+          "load_s_cold": 1.180046269,
+          "load_s_cached": 0.638402274,
+          "speed_score": 2.8766273753467875,
+          "rtf_by_lanes": [
+            0.27276704816015235, 0.19914807718208596, 0.16501115227504562
+          ],
+          "best_lanes": 3,
+          "base_rss_mib": 9.703125,
+          "lane_rss_mib": 571.3203125
+        }
+      }
+    },
+    "supertonic-3": {
+      "quality": 8,
+      "devices": {
+        "cpu": {
+          "supported": true,
+          "placement": {
+            "duration_predictor": "cpu",
+            "text_encoder": "cpu",
+            "vector_estimator": "cpu",
+            "vocoder": "cpu"
+          },
+          "recommended": false,
+          "first_audio_p95_s": 1.4745450009999999,
+          "rtf_1x": 0.16181761905369985,
+          "rtf_2x": 0.3383328221058695,
+          "load_s_cold": 0.534193586,
+          "load_s_cached": 0.31590008,
+          "speed_score": 4.885388736107139,
+          "rtf_by_lanes": [
+            0.1971618191659836, 0.1932472715044182, 0.2123395821866477
+          ],
+          "best_lanes": 2,
+          "base_rss_mib": 9.83203125,
+          "lane_rss_mib": 474.640625
+        },
+        "npu": {
+          "supported": true,
+          "placement": {
+            "duration_predictor": "npu",
+            "text_encoder": "npu",
+            "vector_estimator": "npu",
+            "vocoder": "npu"
+          },
+          "recommended": false,
+          "first_audio_p95_s": 0.832294997,
+          "rtf_1x": 0.09391638716185412,
+          "rtf_2x": 0.19571997146150039,
+          "load_s_cold": 27.819206133,
+          "load_s_cached": 0.899408859,
+          "speed_score": 6.584995168194721,
+          "rtf_by_lanes": [
+            0.1090755210532707, 0.10494827978866764, 0.1049858320210656
+          ],
+          "best_lanes": 2,
+          "base_rss_mib": 9.6171875,
+          "lane_rss_mib": 887.66796875
+        },
+        "gpu": {
+          "supported": true,
+          "placement": {
+            "duration_predictor": "gpu",
+            "text_encoder": "gpu",
+            "vector_estimator": "gpu",
+            "vocoder": "gpu"
+          },
+          "recommended": true,
+          "first_audio_p95_s": 0.092230775,
+          "rtf_1x": 0.017438252554257537,
+          "rtf_2x": 0.041616085880853776,
+          "load_s_cold": 9.221957025,
+          "load_s_cached": 2.435291114,
+          "speed_score": 10.0,
+          "rtf_by_lanes": [
+            0.019350720972302587, 0.017741827068184033, 0.017670771838399303
+          ],
+          "best_lanes": 3,
+          "base_rss_mib": 9.640625,
+          "lane_rss_mib": 1037.953125
+        }
+      }
+    },
+    "kokoro-82m-int8": {
+      "quality": 6,
+      "devices": {
+        "cpu": {
+          "supported": true,
+          "placement": {
+            "model_quantized": "cpu"
+          },
+          "recommended": true,
+          "first_audio_p95_s": 6.672126249000001,
+          "rtf_1x": 0.5495096012080537,
+          "rtf_2x": 1.1332419562416107,
+          "load_s_cold": 1.812338539,
+          "load_s_cached": 1.284059951,
+          "speed_score": 0.8801738997758298,
+          "rtf_by_lanes": [
+            0.734338939314119, 0.4536164790699456, 0.4060103634940021
+          ],
+          "best_lanes": 3,
+          "base_rss_mib": 9.796875,
+          "lane_rss_mib": 1054.9296875
+        },
+        "npu": {
+          "supported": false,
+          "placement": {},
+          "recommended": false,
+          "first_audio_p95_s": null,
+          "rtf_1x": null,
+          "rtf_2x": null,
+          "load_s_cold": null,
+          "load_s_cached": null,
+          "speed_score": null,
+          "best_lanes": 1
+        },
+        "gpu": {
+          "supported": false,
+          "placement": {},
+          "recommended": false,
+          "first_audio_p95_s": null,
+          "rtf_1x": null,
+          "rtf_2x": null,
+          "load_s_cold": null,
+          "load_s_cached": null,
+          "speed_score": null,
+          "best_lanes": 1
+        }
+      }
+    },
+    "paradee-8m-int8": {
+      "quality": 5,
+      "devices": {
+        "cpu": {
+          "supported": true,
+          "placement": {
+            "paradee_int8": "cpu"
+          },
+          "recommended": true,
+          "first_audio_p95_s": 0.175108907,
+          "rtf_1x": 0.01804149142857143,
+          "rtf_2x": 0.03301278763636364,
+          "load_s_cold": 1.081456603,
+          "load_s_cached": 0.930876786,
+          "speed_score": 10.0,
+          "rtf_by_lanes": [
+            0.019965479363801084, 0.014565502432303328, 0.014679293532467531
+          ],
+          "best_lanes": 2,
+          "base_rss_mib": 9.73046875,
+          "lane_rss_mib": 518.69140625
+        },
+        "npu": {
+          "supported": false,
+          "placement": {},
+          "recommended": false,
+          "first_audio_p95_s": null,
+          "rtf_1x": null,
+          "rtf_2x": null,
+          "load_s_cold": null,
+          "load_s_cached": null,
+          "speed_score": null,
+          "best_lanes": 1
+        },
+        "gpu": {
+          "supported": false,
+          "placement": {},
+          "recommended": false,
+          "first_audio_p95_s": null,
+          "rtf_1x": null,
+          "rtf_2x": null,
+          "load_s_cold": null,
+          "load_s_cached": null,
+          "speed_score": null,
+          "best_lanes": 1
+        }
+      }
+    },
+    "phonon-31m-en": {
+      "quality": 8,
+      "devices": {
+        "cpu": {
+          "supported": true,
+          "placement": {
+            "mimi_decoder": "cpu",
+            "model_q4": "cpu"
+          },
+          "recommended": true,
+          "first_audio_p95_s": 0.432858437,
+          "rtf_1x": 0.06311504573863636,
+          "rtf_2x": 0.1044538199074074,
+          "load_s_cold": 0.608287306,
+          "load_s_cached": 0.568007214,
+          "speed_score": 8.197847878578028,
+          "rtf_by_lanes": [
+            0.06439447619717474, 0.04388346942459887, 0.05424651187415755
+          ],
+          "best_lanes": 2,
+          "base_rss_mib": 9.6953125,
+          "lane_rss_mib": 616.41796875
+        },
+        "npu": {
+          "supported": false,
+          "placement": {},
+          "recommended": false,
+          "first_audio_p95_s": null,
+          "rtf_1x": null,
+          "rtf_2x": null,
+          "load_s_cold": null,
+          "load_s_cached": null,
+          "speed_score": null,
+          "best_lanes": 1
+        },
+        "gpu": {
+          "supported": false,
+          "placement": {},
+          "recommended": false,
+          "first_audio_p95_s": null,
+          "rtf_1x": null,
+          "rtf_2x": null,
+          "load_s_cold": null,
+          "load_s_cached": null,
+          "speed_score": null,
+          "best_lanes": 1
+        }
+      }
+    },
+    "indic-tiny-en": {
+      "quality": 5,
+      "devices": {
+        "cpu": {
+          "supported": true,
+          "placement": {
+            "flow_decoder": "cpu",
+            "text_encoder": "cpu",
+            "vocoder": "cpu"
+          },
+          "recommended": true,
+          "first_audio_p95_s": 0.18811723500000002,
+          "rtf_1x": 0.020637950892857145,
+          "rtf_2x": 0.04301902879213484,
+          "load_s_cold": 0.165318078,
+          "load_s_cached": 0.09863935,
+          "speed_score": 10.0,
+          "rtf_by_lanes": [
+            0.02089403535621701, 0.016325477082487428, 0.018273634092825685
+          ],
+          "best_lanes": 2,
+          "base_rss_mib": 9.87109375,
+          "lane_rss_mib": 205.37109375
+        },
+        "npu": {
+          "supported": false,
+          "placement": {},
+          "recommended": false,
+          "first_audio_p95_s": null,
+          "rtf_1x": null,
+          "rtf_2x": null,
+          "load_s_cold": null,
+          "load_s_cached": null,
+          "speed_score": null,
+          "best_lanes": 1
+        },
+        "gpu": {
+          "supported": true,
+          "placement": {
+            "flow_decoder": "gpu",
+            "text_encoder": "gpu",
+            "vocoder": "gpu"
+          },
+          "recommended": false,
+          "first_audio_p95_s": 0.696935957,
+          "rtf_1x": 0.05380709304775281,
+          "rtf_2x": 0.017832301565008025,
+          "load_s_cold": 1.684190263,
+          "load_s_cached": 0.470167484,
+          "speed_score": 7.683072446247376,
+          "rtf_by_lanes": [
+            0.02736370418059156, 0.027218786129243836, 0.024954394431083483
+          ],
+          "best_lanes": 3,
+          "base_rss_mib": 9.7734375,
+          "lane_rss_mib": 477.3046875
+        }
+      }
+    },
+    "indic-tiny-hi": {
+      "quality": 5,
+      "devices": {
+        "cpu": {
+          "supported": true,
+          "placement": {
+            "flow_decoder": "cpu",
+            "text_encoder": "cpu",
+            "vocoder": "cpu"
+          },
+          "recommended": true,
+          "first_audio_p95_s": 0.624625897,
+          "rtf_1x": 0.03724978655997144,
+          "rtf_2x": 0.07277903233579247,
+          "load_s_cold": 0.179227494,
+          "load_s_cached": 0.114362166,
+          "speed_score": 8.396043381310223,
+          "rtf_by_lanes": [
+            0.03669452000196256, 0.04068397739465297, 0.040903699400342
+          ],
+          "best_lanes": 1,
+          "base_rss_mib": 9.8203125,
+          "lane_rss_mib": 414.39453125
+        },
+        "npu": {
+          "supported": false,
+          "placement": {},
+          "recommended": false,
+          "first_audio_p95_s": null,
+          "rtf_1x": null,
+          "rtf_2x": null,
+          "load_s_cold": null,
+          "load_s_cached": null,
+          "speed_score": null,
+          "best_lanes": 1
+        },
+        "gpu": {
+          "supported": true,
+          "placement": {
+            "flow_decoder": "gpu",
+            "text_encoder": "gpu",
+            "vocoder": "gpu"
+          },
+          "recommended": false,
+          "first_audio_p95_s": 1.1034106689999998,
+          "rtf_1x": 0.04666959669282512,
+          "rtf_2x": 0.027054606921487603,
+          "load_s_cold": 2.598027516,
+          "load_s_cached": 0.63899734,
+          "speed_score": 7.169405715299864,
+          "rtf_by_lanes": [
+            0.024488585327330177, 0.020463320529514863, 0.024054385774784776
+          ],
+          "best_lanes": 2,
+          "base_rss_mib": 9.64453125,
+          "lane_rss_mib": 510.81640625
+        }
+      }
+    },
+    "indic-tiny-pa": {
+      "quality": 5,
+      "devices": {
+        "cpu": {
+          "supported": true,
+          "placement": {
+            "flow_decoder": "cpu",
+            "text_encoder": "cpu",
+            "vocoder": "cpu"
+          },
+          "recommended": true,
+          "first_audio_p95_s": 0.8484084970000001,
+          "rtf_1x": 0.05119366131054305,
+          "rtf_2x": 0.09771346398002854,
+          "load_s_cold": 0.222133009,
+          "load_s_cached": 0.14471232,
+          "speed_score": 7.446849732793158,
+          "rtf_by_lanes": [
+            0.052621514376167224, 0.04500892853634466, 0.04896372110353619
+          ],
+          "best_lanes": 2,
+          "base_rss_mib": 9.73828125,
+          "lane_rss_mib": 458.83203125
+        },
+        "npu": {
+          "supported": false,
+          "placement": {},
+          "recommended": false,
+          "first_audio_p95_s": null,
+          "rtf_1x": null,
+          "rtf_2x": null,
+          "load_s_cold": null,
+          "load_s_cached": null,
+          "speed_score": null,
+          "best_lanes": 1
+        },
+        "gpu": {
+          "supported": true,
+          "placement": {
+            "flow_decoder": "gpu",
+            "text_encoder": "gpu",
+            "vocoder": "gpu"
+          },
+          "recommended": false,
+          "first_audio_p95_s": 1.199353163,
+          "rtf_1x": 0.05307628267235609,
+          "rtf_2x": 0.0449396241088403,
+          "load_s_cold": 2.575656743,
+          "load_s_cached": 0.888634846,
+          "speed_score": 6.8491246454219645,
+          "rtf_by_lanes": [
+            0.023401664266115684, 0.0208667463206711, 0.02227044270048372
+          ],
+          "best_lanes": 2,
+          "base_rss_mib": 9.7421875,
+          "lane_rss_mib": 559.1328125
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,3324 @@
+[
+ {
+  "input": "hello world",
+  "normalized": "\u2581Hello world.",
+  "ids": [
+   3248,
+   956,
+   663
+  ]
+ },
+ {
+  "input": "a : b; (c)",
+  "normalized": "\u2581A, b, c,",
+  "ids": [
+   803,
+   661,
+   959,
+   661,
+   723,
+   661
+  ]
+ },
+ {
+  "input": "Wait ... what?",
+  "normalized": "\u2581Wait. what?",
+  "ids": [
+   3731,
+   663,
+   695,
+   691
+  ]
+ },
+ {
+  "input": "price $5 , ok",
+  "normalized": "\u2581Price $5, ok.",
+  "ids": [
+   2369,
+   1314,
+   1403,
+   856,
+   661,
+   660,
+   2451,
+   663
+  ]
+ },
+ {
+  "input": "x\u2019s \u201cquote\u201d",
+  "normalized": "\u2581X's \"quote.",
+  "ids": [
+   2573,
+   664,
+   662,
+   660,
+   3915,
+   2182,
+   805,
+   893,
+   663
+  ]
+ },
+ {
+  "input": "\u00e9t\u00e9",
+  "normalized": "\u2581\u00c9t\u00e9.",
+  "ids": [
+   660,
+   599,
+   541,
+   674,
+   1053,
+   663
+  ]
+ },
+ {
+  "input": "H\u2082O",
+  "normalized": "\u2581H2O.",
+  "ids": [
+   1543,
+   769,
+   1426,
+   663
+  ]
+ },
+ {
+  "input": "",
+  "normalized": "",
+  "ids": []
+ },
+ {
+  "input": "   ",
+  "normalized": "",
+  "ids": []
+ },
+ {
+  "input": "3:45 PM",
+  "normalized": "\u25813:45 PM.",
+  "ids": [
+   660,
+   873,
+   462,
+   924,
+   856,
+   949,
+   1283,
+   663
+  ]
+ },
+ {
+  "input": "end.'",
+  "normalized": "\u2581End.",
+  "ids": [
+   2434,
+   706,
+   663
+  ]
+ },
+ {
+  "input": "say \"hi\"",
+  "normalized": "\u2581Say \"hi.",
+  "ids": [
+   1702,
+   732,
+   660,
+   3915,
+   1441,
+   663
+  ]
+ },
+ {
+  "input": "\u4f60\u597d",
+  "normalized": "\u2581\u4f60\u597d.",
+  "ids": [
+   660,
+   632,
+   593,
+   564,
+   633,
+   569,
+   593,
+   663
+  ]
+ },
+ {
+  "input": "a , b",
+  "normalized": "\u2581A, b.",
+  "ids": [
+   803,
+   661,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "a ,b",
+  "normalized": "\u2581A,b.",
+  "ids": [
+   803,
+   661,
+   881,
+   663
+  ]
+ },
+ {
+  "input": "wait , , then",
+  "normalized": "\u2581Wait, then.",
+  "ids": [
+   3731,
+   661,
+   753,
+   663
+  ]
+ },
+ {
+  "input": "so - . next",
+  "normalized": "\u2581So. next.",
+  "ids": [
+   698,
+   663,
+   980,
+   663
+  ]
+ },
+ {
+  "input": "x !. y",
+  "normalized": "\u2581X. y.",
+  "ids": [
+   2573,
+   663,
+   1023,
+   663
+  ]
+ },
+ {
+  "input": "list: a, b , c .",
+  "normalized": "\u2581List, a, b, c.",
+  "ids": [
+   1612,
+   662,
+   674,
+   661,
+   668,
+   661,
+   959,
+   661,
+   723,
+   663
+  ]
+ },
+ {
+  "input": "hmm ?.",
+  "normalized": "\u2581Hmm.",
+  "ids": [
+   1543,
+   684,
+   684,
+   663
+  ]
+ },
+ {
+  "input": "ok ;.",
+  "normalized": "\u2581Ok.",
+  "ids": [
+   1082,
+   903,
+   663
+  ]
+ },
+ {
+  "input": "a_.",
+  "normalized": "\u2581A.",
+  "ids": [
+   803,
+   663
+  ]
+ },
+ {
+  "input": "a(.)",
+  "normalized": "\u2581A,",
+  "ids": [
+   803,
+   661
+  ]
+ },
+ {
+  "input": "a [x] .",
+  "normalized": "\u2581A x.",
+  "ids": [
+   803,
+   660,
+   1352,
+   663
+  ]
+ },
+ {
+  "input": "a {y}.",
+  "normalized": "\u2581A y.",
+  "ids": [
+   803,
+   1023,
+   663
+  ]
+ },
+ {
+  "input": "path/ .",
+  "normalized": "\u2581Path.",
+  "ids": [
+   1527,
+   869,
+   663
+  ]
+ },
+ {
+  "input": "a \\ .",
+  "normalized": "\u2581A.",
+  "ids": [
+   803,
+   663
+  ]
+ },
+ {
+  "input": "a = . b",
+  "normalized": "\u2581A. b.",
+  "ids": [
+   803,
+   663,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "a < . b",
+  "normalized": "\u2581A. b.",
+  "ids": [
+   803,
+   663,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "a > , b",
+  "normalized": "\u2581A, b.",
+  "ids": [
+   803,
+   661,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "q ^ .",
+  "normalized": "\u2581Q.",
+  "ids": [
+   660,
+   2714,
+   663
+  ]
+ },
+ {
+  "input": "a ~.",
+  "normalized": "\u2581A.",
+  "ids": [
+   803,
+   663
+  ]
+ },
+ {
+  "input": "a | ,",
+  "normalized": "\u2581A,",
+  "ids": [
+   803,
+   661
+  ]
+ },
+ {
+  "input": "a ` .",
+  "normalized": "\u2581A '.",
+  "ids": [
+   803,
+   660,
+   664,
+   663
+  ]
+ },
+ {
+  "input": "a * .",
+  "normalized": "\u2581A.",
+  "ids": [
+   803,
+   663
+  ]
+ },
+ {
+  "input": "foo... bar",
+  "normalized": "\u2581Foo. bar.",
+  "ids": [
+   2458,
+   805,
+   663,
+   1627,
+   663
+  ]
+ },
+ {
+  "input": "foo.. bar",
+  "normalized": "\u2581Foo. bar.",
+  "ids": [
+   2458,
+   805,
+   663,
+   1627,
+   663
+  ]
+ },
+ {
+  "input": "foo,, bar",
+  "normalized": "\u2581Foo, bar.",
+  "ids": [
+   2458,
+   805,
+   661,
+   1627,
+   663
+  ]
+ },
+ {
+  "input": ".leading",
+  "normalized": "\u2581.leading.",
+  "ids": [
+   660,
+   663,
+   814,
+   1049,
+   673,
+   663
+  ]
+ },
+ {
+  "input": ",leading",
+  "normalized": "\u2581,leading.",
+  "ids": [
+   660,
+   661,
+   814,
+   1049,
+   673,
+   663
+  ]
+ },
+ {
+  "input": " . . . ",
+  "normalized": "\u2581.",
+  "ids": [
+   660,
+   663
+  ]
+ },
+ {
+  "input": "a .,. b",
+  "normalized": "\u2581A. b.",
+  "ids": [
+   803,
+   663,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "...",
+  "normalized": "\u2581.",
+  "ids": [
+   660,
+   663
+  ]
+ },
+ {
+  "input": "..",
+  "normalized": "\u2581.",
+  "ids": [
+   660,
+   663
+  ]
+ },
+ {
+  "input": ".",
+  "normalized": "\u2581.",
+  "ids": [
+   660,
+   663
+  ]
+ },
+ {
+  "input": ",,,",
+  "normalized": "\u2581,",
+  "ids": [
+   660,
+   661
+  ]
+ },
+ {
+  "input": "?!.",
+  "normalized": "\u2581.",
+  "ids": [
+   660,
+   663
+  ]
+ },
+ {
+  "input": "a -- , b",
+  "normalized": "\u2581A, b.",
+  "ids": [
+   803,
+   661,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "a : . b",
+  "normalized": "\u2581A. b.",
+  "ids": [
+   803,
+   663,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "x /, y",
+  "normalized": "\u2581X, y.",
+  "ids": [
+   2573,
+   661,
+   1023,
+   663
+  ]
+ },
+ {
+  "input": "a ! , b !",
+  "normalized": "\u2581A, b !",
+  "ids": [
+   803,
+   661,
+   959,
+   660,
+   1367
+  ]
+ },
+ {
+  "input": "one. two, three.",
+  "normalized": "\u2581One. two, three.",
+  "ids": [
+   1510,
+   663,
+   845,
+   661,
+   948,
+   663
+  ]
+ },
+ {
+  "input": "3:45",
+  "normalized": "\u25813:45.",
+  "ids": [
+   660,
+   873,
+   462,
+   924,
+   856,
+   663
+  ]
+ },
+ {
+  "input": "at 10:30 am",
+  "normalized": "\u2581At 10:30 am.",
+  "ids": [
+   1942,
+   660,
+   748,
+   720,
+   462,
+   873,
+   720,
+   1058,
+   663
+  ]
+ },
+ {
+  "input": "ratio 16:9",
+  "normalized": "\u2581Ratio 16:9.",
+  "ids": [
+   1509,
+   674,
+   1599,
+   660,
+   748,
+   978,
+   462,
+   905,
+   663
+  ]
+ },
+ {
+  "input": "1:2:3",
+  "normalized": "\u25811:2:3.",
+  "ids": [
+   660,
+   748,
+   462,
+   769,
+   462,
+   873,
+   663
+  ]
+ },
+ {
+  "input": "a: b",
+  "normalized": "\u2581A, b.",
+  "ids": [
+   803,
+   661,
+   959,
+   663
+  ]
+ },
+ {
+  "input": ":start",
+  "normalized": "\u2581, start.",
+  "ids": [
+   660,
+   661,
+   822,
+   663
+  ]
+ },
+ {
+  "input": "end:",
+  "normalized": "\u2581End,",
+  "ids": [
+   2434,
+   706,
+   661
+  ]
+ },
+ {
+  "input": "key :value",
+  "normalized": "\u2581Key, value.",
+  "ids": [
+   3026,
+   732,
+   661,
+   1624,
+   663
+  ]
+ },
+ {
+  "input": "a :: b",
+  "normalized": "\u2581A, b.",
+  "ids": [
+   803,
+   661,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "http://x.y",
+  "normalized": "\u2581Http://x.y.",
+  "ids": [
+   1543,
+   674,
+   674,
+   809,
+   462,
+   451,
+   451,
+   1352,
+   663,
+   732,
+   663
+  ]
+ },
+ {
+  "input": "C:\\path",
+  "normalized": "\u2581C:\\path.",
+  "ids": [
+   840,
+   462,
+   496,
+   1340,
+   869,
+   663
+  ]
+ },
+ {
+  "input": "time 12:00:00.",
+  "normalized": "\u2581Time 12:00:00.",
+  "ids": [
+   3342,
+   660,
+   748,
+   769,
+   462,
+   720,
+   720,
+   462,
+   720,
+   720,
+   663
+  ]
+ },
+ {
+  "input": "\"quote\": yes",
+  "normalized": "\u2581\"quote\", yes.",
+  "ids": [
+   660,
+   3915,
+   2182,
+   805,
+   893,
+   3915,
+   661,
+   1129,
+   663
+  ]
+ },
+ {
+  "input": "note:",
+  "normalized": "\u2581Note,",
+  "ids": [
+   891,
+   893,
+   661
+  ]
+ },
+ {
+  "input": ": :",
+  "normalized": "\u2581,",
+  "ids": [
+   660,
+   661
+  ]
+ },
+ {
+  "input": "$5",
+  "normalized": "\u2581$5.",
+  "ids": [
+   1403,
+   856,
+   663
+  ]
+ },
+ {
+  "input": "$ 5",
+  "normalized": "\u2581$ 5.",
+  "ids": [
+   1403,
+   660,
+   856,
+   663
+  ]
+ },
+ {
+  "input": "5$",
+  "normalized": "\u25815$",
+  "ids": [
+   660,
+   856,
+   3993
+  ]
+ },
+ {
+  "input": "costs $5.",
+  "normalized": "\u2581Costs $5.",
+  "ids": [
+   1547,
+   662,
+   674,
+   662,
+   1403,
+   856,
+   663
+  ]
+ },
+ {
+  "input": "5 $.",
+  "normalized": "\u25815.",
+  "ids": [
+   660,
+   856,
+   663
+  ]
+ },
+ {
+  "input": "$.",
+  "normalized": "\u2581.",
+  "ids": [
+   660,
+   663
+  ]
+ },
+ {
+  "input": "a $, b",
+  "normalized": "\u2581A, b.",
+  "ids": [
+   803,
+   661,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "1$.",
+  "normalized": "\u25811$.",
+  "ids": [
+   660,
+   748,
+   3993,
+   663
+  ]
+ },
+ {
+  "input": "$$5",
+  "normalized": "\u2581$$5.",
+  "ids": [
+   1403,
+   3993,
+   856,
+   663
+  ]
+ },
+ {
+  "input": "x $5,000.00 y",
+  "normalized": "\u2581X $5,000.00 y.",
+  "ids": [
+   2573,
+   1403,
+   856,
+   661,
+   720,
+   720,
+   720,
+   663,
+   720,
+   720,
+   1023,
+   663
+  ]
+ },
+ {
+  "input": "US$ 3.",
+  "normalized": "\u2581US$ 3.",
+  "ids": [
+   2346,
+   3993,
+   660,
+   873,
+   663
+  ]
+ },
+ {
+  "input": "pay $",
+  "normalized": "\u2581Pay $",
+  "ids": [
+   1527,
+   732,
+   1403
+  ]
+ },
+ {
+  "input": "$,",
+  "normalized": "\u2581,",
+  "ids": [
+   660,
+   661
+  ]
+ },
+ {
+  "input": "5$, 6$.",
+  "normalized": "\u25815$, 6$.",
+  "ids": [
+   660,
+   856,
+   3993,
+   661,
+   660,
+   978,
+   3993,
+   663
+  ]
+ },
+ {
+  "input": "a $ $ . b",
+  "normalized": "\u2581A. b.",
+  "ids": [
+   803,
+   663,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "\"hello\"",
+  "normalized": "\u2581\"hello.",
+  "ids": [
+   660,
+   3915,
+   1448,
+   749,
+   805,
+   663
+  ]
+ },
+ {
+  "input": "'hello'",
+  "normalized": "\u2581'hello'",
+  "ids": [
+   660,
+   664,
+   1448,
+   749,
+   805,
+   664
+  ]
+ },
+ {
+  "input": "he said \"yes.\"",
+  "normalized": "\u2581He said \"yes.",
+  "ids": [
+   807,
+   820,
+   660,
+   3915,
+   732,
+   781,
+   663
+  ]
+ },
+ {
+  "input": "it's",
+  "normalized": "\u2581It's.",
+  "ids": [
+   735,
+   664,
+   662,
+   663
+  ]
+ },
+ {
+  "input": "end.''",
+  "normalized": "\u2581End.''",
+  "ids": [
+   2434,
+   706,
+   663,
+   664,
+   664
+  ]
+ },
+ {
+  "input": "end!'",
+  "normalized": "\u2581End!",
+  "ids": [
+   2434,
+   706,
+   1367
+  ]
+ },
+ {
+  "input": "end?'",
+  "normalized": "\u2581End?",
+  "ids": [
+   2434,
+   706,
+   691
+  ]
+ },
+ {
+  "input": "end,'",
+  "normalized": "\u2581End,",
+  "ids": [
+   2434,
+   706,
+   661
+  ]
+ },
+ {
+  "input": "end;'",
+  "normalized": "\u2581End, '",
+  "ids": [
+   2434,
+   706,
+   661,
+   660,
+   664
+  ]
+ },
+ {
+  "input": "end:'",
+  "normalized": "\u2581End:'",
+  "ids": [
+   2434,
+   706,
+   462,
+   664
+  ]
+ },
+ {
+  "input": "rock 'n' roll",
+  "normalized": "\u2581Rock 'n' roll.",
+  "ids": [
+   3606,
+   660,
+   664,
+   697,
+   664,
+   2232,
+   663
+  ]
+ },
+ {
+  "input": "\u201cSmart\u201d",
+  "normalized": "\u2581\"Smart.",
+  "ids": [
+   660,
+   3915,
+   1092,
+   2541,
+   674,
+   663
+  ]
+ },
+ {
+  "input": "\u2018single\u2019",
+  "normalized": "\u2581'single'",
+  "ids": [
+   660,
+   664,
+   1652,
+   664
+  ]
+ },
+ {
+  "input": "\u00abguillemets\u00bb",
+  "normalized": "\u2581\"guillemets.",
+  "ids": [
+   660,
+   3915,
+   1492,
+   1582,
+   1453,
+   1041,
+   662,
+   663
+  ]
+ },
+ {
+  "input": "``tex''",
+  "normalized": "\u2581''tex''",
+  "ids": [
+   660,
+   664,
+   664,
+   674,
+   2438,
+   664,
+   664
+  ]
+ },
+ {
+  "input": "trailing \"\"\"",
+  "normalized": "\u2581Trailing.",
+  "ids": [
+   3116,
+   932,
+   673,
+   663
+  ]
+ },
+ {
+  "input": "\" \"",
+  "normalized": "\u2581\"",
+  "ids": [
+   660,
+   3915
+  ]
+ },
+ {
+  "input": "'",
+  "normalized": "\u2581'",
+  "ids": [
+   660,
+   664
+  ]
+ },
+ {
+  "input": "\"",
+  "normalized": "",
+  "ids": []
+ },
+ {
+  "input": "x '",
+  "normalized": "\u2581X '",
+  "ids": [
+   2573,
+   660,
+   664
+  ]
+ },
+ {
+  "input": "x.'  ",
+  "normalized": "\u2581X.",
+  "ids": [
+   2573,
+   663
+  ]
+ },
+ {
+  "input": "a \"b\" c",
+  "normalized": "\u2581A \"b\" c.",
+  "ids": [
+   803,
+   660,
+   3915,
+   881,
+   3915,
+   723,
+   663
+  ]
+ },
+ {
+  "input": "\"hi\" ",
+  "normalized": "\u2581\"hi.",
+  "ids": [
+   660,
+   3915,
+   1441,
+   663
+  ]
+ },
+ {
+  "input": " 'yes' ",
+  "normalized": "\u2581'yes'",
+  "ids": [
+   660,
+   664,
+   732,
+   781,
+   664
+  ]
+ },
+ {
+  "input": "ok.\"",
+  "normalized": "\u2581Ok.",
+  "ids": [
+   1082,
+   903,
+   663
+  ]
+ },
+ {
+  "input": "ok!\"'",
+  "normalized": "\u2581Ok!\"'",
+  "ids": [
+   1082,
+   903,
+   1367,
+   3915,
+   664
+  ]
+ },
+ {
+  "input": "\"ok.'\"",
+  "normalized": "\u2581\"ok.",
+  "ids": [
+   660,
+   3915,
+   2451,
+   663
+  ]
+ },
+ {
+  "input": "\u00e9cole",
+  "normalized": "\u2581\u00c9cole.",
+  "ids": [
+   660,
+   599,
+   541,
+   1130,
+   814,
+   663
+  ]
+ },
+ {
+  "input": "\u00e0 bient\u00f4t",
+  "normalized": "\u2581\u00c0 bient\u00f4t.",
+  "ids": [
+   660,
+   599,
+   532,
+   1772,
+   945,
+   3907,
+   674,
+   663
+  ]
+ },
+ {
+  "input": "\u00f1and\u00fa",
+  "normalized": "\u2581\u00d1and\u00fa.",
+  "ids": [
+   660,
+   599,
+   549,
+   1447,
+   3339,
+   663
+  ]
+ },
+ {
+  "input": "\u00fcber",
+  "normalized": "\u2581\u00dcber.",
+  "ids": [
+   660,
+   599,
+   560,
+   1433,
+   663
+  ]
+ },
+ {
+  "input": "\u00f8re",
+  "normalized": "\u2581\u00d8re.",
+  "ids": [
+   660,
+   599,
+   556,
+   680,
+   663
+  ]
+ },
+ {
+  "input": "\u00e7a va",
+  "normalized": "\u2581\u00c7a va.",
+  "ids": [
+   660,
+   599,
+   539,
+   770,
+   1925,
+   663
+  ]
+ },
+ {
+  "input": "\u0142\u00f3d\u017a",
+  "normalized": "\u2581\u0141\u00f3dz.",
+  "ids": [
+   660,
+   601,
+   533,
+   2061,
+   706,
+   1152,
+   663
+  ]
+ },
+ {
+  "input": "\u015f",
+  "normalized": "\u2581S.",
+  "ids": [
+   851,
+   663
+  ]
+ },
+ {
+  "input": "\u0161koda",
+  "normalized": "\u2581Skoda.",
+  "ids": [
+   851,
+   2635,
+   1209,
+   663
+  ]
+ },
+ {
+  "input": "\u017eena",
+  "normalized": "\u2581Zena.",
+  "ids": [
+   3283,
+   950,
+   663
+  ]
+ },
+ {
+  "input": "\u0111",
+  "normalized": "\u2581\u0110.",
+  "ids": [
+   660,
+   600,
+   548,
+   663
+  ]
+ },
+ {
+  "input": "\u0131stanbul",
+  "normalized": "\u2581Istanbul.",
+  "ids": [
+   666,
+   1791,
+   697,
+   881,
+   1196,
+   663
+  ]
+ },
+ {
+  "input": "\u03b1\u03b2\u03b3",
+  "normalized": "\u2581\u0391\u03b2\u03b3.",
+  "ids": [
+   660,
+   610,
+   549,
+   610,
+   582,
+   3968,
+   663
+  ]
+ },
+ {
+  "input": "\u03c0 is",
+  "normalized": "\u2581\u03a0 is.",
+  "ids": [
+   660,
+   610,
+   564,
+   677,
+   663
+  ]
+ },
+ {
+  "input": "\u03c3",
+  "normalized": "\u2581\u03a3.",
+  "ids": [
+   660,
+   610,
+   567,
+   663
+  ]
+ },
+ {
+  "input": "\u03c2",
+  "normalized": "\u2581\u03a3.",
+  "ids": [
+   660,
+   610,
+   567,
+   663
+  ]
+ },
+ {
+  "input": "\u03bb",
+  "normalized": "\u2581\u039b.",
+  "ids": [
+   660,
+   610,
+   559,
+   663
+  ]
+ },
+ {
+  "input": "\u043f\u0440\u0438\u0432\u0435\u0442",
+  "normalized": "\u2581\u041f\u0440\u0438\u0432\u0435\u0442.",
+  "ids": [
+   660,
+   612,
+   563,
+   2750,
+   1863,
+   2127,
+   1558,
+   2096,
+   663
+  ]
+ },
+ {
+  "input": "\u0436",
+  "normalized": "\u2581\u0416.",
+  "ids": [
+   660,
+   612,
+   554,
+   663
+  ]
+ },
+ {
+  "input": "\u0451",
+  "normalized": "\u2581\u0451.",
+  "ids": [
+   660,
+   613,
+   549,
+   663
+  ]
+ },
+ {
+  "input": "\u0456",
+  "normalized": "\u2581\u0406.",
+  "ids": [
+   660,
+   612,
+   538,
+   663
+  ]
+ },
+ {
+  "input": "\u00e6",
+  "normalized": "\u2581\u00e6.",
+  "ids": [
+   660,
+   599,
+   570,
+   663
+  ]
+ },
+ {
+  "input": "\u00ff",
+  "normalized": "\u2581Y.",
+  "ids": [
+   1724,
+   663
+  ]
+ },
+ {
+  "input": "\u0101",
+  "normalized": "\u2581A.",
+  "ids": [
+   803,
+   663
+  ]
+ },
+ {
+  "input": "\u1ebf",
+  "normalized": "\u2581E.",
+  "ids": [
+   926,
+   663
+  ]
+ },
+ {
+  "input": "\u0130stanbul",
+  "normalized": "\u2581Istanbul.",
+  "ids": [
+   666,
+   1791,
+   697,
+   881,
+   1196,
+   663
+  ]
+ },
+ {
+  "input": "\u00dfe",
+  "normalized": "\u2581\u00dfe.",
+  "ids": [
+   660,
+   599,
+   563,
+   738,
+   663
+  ]
+ },
+ {
+  "input": "\u00ecl",
+  "normalized": "\u2581Il.",
+  "ids": [
+   666,
+   834,
+   663
+  ]
+ },
+ {
+  "input": "\u01b0u",
+  "normalized": "\u2581Uu.",
+  "ids": [
+   1335,
+   887,
+   663
+  ]
+ },
+ {
+  "input": "CO\u2082",
+  "normalized": "\u2581CO2.",
+  "ids": [
+   840,
+   1426,
+   769,
+   663
+  ]
+ },
+ {
+  "input": "x\u2081 + x\u2082",
+  "normalized": "\u2581X1 + x2.",
+  "ids": [
+   2573,
+   748,
+   660,
+   447,
+   660,
+   1352,
+   769,
+   663
+  ]
+ },
+ {
+  "input": "a\u208a",
+  "normalized": "\u2581A+",
+  "ids": [
+   803,
+   447
+  ]
+ },
+ {
+  "input": "log\u2093",
+  "normalized": "\u2581Logx.",
+  "ids": [
+   1737,
+   852,
+   1352,
+   663
+  ]
+ },
+ {
+  "input": "\u1d62",
+  "normalized": "\u2581I.",
+  "ids": [
+   666,
+   663
+  ]
+ },
+ {
+  "input": "\u2c7c",
+  "normalized": "\u2581J.",
+  "ids": [
+   1802,
+   663
+  ]
+ },
+ {
+  "input": "x\u00b2",
+  "normalized": "\u2581X\u00b2.",
+  "ids": [
+   2573,
+   598,
+   582,
+   663
+  ]
+ },
+ {
+  "input": "wait\u2026",
+  "normalized": "\u2581Wait.",
+  "ids": [
+   3731,
+   663
+  ]
+ },
+ {
+  "input": "\u2026",
+  "normalized": "\u2581.",
+  "ids": [
+   660,
+   663
+  ]
+ },
+ {
+  "input": "so\u2026 then",
+  "normalized": "\u2581So. then.",
+  "ids": [
+   698,
+   663,
+   753,
+   663
+  ]
+ },
+ {
+  "input": "a\u2026.",
+  "normalized": "\u2581A.",
+  "ids": [
+   803,
+   663
+  ]
+ },
+ {
+  "input": "a\u2013b",
+  "normalized": "\u2581A b.",
+  "ids": [
+   803,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "a \u2014 b",
+  "normalized": "\u2581A b.",
+  "ids": [
+   803,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "\u2014",
+  "normalized": "",
+  "ids": []
+ },
+ {
+  "input": "a\u2010b",
+  "normalized": "\u2581A-b.",
+  "ids": [
+   803,
+   742,
+   881,
+   663
+  ]
+ },
+ {
+  "input": "a\u2011b",
+  "normalized": "\u2581A-b.",
+  "ids": [
+   803,
+   742,
+   881,
+   663
+  ]
+ },
+ {
+  "input": "a\u2012b",
+  "normalized": "\u2581A-b.",
+  "ids": [
+   803,
+   742,
+   881,
+   663
+  ]
+ },
+ {
+  "input": "a\u2015b",
+  "normalized": "\u2581A-b.",
+  "ids": [
+   803,
+   742,
+   881,
+   663
+  ]
+ },
+ {
+  "input": "--dry-run",
+  "normalized": "\u2581--dry-run.",
+  "ids": [
+   660,
+   742,
+   742,
+   706,
+   1007,
+   742,
+   1099,
+   697,
+   663
+  ]
+ },
+ {
+  "input": "a - b",
+  "normalized": "\u2581A - b.",
+  "ids": [
+   803,
+   660,
+   742,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "-5",
+  "normalized": "\u2581-5.",
+  "ids": [
+   660,
+   742,
+   856,
+   663
+  ]
+ },
+ {
+  "input": "a--b",
+  "normalized": "\u2581A--b.",
+  "ids": [
+   803,
+   742,
+   742,
+   881,
+   663
+  ]
+ },
+ {
+  "input": "\u2014\u2014",
+  "normalized": "",
+  "ids": []
+ },
+ {
+  "input": "\u65e5\u672c\u8a9e",
+  "normalized": "\u2581\u65e5\u672c\u8a9e.",
+  "ids": [
+   660,
+   634,
+   555,
+   569,
+   634,
+   560,
+   576,
+   636,
+   574,
+   562,
+   663
+  ]
+ },
+ {
+  "input": "\u4f60\u597d\u4e16\u754c\u3002",
+  "normalized": "\u2581\u4f60\u597d\u4e16\u754c\u3002",
+  "ids": [
+   660,
+   632,
+   593,
+   564,
+   633,
+   569,
+   593,
+   632,
+   588,
+   554,
+   635,
+   553,
+   544,
+   631,
+   532,
+   534
+  ]
+ },
+ {
+  "input": "Tokyo \u6771\u4eac",
+  "normalized": "\u2581Tokyo \u6771\u4eac.",
+  "ids": [
+   1188,
+   2492,
+   805,
+   660,
+   634,
+   561,
+   581,
+   632,
+   590,
+   576,
+   663
+  ]
+ },
+ {
+  "input": "\u3053\u3093\u306b\u3061\u306f",
+  "normalized": "\u2581\u3053\u3093\u306b\u3061\u306f.",
+  "ids": [
+   660,
+   631,
+   533,
+   551,
+   631,
+   534,
+   551,
+   631,
+   533,
+   575,
+   631,
+   533,
+   565,
+   631,
+   533,
+   579,
+   663
+  ]
+ },
+ {
+  "input": "\ud55c\uad6d\uc5b4",
+  "normalized": "\u2581\ud55c\uad6d\uc5b4.",
+  "ids": [
+   660,
+   641,
+   553,
+   560,
+   638,
+   585,
+   577,
+   640,
+   554,
+   584,
+   663
+  ]
+ },
+ {
+  "input": "\u3002",
+  "normalized": "\u2581\u3002",
+  "ids": [
+   660,
+   631,
+   532,
+   534
+  ]
+ },
+ {
+  "input": "\uff01",
+  "normalized": "\u2581\uff01",
+  "ids": [
+   660,
+   643,
+   592,
+   533
+  ]
+ },
+ {
+  "input": "\uff02quote\uff02",
+  "normalized": "\u2581\"quote.",
+  "ids": [
+   660,
+   3915,
+   2182,
+   805,
+   893,
+   663
+  ]
+ },
+ {
+  "input": "\ud83d\ude00",
+  "normalized": "",
+  "ids": []
+ },
+ {
+  "input": "hi \ud83d\ude00",
+  "normalized": "\u2581Hi.",
+  "ids": [
+   2048,
+   663
+  ]
+ },
+ {
+  "input": "\ud83d\udc4d\ud83c\udffd",
+  "normalized": "",
+  "ids": []
+ },
+ {
+  "input": "\u2764\ufe0f love",
+  "normalized": "\u2581Love.",
+  "ids": [
+   2984,
+   663
+  ]
+ },
+ {
+  "input": "\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67",
+  "normalized": "",
+  "ids": []
+ },
+ {
+  "input": "\u2b50 star",
+  "normalized": "\u2581Star.",
+  "ids": [
+   2408,
+   663
+  ]
+ },
+ {
+  "input": "\ud83d\ude80 launch",
+  "normalized": "\u2581Launch.",
+  "ids": [
+   1284,
+   1123,
+   884,
+   663
+  ]
+ },
+ {
+  "input": "\ud83e\udef6",
+  "normalized": "",
+  "ids": []
+ },
+ {
+  "input": "\ud83e\udf00",
+  "normalized": "\u2581\ud83e\udf00",
+  "ids": [
+   660,
+   644,
+   563,
+   576,
+   532
+  ]
+ },
+ {
+  "input": "\u263a",
+  "normalized": "",
+  "ids": []
+ },
+ {
+  "input": "ok \ud83d\ude00.",
+  "normalized": "\u2581Ok.",
+  "ids": [
+   1082,
+   903,
+   663
+  ]
+ },
+ {
+  "input": "e\u0301",
+  "normalized": "\u2581E\u0301",
+  "ids": [
+   926,
+   608,
+   533
+  ]
+ },
+ {
+  "input": "cafe\u0301",
+  "normalized": "\u2581Cafe\u0301",
+  "ids": [
+   1463,
+   1742,
+   608,
+   533
+  ]
+ },
+ {
+  "input": "n\u0303",
+  "normalized": "\u2581N\u0303",
+  "ids": [
+   1136,
+   608,
+   535
+  ]
+ },
+ {
+  "input": "a\u0308b",
+  "normalized": "\u2581A\u0308b.",
+  "ids": [
+   803,
+   608,
+   540,
+   881,
+   663
+  ]
+ },
+ {
+  "input": "\u0301",
+  "normalized": "\u2581\u0301",
+  "ids": [
+   660,
+   608,
+   533
+  ]
+ },
+ {
+  "input": "Z\u0335a\u0335",
+  "normalized": "\u2581Z\u0335a\u0335",
+  "ids": [
+   1859,
+   608,
+   585,
+   770,
+   608,
+   585
+  ]
+ },
+ {
+  "input": "x\u20dd",
+  "normalized": "\u2581X\u20dd",
+  "ids": [
+   2573,
+   630,
+   535,
+   561
+  ]
+ },
+ {
+  "input": "a\tb",
+  "normalized": "\u2581A b.",
+  "ids": [
+   803,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "line1\nline2",
+  "normalized": "\u2581Line1 line2.",
+  "ids": [
+   1612,
+   927,
+   748,
+   1258,
+   769,
+   663
+  ]
+ },
+ {
+  "input": "a\r\nb",
+  "normalized": "\u2581A b.",
+  "ids": [
+   803,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "\n\n",
+  "normalized": "",
+  "ids": []
+ },
+ {
+  "input": "\t",
+  "normalized": "",
+  "ids": []
+ },
+ {
+  "input": "a\u00a0b",
+  "normalized": "\u2581A b.",
+  "ids": [
+   803,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "a\u2028b",
+  "normalized": "\u2581A b.",
+  "ids": [
+   803,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "a\u3000b",
+  "normalized": "\u2581A b.",
+  "ids": [
+   803,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "a\u200bb",
+  "normalized": "\u2581A\u200bb.",
+  "ids": [
+   803,
+   630,
+   532,
+   543,
+   881,
+   663
+  ]
+ },
+ {
+  "input": "a\u200db",
+  "normalized": "\u2581A b.",
+  "ids": [
+   803,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "\u000b",
+  "normalized": "",
+  "ids": []
+ },
+ {
+  "input": "\u0085x",
+  "normalized": "\u2581X.",
+  "ids": [
+   2573,
+   663
+  ]
+ },
+ {
+  "input": "x\u001b[0m",
+  "normalized": "\u2581X 0m.",
+  "ids": [
+   2573,
+   660,
+   720,
+   684,
+   663
+  ]
+ },
+ {
+  "input": "tab\t.",
+  "normalized": "\u2581Tab.",
+  "ids": [
+   1934,
+   881,
+   663
+  ]
+ },
+ {
+  "input": "a",
+  "normalized": "\u2581A.",
+  "ids": [
+   803,
+   663
+  ]
+ },
+ {
+  "input": "A",
+  "normalized": "\u2581A.",
+  "ids": [
+   803,
+   663
+  ]
+ },
+ {
+  "input": "?",
+  "normalized": "\u2581?",
+  "ids": [
+   660,
+   691
+  ]
+ },
+ {
+  "input": "!",
+  "normalized": "\u2581!",
+  "ids": [
+   660,
+   1367
+  ]
+ },
+ {
+  "input": "1",
+  "normalized": "\u25811.",
+  "ids": [
+   660,
+   748,
+   663
+  ]
+ },
+ {
+  "input": "$",
+  "normalized": "\u2581$",
+  "ids": [
+   1403
+  ]
+ },
+ {
+  "input": "-",
+  "normalized": "\u2581-",
+  "ids": [
+   660,
+   742
+  ]
+ },
+ {
+  "input": "_",
+  "normalized": "\u2581_",
+  "ids": [
+   660,
+   499
+  ]
+ },
+ {
+  "input": "x",
+  "normalized": "\u2581X.",
+  "ids": [
+   2573,
+   663
+  ]
+ },
+ {
+  "input": "\u00e9",
+  "normalized": "\u2581\u00c9.",
+  "ids": [
+   660,
+   599,
+   541,
+   663
+  ]
+ },
+ {
+  "input": "\u2581",
+  "normalized": "\u2581\u2581",
+  "ids": [
+   660,
+   660
+  ]
+ },
+ {
+  "input": " ",
+  "normalized": "",
+  "ids": []
+ },
+ {
+  "input": "<0x41>",
+  "normalized": "\u2581<0x41>",
+  "ids": [
+   660,
+   469
+  ]
+ },
+ {
+  "input": "<|audio_bos|>",
+  "normalized": "\u2581<|audio_bos|>",
+  "ids": [
+   4
+  ]
+ },
+ {
+  "input": "hi <|audio_bos|> there",
+  "normalized": "\u2581Hi <|audio_bos|> there.",
+  "ids": [
+   2048,
+   663,
+   4,
+   931,
+   663
+  ]
+ },
+ {
+  "input": "<unk>",
+  "normalized": "\u2581<unk>",
+  "ids": [
+   660,
+   464,
+   2982,
+   466
+  ]
+ },
+ {
+  "input": "x\u0000<unk>y",
+  "normalized": "\u2581X <unk>y.",
+  "ids": [
+   2573,
+   663,
+   0,
+   1724,
+   663
+  ]
+ },
+ {
+  "input": "\u2581word",
+  "normalized": "\u2581\u2581word.",
+  "ids": [
+   660,
+   1311,
+   663
+  ]
+ },
+ {
+  "input": "a\u2581\u2581b",
+  "normalized": "\u2581A\u2581\u2581b.",
+  "ids": [
+   803,
+   660,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "1,234,567 rows, 100%",
+  "normalized": "\u25811,234,567 rows, 100%",
+  "ids": [
+   660,
+   748,
+   661,
+   769,
+   873,
+   924,
+   661,
+   856,
+   978,
+   1003,
+   660,
+   1764,
+   662,
+   661,
+   660,
+   748,
+   720,
+   720,
+   1240
+  ]
+ },
+ {
+  "input": "user@example.com",
+  "normalized": "\u2581User@example.com.",
+  "ids": [
+   1335,
+   662,
+   707,
+   468,
+   738,
+   1390,
+   663,
+   1168,
+   663
+  ]
+ },
+ {
+  "input": "2026-11-08",
+  "normalized": "\u25812026-11-08.",
+  "ids": [
+   660,
+   769,
+   720,
+   769,
+   978,
+   742,
+   748,
+   748,
+   742,
+   720,
+   964,
+   663
+  ]
+ },
+ {
+  "input": "v1.2.3",
+  "normalized": "\u2581V1.2.3.",
+  "ids": [
+   1398,
+   748,
+   663,
+   769,
+   663,
+   873,
+   663
+  ]
+ },
+ {
+  "input": "3.2 GHz",
+  "normalized": "\u25813.2 GHz.",
+  "ids": [
+   660,
+   873,
+   663,
+   769,
+   1160,
+   1966,
+   1152,
+   663
+  ]
+ },
+ {
+  "input": "555-0123",
+  "normalized": "\u2581555-0123.",
+  "ids": [
+   660,
+   856,
+   856,
+   856,
+   742,
+   720,
+   748,
+   769,
+   873,
+   663
+  ]
+ },
+ {
+  "input": "www.example.com",
+  "normalized": "\u2581Www.example.com.",
+  "ids": [
+   1167,
+   933,
+   933,
+   663,
+   738,
+   1390,
+   663,
+   1168,
+   663
+  ]
+ },
+ {
+  "input": "#hashtag",
+  "normalized": "\u2581#hashtag.",
+  "ids": [
+   660,
+   439,
+   1234,
+   1114,
+   674,
+   1325,
+   663
+  ]
+ },
+ {
+  "input": "a & b",
+  "normalized": "\u2581A & b.",
+  "ids": [
+   803,
+   660,
+   3493,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "a + b = c",
+  "normalized": "\u2581A + b = c.",
+  "ids": [
+   803,
+   660,
+   447,
+   959,
+   660,
+   465,
+   723,
+   663
+  ]
+ },
+ {
+  "input": "50% off",
+  "normalized": "\u258150% off.",
+  "ids": [
+   660,
+   856,
+   720,
+   1240,
+   890,
+   663
+  ]
+ },
+ {
+  "input": "C++",
+  "normalized": "\u2581C++",
+  "ids": [
+   840,
+   447,
+   447
+  ]
+ },
+ {
+  "input": "foo_bar_baz",
+  "normalized": "\u2581Foo_bar_baz.",
+  "ids": [
+   2458,
+   805,
+   499,
+   881,
+   848,
+   499,
+   1423,
+   1152,
+   663
+  ]
+ },
+ {
+  "input": "camelCaseWord",
+  "normalized": "\u2581CamelCaseWord.",
+  "ids": [
+   1463,
+   684,
+   916,
+   1078,
+   770,
+   938,
+   2591,
+   853,
+   706,
+   663
+  ]
+ },
+ {
+  "input": "ALLCAPS",
+  "normalized": "\u2581ALLCAPS.",
+  "ids": [
+   803,
+   1593,
+   1593,
+   1078,
+   1059,
+   1202,
+   1092,
+   663
+  ]
+ },
+ {
+  "input": "README.md",
+  "normalized": "\u2581README.md.",
+  "ids": [
+   1409,
+   1459,
+   1059,
+   1233,
+   1283,
+   1459,
+   663,
+   684,
+   706,
+   663
+  ]
+ },
+ {
+  "input": "--workspace",
+  "normalized": "\u2581--workspace.",
+  "ids": [
+   660,
+   742,
+   742,
+   2378,
+   662,
+   1340,
+   985,
+   663
+  ]
+ },
+ {
+  "input": "~/.config",
+  "normalized": "\u2581.config.",
+  "ids": [
+   660,
+   663,
+   1683,
+   1692,
+   852,
+   663
+  ]
+ },
+ {
+  "input": "x\u00b7y",
+  "normalized": "\u2581X y.",
+  "ids": [
+   2573,
+   1023,
+   663
+  ]
+ },
+ {
+  "input": "\u2022 bullet",
+  "normalized": "\u2581Bullet.",
+  "ids": [
+   1876,
+   749,
+   1041,
+   663
+  ]
+ },
+ {
+  "input": "\u2192 arrow",
+  "normalized": "\u2581Arrow.",
+  "ids": [
+   1806,
+   1764,
+   663
+  ]
+ },
+ {
+  "input": "[link](url)",
+  "normalized": "\u2581Link, url,",
+  "ids": [
+   1612,
+   1687,
+   661,
+   660,
+   939,
+   834,
+   661
+  ]
+ },
+ {
+  "input": "{json: 1}",
+  "normalized": "\u2581Json, 1.",
+  "ids": [
+   1802,
+   1185,
+   661,
+   660,
+   748,
+   663
+  ]
+ },
+ {
+  "input": "a* b*",
+  "normalized": "\u2581A b.",
+  "ids": [
+   803,
+   959,
+   663
+  ]
+ },
+ {
+  "input": "<b>bold</b>",
+  "normalized": "\u2581<b>bold</b>",
+  "ids": [
+   660,
+   464,
+   881,
+   466,
+   881,
+   1804,
+   464,
+   451,
+   881,
+   466
+  ]
+ },
+ {
+  "input": "100\u00b0C",
+  "normalized": "\u2581100\u00b0C.",
+  "ids": [
+   660,
+   748,
+   720,
+   720,
+   598,
+   580,
+   1078,
+   663
+  ]
+ },
+ {
+  "input": "\u20ac5",
+  "normalized": "\u2581\u20ac5.",
+  "ids": [
+   660,
+   630,
+   534,
+   576,
+   856,
+   663
+  ]
+ },
+ {
+  "input": "\u00a35",
+  "normalized": "\u2581\u00a35.",
+  "ids": [
+   660,
+   598,
+   567,
+   856,
+   663
+  ]
+ },
+ {
+  "input": "\u00a5",
+  "normalized": "\u2581\u00a5",
+  "ids": [
+   660,
+   598,
+   569
+  ]
+ },
+ {
+  "input": "\u2122",
+  "normalized": "\u2581\u2122",
+  "ids": [
+   660,
+   630,
+   536,
+   566
+  ]
+ },
+ {
+  "input": "\u00bd",
+  "normalized": "\u2581\u00bd.",
+  "ids": [
+   660,
+   598,
+   593,
+   663
+  ]
+ },
+ {
+  "input": "\u2460",
+  "normalized": "\u2581\u2460.",
+  "ids": [
+   660,
+   630,
+   549,
+   564,
+   663
+  ]
+ },
+ {
+  "input": "\u2167",
+  "normalized": "\u2581\u2167.",
+  "ids": [
+   660,
+   630,
+   537,
+   571,
+   663
+  ]
+ },
+ {
+  "input": "IV.",
+  "normalized": "\u2581IV.",
+  "ids": [
+   666,
+   2036,
+   663
+  ]
+ },
+ {
+  "input": "The year 1999",
+  "normalized": "\u2581The year 1999.",
+  "ids": [
+   776,
+   912,
+   660,
+   748,
+   905,
+   905,
+   905,
+   663
+  ]
+ },
+ {
+  "input": "Is it 42?",
+  "normalized": "\u2581Is it 42?",
+  "ids": [
+   666,
+   662,
+   675,
+   660,
+   924,
+   769,
+   691
+  ]
+ },
+ {
+  "input": "Call me at 5",
+  "normalized": "\u2581Call me at 5.",
+  "ids": [
+   1463,
+   749,
+   704,
+   716,
+   660,
+   856,
+   663
+  ]
+ },
+ {
+  "input": "src/tts/manager.rs:684",
+  "normalized": "\u2581Src/tts/manager.rs:684.",
+  "ids": [
+   851,
+   731,
+   817,
+   451,
+   674,
+   674,
+   662,
+   451,
+   3372,
+   731,
+   663,
+   731,
+   662,
+   462,
+   978,
+   964,
+   924,
+   663
+  ]
+ },
+ {
+  "input": "The quick brown fox jumps over the lazy dog, again and again. The quick brown fox jumps over the lazy dog, again and again. The quick brown fox jumps over the lazy dog, again and again. The quick brown fox jumps over the lazy dog, again and again. The quick brown fox jumps over the lazy dog, again a",
+  "normalized": "\u2581The quick brown fox jumps over the lazy dog, again and again. The quick brown fox jumps over the lazy dog, again and again. The quick brown fox jumps over the lazy dog, again and again. The quick brown fox jumps over the lazy dog, again and again. The quick brown fox jumps over the lazy dog, again a.",
+  "ids": [
+   776,
+   1417,
+   2600,
+   1657,
+   879,
+   2503,
+   1971,
+   662,
+   816,
+   665,
+   993,
+   3358,
+   1852,
+   661,
+   925,
+   670,
+   925,
+   663,
+   776,
+   1417,
+   2600,
+   1657,
+   879,
+   2503,
+   1971,
+   662,
+   816,
+   665,
+   993,
+   3358,
+   1852,
+   661,
+   925,
+   670,
+   925,
+   663,
+   776,
+   1417,
+   2600,
+   1657,
+   879,
+   2503,
+   1971,
+   662,
+   816,
+   665,
+   993,
+   3358,
+   1852,
+   661,
+   925,
+   670,
+   925,
+   663,
+   776,
+   1417,
+   2600,
+   1657,
+   879,
+   2503,
+   1971,
+   662,
+   816,
+   665,
+   993,
+   3358,
+   1852,
+   661,
+   925,
+   670,
+   925,
+   663,
+   776,
+   1417,
+   2600,
+   1657,
+   879,
+   2503,
+   1971,
+   662,
+   816,
+   665,
+   993,
+   3358,
+   1852,
+   661,
+   925,
+   668,
+   663
+  ]
+ },
+ {
+  "input": "The quick review is done and the branch is ready for you to read. Most of the work was small, and the tests all passed on the first run.",
+  "normalized": "\u2581The quick review is done and the branch is ready for you to read. Most of the work was small, and the tests all passed on the first run.",
+  "ids": [
+   776,
+   1417,
+   660,
+   2138,
+   677,
+   1004,
+   670,
+   665,
+   2717,
+   697,
+   884,
+   677,
+   1663,
+   683,
+   669,
+   667,
+   1057,
+   663,
+   3357,
+   672,
+   665,
+   792,
+   685,
+   1424,
+   661,
+   670,
+   665,
+   1606,
+   662,
+   718,
+   1252,
+   678,
+   689,
+   665,
+   842,
+   1221,
+   663
+  ]
+ },
+ {
+  "input": "Open src/tts/manager.rs:684 and check the retry loop before you merge.",
+  "normalized": "\u2581Open src/tts/manager.rs:684 and check the retry loop before you merge.",
+  "ids": [
+   1082,
+   1090,
+   697,
+   660,
+   662,
+   731,
+   817,
+   451,
+   674,
+   674,
+   662,
+   451,
+   3372,
+   731,
+   663,
+   731,
+   662,
+   462,
+   978,
+   964,
+   924,
+   670,
+   1339,
+   665,
+   741,
+   674,
+   1007,
+   1613,
+   1268,
+   660,
+   929,
+   669,
+   704,
+   731,
+   1093,
+   663
+  ]
+ },
+ {
+  "input": "Run cargo test with the --workspace flag, then run bun run lint.",
+  "normalized": "\u2581Run cargo test with the --workspace flag, then run bun run lint.",
+  "ids": [
+   2352,
+   697,
+   1142,
+   1484,
+   1606,
+   692,
+   665,
+   660,
+   742,
+   742,
+   2378,
+   662,
+   1340,
+   985,
+   879,
+   965,
+   852,
+   661,
+   753,
+   1221,
+   1345,
+   697,
+   1221,
+   660,
+   1845,
+   674,
+   663
+  ]
+ },
+ {
+  "input": "Type /review to start a code review, or /help to see the other commands.",
+  "normalized": "\u2581Type /review to start a code review, or /help to see the other commands.",
+  "ids": [
+   3707,
+   1090,
+   660,
+   451,
+   2138,
+   667,
+   822,
+   668,
+   2915,
+   660,
+   2138,
+   661,
+   711,
+   660,
+   451,
+   967,
+   916,
+   809,
+   667,
+   775,
+   665,
+   802,
+   723,
+   3831,
+   662,
+   663
+  ]
+ },
+ {
+  "input": "The function parseHTTPRequest calls read_header and returns a Header.",
+  "normalized": "\u2581The function parseHTTPRequest calls read_header and returns a Header.",
+  "ids": [
+   776,
+   1122,
+   1105,
+   2425,
+   938,
+   1966,
+   1337,
+   1337,
+   1202,
+   1437,
+   738,
+   3119,
+   962,
+   662,
+   1057,
+   499,
+   3546,
+   707,
+   670,
+   660,
+   2305,
+   662,
+   668,
+   807,
+   1049,
+   707,
+   663
+  ]
+ },
+ {
+  "input": "Set HANDY_TTS_WORKER to the worker path if the default is wrong.",
+  "normalized": "\u2581Set HANDY_TTS_WORKER to the worker path if the default is wrong.",
+  "ids": [
+   1529,
+   674,
+   1543,
+   1059,
+   1743,
+   1233,
+   3506,
+   499,
+   1337,
+   1337,
+   1092,
+   499,
+   2591,
+   1426,
+   1437,
+   2567,
+   1459,
+   1437,
+   667,
+   665,
+   792,
+   707,
+   2355,
+   727,
+   665,
+   794,
+   3541,
+   677,
+   1438,
+   663
+  ]
+ },
+ {
+  "input": "The config lives in ~/.config/handy/settings.json and the log in handy.log.",
+  "normalized": "\u2581The config lives in.config/handy/settings.json and the log in handy.log.",
+  "ids": [
+   776,
+   1525,
+   1313,
+   1848,
+   676,
+   663,
+   1683,
+   1692,
+   852,
+   451,
+   3798,
+   732,
+   451,
+   2338,
+   1009,
+   662,
+   663,
+   1347,
+   1185,
+   670,
+   665,
+   660,
+   2815,
+   676,
+   1318,
+   732,
+   663,
+   2815,
+   663
+  ]
+ },
+ {
+  "input": "Upgrade from v0.10.0 to v1.2.3 before the next release.",
+  "normalized": "\u2581Upgrade from v0.10.0 to v1.2.3 before the next release.",
+  "ids": [
+   1335,
+   809,
+   3050,
+   744,
+   1694,
+   720,
+   663,
+   748,
+   720,
+   663,
+   720,
+   667,
+   1694,
+   748,
+   663,
+   769,
+   663,
+   873,
+   660,
+   929,
+   665,
+   980,
+   741,
+   2508,
+   663
+  ]
+ },
+ {
+  "input": "See https://github.com/cjpais/Handy for the upstream project.",
+  "normalized": "\u2581See https://github.com/cjpais/Handy for the upstream project.",
+  "ids": [
+   2582,
+   1359,
+   674,
+   674,
+   809,
+   662,
+   462,
+   451,
+   451,
+   1552,
+   869,
+   2156,
+   663,
+   1168,
+   451,
+   817,
+   1347,
+   1340,
+   983,
+   451,
+   1966,
+   1447,
+   732,
+   683,
+   665,
+   729,
+   2570,
+   713,
+   1967,
+   663
+  ]
+ },
+ {
+  "input": "The GPU runs the vocoder, the NPU runs the encoder, and the CPU runs the rest.",
+  "normalized": "\u2581The GPU runs the vocoder, the NPU runs the encoder, and the CPU runs the rest.",
+  "ids": [
+   776,
+   1160,
+   1202,
+   2304,
+   1221,
+   662,
+   665,
+   660,
+   1407,
+   1130,
+   1477,
+   661,
+   665,
+   1136,
+   1202,
+   2304,
+   1221,
+   662,
+   665,
+   1115,
+   1130,
+   1477,
+   661,
+   670,
+   665,
+   840,
+   1202,
+   2304,
+   1221,
+   662,
+   665,
+   1435,
+   663
+  ]
+ },
+ {
+  "input": "Use kubectl apply with the manifest in deploy/app.yaml, then check the pods.",
+  "normalized": "\u2581Use kubectl apply with the manifest in deploy/app.yaml, then check the pods.",
+  "ids": [
+   1335,
+   938,
+   1588,
+   2156,
+   2318,
+   834,
+   3106,
+   692,
+   665,
+   898,
+   2543,
+   974,
+   676,
+   794,
+   809,
+   987,
+   732,
+   451,
+   2901,
+   663,
+   2124,
+   684,
+   834,
+   661,
+   753,
+   1339,
+   665,
+   1070,
+   706,
+   662,
+   663
+  ]
+ },
+ {
+  "input": "The model reads 24 kHz audio and writes 44.1 kHz output in about 0.04 seconds per second.",
+  "normalized": "\u2581The model reads 24 kHz audio and writes 44.1 kHz output in about 0.04 seconds per second.",
+  "ids": [
+   776,
+   2366,
+   1057,
+   662,
+   660,
+   769,
+   924,
+   1588,
+   1966,
+   1152,
+   3346,
+   670,
+   1711,
+   662,
+   660,
+   924,
+   924,
+   663,
+   748,
+   1588,
+   1966,
+   1152,
+   721,
+   809,
+   1275,
+   676,
+   710,
+   660,
+   720,
+   663,
+   720,
+   924,
+   660,
+   1133,
+   662,
+   1249,
+   660,
+   1133,
+   663
+  ]
+ },
+ {
+  "input": "Call fixtureBase() from the setup step, then delete build/dist/old.rpm by hand.",
+  "normalized": "\u2581Call fixtureBase, from the setup step, then delete build/dist/old.rpm by hand.",
+  "ids": [
+   1463,
+   749,
+   2449,
+   674,
+   1080,
+   1406,
+   770,
+   938,
+   661,
+   744,
+   665,
+   1214,
+   1204,
+   1482,
+   661,
+   753,
+   794,
+   814,
+   893,
+   1195,
+   451,
+   706,
+   1046,
+   451,
+   1804,
+   663,
+   731,
+   809,
+   684,
+   795,
+   1318,
+   663
+  ]
+ },
+ {
+  "input": "I will check back in ten minutes and tell you what changed.",
+  "normalized": "\u2581I will check back in ten minutes and tell you what changed.",
+  "ids": [
+   666,
+   777,
+   1339,
+   778,
+   676,
+   1945,
+   660,
+   1232,
+   662,
+   670,
+   902,
+   669,
+   695,
+   1575,
+   678,
+   663
+  ]
+ }
+]

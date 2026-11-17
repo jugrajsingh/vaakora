@@ -39,6 +39,17 @@ const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
   RecordingFailed: {
     title: "errors.recordingFailedTitle",
   },
+  ReadAloudBusyPasting: {
+    title: "errors.readAloudBusyPastingTitle",
+    explanation: (t) => t("errors.readAloudBusyPasting"),
+  },
+  ReadAloudUnavailable: {
+    title: "errors.readAloudUnavailableTitle",
+  },
+  ReadAloudClipboardUnreadable: {
+    title: "errors.readAloudClipboardUnreadableTitle",
+    explanation: (t) => t("errors.readAloudClipboardUnreadable"),
+  },
   ModelLoadFailed: {
     title: "errors.modelLoadFailedTitle",
     explanation: (t) => t("errors.modelLoadFailed"),
@@ -57,6 +68,11 @@ const NOTICE_DISPLAY: Record<NoticeCode, NoticeDisplay> = {
   FilePostProcessFailed: {
     title: "errors.filePostProcessFailedTitle",
     explanation: (t) => t("errors.filePostProcessFailed"),
+  },
+  // The notice's detail names the vocabulary file and the line and column of the error.
+  VocabularyInvalid: {
+    title: "errors.vocabularyInvalidTitle",
+    explanation: (t) => t("errors.vocabularyInvalid"),
   },
 };
 

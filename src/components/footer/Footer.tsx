@@ -2,15 +2,19 @@ import React, { useState, useEffect } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 
 import ModelSelector from "../model-selector";
+import { LocalLlmModelSelector } from "../model-selector/LocalLlmModelSelector";
 import UpdateChecker from "../update-checker";
 import NoticeChip from "./NoticeChip";
 import TranscriptionStatus from "./TranscriptionStatus";
 
 interface FooterProps {
   onShowHistory: () => void;
+  onOpenPostProcessing: () => void;
 }
-
-const Footer: React.FC<FooterProps> = ({ onShowHistory }) => {
+const Footer: React.FC<FooterProps> = ({
+  onShowHistory,
+  onOpenPostProcessing,
+}) => {
   const [version, setVersion] = useState("");
 
   useEffect(() => {
@@ -29,13 +33,14 @@ const Footer: React.FC<FooterProps> = ({ onShowHistory }) => {
 
   return (
     <div className="w-full border-t border-line pt-3">
-      <div className="flex justify-between items-center text-xs px-4 pb-3 text-ink-2">
-        <div className="flex items-center gap-4">
+      <div className="flex justify-between items-center gap-3 min-w-0 text-xs px-4 pb-3 text-ink-2">
+        <div className="flex items-center gap-4 min-w-0 flex-1">
           <ModelSelector />
           <TranscriptionStatus onShowHistory={onShowHistory} />
+          <LocalLlmModelSelector onOpenPostProcessing={onOpenPostProcessing} />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           {/* Update Status */}
           <div className="flex items-center gap-1">
             <UpdateChecker />

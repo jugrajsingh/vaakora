@@ -10,6 +10,8 @@ use tauri_plugin_store::StoreExt;
 
 pub const APPLE_INTELLIGENCE_PROVIDER_ID: &str = "apple_intelligence";
 pub const APPLE_INTELLIGENCE_DEFAULT_MODEL_ID: &str = "Apple Intelligence";
+/// Provider id of the in-app llama-server post-processor (`local_llm` module).
+pub const LOCAL_LLM_PROVIDER_ID: &str = "local_llm";
 
 #[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "lowercase")]
@@ -159,6 +161,45 @@ pub enum ModelUnloadTimeout {
     Sec15, // Debug mode only
 }
 
+/// S1 control-line knob: how formal the cleaned text reads.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum LocalLlmStyling {
+    Casual,
+    SemiCasual,
+    #[default]
+    SemiFormal,
+    Formal,
+}
+
+/// S1 control-line knob: prose paragraphs or Markdown lists.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum LocalLlmStructure {
+    #[default]
+    Prose,
+    Lists,
+}
+
+/// Layout used to compare raw and cleaned history transcripts.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum HistoryCompareView {
+    #[default]
+    Diff,
+    SideBySide,
+    Stacked,
+}
+
+/// S1 control-line knob: general text or an email layout.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum LocalLlmContext {
+    #[default]
+    General,
+    Email,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum PasteMethod {
@@ -225,6 +266,22 @@ pub enum RecordingRetentionPeriod {
     PreserveLimit,
     Days3,
     Weeks2,
+    Months3,
+}
+
+/// How long read-aloud history keeps reads. Unlike `RecordingRetentionPeriod::Never`, which
+/// never deletes, `KeepNothing` stores no read at all; the count limit applies to every choice.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum ReadHistoryRetention {
+    KeepNothing,
+    #[default]
+    KeepLimit,
+    #[serde(rename = "days_3", alias = "days3")]
+    Days3,
+    #[serde(rename = "weeks_2", alias = "weeks2")]
+    Weeks2,
+    #[serde(rename = "months_3", alias = "months3")]
     Months3,
 }
 
@@ -398,6 +455,35 @@ impl std::ops::DerefMut for SecretMap {
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
 #[serde(default)]
 pub struct AppSettings {
+    #[serde(default = "default_tts_model")]
+    pub tts_model_id: String,
+    #[serde(default = "default_tts_voices")]
+    pub tts_voice: HashMap<String, String>,
+    #[serde(default = "default_tts_speed")]
+    pub tts_speed: f32,
+    #[serde(default)]
+    pub tts_pitch_semitones: f32,
+    #[serde(default)]
+    pub tts_output_device: Option<String>,
+    #[serde(default)]
+    pub tts_read_code_blocks: bool,
+    /// Read paths, file names, flags and code names in full, using the vocabulary.
+    #[serde(default = "default_tts_technical_reading")]
+    pub tts_technical_reading: bool,
+    /// With technical reading, read every folder of a path; off reads the file name.
+    #[serde(default = "default_tts_full_paths")]
+    pub tts_full_paths: bool,
+    /// With technical reading, read the whole web address; off says only the site.
+    #[serde(default)]
+    pub tts_full_links: bool,
+    #[serde(default)]
+    pub tts_run_on: std::collections::BTreeMap<String, handy_tts_core::device::RunOn>,
+    /// How many reads read-aloud history keeps (0 to 1000); 0 keeps none.
+    #[serde(default = "default_tts_history_limit")]
+    pub tts_history_limit: usize,
+    #[serde(default)]
+    pub tts_history_retention: ReadHistoryRetention,
+
     /// Internal settings schema marker for one-time migrations. Fresh installs
     /// start at the current version; existing stores missing this key are
     /// treated as version 0 and migrated forward.
@@ -572,10 +658,28 @@ pub struct AppSettings {
     /// `overlay_position` (position `none` → style `None`).
     #[serde(default = "default_overlay_style")]
     pub overlay_style: OverlayStyle,
+    /// Registry id of the local LLM (provider `local_llm`); `None` until chosen.
+    #[serde(default)]
+    pub local_llm_model_id: Option<String>,
+    #[serde(default)]
+    pub local_llm_styling: LocalLlmStyling,
+    #[serde(default)]
+    pub local_llm_structure: LocalLlmStructure,
+    #[serde(default)]
+    pub local_llm_context: LocalLlmContext,
+    /// Inference threads for llama-server.
+    #[serde(default = "default_local_llm_threads")]
+    pub local_llm_threads: u8,
+    #[serde(default)]
+    pub history_compare_view: HistoryCompareView,
 }
 
 fn default_model() -> String {
     "".to_string()
+}
+
+fn default_local_llm_threads() -> u8 {
+    4
 }
 
 const CURRENT_SETTINGS_SCHEMA_VERSION: u32 = 3;
@@ -814,6 +918,17 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
         api_format: PostProcessApiFormat::OpenAi,
     });
 
+    // In-app llama-server post-processor (see `local_llm`); no HTTP base URL.
+    providers.push(PostProcessProvider {
+        id: LOCAL_LLM_PROVIDER_ID.to_string(),
+        label: "Local (in-app)".to_string(),
+        base_url: "local-llm://in-app".to_string(),
+        allow_base_url_edit: false,
+        models_endpoint: None,
+        supports_structured_output: false,
+        api_format: PostProcessApiFormat::OpenAi,
+    });
+
     // Custom provider always comes last
     providers.push(PostProcessProvider {
         id: "custom".to_string(),
@@ -956,6 +1071,32 @@ fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
 
 pub const SETTINGS_STORE_PATH: &str = "settings_store.json";
 
+pub fn default_tts_model() -> String {
+    "pocket-en".into()
+}
+pub fn default_tts_technical_reading() -> bool {
+    true
+}
+pub fn default_tts_full_paths() -> bool {
+    true
+}
+pub fn default_tts_history_limit() -> usize {
+    5
+}
+pub fn default_tts_speed() -> f32 {
+    1.0
+}
+pub fn default_tts_voices() -> HashMap<String, String> {
+    [
+        ("pocket-en", "alba"),
+        ("supertonic-3", "F1"),
+        ("kokoro-82m-int8", "af_heart"),
+    ]
+    .into_iter()
+    .map(|(id, voice)| (id.into(), voice.into()))
+    .collect()
+}
+
 pub fn get_default_settings() -> AppSettings {
     #[cfg(target_os = "windows")]
     let default_shortcut = "ctrl+space";
@@ -1008,7 +1149,29 @@ pub fn get_default_settings() -> AppSettings {
         },
     );
 
+    bindings.insert(
+        "read_aloud".into(),
+        ShortcutBinding {
+            id: "read_aloud".into(),
+            name: "settings.general.readAloudShortcut.label".into(),
+            description: "settings.general.readAloudShortcut.description".into(),
+            default_binding: "super+alt+r".into(),
+            current_binding: "super+alt+r".into(),
+        },
+    );
     AppSettings {
+        tts_model_id: default_tts_model(),
+        tts_voice: default_tts_voices(),
+        tts_speed: default_tts_speed(),
+        tts_pitch_semitones: 0.0,
+        tts_output_device: None,
+        tts_read_code_blocks: false,
+        tts_technical_reading: default_tts_technical_reading(),
+        tts_full_paths: default_tts_full_paths(),
+        tts_full_links: false,
+        tts_run_on: std::collections::BTreeMap::new(),
+        tts_history_limit: default_tts_history_limit(),
+        tts_history_retention: ReadHistoryRetention::default(),
         settings_schema_version: default_settings_schema_version(),
         bindings,
         shortcut_activation: ShortcutActivation::default(),
@@ -1076,6 +1239,12 @@ pub fn get_default_settings() -> AppSettings {
         language_detection: LanguageDetectionMode::default(),
         language_detection_window_secs: default_language_detection_window_secs(),
         overlay_style: default_overlay_style(),
+        local_llm_model_id: None,
+        local_llm_styling: LocalLlmStyling::default(),
+        local_llm_structure: LocalLlmStructure::default(),
+        local_llm_context: LocalLlmContext::default(),
+        local_llm_threads: default_local_llm_threads(),
+        history_compare_view: HistoryCompareView::default(),
     }
 }
 
@@ -1132,9 +1301,19 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
         .store(crate::portable::store_path(SETTINGS_STORE_PATH))
         .expect("Failed to initialize store");
 
+    load_settings_with(store.get("settings"), |settings| {
+        store.set("settings", serde_json::to_value(settings).unwrap());
+    })
+}
+
+/// Load and migrate stored settings, persisting each required recovery.
+pub(crate) fn load_settings_with(
+    settings_value: Option<serde_json::Value>,
+    mut persist: impl FnMut(&AppSettings),
+) -> AppSettings {
     // Settings reads also persist one-time migrations. Migration helpers are
     // idempotent, so this converges after the first read of an older store.
-    let mut settings = if let Some(settings_value) = store.get("settings") {
+    let mut settings = if let Some(settings_value) = settings_value {
         let (mut settings, mut updated) =
             match serde_json::from_value::<AppSettings>(settings_value.clone()) {
                 Ok(settings) => (settings, false),
@@ -1157,19 +1336,23 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
             }
         }
 
+        if crate::shortcut::policy::restore_raw_binding(&mut settings) {
+            updated = true;
+        }
+
         if updated {
-            store.set("settings", serde_json::to_value(&settings).unwrap());
+            persist(&settings);
         }
 
         settings
     } else {
         let default_settings = get_default_settings();
-        store.set("settings", serde_json::to_value(&default_settings).unwrap());
+        persist(&default_settings);
         default_settings
     };
 
     if ensure_post_process_defaults(&mut settings) {
-        store.set("settings", serde_json::to_value(&settings).unwrap());
+        persist(&settings);
     }
 
     settings
@@ -1484,6 +1667,26 @@ pub fn update_checks_effectively_enabled(settings: &AppSettings) -> bool {
     settings.update_checks_enabled && !update_checks_forced_disabled()
 }
 
+/// Persists settings and restores the previous cached value if saving fails.
+pub fn write_settings_checked(app: &AppHandle, settings: AppSettings) -> Result<(), String> {
+    let value = serde_json::to_value(&settings)
+        .map_err(|error| format!("Failed to serialize settings: {error}"))?;
+    let store = app
+        .store(crate::portable::store_path(SETTINGS_STORE_PATH))
+        .map_err(|error| format!("Failed to initialize settings store: {error}"))?;
+    let previous = store.get("settings");
+    store.set("settings", value);
+    if let Err(error) = store.save() {
+        if let Some(previous) = previous {
+            store.set("settings", previous);
+        } else {
+            store.delete("settings");
+        }
+        return Err(format!("Failed to save settings: {error}"));
+    }
+    Ok(())
+}
+
 pub fn write_settings(app: &AppHandle, settings: AppSettings) {
     let store = app
         .store(crate::portable::store_path(SETTINGS_STORE_PATH))
@@ -1519,6 +1722,166 @@ pub fn get_recording_retention_period(app: &AppHandle) -> RecordingRetentionPeri
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn history_compare_command_persists_requested_views_and_preserves_other_settings() {
+        use crate::commands::history::change_history_compare_view_with;
+
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        let original = AppSettings {
+            history_limit: 321,
+            local_llm_model_id: Some("fixture-cleanup-model".to_string()),
+            ..get_default_settings()
+        };
+        let mut unrelated = serde_json::to_value(&original).unwrap();
+        unrelated
+            .as_object_mut()
+            .unwrap()
+            .remove("history_compare_view");
+
+        for view in [HistoryCompareView::SideBySide, HistoryCompareView::Stacked] {
+            std::fs::write(&path, serde_json::to_vec(&original).unwrap()).unwrap();
+            change_history_compare_view_with(
+                view,
+                || serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap(),
+                |settings| {
+                    assert_eq!(settings.history_compare_view, view);
+                    assert_eq!(settings.history_limit, 321);
+                    std::fs::write(&path, serde_json::to_vec(&settings).unwrap())
+                        .map_err(|error| error.to_string())
+                },
+            )
+            .unwrap();
+
+            let reloaded: AppSettings =
+                serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+            assert_eq!(reloaded.history_compare_view, view);
+            let mut persisted = serde_json::to_value(reloaded).unwrap();
+            persisted
+                .as_object_mut()
+                .unwrap()
+                .remove("history_compare_view");
+            assert_eq!(persisted, unrelated);
+        }
+    }
+
+    #[test]
+    fn history_compare_command_returns_save_error() {
+        use crate::commands::history::change_history_compare_view_with;
+
+        let result = change_history_compare_view_with(
+            HistoryCompareView::Stacked,
+            get_default_settings,
+            |settings| {
+                assert_eq!(settings.history_compare_view, HistoryCompareView::Stacked);
+                Err("fixture save failed".to_string())
+            },
+        );
+        assert_eq!(result, Err("fixture save failed".to_string()));
+    }
+
+    #[test]
+    fn history_compare_defaults_for_an_old_store_and_serializes_all_modes() {
+        let mut json = serde_json::to_value(get_default_settings()).unwrap();
+        assert!(json
+            .as_object_mut()
+            .unwrap()
+            .remove("history_compare_view")
+            .is_some());
+        let old: AppSettings = serde_json::from_value(json).unwrap();
+        assert_eq!(old.history_compare_view, HistoryCompareView::Diff);
+        for (view, expected) in [
+            (HistoryCompareView::Diff, "diff"),
+            (HistoryCompareView::SideBySide, "side_by_side"),
+            (HistoryCompareView::Stacked, "stacked"),
+        ] {
+            assert_eq!(
+                serde_json::to_value(view).unwrap(),
+                serde_json::json!(expected)
+            );
+            let settings = AppSettings {
+                history_compare_view: view,
+                ..get_default_settings()
+            };
+            let stored = serde_json::to_value(settings).unwrap();
+            assert_eq!(stored["history_compare_view"], serde_json::json!(expected));
+            let restored: AppSettings = serde_json::from_value(stored).unwrap();
+            assert_eq!(restored.history_compare_view, view);
+        }
+    }
+
+    #[test]
+    fn store_without_local_llm_keys_parses_with_local_llm_defaults() {
+        let mut stored = default_settings_json();
+        let obj = stored.as_object_mut().unwrap();
+        for key in [
+            "local_llm_model_id",
+            "local_llm_styling",
+            "local_llm_structure",
+            "local_llm_context",
+            "local_llm_threads",
+        ] {
+            assert!(obj.remove(key).is_some(), "fixture must contain {key}");
+        }
+        let settings: AppSettings =
+            serde_json::from_value(stored).expect("a pre-local-llm store must parse strictly");
+        assert_eq!(settings.local_llm_model_id, None);
+        assert_eq!(settings.local_llm_styling, LocalLlmStyling::SemiFormal);
+        assert_eq!(settings.local_llm_structure, LocalLlmStructure::Prose);
+        assert_eq!(settings.local_llm_context, LocalLlmContext::General);
+        assert_eq!(settings.local_llm_threads, 4);
+    }
+
+    #[test]
+    fn local_llm_knobs_serialize_in_snake_case() {
+        assert_eq!(
+            serde_json::to_value(LocalLlmStyling::SemiCasual).unwrap(),
+            serde_json::json!("semi_casual")
+        );
+        assert_eq!(
+            serde_json::to_value(LocalLlmStructure::Lists).unwrap(),
+            serde_json::json!("lists")
+        );
+        assert_eq!(
+            serde_json::to_value(LocalLlmContext::Email).unwrap(),
+            serde_json::json!("email")
+        );
+    }
+
+    #[test]
+    fn local_llm_provider_is_listed_before_custom() {
+        let providers = default_post_process_providers();
+        let local = providers
+            .iter()
+            .position(|p| p.id == LOCAL_LLM_PROVIDER_ID)
+            .expect("local_llm provider missing");
+        let custom = providers.iter().position(|p| p.id == "custom").unwrap();
+        assert_eq!(local + 1, custom, "local_llm sits right before custom");
+        let p = &providers[local];
+        assert_eq!(p.label, "Local (in-app)");
+        assert!(!p.allow_base_url_edit);
+        assert!(p.models_endpoint.is_none());
+        assert!(!p.supports_structured_output);
+    }
+
+    #[test]
+    fn ensure_post_process_defaults_adds_local_llm_to_an_old_store() {
+        let mut settings = get_default_settings();
+        settings
+            .post_process_providers
+            .retain(|p| p.id != LOCAL_LLM_PROVIDER_ID);
+        settings.post_process_api_keys.remove(LOCAL_LLM_PROVIDER_ID);
+        settings.post_process_models.remove(LOCAL_LLM_PROVIDER_ID);
+        assert!(ensure_post_process_defaults(&mut settings));
+        assert!(settings
+            .post_process_provider(LOCAL_LLM_PROVIDER_ID)
+            .is_some());
+        assert_eq!(
+            settings.post_process_models.get(LOCAL_LLM_PROVIDER_ID),
+            Some(&String::new())
+        );
+    }
 
     #[test]
     fn stored_binding_returns_the_requested_binding() {
@@ -2170,5 +2533,82 @@ mod tests {
         ));
         assert!(!linux_self_update_possible(Some(BundleKind::Other), all));
         assert!(!linux_self_update_possible(None, all));
+    }
+}
+
+#[cfg(test)]
+mod tts_defaults_tests {
+    use super::*;
+    #[test]
+    fn legacy_settings_get_tts_defaults_without_losing_existing_fields() {
+        let mut value = serde_json::to_value(get_default_settings()).unwrap();
+        for key in [
+            "tts_model_id",
+            "tts_voice",
+            "tts_speed",
+            "tts_pitch_semitones",
+            "tts_output_device",
+            "tts_read_code_blocks",
+            "tts_technical_reading",
+            "tts_full_paths",
+            "tts_full_links",
+            "tts_run_on",
+            "tts_history_limit",
+            "tts_history_retention",
+        ] {
+            value.as_object_mut().unwrap().remove(key);
+        }
+        let settings: AppSettings = serde_json::from_value(value).unwrap();
+        assert_eq!(settings.tts_model_id, "pocket-en");
+        assert_eq!(settings.tts_speed, 1.0);
+        assert_eq!(settings.tts_pitch_semitones, 0.0);
+        assert_eq!(settings.tts_output_device, None);
+        assert!(!settings.tts_read_code_blocks);
+        assert!(settings.tts_technical_reading);
+        assert!(settings.tts_full_paths);
+        assert!(!settings.tts_full_links);
+        assert!(settings.tts_run_on.is_empty());
+        assert_eq!(settings.tts_history_limit, 5);
+        assert_eq!(
+            settings.tts_history_retention,
+            ReadHistoryRetention::KeepLimit
+        );
+        assert_eq!(settings.tts_voice["pocket-en"], "alba");
+        assert_eq!(
+            settings.bindings["read_aloud"].current_binding,
+            "super+alt+r"
+        );
+    }
+
+    const READ_HISTORY_TIME_CHOICES: [(ReadHistoryRetention, &str, &str); 3] = [
+        (ReadHistoryRetention::Days3, "days_3", "days3"),
+        (ReadHistoryRetention::Weeks2, "weeks_2", "weeks2"),
+        (ReadHistoryRetention::Months3, "months_3", "months3"),
+    ];
+
+    #[test]
+    fn read_history_retention_accepts_binding_values() {
+        for (choice, binding, _) in READ_HISTORY_TIME_CHOICES {
+            let parsed = serde_json::from_str::<ReadHistoryRetention>(&format!("\"{binding}\""));
+            assert_eq!(parsed.unwrap(), choice, "{binding}");
+        }
+    }
+
+    #[test]
+    fn read_history_retention_still_reads_stored_old_spelling() {
+        for (choice, _, old) in READ_HISTORY_TIME_CHOICES {
+            let parsed = serde_json::from_str::<ReadHistoryRetention>(&format!("\"{old}\""));
+            assert_eq!(parsed.unwrap(), choice, "{old}");
+        }
+    }
+
+    #[test]
+    fn read_history_retention_writes_binding_values() {
+        for (choice, binding, _) in READ_HISTORY_TIME_CHOICES {
+            assert_eq!(
+                serde_json::to_string(&choice).unwrap(),
+                format!("\"{binding}\"")
+            );
+        }
     }
 }

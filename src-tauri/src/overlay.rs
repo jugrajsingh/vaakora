@@ -1,8 +1,9 @@
 use crate::input;
-use crate::notices::Notice;
+use crate::notices::{Notice, NoticeSource};
 use crate::settings;
 use crate::settings::{OverlayPosition, OverlayStyle};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Mutex, MutexGuard};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize};
 
@@ -120,7 +121,7 @@ fn configure_layer_shell_position(gtk_window: &gtk::ApplicationWindow, position:
 /// derive their dimensions from GTK's size request. gtk-layer-shell documents
 /// the `set_size_request` + `resize(1, 1)` sequence for forcing a new size.
 #[cfg(target_os = "linux")]
-fn configure_layer_shell_surface(
+pub(crate) fn configure_layer_shell_surface(
     gtk_window: &gtk::ApplicationWindow,
     position: OverlayPosition,
     width: f64,
@@ -275,28 +276,77 @@ fn calculate_overlay_position(
     let monitor_x = monitor.position().x as f64 / scale;
     let monitor_y = monitor.position().y as f64 / scale;
     let monitor_width = monitor.size().width as f64 / scale;
+    let monitor_height = monitor.size().height as f64 / scale;
 
     let settings = settings::get_settings(app_handle);
 
-    let x = monitor_x + (monitor_width - width) / 2.0;
-    let y = match settings.overlay_position {
-        OverlayPosition::Top => monitor_y + OVERLAY_TOP_OFFSET,
-        OverlayPosition::Bottom => {
-            // work_area.position shares monitor.position's global coordinate
-            // space, so no monitor offset is added.
-            #[cfg(target_os = "macos")]
-            let bottom = {
-                let wa = monitor.work_area();
-                (wa.position.y as f64 + wa.size.height as f64) / scale
-            };
-            #[cfg(not(target_os = "macos"))]
-            let bottom = monitor_y + monitor.size().height as f64 / scale;
-
-            bottom - height - OVERLAY_BOTTOM_OFFSET
-        }
+    // work_area.position shares monitor.position's global coordinate
+    // space, so no monitor offset is added.
+    #[cfg(target_os = "macos")]
+    let bottom = {
+        let wa = monitor.work_area();
+        (wa.position.y as f64 + wa.size.height as f64) / scale
     };
+    #[cfg(not(target_os = "macos"))]
+    let bottom = monitor_y + monitor_height;
 
-    Some((x, y))
+    Some(floating_origin(
+        settings.overlay_position,
+        (monitor_x, monitor_y, monitor_width, monitor_height),
+        bottom,
+        width,
+        height,
+    ))
+}
+
+/// Top-left corner (logical) of a floating window centred on `monitor` (x, y,
+/// width, height), offset from its top or from `bottom`, the platform bottom edge.
+fn floating_origin(
+    position: OverlayPosition,
+    monitor: (f64, f64, f64, f64),
+    bottom: f64,
+    width: f64,
+    height: f64,
+) -> (f64, f64) {
+    let (monitor_x, monitor_y, monitor_width, _) = monitor;
+    let x = monitor_x + (monitor_width - width) / 2.0;
+    let y = match position {
+        OverlayPosition::Top => monitor_y + OVERLAY_TOP_OFFSET,
+        OverlayPosition::Bottom => bottom - height - OVERLAY_BOTTOM_OFFSET,
+    };
+    (x, y)
+}
+
+/// Places a floating window by the overlay's rules: the cursor's monitor,
+/// centred, Top or Bottom from the settings. Main thread only.
+pub(crate) fn place_floating_window(
+    app_handle: &AppHandle,
+    window: &tauri::webview::WebviewWindow,
+    width: f64,
+    height: f64,
+    layer_shell: bool,
+) {
+    #[cfg(target_os = "linux")]
+    if layer_shell {
+        let position = settings::get_settings(app_handle).overlay_position;
+        match window.gtk_window() {
+            Ok(gtk_window) => configure_layer_shell_position(&gtk_window, position),
+            Err(error) => log::error!("Failed to access GTK window: {error}"),
+        }
+        return;
+    }
+    #[cfg(not(target_os = "linux"))]
+    let _ = layer_shell;
+
+    #[cfg(target_os = "windows")]
+    if let Err(error) = place_windows_overlay(app_handle, window, width, height) {
+        log::error!("Failed to place floating window: {error}");
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    if let Some((x, y)) = calculate_overlay_position(app_handle, width, height) {
+        let _ = window.set_position(tauri::Position::Logical(tauri::LogicalPosition { x, y }));
+    }
 }
 
 /// Current overlay window size in logical units (points), for repositioning
@@ -673,12 +723,15 @@ pub fn show_processing_overlay(app_handle: &AppHandle) {
 /// Shows `notice` in place of the session's overlay and fades it after
 /// [`NOTICE_HOLD`] unless something newer has shown. With the overlay off, it
 /// still hides the session's overlay in case the setting changed mid-session.
+/// A non-dictation notice never takes the overlay from a dictation.
 pub fn show_overlay_notice(app_handle: &AppHandle, notice: &Notice) {
     if !OVERLAY_ENABLED.load(Ordering::Relaxed) {
         hide_recording_overlay(app_handle);
         return;
     }
-    OVERLAY_SESSION_SHOWING.store(false, Ordering::SeqCst);
+    if !overlay_hold().take(notice.source, &OVERLAY_SESSION_SHOWING) {
+        return;
+    }
 
     let state = notice_state(OVERLAY_SESSION_LIVE.load(Ordering::SeqCst));
     let handle = app_handle.clone();
@@ -711,6 +764,51 @@ pub fn is_session_showing() -> bool {
     OVERLAY_SESSION_SHOWING.load(Ordering::SeqCst)
 }
 
+/// A dictation session or a dictation notice is on the overlay.
+pub fn is_dictation_showing() -> bool {
+    overlay_hold().dictation_showing(&OVERLAY_SESSION_SHOWING)
+}
+
+/// Whether the overlay holds a dictation notice, changed together with the session flag.
+pub(crate) struct OverlayHold {
+    /// The overlay holds a dictation notice.
+    dictation_notice: bool,
+}
+
+impl OverlayHold {
+    pub(crate) const fn new() -> Self {
+        Self {
+            dictation_notice: false,
+        }
+    }
+
+    /// A dictation session or a dictation notice is on the overlay.
+    pub(crate) fn dictation_showing(&self, session: &AtomicBool) -> bool {
+        session.load(Ordering::SeqCst) || self.dictation_notice
+    }
+
+    /// Claims the overlay for a notice from `source`; only a dictation notice
+    /// takes it from a dictation session or a held dictation notice.
+    pub(crate) fn take(&mut self, source: NoticeSource, session: &AtomicBool) -> bool {
+        if source != NoticeSource::Dictation && self.dictation_showing(session) {
+            return false;
+        }
+        self.dictation_notice = source == NoticeSource::Dictation;
+        session.store(false, Ordering::SeqCst);
+        true
+    }
+
+    /// The overlay hides: neither a session nor a notice is on it.
+    pub(crate) fn release(&mut self, session: &AtomicBool) {
+        session.store(false, Ordering::SeqCst);
+        self.dictation_notice = false;
+    }
+}
+
+fn overlay_hold() -> MutexGuard<'static, OverlayHold> {
+    OVERLAY_HOLD.lock().unwrap_or_else(|p| p.into_inner())
+}
+
 /// Updates the overlay window position based on current settings
 pub fn update_overlay_position(app_handle: &AppHandle) {
     // Positioning queries monitors/cursor (GDK/Xlib on Linux) and moves the
@@ -721,40 +819,23 @@ pub fn update_overlay_position(app_handle: &AppHandle) {
 
 fn update_overlay_position_on_main(app_handle: &AppHandle) {
     if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
-        #[cfg(target_os = "linux")]
-        if LAYER_SHELL_ACTIVE.load(Ordering::SeqCst) {
-            let position = settings::get_settings(app_handle).overlay_position;
-            match overlay_window.gtk_window() {
-                Ok(gtk_window) => configure_layer_shell_position(&gtk_window, position),
-                Err(error) => log::error!("Failed to access GTK overlay window: {error}"),
-            }
-            return;
-        }
-
         #[cfg(target_os = "windows")]
-        {
-            let state = if WINDOWS_OVERLAY_IS_STREAMING.load(Ordering::Relaxed) {
+        let (width, height) =
+            overlay_dimensions(if WINDOWS_OVERLAY_IS_STREAMING.load(Ordering::Relaxed) {
                 "streaming"
             } else {
                 "recording"
-            };
-            let (width, height) = overlay_dimensions(state);
-            if let Err(error) = place_windows_overlay(app_handle, &overlay_window, width, height) {
-                log::error!("Failed to update recording overlay position: {error}");
-            }
-        }
-
+            });
+        // Use the window's current size so centering stays correct whether the
+        // overlay is in compact or streaming layout.
         #[cfg(not(target_os = "windows"))]
-        {
-            // Use the window's current size so centering stays correct whether the
-            // overlay is in compact or streaming layout.
-            let (width, height) = current_overlay_logical_size(&overlay_window)
-                .unwrap_or((OVERLAY_WIDTH, OVERLAY_HEIGHT));
-            if let Some((x, y)) = calculate_overlay_position(app_handle, width, height) {
-                let _ = overlay_window
-                    .set_position(tauri::Position::Logical(tauri::LogicalPosition { x, y }));
-            }
-        }
+        let (width, height) = current_overlay_logical_size(&overlay_window)
+            .unwrap_or((OVERLAY_WIDTH, OVERLAY_HEIGHT));
+        #[cfg(target_os = "linux")]
+        let layer_shell = LAYER_SHELL_ACTIVE.load(Ordering::SeqCst);
+        #[cfg(not(target_os = "linux"))]
+        let layer_shell = false;
+        place_floating_window(app_handle, &overlay_window, width, height, layer_shell);
     }
 }
 
@@ -773,13 +854,16 @@ static OVERLAY_NOTICE_GENERATION: AtomicU64 = AtomicU64::new(u64::MAX);
 /// Set while the overlay shows a recording or transcribing session.
 static OVERLAY_SESSION_SHOWING: AtomicBool = AtomicBool::new(false);
 
+/// Whether the overlay holds a dictation notice.
+static OVERLAY_HOLD: Mutex<OverlayHold> = Mutex::new(OverlayHold::new());
+
 /// Whether the overlay's current session uses the Live window. The style alone
 /// can't say: a model that doesn't stream gets the compact pill under Live too.
 static OVERLAY_SESSION_LIVE: AtomicBool = AtomicBool::new(false);
 
 /// Hides the recording overlay window with fade-out animation
 pub fn hide_recording_overlay(app_handle: &AppHandle) {
-    OVERLAY_SESSION_SHOWING.store(false, Ordering::SeqCst);
+    overlay_hold().release(&OVERLAY_SESSION_SHOWING);
     OVERLAY_SESSION_LIVE.store(false, Ordering::SeqCst);
     // Always hide the overlay regardless of settings - if setting was changed while recording,
     // we still want to hide it properly
@@ -863,6 +947,54 @@ pub fn emit_levels(app_handle: &AppHandle, levels: &[f32]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::notices::{overlay_takes, NoticeCode};
+
+    #[test]
+    fn a_held_dictation_notice_turns_away_read_aloud_refusals() {
+        let refusal = Notice::new(NoticeCode::ReadAloudUnavailable, NoticeSource::ReadAloud);
+        let session = AtomicBool::new(false);
+        let mut hold = OverlayHold::new();
+        assert!(hold.take(NoticeSource::Dictation, &session));
+        assert!(
+            !overlay_takes(&refusal, hold.dictation_showing(&session), false),
+            "a held dictation notice keeps the overlay"
+        );
+        hold.release(&session);
+        assert!(overlay_takes(
+            &refusal,
+            hold.dictation_showing(&session),
+            false
+        ));
+        assert!(hold.take(NoticeSource::ReadAloud, &session));
+        assert!(overlay_takes(
+            &refusal,
+            hold.dictation_showing(&session),
+            false
+        ));
+    }
+
+    #[test]
+    fn a_read_aloud_notice_never_takes_the_overlay_from_a_dictation() {
+        let session = AtomicBool::new(true);
+        let mut hold = OverlayHold::new();
+        assert!(
+            !hold.take(NoticeSource::ReadAloud, &session),
+            "a dictation session keeps the overlay"
+        );
+        assert!(session.load(Ordering::SeqCst), "the session stays on");
+        assert!(hold.take(NoticeSource::Dictation, &session));
+        assert!(!session.load(Ordering::SeqCst));
+        assert!(hold.dictation_showing(&session));
+        assert!(
+            !hold.take(NoticeSource::ReadAloud, &session),
+            "a held dictation notice keeps the overlay"
+        );
+        assert!(hold.dictation_showing(&session));
+        assert!(hold.take(NoticeSource::Dictation, &session));
+        hold.release(&session);
+        assert!(hold.take(NoticeSource::ReadAloud, &session));
+        assert!(!hold.dictation_showing(&session));
+    }
 
     #[test]
     fn a_notice_keeps_the_size_of_its_session() {
@@ -873,6 +1005,28 @@ mod tests {
             );
             assert_eq!(is_live_state(session), live);
         }
+    }
+
+    #[test]
+    fn floating_origin_centres_and_uses_the_offsets() {
+        let monitor = (0.0, 0.0, 1920.0, 1080.0);
+        assert_eq!(
+            floating_origin(OverlayPosition::Top, monitor, 1080.0, 560.0, 200.0),
+            (680.0, OVERLAY_TOP_OFFSET)
+        );
+        assert_eq!(
+            floating_origin(OverlayPosition::Bottom, monitor, 1080.0, 560.0, 200.0),
+            (680.0, 1080.0 - 200.0 - OVERLAY_BOTTOM_OFFSET)
+        );
+        let second = (1920.0, 0.0, 1920.0, 1080.0);
+        assert_eq!(
+            floating_origin(OverlayPosition::Top, second, 1080.0, 560.0, 200.0),
+            (2600.0, OVERLAY_TOP_OFFSET)
+        );
+        assert_eq!(
+            floating_origin(OverlayPosition::Bottom, second, 1080.0, 560.0, 200.0),
+            (2600.0, 1080.0 - 200.0 - OVERLAY_BOTTOM_OFFSET)
+        );
     }
 
     #[test]

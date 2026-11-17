@@ -981,6 +981,15 @@ impl TranscriptionManager {
         Ok(self.complete(Instant::now(), audio, None)?.text)
     }
 
+    /// The words a clip holds as the model hears them, for read aloud's voice check and
+    /// correction microphone: no custom-word correction, filler removal, post-processing, paste or
+    /// history. Loads the selected model first when none is loaded and leaves it loaded: the
+    /// caller decides when to release it.
+    pub fn transcribe_raw(&self, audio: Vec<f32>) -> Result<String> {
+        self.initiate_model_load(false);
+        Ok(self.decode_batch(audio)?.text.trim().to_string())
+    }
+
     /// Transcribe a finished recording: what its live decode produced, or a
     /// batch run of the whole recording when there is no live result.
     pub fn transcribe_recording(&self, samples: Vec<f32>) -> Result<Transcription> {

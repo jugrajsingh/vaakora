@@ -5,9 +5,334 @@
 
 
 export const commands = {
+async getTtsModels() : Promise<Result<TtsModelInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_tts_models") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getTtsStatus() : Promise<Result<ManagerSnapshot, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_tts_status") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getTtsDevices() : Promise<Result<Device[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_tts_devices") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getReadAloudState() : Promise<Result<SessionView, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_read_aloud_state") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async readAloudReplaceText(text: string, clientRevision: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("read_aloud_replace_text", { text, clientRevision }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async readAloudPlay() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("read_aloud_play") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async readAloudPause() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("read_aloud_pause") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async readAloudStop() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("read_aloud_stop") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async readAloudReadClipboard() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("read_aloud_read_clipboard") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async readAloudClose() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("read_aloud_close") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async setTtsSelection(chosen: Selection) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_tts_selection", { chosen }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async setTtsModel(modelId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_tts_model", { modelId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async setTtsRunOn(modelId: string, choice: RunOn) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_tts_run_on", { modelId, choice }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async unloadTtsModel() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("unload_tts_model") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async downloadTtsModel(modelId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("download_tts_model", { modelId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async cancelTtsDownload(modelId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("cancel_tts_download", { modelId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteTtsModel(modelId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_tts_model", { modelId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async setTtsHfToken(token: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_tts_hf_token", { token }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async previewTtsVoice(voice: string, text: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("preview_tts_voice", { voice, text }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getTtsVocabulary() : Promise<Result<VocabularyTable, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_tts_vocabulary") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async saveTtsVocabulary(revision: string, edits: Edit[]) : Promise<Result<VocabularyTable, SaveError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_tts_vocabulary", { revision, edits }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async listenTtsVocabulary(text: ListenText, modelId: string | null) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("listen_tts_vocabulary", { text, modelId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * The words a read says for `written` on `model_id` (the selected model when `None`), prepared
+ * the way a correction is derived: technical reading on, code blocks skipped.
+ */
+async speakTtsText(written: string, modelId: string | null) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("speak_tts_text", { written, modelId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * The rule that explains an edit of the spoken words, and the exact-text alternative.
+ */
+async deriveTtsRule(request: CorrectionRequest) : Promise<Result<Derivation, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("derive_tts_rule", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * What each voice model says for `written` once `rule` is saved: the words Play all plays and
+ * the round trip checks for a correction.
+ */
+async spokenTtsRule(written: string, rule: DerivedRule, modelIds: string[]) : Promise<Result<VoiceText[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("spoken_tts_rule", { written, rule, modelIds }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async saveTtsRules(revision: string, rules: DerivedRule[]) : Promise<Result<VocabularyTable, SaveError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_tts_rules", { revision, rules }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Plays each voice's words on its model in turn with the owner's speed and that model's voice,
+ * naming the model as it plays. Dictation stops it like any preview.
+ */
+async playTtsVoices(voices: VoiceText[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("play_tts_voices", { voices }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * The round trip on each voice: synthesize its words, transcribe them raw with the current
+ * speech-to-text model, compare. The model is released afterwards under the owner's unload
+ * setting unless a dictation or a newer check took it over. Refused while a dictation records or a file transcribes; a
+ * dictation that starts during the check stops it.
+ */
+async checkTtsVoices(voices: VoiceText[]) : Promise<Result<VoiceCheck[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("check_tts_voices", { voices }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Starts the correction microphone. Refused while read aloud is open and during a dictation, a
+ * recording or a file transcription; a playing preview stops first.
+ */
+async startTtsCapture() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("start_tts_capture") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Stops the correction microphone and returns the words the current speech-to-text model heard,
+ * raw: no custom-word correction, filler removal, post-processing, paste or history. The audio
+ * goes to speech-to-text only. The model is released afterwards under the owner's unload setting
+ * unless a dictation cancelled the capture.
+ */
+async stopTtsCapture() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("stop_tts_capture") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Stops the correction microphone without transcribing; nothing is kept.
+ */
+async cancelTtsCapture() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("cancel_tts_capture") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getTtsHistory() : Promise<Result<ReadHistoryEntry[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_tts_history") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async clearTtsHistory() : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clear_tts_history") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async setTtsHistoryLimit(limit: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_tts_history_limit", { limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async setTtsHistoryRetention(retention: ReadHistoryRetention) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_tts_history_retention", { retention }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async changeBinding(id: string, binding: string) : Promise<Result<BindingResponse, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_binding", { id, binding }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Clear an optional dictation shortcut while preserving another assigned binding.
+ */
+async clearBinding(id: string) : Promise<Result<ShortcutBinding, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clear_binding", { id }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -970,6 +1295,17 @@ async getHistoryEntries(cursor: number | null, limit: number | null) : Promise<R
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Persist the layout used to compare raw and cleaned history transcripts.
+ */
+async changeHistoryCompareViewSetting(view: HistoryCompareView) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_history_compare_view_setting", { view }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async toggleHistoryEntrySaved(id: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("toggle_history_entry_saved", { id }) };
@@ -989,6 +1325,22 @@ async getAudioFilePath(fileName: string) : Promise<Result<string, string>> {
 async deleteHistoryEntry(id: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("delete_history_entry", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getHistoryClearSummary(keepSaved: boolean) : Promise<Result<HistoryClearSummary, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_history_clear_summary", { keepSaved }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async clearHistory(keepSaved: boolean) : Promise<Result<HistoryClearSummary, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clear_history", { keepSaved }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -1038,10 +1390,8 @@ async updateRecordingRetentionPeriod(period: string) : Promise<Result<null, stri
 }
 },
 /**
- * Checks if the Mac is a laptop by detecting battery presence
- * 
- * This uses pmset to check for battery information.
- * Returns true if a battery is detected (laptop), false otherwise (desktop)
+ * Stub implementation for non-macOS platforms
+ * Always returns false since laptop detection is macOS-specific
  */
 async isLaptop() : Promise<Result<boolean, string>> {
     try {
@@ -1066,6 +1416,60 @@ async dismissNotice(source: NoticeSource, code: NoticeCode) : Promise<void> {
  */
 async dismissOverlayNotice() : Promise<void> {
     await TAURI_INVOKE("dismiss_overlay_notice");
+},
+async getLocalLlmModels() : Promise<LocalLlmModelInfo[]> {
+    return await TAURI_INVOKE("get_local_llm_models");
+},
+async downloadLocalLlmModel(modelId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("download_local_llm_model", { modelId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteLocalLlmModel(modelId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_local_llm_model", { modelId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getLocalLlmStatus() : Promise<LocalLlmStatus> {
+    return await TAURI_INVOKE("get_local_llm_status");
+},
+async setLocalLlmModel(modelId: string | null) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_local_llm_model", { modelId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeLocalLlmStylingSetting(styling: LocalLlmStyling) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_local_llm_styling_setting", { styling }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeLocalLlmStructureSetting(structure: LocalLlmStructure) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_local_llm_structure_setting", { structure }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeLocalLlmContextSetting(context: LocalLlmContext) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_local_llm_context_setting", { context }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -1079,7 +1483,8 @@ recordingStateEvent: RecordingStateEvent,
 streamPhaseEvent: StreamPhaseEvent,
 streamTextEvent: StreamTextEvent,
 transcriptionCompleteEvent: TranscriptionCompleteEvent,
-transcriptionJob: TranscriptionJob
+transcriptionJob: TranscriptionJob,
+ttsVoicePlaying: TtsVoicePlaying
 }>({
 historyUpdatePayload: "history-update-payload",
 noticesChanged: "notices-changed",
@@ -1087,7 +1492,8 @@ recordingStateEvent: "recording-state-event",
 streamPhaseEvent: "stream-phase-event",
 streamTextEvent: "stream-text-event",
 transcriptionCompleteEvent: "transcription-complete-event",
-transcriptionJob: "transcription-job"
+transcriptionJob: "transcription-job",
+ttsVoicePlaying: "tts-voice-playing"
 })
 
 /** user-defined constants **/
@@ -1097,13 +1503,44 @@ transcriptionJob: "transcription-job"
 /** user-defined types **/
 
 /**
+ * How a voice is given an acronym: spaced letters (`C L I`, the default) or written capitals
+ * (`CLI`).
+ */
+export type AcronymStyle = "spaced" | "capitals"
+/**
+ * How acronyms are given to one voice (`model`, or every voice when `None`): the owner's own
+ * choice in that scope and the style a read there uses.
+ */
+export type AcronymStyleRow = { model: string | null; owner: AcronymStyle | null; effective: AcronymStyle }
+/**
+ * A chunk with the span of every written word it speaks, in source order. A synthetic period
+ * belongs to no span.
+ */
+export type AlignedChunk = { chunk: TextChunk; words: WordSpan[] }
+/**
  * The container-level `serde(default)` (backed by the `Default` impl below)
  * guarantees every field — including ones added in the future — falls back to
  * its `get_default_settings()` value when missing from a stored settings
  * object, so a partial store can never fail the whole load (#1619).
  * Field-level defaults below take precedence where present.
  */
-export type AppSettings = { 
+export type AppSettings = { tts_model_id?: string; tts_voice?: Partial<{ [key in string]: string }>; tts_speed?: number; tts_pitch_semitones?: number; tts_output_device?: string | null; tts_read_code_blocks?: boolean; 
+/**
+ * Read paths, file names, flags and code names in full, using the vocabulary.
+ */
+tts_technical_reading?: boolean; 
+/**
+ * With technical reading, read every folder of a path; off reads the file name.
+ */
+tts_full_paths?: boolean; 
+/**
+ * With technical reading, read the whole web address; off says only the site.
+ */
+tts_full_links?: boolean; tts_run_on?: Partial<{ [key in string]: RunOn }>; 
+/**
+ * How many reads read-aloud history keeps (0 to 1000); 0 keeps none.
+ */
+tts_history_limit?: number; tts_history_retention?: ReadHistoryRetention; 
 /**
  * Internal settings schema marker for one-time migrations. Fresh installs
  * start at the current version; existing stores missing this key are
@@ -1185,7 +1622,15 @@ language_detection_window_secs?: number;
  * not gated on this — that follows model capability. Migrated from the old
  * `overlay_position` (position `none` → style `None`).
  */
-overlay_style?: OverlayStyle }
+overlay_style?: OverlayStyle; 
+/**
+ * Registry id of the local LLM (provider `local_llm`); `None` until chosen.
+ */
+local_llm_model_id?: string | null; local_llm_styling?: LocalLlmStyling; local_llm_structure?: LocalLlmStructure; local_llm_context?: LocalLlmContext; 
+/**
+ * Inference threads for llama-server.
+ */
+local_llm_threads?: number; history_compare_view?: HistoryCompareView }
 export type AudioDevice = { index: string; name: string; is_default: boolean }
 export type AutoSubmitKey = "enter" | "ctrl_enter" | "cmd_enter"
 export type AutoUnavailableReason = 
@@ -1204,6 +1649,10 @@ export type AutoUnavailableReason =
 export type AvailableAccelerators = { transcribe: string[]; gpu_devices: GpuDeviceOption[] }
 export type BindingResponse = { success: boolean; binding: ShortcutBinding | null; error: string | null }
 /**
+ * What one voice's round trip found.
+ */
+export type CheckOutcome = { kind: "heard_right"; heard: string } | { kind: "missed"; heard: string } | { kind: "failed"; error: string }
+/**
  * Script applied to Mandarin and Cantonese output. Traditional carries its region
  * (Taiwan vs Hong Kong forms, e.g. 裡/裏) rather than guessing it.
  */
@@ -1221,8 +1670,85 @@ export type ChineseScript =
  */
 "traditional_hk"
 export type ClipboardHandling = "dont_modify" | "copy_to_clipboard"
+/**
+ * An owner's correction: the written text, the words it should say, the voice it was read with,
+ * the scope to save at (`None` for all voices) and the match options for a term rule.
+ */
+export type CorrectionRequest = { written: string; should_say: string; reading_model: string; scope: string | null; matching: [TermMatch, boolean] | null }
 export type CustomSounds = { start: boolean; stop: boolean }
+/**
+ * The derived rule for an edit, the exact-text alternative when the rule reaches further, and
+ * the spoken text before and after.
+ */
+export type Derivation = { spoken_before: string; rule: DerivedRule; exact: DerivedRule | null; spoken_after: string }
+/**
+ * A rule ready to save at the owner layer, with its reach and how its key now reads.
+ */
+export type DerivedRule = { entry: EntryKey; rule: Rule; reach: Reach; 
+/**
+ * The entry's key spoken with the rule (`.md` reads "dot M D").
+ */
+preview: string }
+export type Device = "cpu" | "gpu" | "npu"
+export type DeviceRating = { supported: boolean; placement: Partial<{ [key in string]: Device }>; first_audio_p95_s: number | null; rtf_1x: number | null; rtf_2x: number | null; load_s_cold: number | null; load_s_cached: number | null; speed_score: number | null; recommended: boolean }
+/**
+ * One change to the owner's file.
+ */
+export type Edit = 
+/**
+ * Sets an owner entry: an existing one is replaced in place, a new term is appended.
+ * `previous`, when it names another key, is removed (an edit that changed the key).
+ */
+{ kind: "put"; entry: EntryKey; rule: Rule; previous: EntryKey | null } | 
+/**
+ * Removes an owner entry and its own switch.
+ */
+{ kind: "delete"; entry: EntryKey } | 
+/**
+ * Removes an owner entry, its own switch and the built-in switch for the same key and
+ * scope, so the built-in entry applies again.
+ */
+{ kind: "reset"; entry: EntryKey } | 
+/**
+ * Switches an entry on or off at its scope.
+ */
+{ kind: "set_enabled"; id: EntryId; enabled: boolean } | 
+/**
+ * Sets how acronyms are given to a voice (`model`, or every voice when `None`); a `None`
+ * style removes the owner's choice there.
+ */
+{ kind: "set_acronym_style"; model: string | null; style: AcronymStyle | null }
+/**
+ * An entry and the file it comes from.
+ */
+export type EntryId = { origin: Origin; entry: EntryKey }
+/**
+ * An entry within one file: its section, its scope (`models.<id>`, or `None` for all voices) and
+ * its key.
+ */
+export type EntryKey = { section: Section; model: string | null; key: string }
+/**
+ * One row of the vocabulary table.
+ */
+export type EntryRow = { id: EntryId; 
+/**
+ * What the entry says; empty for acronyms and skips.
+ */
+spoken: string; skip: boolean; matching: Matching; enabled: boolean; 
+/**
+ * An owner entry with a built-in entry of the same section and key in the same scope.
+ */
+replaces_builtin: boolean; 
+/**
+ * The text Listen reads to demonstrate the entry.
+ */
+sample: string; problems: Problem[] }
 export type GpuDeviceOption = { id: string; name: string; total_vram_mb: number }
+export type HistoryClearSummary = { entries: number; recordings: number }
+/**
+ * Layout used to compare raw and cleaned history transcripts.
+ */
+export type HistoryCompareView = "diff" | "side_by_side" | "stacked"
 export type HistoryEntry = { id: number; file_name: string; timestamp: number; saved: boolean; title: string; transcription_text: string; post_processed_text: string | null; post_process_prompt: string | null; post_process_requested: boolean; 
 /**
  * The name of the file this entry was transcribed from; `None` for a
@@ -1236,8 +1762,8 @@ language: string | null;
 /**
  * How that language was chosen; `None` before it was recorded.
  */
-language_source: LanguageSource | null }
-export type HistoryUpdatePayload = { action: "added"; entry: HistoryEntry } | { action: "updated"; entry: HistoryEntry } | { action: "deleted"; id: number } | { action: "toggled"; id: number }
+language_source: LanguageSource | null; post_process_provider: string | null; post_process_model: string | null }
+export type HistoryUpdatePayload = { action: "added"; entry: HistoryEntry } | { action: "updated"; entry: HistoryEntry } | { action: "deleted"; id: number } | { action: "toggled"; id: number } | { action: "cleared" }
 /**
  * Result of changing keyboard implementation
  */
@@ -1316,13 +1842,64 @@ export type LanguageStatus =
  * Auto can't work here; `language` is used instead.
  */
 { kind: "auto_unavailable"; language: string; reason: AutoUnavailableReason }
+/**
+ * What Listen reads: written text, prepared the way a read prepares it, or spoken text sent to
+ * the voice as it is.
+ */
+export type ListenText = { written: string } | { spoken: string }
+/**
+ * S1 control-line knob: general text or an email layout.
+ */
+export type LocalLlmContext = "general" | "email"
+/**
+ * One registry entry as the UI sees it.
+ */
+export type LocalLlmModelInfo = { id: string; display_name: string; attribution: string; card_url: string; license: string; license_url: string; license_note: string | null; size_bytes: number; prompt_style: PromptStyle; downloaded: boolean }
+/**
+ * State name as sent to the UI.
+ */
+export type LocalLlmStateKind = "unloaded" | "starting" | "ready" | "stopping" | "failed"
+/**
+ * Payload of the `local-llm-state-changed` event and `get_local_llm_status`.
+ */
+export type LocalLlmStatus = { state: LocalLlmStateKind; model_id: string | null; error: string | null }
+/**
+ * S1 control-line knob: prose paragraphs or Markdown lists.
+ */
+export type LocalLlmStructure = "prose" | "lists"
+/**
+ * S1 control-line knob: how formal the cleaned text reads.
+ */
+export type LocalLlmStyling = "casual" | "semi_casual" | "semi_formal" | "formal"
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error"
 /**
  * A macOS privacy permission Handy asks for during onboarding.
  */
 export type MacPermission = "accessibility" | "microphone"
+export type ManagerSnapshot = { state: State; preparation: Preparation; ready: WorkerReady | null; fallback_from: Device | null }
+/**
+ * How an entry matches text.
+ */
+export type Matching = 
+/**
+ * A term: whole word, prefix, suffix, anywhere or regex, case-sensitive or not.
+ */
+{ term: { matching: TermMatch; case: boolean } } | 
+/**
+ * The end of a file name, any case.
+ */
+"extension" | 
+/**
+ * Anywhere in a technical word.
+ */
+"symbol" | 
+/**
+ * A whole word or hyphenated piece in any case, or an identifier part in exact case.
+ */
+"acronym"
 export type ModelInfo = { id: string; name: string; description: string; filename: string; source: ModelSource; size_mb: number; is_downloaded: boolean; is_downloading: boolean; partial_size: number; accuracy_score: number; speed_score: number; supports_translation: boolean; is_recommended: boolean; supported_languages: string[]; supports_language_selection: boolean; is_custom: boolean; supports_streaming: boolean; supports_language_detection: boolean }
 export type ModelLoadStatus = { is_loaded: boolean; current_model: string | null }
+export type ModelRating = { quality: number; devices: Partial<{ [key in Device]: DeviceRating }> }
 /**
  * Where a model comes from and how Handy obtains it — the routing discriminant
  * for downloading and on-disk resolution.
@@ -1356,7 +1933,7 @@ detail: string | null }
 /**
  * The frontend maps each code to its text in `src/lib/notices.ts`.
  */
-export type NoticeCode = "TranscriptionFailed" | "PasteFailed" | "PasteBlockedElevated" | "NoMicrophone" | "MicrophoneSilent" | "MicPermissionDenied" | "RecordingFailed" | "ModelLoadFailed" | "NoModelSelected" | "PostProcessFailed" | "FileTranscriptionFailed" | "FilePostProcessFailed"
+export type NoticeCode = "TranscriptionFailed" | "PasteFailed" | "PasteBlockedElevated" | "NoMicrophone" | "MicrophoneSilent" | "MicPermissionDenied" | "RecordingFailed" | "ModelLoadFailed" | "NoModelSelected" | "ReadAloudUnavailable" | "ReadAloudBusyPasting" | "ReadAloudClipboardUnreadable" | "PostProcessFailed" | "FileTranscriptionFailed" | "FilePostProcessFailed" | "VocabularyInvalid"
 export type NoticeLevel = 
 /**
  * Nothing came out, or Handy can't do its job.
@@ -1367,11 +1944,11 @@ export type NoticeLevel =
  */
 "warning"
 /**
- * Each source has one slot in the store. Only dictation notices use the
- * overlay: a file job finishes while the user is doing something else, and
- * `Model` is a switch the user made in Settings or the tray.
+ * Each source has one slot in the store. Only dictation notices and read-aloud
+ * refusals use the overlay: a file job finishes while the user is doing
+ * something else, and `Model` is a switch the user made in Settings or the tray.
  */
-export type NoticeSource = "dictation" | "file" | "model"
+export type NoticeSource = "dictation" | "file" | "model" | "readaloud"
 export type NoticesChanged = { 
 /**
  * Every active notice, newest first.
@@ -1381,6 +1958,10 @@ notices: Notice[];
  * `None` when a notice was cleared.
  */
 raised: Notice | null }
+/**
+ * Which file an entry comes from.
+ */
+export type Origin = "builtin" | "owner"
 export type OverlayPosition = "top" | "bottom"
 /**
  * Which recording overlay to display. `Minimal` and `Live` share one base
@@ -1392,6 +1973,10 @@ export type OverlayStyle = "none" | "minimal" | "live"
 export type PaginatedHistory = { entries: HistoryEntry[]; has_more: boolean }
 export type PasteMethod = "ctrl_v" | "direct" | "none" | "shift_insert" | "ctrl_shift_v" | "external_script"
 export type PermissionAccess = "allowed" | "denied" | "unknown"
+/**
+ * Playback and buffering states exposed to session consumers.
+ */
+export type PlaybackState = "waiting" | "starting" | "buffering" | "playing" | "paused" | "finished" | "error"
 /**
  * Request format a post-processing endpoint speaks. Built-in providers have a
  * fixed format; only the custom provider lets the user change it.
@@ -1406,6 +1991,60 @@ export type PostProcessApiFormat =
  */
 "anthropic"
 export type PostProcessProvider = { id: string; label: string; base_url: string; allow_base_url_edit?: boolean; models_endpoint?: string | null; supports_structured_output?: boolean; api_format?: PostProcessApiFormat }
+export type Preparation = { state: "idle" } | { state: "preparing"; device: Device; completed: number; total: number; graph: string } | { state: "ready"; device: Device } | { state: "failed"; device: Device; error: string }
+/**
+ * A reason an entry never applies.
+ */
+export type Problem = 
+/**
+ * A higher enabled layer sets the same key for every voice this entry reaches.
+ */
+{ shadowed: { by: EntryId } } | { unreachable: { reason: Unreachable } } | 
+/**
+ * The entry's own switch is off.
+ */
+"disabled"
+/**
+ * How the chat messages for a model are built.
+ */
+export type PromptStyle = 
+/**
+ * S1-mini: fixed card system prompt, control line + transcript as the user turn.
+ */
+"s1_control_line" | "plain_system_prompt"
+/**
+ * Which written text a derived rule changes.
+ */
+export type Reach = 
+/**
+ * Every file name with this extension.
+ */
+{ kind: "extension"; extension: string } | 
+/**
+ * This acronym wherever it is a word or identifier part.
+ */
+{ kind: "acronym"; acronym: string } | 
+/**
+ * This word or path segment wherever the term matches it.
+ */
+{ kind: "term"; term: string } | 
+/**
+ * This symbol inside every technical word.
+ */
+{ kind: "symbol"; symbol: string } | 
+/**
+ * Only this exact written text.
+ */
+{ kind: "exact_text"; text: string }
+/**
+ * A stored read.
+ */
+export type ReadHistoryEntry = { id: number; timestamp: number; model_id: string; voice: string; speed: number; technical: boolean; source: string; chunks: AlignedChunk[] }
+/**
+ * How long read-aloud history keeps reads. Unlike `RecordingRetentionPeriod::Never`, which
+ * never deletes, `KeepNothing` stores no read at all; the count limit applies to every choice.
+ */
+export type ReadHistoryRetention = "keep_nothing" | "keep_limit" | "days_3" | "weeks_2" | "months_3"
 /**
  * Recording phase events for windows that follow along (onboarding's Try it).
  */
@@ -1433,7 +2072,29 @@ export type RecordingStateEvent = { phase: RecordingPhase }
  * A retired ONNX model found on disk.
  */
 export type RetiredModel = { id: string; name: string; size_mb: number; replacement_repo: string }
+/**
+ * What an entry says and how a term matches. `say: None` is a skip (terms only); `matching`
+ * defaults to whole and `case` to true. Acronyms ignore all three.
+ */
+export type Rule = { say: string | null; matching: TermMatch | null; case: boolean | null }
+export type RunOn = "auto" | "cpu" | "gpu" | "npu"
+/**
+ * Why a save wrote nothing.
+ */
+export type SaveError = 
+/**
+ * The file changed on disk since it was loaded.
+ */
+{ kind: "changed" } | { kind: "file_invalid"; message: string } | { kind: "invalid_edit"; message: string } | 
+/**
+ * The saved file would be larger than 1 MiB.
+ */
+{ kind: "too_large" } | { kind: "io"; message: string }
 export type SecretMap = Partial<{ [key in string]: string }>
+/**
+ * The section of a vocabulary file an entry belongs to.
+ */
+export type Section = "symbol" | "extension" | "term" | "acronym"
 export type SecureInputStatus = { 
 /**
  * Secure input is currently enabled (live check)
@@ -1466,6 +2127,25 @@ uncovered_bindings: string[];
  * warning banner appears and explains why recording refused.
  */
 recorder_blocked: boolean }
+export type Selection = { model_id: string; voice: string; speed: number; pitch: number; output_device: string | null; read_code: boolean; 
+/**
+ * Paths, file names, flags and identifiers are read with the vocabulary. Older payloads
+ * lack it and read with it off.
+ */
+technical?: boolean; 
+/**
+ * With technical reading, every path segment is read; off reads the last one.
+ */
+full_paths?: boolean; 
+/**
+ * With technical reading, a link's host and path are read; off keeps "link to <host>".
+ */
+full_links?: boolean }
+/**
+ * Playback progress and errors suitable for frontend events.
+ */
+export type SessionSnapshot = { epoch: number; state: PlaybackState; source_start: number; source_end: number; elapsed_seconds: number; remaining_seconds: number; progress: number; error: string | null; output_fallback: boolean; queued_audio_seconds: number; buffering_pauses: number; head_start_seconds: number | null }
+export type SessionView = { client_revision: number | null; document_id: number; text: string; visible: boolean; snapshot: SessionSnapshot }
 /**
  * How the transcribe shortcut's key events drive a recording.
  */
@@ -1486,6 +2166,7 @@ export type ShortcutActivation =
 "hold_or_toggle"
 export type ShortcutBinding = { id: string; name: string; description: string; default_binding: string; current_binding: string }
 export type SoundTheme = "marimba" | "pop" | "custom"
+export type State = "Unloaded" | "Starting" | "Ready" | "Stopping" | "Failed"
 /**
  * Phase of the streaming overlay card, emitted to drive its UI state.
  */
@@ -1518,6 +2199,14 @@ export type StreamTextEvent = { committed: string; tentative: string }
  * Semantic kind of "working" phase, used to localize the spinner label.
  */
 export type StreamWorkKind = "transcribing" | "polishing"
+/**
+ * How a `terms` entry is matched against one path segment or word.
+ */
+export type TermMatch = "whole" | "anywhere" | "prefix" | "suffix" | "regex"
+/**
+ * A spoken chunk with its original UTF-16 source range and trailing pause.
+ */
+export type TextChunk = { index: number; text: string; source_start: number; source_end: number; pause_ms: number }
 /**
  * UI appearance mode. `System` follows the OS `prefers-color-scheme`; `Light`
  * and `Dark` force one of the two palettes Handy already ships.
@@ -1565,9 +2254,56 @@ export type TranscriptionOutcome =
  * Transcribing or pasting failed.
  */
 "failed"
+export type TtsModelInfo = { id: string; display_name: string; license: string; attribution: string; card_url: string; size_bytes: number; voices: string[]; default_voice: string; downloaded: boolean; downloading: boolean; active: boolean; rating: ModelRating; run_on: RunOn; preparation: Preparation; npu_driver_too_old: boolean; recommended: boolean; needs_token: boolean }
+/**
+ * The voice model Play all is playing now; `None` once it has finished or stopped.
+ */
+export type TtsVoicePlaying = { model_id: string | null }
 export type TypingTool = "auto" | "wtype" | "kwtype" | "dotool" | "ydotool" | "xdotool"
+/**
+ * Why an entry can never match.
+ */
+export type Unreachable = 
+/**
+ * A term key with a space: text is matched one word at a time.
+ */
+"contains_space" | 
+/**
+ * A term key ending in sentence punctuation, which is split off before terms match.
+ */
+"ends_with_punctuation" | 
+/**
+ * A symbol key that is not exactly one character.
+ */
+"not_one_character" | 
+/**
+ * An extension key that is not only letters and digits.
+ */
+"extension_not_alphanumeric" | 
+/**
+ * The entry alone does not change how its sample is read, or a symbol is a letter or digit,
+ * which is always read as text.
+ */
+"never_matches"
 export type VadBackend = "silero" | "earshot"
+/**
+ * What the Vocabulary tab shows: every row, the file's revision for the next save, and the
+ * file's error when it cannot be used (the rows are then the built-in ones).
+ */
+export type VocabularyTable = { revision: string; path: string; file_error: string | null; rows: EntryRow[]; acronym_styles: AcronymStyleRow[] }
+export type VoiceCheck = { model_id: string; outcome: CheckOutcome }
+/**
+ * The words one voice model is asked to say.
+ */
+export type VoiceText = { model_id: string; spoken: string }
 export type WindowsMicrophonePermissionStatus = { supported: boolean; overall_access: PermissionAccess; device_access: PermissionAccess; app_access: PermissionAccess; desktop_app_access: PermissionAccess }
+/**
+ * One written word and what it became: its UTF-16 range in the source and its UTF-16 range in
+ * the chunk's spoken text. A skipped word has an empty spoken range (and may sit outside the
+ * chunk's source range); a word split across chunks has one span per part.
+ */
+export type WordSpan = { source_start: number; source_end: number; spoken_start: number; spoken_end: number }
+export type WorkerReady = { device: Device; placement: Partial<{ [key in string]: Device }> }
 
 /** tauri-specta globals **/
 

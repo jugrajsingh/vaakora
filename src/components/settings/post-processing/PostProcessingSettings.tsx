@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { RefreshCcw } from "lucide-react";
 import { commands, type PostProcessApiFormat } from "@/bindings";
+import {
+  promptControls,
+  providerGroupKey,
+} from "@/lib/utils/localLlmPresentation";
 
 import { Alert } from "../../ui/Alert";
 import {
@@ -18,33 +22,51 @@ import { ProviderSelect } from "../PostProcessingSettingsApi/ProviderSelect";
 import { BaseUrlField } from "../PostProcessingSettingsApi/BaseUrlField";
 import { ApiKeyField } from "../PostProcessingSettingsApi/ApiKeyField";
 import { ModelSelect } from "../PostProcessingSettingsApi/ModelSelect";
-import { usePostProcessProviderState } from "../PostProcessingSettingsApi/usePostProcessProviderState";
-import { ShortcutInput } from "../ShortcutInput";
+import {
+  usePostProcessProviderState,
+  type PostProcessProviderState,
+} from "../PostProcessingSettingsApi/usePostProcessProviderState";
 import { useSettings } from "../../../hooks/useSettings";
+import {
+  LOCAL_LLM_PROVIDER_ID,
+  LocalLlmSettings,
+  useLocalLlmModels,
+} from "./LocalLlmSettings";
 
-const PostProcessingSettingsApiComponent: React.FC = () => {
+const PostProcessingProvider: React.FC<{ state: PostProcessProviderState }> = ({
+  state,
+}) => {
   const { t } = useTranslation();
-  const state = usePostProcessProviderState();
+  return (
+    <SettingContainer
+      title={t("settings.postProcessing.api.provider.title")}
+      description={t("settings.postProcessing.api.provider.description")}
+      descriptionMode="tooltip"
+      layout="horizontal"
+      grouped={true}
+    >
+      <div className="flex items-center gap-2">
+        <ProviderSelect
+          options={state.providerOptions}
+          value={state.selectedProviderId}
+          onChange={state.handleProviderSelect}
+        />
+      </div>
+    </SettingContainer>
+  );
+};
+
+const PostProcessingSettingsApiComponent: React.FC<{
+  state: PostProcessProviderState;
+}> = ({ state }) => {
+  const { t } = useTranslation();
+  const isLocalLlm = state.selectedProvider?.id === LOCAL_LLM_PROVIDER_ID;
 
   return (
     <>
-      <SettingContainer
-        title={t("settings.postProcessing.api.provider.title")}
-        description={t("settings.postProcessing.api.provider.description")}
-        descriptionMode="tooltip"
-        layout="horizontal"
-        grouped={true}
-      >
-        <div className="flex items-center gap-2">
-          <ProviderSelect
-            options={state.providerOptions}
-            value={state.selectedProviderId}
-            onChange={state.handleProviderSelect}
-          />
-        </div>
-      </SettingContainer>
-
-      {state.isAppleProvider ? (
+      {isLocalLlm ? (
+        <LocalLlmSettings />
+      ) : state.isAppleProvider ? (
         state.appleIntelligenceUnavailable ? (
           <Alert variant="error" contained>
             {t("settings.postProcessing.api.appleIntelligence.unavailable")}
@@ -134,7 +156,7 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
         </>
       )}
 
-      {!state.isAppleProvider && (
+      {!state.isAppleProvider && !isLocalLlm && (
         <SettingContainer
           title={t("settings.postProcessing.api.model.title")}
           description={
@@ -464,23 +486,40 @@ PostProcessingSettingsPrompts.displayName = "PostProcessingSettingsPrompts";
 
 export const PostProcessingSettings: React.FC = () => {
   const { t } = useTranslation();
+  const state = usePostProcessProviderState();
+  const { getSetting } = useSettings();
+  const { models } = useLocalLlmModels();
+  const localModel = models.find(
+    (m) => m.id === getSetting("local_llm_model_id"),
+  );
+  const { hidePrompts } = promptControls(
+    getSetting("post_process_provider_id"),
+    models.length === 0 ? undefined : (localModel ?? null),
+    getSetting("post_process_prompts") ?? [],
+    getSetting("post_process_selected_prompt_id") ?? null,
+  );
 
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
-      <SettingsGroup title={t("settings.postProcessing.hotkey.title")}>
-        <ShortcutInput
-          shortcutId="transcribe_with_post_process"
-          descriptionMode="tooltip"
-          grouped={true}
-        />
+      <SettingsGroup title={t("settings.postProcessing.provider.title")}>
+        <PostProcessingProvider state={state} />
       </SettingsGroup>
-
-      <SettingsGroup title={t("settings.postProcessing.api.title")}>
-        <PostProcessingSettingsApi />
+      <SettingsGroup
+        title={t(
+          providerGroupKey(getSetting("post_process_provider_id") ?? "openai"),
+        )}
+      >
+        <PostProcessingSettingsApi state={state} />
       </SettingsGroup>
 
       <SettingsGroup title={t("settings.postProcessing.prompts.title")}>
-        <PostProcessingSettingsPrompts />
+        {hidePrompts ? (
+          <p className="px-4 py-3 text-sm text-ink-3">
+            {t("settings.postProcessing.localLlm.promptHidden")}
+          </p>
+        ) : (
+          <PostProcessingSettingsPrompts />
+        )}
       </SettingsGroup>
     </div>
   );

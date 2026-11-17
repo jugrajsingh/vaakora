@@ -1,0 +1,207 @@
+pub use crate::selection_options::{Selection, SelectionError, clamp_selection, maximum_speed};
+/// Cursor and resume behavior of a selection transaction.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SelectionChange {
+    pub epoch: u64,
+    pub sentence_index: usize,
+    pub resume: bool,
+    pub missing_download: bool,
+}
+/// True when the two selections prepare the source into different spoken text, so the cursor
+/// must be rebuilt: code blocks, technical reading, or full paths and links changed, or the
+/// model changed with technical reading on (the vocabulary can differ per model).
+pub fn text_changed(current: &Selection, next: &Selection) -> bool {
+    current.read_code != next.read_code
+        || current.technical != next.technical
+        || (next.technical && current.model_id != next.model_id)
+        || current.full_paths != next.full_paths
+        || current.full_links != next.full_links
+}
+/// Identifies controls changes that retain the current sentence and worker.
+pub fn speed_pitch_only(current: &Selection, next: &Selection) -> bool {
+    current.model_id == next.model_id
+        && current.voice == next.voice
+        && current.output_device == next.output_device
+        && !text_changed(current, next)
+        && (current.speed != next.speed || current.pitch != next.pitch)
+}
+/// Validates and persists a selection before invalidating current audio.
+pub fn select_with(
+    queue: &mut crate::scheduler::Queue,
+    current: &Selection,
+    selection: Selection,
+    downloaded: bool,
+    persist: impl FnOnce(&Selection) -> Result<(), SelectionError>,
+) -> Result<SelectionChange, SelectionError> {
+    let selection = clamp_selection(selection)?;
+    let model = crate::catalog::entry(&selection.model_id).map_err(|_| SelectionError::Model)?;
+    if !model.voices.contains(&selection.voice) {
+        return Err(SelectionError::Voice);
+    }
+    persist(&selection)?;
+    use crate::scheduler::PlaybackState;
+    let old = queue.state;
+    let resume = matches!(
+        old,
+        PlaybackState::Playing | PlaybackState::Buffering | PlaybackState::Starting
+    );
+    if downloaded && speed_pitch_only(current, &selection) {
+        return Ok(SelectionChange {
+            epoch: queue.epoch,
+            sentence_index: queue.next_unspoken(),
+            resume,
+            missing_download: false,
+        });
+    }
+    let sentence_index = queue.switch_selection(downloaded);
+    if downloaded && old == PlaybackState::Paused {
+        queue.pause();
+    }
+    if downloaded && old == PlaybackState::Error {
+        queue.state = PlaybackState::Error;
+        queue.failed_index = Some(sentence_index);
+    } else if downloaded && !resume && old != PlaybackState::Paused {
+        queue.stop();
+    }
+    Ok(SelectionChange {
+        epoch: queue.epoch,
+        sentence_index,
+        resume: resume && downloaded,
+        missing_download: !downloaded,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn selection() -> Selection {
+        Selection {
+            model_id: "pocket-en".into(),
+            voice: "alba".into(),
+            speed: 2.0,
+            pitch: 0.0,
+            output_device: None,
+            read_code: false,
+            technical: false,
+            full_paths: true,
+            full_links: false,
+        }
+    }
+    #[test]
+    fn model_change_changes_the_text_only_with_technical_reading_on() {
+        let other = |technical: bool| Selection {
+            model_id: "supertonic-3".into(),
+            voice: "F1".into(),
+            technical,
+            ..selection()
+        };
+        let current = |technical: bool| Selection {
+            technical,
+            ..selection()
+        };
+        assert!(text_changed(&current(true), &other(true)));
+        assert!(!text_changed(&current(false), &other(false)));
+        assert!(!text_changed(&current(true), &current(true)));
+        assert!(!speed_pitch_only(&current(true), &other(true)));
+    }
+    #[test]
+    fn settings_and_tray_transactions_replay_current_sentence_and_preserve_missing_position() {
+        use crate::protocol::Pcm;
+        use crate::scheduler::{AudioChunk, PlaybackState, Queue, Ticket};
+        for entry_point in ["settings", "tray"] {
+            let mut q = Queue::default();
+            q.state = PlaybackState::Playing;
+            q.epoch = 4;
+            q.playing = Some(AudioChunk {
+                pause_ms: 0,
+                native: vec![0.0; 24000],
+                plan: crate::speed::SpeedPlan {
+                    requested: 1.0,
+                    native: 1.0,
+                    stretch: 1.0,
+                },
+                ticket: Ticket { epoch: 4, index: 7 },
+                pcm: Pcm {
+                    id: 7,
+                    sample_rate: 24000,
+                    samples: vec![0.0; 24000],
+                },
+                source_start: 70,
+                source_end: 80,
+            });
+            let mut trace = vec![];
+            let changed = select_with(&mut q, &selection(), selection(), true, |value| {
+                trace.push((entry_point, value.model_id.clone(), value.voice.clone()));
+                Ok(())
+            })
+            .unwrap();
+            assert_eq!(trace, [(entry_point, "pocket-en".into(), "alba".into())]);
+            assert_eq!(changed.sentence_index, 7);
+            assert!(changed.resume);
+            assert_eq!(changed.epoch, 5);
+            assert!(q.playing.is_none());
+            assert_eq!(q.request_next().unwrap().index, 7);
+            let missing =
+                select_with(&mut q, &selection(), selection(), false, |_| Ok(())).unwrap();
+            assert_eq!(missing.sentence_index, 7);
+            assert!(!missing.resume);
+            assert!(missing.missing_download);
+            assert_eq!(q.state, PlaybackState::Error);
+        }
+    }
+    #[test]
+    fn failed_persistence_or_invalid_voice_cannot_stop_current_playback() {
+        let mut q = crate::scheduler::Queue::default();
+        q.play();
+        let epoch = q.epoch;
+        assert_eq!(
+            select_with(&mut q, &selection(), selection(), true, |_| Err(
+                SelectionError::Persist
+            )),
+            Err(SelectionError::Persist)
+        );
+        assert_eq!(q.epoch, epoch);
+        let mut invalid = selection();
+        invalid.voice = "missing".into();
+        assert_eq!(
+            select_with(&mut q, &selection(), invalid, true, |_| panic!(
+                "must not persist"
+            )),
+            Err(SelectionError::Voice)
+        );
+        assert_eq!(q.epoch, epoch);
+        q.pause();
+        select_with(&mut q, &selection(), selection(), true, |_| Ok(())).unwrap();
+        assert_eq!(q.state, crate::scheduler::PlaybackState::Paused);
+        assert!(q.request_next().is_none());
+    }
+    #[test]
+    fn all_models_keep_two_x_and_invalid_controls_are_refused() {
+        let mut selection = Selection {
+            model_id: "supertonic-3".into(),
+            voice: "M1".into(),
+            speed: 2.0,
+            pitch: 0.0,
+            output_device: None,
+            read_code: false,
+            technical: false,
+            full_paths: true,
+            full_links: false,
+        };
+        assert_eq!(clamp_selection(selection.clone()).unwrap().speed, 2.0);
+        selection.model_id = "pocket-en".into();
+        let pocket = clamp_selection(selection).unwrap();
+        assert_eq!(pocket.speed, 2.0);
+        assert_eq!(maximum_speed("kokoro-82m-int8").unwrap(), 2.0);
+        assert!(maximum_speed("missing").is_err());
+        for speed in [f32::NAN, 0.4, 2.1, 1.05] {
+            assert!(
+                clamp_selection(Selection {
+                    speed,
+                    ..pocket.clone()
+                })
+                .is_err()
+            );
+        }
+    }
+}

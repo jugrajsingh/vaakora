@@ -3,20 +3,35 @@
     "settings": "Settings...",
     "checkUpdates": "Check for Updates...",
     "copyLastTranscript": "Copy Last Transcript",
-    "unloadModel": "Unload Model",
+    "unloadModel": "Unload transcription model",
+    "cleanup": "Post-processing model",
+    "cleanupReady": "ready",
+    "cleanupNotLoaded": "not loaded",
+    "cleanupLoading": "loading",
+    "cleanupError": "error",
+    "noCleanupModel": "No post-processing model",
+    "unloadPostProcessingModel": "Unload post-processing model",
     "model": "Model",
+    "transcriptionModel": "Transcription model",
     "quit": "Quit",
     "cancel": "Cancel",
     "secureInputWarning": "⚠ Shortcuts blocked by Secure Input",
     "language": "Language",
     "autoLanguage": "Auto",
-    "otherLanguages": "Other Languages"
+    "otherLanguages": "Other Languages",
+    "ttsModel": "Text-to-speech model",
+    "ttsUnload": "Unload text-to-speech model",
+    "ttsStarting": "Starting",
+    "ttsReady": "Loaded",
+    "ttsStopping": "Stopping",
+    "ttsFailed": "Failed",
+    "ttsUnloaded": "Unloaded"
   },
   "sidebar": {
     "general": "General",
-    "models": "Models",
+    "models": "Transcription Models",
     "advanced": "Advanced",
-    "postProcessing": "Post Process",
+    "postProcessing": "Post-processing Models",
     "history": "History",
     "debug": "Debug",
     "about": "About"
@@ -144,6 +159,10 @@
       },
       "model": "Model",
       "showAll": "Show all {{count}} models",
+      "noPick": "No recommended model covers {{languages}}.",
+      "noPickNext": "Show every model, or go back and change your languages.",
+      "showAllButton": "Show all models",
+      "pickOne": "Choose a model",
       "download": "Download {{size}}",
       "downloadInstead": "Download {{size}} instead",
       "pauses": "{{name}} pauses at {{percent}}%",
@@ -306,6 +325,8 @@
     "alreadyAdded_other": "{{languages}} are already added."
   },
   "modelSelector": {
+    "status": "Model status: {{modelName}}",
+    "size": "{{size}} MiB",
     "custom": "Custom",
     "streaming": "Streaming",
     "active": "Active",
@@ -336,18 +357,26 @@
         "none": "No shortcuts configured",
         "notFound": "Shortcut not found",
         "pressKeys": "Press keys...",
+        "unassigned": "Unassigned",
         "bindings": {
           "transcribe": {
             "name": "Transcribe Shortcut",
             "description": "The keyboard shortcut to record and transcribe your voice."
+          },
+          "transcribe_raw": {
+            "name": "Raw Shortcut"
           },
           "cancel": {
             "name": "Cancel Shortcut",
             "description": "The keyboard shortcut to cancel the current recording."
           },
           "transcribe_with_post_process": {
-            "name": "Post-Processing Hotkey",
+            "name": "Post-processing Shortcut",
             "description": "Optional: A dedicated hotkey that always applies AI post-processing to your transcription."
+          },
+          "read_aloud": {
+            "name": "Read-aloud shortcut",
+            "description": "Open the popup and read copied text aloud."
           }
         },
         "errors": {
@@ -517,8 +546,8 @@
           }
         },
         "position": {
-          "title": "Overlay Position",
-          "description": "Where the overlay appears on screen during recording and transcription.",
+          "title": "Floating window position",
+          "description": "Top keeps the bottom of the screen clear, useful when you dictate into a terminal.",
           "options": {
             "bottom": "Bottom",
             "top": "Top"
@@ -628,8 +657,8 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "Hotkey"
+      "provider": {
+        "title": "Provider"
       },
       "api": {
         "title": "API",
@@ -688,10 +717,76 @@
         "cancel": "Cancel",
         "selectToEdit": "Select a prompt above to view and edit its details.",
         "createFirst": "Click 'Create New Prompt' above to create your first post-processing prompt."
+      },
+      "localLlm": {
+        "noCleanupModel": "No post-processing model",
+        "s1Description": "Uses styling, structure and context controls.",
+        "plainDescription": "Uses your selected Handy prompt.",
+        "groupTitle": "Local model",
+        "size": "{{size}} MiB",
+        "downloaded": "Downloaded",
+        "use": "Use",
+        "download": "Download",
+        "downloading": "Downloading {{percent}}%",
+        "delete": "Delete",
+        "deleteConfirm": "Delete {{name}}? It frees {{size}}.",
+        "deleteConfirmAction": "Delete model",
+        "status": {
+          "title": "Status",
+          "description": "The model loads when a post-processing dictation starts and unloads after the model unload timeout.",
+          "notLoaded": "Not loaded",
+          "loading": "Loading",
+          "ready": "Ready",
+          "error": "Error: {{reason}}"
+        },
+        "styling": {
+          "title": "Styling",
+          "description": "How formal the post-processed text reads.",
+          "options": {
+            "casual": "Casual",
+            "semi_casual": "Semi-casual",
+            "semi_formal": "Semi-formal",
+            "formal": "Formal"
+          }
+        },
+        "structure": {
+          "title": "Structure",
+          "description": "Prose paragraphs or Markdown lists.",
+          "options": {
+            "prose": "Prose",
+            "lists": "Lists"
+          }
+        },
+        "context": {
+          "title": "Context",
+          "description": "General text or an email layout.",
+          "options": {
+            "general": "General",
+            "email": "Email"
+          }
+        },
+        "licenseNotes": {
+          "s1Name": "Apache-2.0 with one added term: the model must always be named \"S1-mini\" by \"Superwhisper\", with that exact capitalization."
+        },
+        "promptRequired": "Select a non-empty Handy prompt in the Prompts group. Until then, post-processing is skipped and the raw transcript is used.",
+        "promptHidden": "This model uses its own fixed prompt and the Styling, Structure and Context settings above, so the prompt editor is hidden."
       }
     },
     "history": {
       "title": "History",
+      "cleaned": "Post-processed",
+      "cleanedWith": "Post-processed with {{model}}",
+      "raw": "Raw",
+      "copyRaw": "Copy raw text",
+      "copyPostProcessed": "Copy post-processed text",
+      "compare": {
+        "title": "Compare view",
+        "diff": "Diff",
+        "side_by_side": "Side by side",
+        "stacked": "Stacked"
+      },
+      "clearHistory": "Clear History",
+      "clearConfirmation": "Remove {{count}} unstarred history entries and {{recordings}} recordings? Starred entries and their recordings will be kept.",
       "openFolder": "Open Recordings Folder",
       "loading": "Loading history...",
       "empty": "No transcriptions yet. Start recording to build your history!",
@@ -701,6 +796,8 @@
       "unsave": "Remove from saved",
       "delete": "Delete entry",
       "deleteError": "Failed to delete entry. Please try again.",
+      "deleteConfirm": "Delete this entry and its recording?",
+      "deleteConfirmAction": "Delete entry",
       "retranscribe": "Re-transcribe",
       "cancelTranscription": "Cancel transcription",
       "transcribing": "Transcribing...",
@@ -716,7 +813,14 @@
       "showMore": "Show more",
       "showLess": "Show less",
       "dropTitle": "Drop to transcribe",
-      "dropDescription": "It'll show up in History."
+      "dropDescription": "It'll show up in History.",
+      "retentionConfirm": {
+        "preserveLimit": "Delete unstarred entries beyond the latest {{count}} and their recordings? Starred entries and transcribed files are kept.",
+        "days3": "Delete unstarred entries older than 3 days and their recordings? Starred entries and transcribed files are kept.",
+        "weeks2": "Delete unstarred entries older than 2 weeks and their recordings? Starred entries and transcribed files are kept.",
+        "months3": "Delete unstarred entries older than 3 months and their recordings? Starred entries and transcribed files are kept.",
+        "action": "Delete entries"
+      }
     },
     "debug": {
       "title": "Debug",
@@ -927,9 +1031,15 @@
     "open": "Open",
     "copy": "Copy",
     "clear": "Clear",
-    "noOptionsFound": "No options found"
+    "noOptionsFound": "No options found",
+    "cancel": "Cancel"
   },
   "errors": {
+    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
+    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
+    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudClipboardUnreadableTitle": "Clipboard Not Readable",
+    "readAloudClipboardUnreadable": "The clipboard text could not be read.",
     "loadDirectory": "Error loading directory: {{error}}",
     "micPermissionDeniedTitle": "Microphone Access Denied",
     "micPermissionDenied": {
@@ -957,7 +1067,9 @@
     "filePostProcessFailedTitle": "Transcribed Without Post-Processing",
     "filePostProcessFailed": "Post Process didn't finish, so the transcript was saved as is.",
     "fileTranscriptionFailedTitle": "File Transcription Failed",
-    "transcriptionFailedTitle": "Transcription Failed"
+    "transcriptionFailedTitle": "Transcription Failed",
+    "vocabularyInvalidTitle": "Vocabulary File Has an Error",
+    "vocabularyInvalid": "Read aloud used the built-in vocabulary because your vocabulary file could not be used. Fix the file named below to use your own entries."
   },
   "notices": {
     "errorOne": "{{n}} error",
@@ -980,9 +1092,10 @@
     }
   },
   "overlay": {
-    "transcribing": "Transcribing...",
-    "processing": "Processing...",
-    "loadingModel": "Loading model..."
+    "transcribing": "Transcribing",
+    "processing": "Cleaning up",
+    "loadingModel": "Loading model",
+    "cancel": "Cancel dictation"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} may be blocking 1 shortcut",
@@ -994,5 +1107,345 @@
     "learnMore": "How to fix",
     "recorderBlocked": "Can't record shortcuts right now — macOS Secure Input is blocking key events. Resolve the Secure Input warning first.",
     "dismiss": "Dismiss"
+  },
+  "tts": {
+    "ratings": {
+      "quality": "Quality",
+      "speed": "Speed",
+      "recommended": "Recommended",
+      "tooltip": "First audio {{firstAudio}} s, {{faster}}x faster than real time, loads in {{load}} s"
+    },
+    "devices": {
+      "auto": "Auto",
+      "cpu": "CPU",
+      "gpu": "GPU",
+      "npu": "NPU"
+    },
+    "errors": {
+      "notDownloaded": "Download this model before reading.",
+      "audio": "The output device could not be opened.",
+      "text": "This text could not be prepared.",
+      "clock": "Playback timing failed.",
+      "worker": "The text-to-speech worker stopped.",
+      "unavailable": "Text-to-speech is unavailable.",
+      "notReady": "Text-to-speech is still starting.",
+      "generic": "Text-to-speech failed.",
+      "memory": "At least 1 GiB of available memory is required.",
+      "gatedToken": "Pocket voices require a Hugging Face token and accepted voice terms.",
+      "model": "Choose an available text-to-speech model.",
+      "device": "This device is unavailable.",
+      "npuDriverTooOld": "NPU driver too old. Update it or choose another device.",
+      "selection": "The selection could not be applied.",
+      "busy": "A text-to-speech operation is already running.",
+      "cancelled": "Reading was cancelled.",
+      "clipboard": "The clipboard text could not be read.",
+      "deviceNotSupported": "This model does not support the selected device.",
+      "deviceUnavailable": "The selected device is unavailable.",
+      "download": "The model download failed.",
+      "driverDiscovery": "The NPU driver could not be detected.",
+      "failed": "The worker failed three times. Select a model to retry.",
+      "integrity": "A model file failed its integrity check.",
+      "invalidControls": "Choose a speed from 0.5x to 2.0x and a pitch from -6 to +6 semitones.",
+      "invalidRatings": "The model ratings are missing or invalid.",
+      "invalidVoice": "Choose a voice for the selected model.",
+      "outputUnavailable": "The output device is unavailable.",
+      "path": "The text-to-speech storage directory is unavailable.",
+      "prepareFailed": "The selected device could not prepare this model.",
+      "protocol": "The text-to-speech worker returned an invalid response.",
+      "registry": "The text-to-speech model registry is invalid.",
+      "settings": "The text-to-speech settings could not be saved.",
+      "start": "The text-to-speech worker could not start.",
+      "starting": "The text-to-speech worker is starting.",
+      "tokenRejected": "The Hugging Face token was rejected. Check access to the Pocket voice terms.",
+      "tokenRequired": "Set a Hugging Face token and accept the Pocket voice terms before downloading voices.",
+      "unknownModel": "The selected text-to-speech model is unknown.",
+      "window": "The read-aloud window could not be opened.",
+      "accessDenied": "Access to the model files was denied.",
+      "localIo": "The model files could not be read or written.",
+      "downloading": "This model is already downloading."
+    },
+    "runOn": "Run on",
+    "preparing": "Preparing for {{device}}: {{graph}}",
+    "buffering": "Buffering",
+    "title": "Read aloud",
+    "textLabel": "Text to read",
+    "placeholder": "Paste text to read",
+    "play": "Play",
+    "pause": "Pause",
+    "stop": "Stop",
+    "close": "Close",
+    "readClipboard": "Read clipboard",
+    "editText": "Edit text",
+    "progress": "Progress",
+    "time": "{{elapsed}} s elapsed, {{remaining}} s remaining",
+    "openModels": "Text-to-speech Models",
+    "outputFallback": "Using the default output device",
+    "states": {
+      "waiting": "Waiting",
+      "starting": "Starting",
+      "buffering": "Buffering",
+      "playing": "Playing",
+      "paused": "Paused",
+      "finished": "Finished",
+      "error": "Error"
+    },
+    "modelsTitle": "Text-to-speech Models",
+    "modelsSubtitle": "Choose a voice model. Speed figures were measured on the developer's computer; yours may differ.",
+    "downloaded": "Downloaded",
+    "availableToDownload": "Available to download",
+    "recommended": "Recommended",
+    "downloading": "Downloading",
+    "needsToken": "Needs a Hugging Face token",
+    "tokenSet": "Token set",
+    "active": "Active",
+    "use": "Use",
+    "download": "Download",
+    "delete": "Delete",
+    "deleteConfirm": "Delete {{name}}? It frees {{size}}. Your vocabulary and history are kept.",
+    "deleteConfirmSelected": "Read aloud stops working until you choose another model.",
+    "deleteConfirmAction": "Delete model",
+    "cancel": "Cancel",
+    "token": "Hugging Face token",
+    "tokenHelp": "Only needed for Pocket gated voices after accepting the voice terms on Hugging Face. The token stays in memory and is cleared when Handy restarts.",
+    "clearToken": "Clear token",
+    "showToken": "Show token",
+    "hideToken": "Hide token",
+    "saveToken": "Set token",
+    "model": "Model",
+    "voice": "Voice",
+    "preview": "Preview voice",
+    "speed": "Speed: {{value}}x",
+    "pitch": "Pitch: {{value}} semitones",
+    "output": "Output device",
+    "sameAsHandy": "Same as Handy",
+    "readCode": "Read code blocks",
+    "technicalReading": "Technical reading",
+    "fullPaths": "Read full paths",
+    "fullLinks": "Read full links",
+    "pocketAttribution": "Pocket TTS voices are licensed under CC-BY-4.0. Follow each voice attribution and consent terms on the model card.",
+    "supertonicRestrictions": "Supertonic 3 uses OpenRAIL-M. Review its use restrictions on the model card.",
+    "kokoroAttribution": "Kokoro model weights use the Apache-2.0 licence.",
+    "paradeeAttribution": "Paradee-8M v1.2 by Sahil Mahendrakar, distilled from Kokoro-82M (hexgrad). Apache-2.0 licence.",
+    "phononAttribution": "Phonon 31m English by Gradium (Apache-2.0), built on Pocket TTS and the Mimi codec by Kyutai (CC-BY-4.0). Voices from gradium/phonon-voices (Apache-2.0).",
+    "indicTinyEnglishAttribution": "Indic Tiny TTS (English) by Sulabh Katiyar, CC-BY-4.0. Voices trained on LIMMITS 2024 (SYSPIN, Indian Institute of Science, Bangalore, SPIRE Lab), CC-BY-4.0. Speaker consent for release is not documented by the source. Vocoder: Vocos by Charactr Inc., MIT.",
+    "indicTinyHindiAttribution": "Indic Tiny TTS (Hindi) by Sulabh Katiyar, CC-BY-4.0, trained on the AI4Bharat Rasa dataset (CC-BY-4.0; Varadhan, Sankar, Raju and Khapra, INTERSPEECH 2024). Vocoder: Vocos by Charactr Inc., MIT.",
+    "indicTinyPunjabiAttribution": "Indic Tiny TTS (Punjabi) by Sulabh Katiyar, CC-BY-4.0, trained on the AI4Bharat Rasa dataset (CC-BY-4.0; Varadhan, Sankar, Raju and Khapra, INTERSPEECH 2024). Vocoder: Vocos by Charactr Inc., MIT.",
+    "status": {
+      "failed": "Failed",
+      "ready": "Ready",
+      "starting": "Starting",
+      "stopping": "Stopping",
+      "unloaded": "Unloaded"
+    },
+    "previewSentence": "Reading clearly, one phrase at a time.",
+    "description": {
+      "pocket-en": "Expressive English voices with the highest listening score.",
+      "supertonic-3": "Fast English synthesis with CPU, GPU and NPU execution.",
+      "kokoro-82m-int8": "Compact English voices from an INT8 model.",
+      "paradee-8m-int8": "Very small, fast English voices from a model distilled from Kokoro.",
+      "phonon-31m-en": "Small, natural English voices built on Pocket TTS, with 26 voices.",
+      "indic-tiny-en": "Small Indian English voices, female and male.",
+      "indic-tiny-hi": "Small Hindi voices, female and male. English words are spelled letter by letter.",
+      "indic-tiny-pa": "Small Punjabi (Gurmukhi) voices, female and male. English words are spelled letter by letter."
+    },
+    "voiceCount": "{{count}} voices",
+    "downloadProgress": "Model download progress",
+    "settingsTitle": "Text-to-speech",
+    "speedLabel": "Speed",
+    "pitchLabel": "Pitch",
+    "help": {
+      "model": "Choose a downloaded text-to-speech model.",
+      "voice": "Choose a voice for this model and preview it.",
+      "speed": "Adjust how fast the text is read.",
+      "pitch": "Adjust the voice pitch in semitones.",
+      "output": "Choose where read-aloud audio plays.",
+      "readCode": "Include fenced code blocks when reading.",
+      "technicalReading": "Speak paths, file names, flags and code names in full, using your vocabulary file.",
+      "fullPaths": "Read every folder in a path. Off reads only the file name.",
+      "fullLinks": "Read the whole web address. Off says only the site name."
+    },
+    "tabs": {
+      "settings": "Settings",
+      "history": "History",
+      "vocabulary": "Vocabulary"
+    },
+    "history": {
+      "title": "History settings",
+      "reading": "Written words with what was said",
+      "hint": "Drag over words to select a chunk and correct how it was read.",
+      "empty": "Nothing has been read aloud yet. Reads you play appear here.",
+      "limit": {
+        "title": "History limit",
+        "description": "Most reads to keep in the history",
+        "entries": "reads"
+      },
+      "retention": {
+        "title": "Auto-delete",
+        "description": "Also delete older reads automatically",
+        "keepNothing": "Never keep",
+        "keepLimit": "Keep latest {{count}}",
+        "days3": "After 3 days",
+        "weeks2": "After 2 weeks",
+        "months3": "After 3 months"
+      },
+      "clear": {
+        "title": "Clear history",
+        "description": "Remove every stored read. Your vocabulary is not changed.",
+        "confirmation": "Remove all {{count}} stored reads? Your vocabulary is not changed."
+      },
+      "retentionConfirm": {
+        "message_one": "Delete {{count}} stored read now? Your vocabulary is not changed.",
+        "message": "Delete {{count}} stored reads now? Your vocabulary is not changed.",
+        "action": "Delete reads"
+      }
+    },
+    "vocabulary": {
+      "columns": {
+        "written": "Written",
+        "spoken": "Spoken",
+        "kind": "Kind",
+        "voices": "Voices",
+        "match": "Match",
+        "enabled": "On",
+        "actions": "Actions"
+      },
+      "kinds": {
+        "symbol": "Symbol",
+        "extension": "Extension",
+        "term": "Term",
+        "acronym": "Acronym"
+      },
+      "voices": {
+        "all": "All voices",
+        "except": "except {{names}}",
+        "add": "+ voice"
+      },
+      "origins": {
+        "builtin": "Built-in",
+        "owner": "Yours"
+      },
+      "skipped": "(skipped)",
+      "buttons": {
+        "add": "Add entry",
+        "edit": "Edit",
+        "listen": "Listen",
+        "delete": "Delete",
+        "reset": "Reset to default",
+        "save": "Save",
+        "cancel": "Cancel"
+      },
+      "match": {
+        "whole": "Whole word",
+        "anywhere": "Anywhere in a word",
+        "prefix": "Start of a word",
+        "suffix": "End of a word",
+        "regex": "Pattern",
+        "caseSensitive": "Case sensitive",
+        "extension": "End of a file name",
+        "symbol": "Anywhere",
+        "acronym": "Whole word or name part"
+      },
+      "filter": "Search written or spoken",
+      "toggle": "Use {{written}}",
+      "editTitle": "Edit entry",
+      "fields": {
+        "skip": "Skip",
+        "appliesTo": "Applies to"
+      },
+      "empty": "No entries match your filter.",
+      "deleteConfirmation": "Delete {{written}} from your vocabulary? This cannot be undone.",
+      "resetConfirm": "Reset {{written}} to the built-in reading? Your entry is deleted.",
+      "errors": {
+        "changed": "The vocabulary file changed on disk. The table was reloaded; make your edit again.",
+        "fileInvalid": "Your vocabulary file has an error, so it cannot be edited here: {{message}}",
+        "invalidEdit": "This entry could not be saved: {{message}}",
+        "tooLarge": "The vocabulary file would be larger than 1 MiB, so nothing was saved.",
+        "io": "The vocabulary file could not be written: {{message}}",
+        "voicesChanged": "The vocabulary changed while this was waiting, so the voices change was not applied. Choose the voices again."
+      },
+      "problems": {
+        "shadowed": "Never applies: a higher-priority entry always wins",
+        "unreachable": "Never applies: {{reason}}",
+        "disabled": "Switched off"
+      },
+      "unreachable": {
+        "containsSpace": "a term is matched one word at a time, so its written text cannot hold a space",
+        "endsWithPunctuation": "sentence punctuation at the end of a word is split off before terms match",
+        "notOneCharacter": "a symbol is exactly one character",
+        "extensionNotAlphanumeric": "an extension holds only letters and digits",
+        "neverMatches": "it does not change how its sample is read"
+      },
+      "derive": {
+        "unchanged": "The spoken words are unchanged, so there is nothing to save.",
+        "severalWords": "The change touches more than one written word. Correct one word at a time.",
+        "notExplained": "No single rule makes the text read this way.",
+        "invalid": "This cannot be saved: {{detail}}"
+      },
+      "check": {
+        "title": "Check across voices",
+        "playAll": "Play all",
+        "playing": "Playing {{model}}",
+        "checking": "Checking each voice...",
+        "heardRight": "heard right",
+        "missed": "missed: {{heard}}",
+        "failed": "could not check: {{error}}",
+        "row": "{{model}}: {{outcome}}",
+        "advisory": "Some voices did not read this right. You can still save it.",
+        "saveAllAnyway": "Save for all voices anyway",
+        "savePassedOnly": "Save only for voices that passed",
+        "pickOne": "Pick one voice",
+        "dictating": "Dictation is running. Check again when it ends.",
+        "transcribeFailed": "Speech-to-text could not transcribe the voice."
+      },
+      "filters": {
+        "voice": "Voice",
+        "kind": "Kind",
+        "source": "Source",
+        "all": "All",
+        "changed": "Changed by you",
+        "onlyProblems": "Only problems"
+      },
+      "defaultLabel": "default:",
+      "defaultLabelFor": "default for {{voices}}:"
+    },
+    "correction": {
+      "add": "Add correction",
+      "start": "Add a correction",
+      "writtenText": "Written text",
+      "next": "Next",
+      "title": "Correct a reading",
+      "selected": "Selected",
+      "spokenAs": "Spoken as",
+      "shouldSay": "Should say",
+      "savesAs": "Saves as",
+      "deriving": "Working out the rule...",
+      "exactOnly": "Only this exact text",
+      "chooseScope": "Choose where it applies",
+      "scopeRequired": "Choose All voices or one voice before saving.",
+      "acronymStyle": "Acronym style per voice",
+      "style": {
+        "spaced": "Spaced letters (C L I)",
+        "capitals": "Capitals (CLI)",
+        "inherit": "Same as all voices"
+      },
+      "reach": {
+        "extension": "affects every {{extension}} file",
+        "acronym": "affects the acronym {{acronym}} wherever it appears",
+        "term": "affects {{term}} wherever it appears",
+        "symbol": "affects {{symbol}} inside every technical word",
+        "exact": "only {{text}}"
+      },
+      "savesAsFormat": "{{written}} -> \"{{spoken}}\" · {{reach}}",
+      "microphone": {
+        "idle": "Say it instead of typing",
+        "recording": "Stop and fill in what you said",
+        "transcribing": "Transcribing what you said...",
+        "busy": "A dictation, a recording or a file transcription is running. Try the microphone again when it ends.",
+        "stopped": "The microphone stopped before your words were heard, so nothing was filled in.",
+        "reading": "Read aloud is open. Close it, then use the microphone.",
+        "failed": "The microphone could not start.",
+        "transcribeFailed": "Speech-to-text could not transcribe what you said."
+      }
+    }
   }
 }

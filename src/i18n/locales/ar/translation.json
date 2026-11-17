@@ -3,20 +3,35 @@
     "settings": "الإعدادات...",
     "checkUpdates": "التحقق من وجود تحديثات...",
     "copyLastTranscript": "نسخ آخر نص تم تفريغه",
-    "unloadModel": "تفريغ النموذج",
+    "unloadModel": "إلغاء تحميل نموذج التفريغ",
+    "cleanup": "نموذج المعالجة اللاحقة",
+    "cleanupReady": "جاهز",
+    "cleanupNotLoaded": "غير محمّل",
+    "cleanupLoading": "جارٍ التحميل",
+    "cleanupError": "خطأ",
+    "noCleanupModel": "لا يوجد نموذج معالجة لاحقة",
+    "unloadPostProcessingModel": "إلغاء تحميل نموذج المعالجة اللاحقة",
     "model": "النموذج",
+    "transcriptionModel": "نموذج التفريغ",
     "quit": "إنهاء",
     "cancel": "إلغاء",
     "secureInputWarning": "⚠ الاختصارات محجوبة بواسطة Secure Input",
     "language": "اللغة",
     "autoLanguage": "تلقائي",
-    "otherLanguages": "لغات أخرى"
+    "otherLanguages": "لغات أخرى",
+    "ttsModel": "نموذج تحويل النص إلى كلام",
+    "ttsUnload": "إلغاء تحميل نموذج تحويل النص إلى كلام",
+    "ttsStarting": "جارٍ البدء",
+    "ttsReady": "محمّل",
+    "ttsStopping": "جارٍ الإيقاف",
+    "ttsFailed": "فشل",
+    "ttsUnloaded": "غير محمّل"
   },
   "sidebar": {
     "general": "عام",
-    "models": "النماذج",
+    "models": "نماذج التفريغ",
     "advanced": "متقدم",
-    "postProcessing": "معالجة لاحقة",
+    "postProcessing": "نماذج المعالجة اللاحقة",
     "history": "السجل",
     "debug": "تصحيح الأخطاء",
     "about": "حول"
@@ -144,6 +159,10 @@
       },
       "model": "النموذج",
       "showAll": "عرض كل النماذج ({{count}})",
+      "noPick": "لا يوجد نموذج موصى به يغطي {{languages}}.",
+      "noPickNext": "اعرض كل النماذج، أو ارجع وغيّر لغاتك.",
+      "showAllButton": "عرض كل النماذج",
+      "pickOne": "اختر نموذجًا",
       "download": "تنزيل {{size}}",
       "downloadInstead": "تنزيل {{size}} بدلًا من ذلك",
       "pauses": "يتوقف {{name}} مؤقتًا عند {{percent}}%",
@@ -306,6 +325,8 @@
     "alreadyAdded_other": "{{languages}} مُضافة بالفعل."
   },
   "modelSelector": {
+    "status": "حالة النموذج: {{modelName}}",
+    "size": "{{size}} MiB",
     "custom": "مخصص",
     "streaming": "البث",
     "active": "نشط",
@@ -336,18 +357,26 @@
         "none": "لا توجد اختصارات مجهزة",
         "notFound": "الاختصار غير موجود",
         "pressKeys": "اضغط على المفاتيح...",
+        "unassigned": "غير معيّن",
         "bindings": {
           "transcribe": {
             "name": "اختصار التفريغ الصوتي",
             "description": ".اختصار لوحة المفاتيح لتسجيل وتفريغ صوتك"
+          },
+          "transcribe_raw": {
+            "name": "اختصار النص الخام"
           },
           "cancel": {
             "name": "اختصار الإلغاء",
             "description": ".اختصار لوحة المفاتيح لإلغاء التسجيل الحالي"
           },
           "transcribe_with_post_process": {
-            "name": "مفتاح المعالجة اللاحقة",
+            "name": "اختصار المعالجة اللاحقة",
             "description": "اختياري: مفتاح اختصار مخصص يطبق دائماً المعالجة اللاحقة بالذكاء الاصطناعي على التفريغ الصوتي."
+          },
+          "read_aloud": {
+            "name": "اختصار القراءة بصوت عالٍ",
+            "description": "افتح النافذة واقرأ النص المنسوخ بصوت عالٍ."
           }
         },
         "errors": {
@@ -517,8 +546,8 @@
           }
         },
         "position": {
-          "title": "موقع التراكب",
-          "description": "عرض تراكب الملاحظات المرئية أثناء التسجيل والتفريغ. على نظام Linux يوصى بـ 'بلا'.",
+          "title": "موضع النافذة العائمة",
+          "description": "يُبقي خيار «أعلى» أسفل الشاشة خاليًا، وهذا مفيد عند الإملاء في الطرفية.",
           "options": {
             "bottom": "أسفل",
             "top": "أعلى"
@@ -628,8 +657,8 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "مفتاح الاختصار"
+      "provider": {
+        "title": "المزوّد"
       },
       "api": {
         "title": "API",
@@ -688,10 +717,76 @@
         "cancel": "إلغاء",
         "selectToEdit": ".اختر مطالبة أعلاه لعرض وتعديل تفاصيلها",
         "createFirst": ".انقر على 'إنشاء مطالبة جديدة' أعلاه لإنشاء أول مطالبة معالجة لاحقة لك"
+      },
+      "localLlm": {
+        "noCleanupModel": "لا يوجد نموذج معالجة لاحقة",
+        "s1Description": "يستخدم عناصر التحكم في الأسلوب والبنية والسياق.",
+        "plainDescription": "يستخدم مطالبة Handy التي اخترتها.",
+        "groupTitle": "النموذج المحلي",
+        "size": "{{size}} MiB",
+        "downloaded": "تم التنزيل",
+        "use": "استخدام",
+        "download": "تنزيل",
+        "downloading": "جاري التنزيل {{percent}}%",
+        "delete": "حذف",
+        "deleteConfirm": "هل تريد حذف {{name}}؟ سيُحرّر {{size}}.",
+        "deleteConfirmAction": "حذف النموذج",
+        "status": {
+          "title": "الحالة",
+          "description": "يُحمَّل النموذج عند بدء إملاء مع معالجة لاحقة، ويُلغى تحميله بعد انتهاء مهلة إلغاء تحميل النموذج.",
+          "notLoaded": "غير محمّل",
+          "loading": "جارٍ التحميل",
+          "ready": "جاهز",
+          "error": "خطأ: {{reason}}"
+        },
+        "styling": {
+          "title": "الأسلوب",
+          "description": "مدى رسمية النص بعد المعالجة اللاحقة.",
+          "options": {
+            "casual": "غير رسمي",
+            "semi_casual": "شبه غير رسمي",
+            "semi_formal": "شبه رسمي",
+            "formal": "رسمي"
+          }
+        },
+        "structure": {
+          "title": "البنية",
+          "description": "فقرات نثرية أو قوائم Markdown.",
+          "options": {
+            "prose": "نثر",
+            "lists": "قوائم"
+          }
+        },
+        "context": {
+          "title": "السياق",
+          "description": "نص عام أو تنسيق بريد إلكتروني.",
+          "options": {
+            "general": "عام",
+            "email": "بريد إلكتروني"
+          }
+        },
+        "licenseNotes": {
+          "s1Name": "Apache-2.0 مع شرط إضافي واحد: يجب أن يُسمّى النموذج دائمًا \"S1-mini\" من \"Superwhisper\"، بهذه الأحرف الكبيرة والصغيرة تمامًا."
+        },
+        "promptRequired": "اختر مطالبة Handy غير فارغة في مجموعة المطالبات. إلى حين ذلك تُتخطى المعالجة اللاحقة ويُستخدم التفريغ الخام.",
+        "promptHidden": "يستخدم هذا النموذج مطالبته الثابتة الخاصة وإعدادات الأسلوب والبنية والسياق أعلاه، لذا فإن محرر المطالبة مخفي."
       }
     },
     "history": {
       "title": "السجل",
+      "cleaned": "بعد المعالجة اللاحقة",
+      "cleanedWith": "عولج لاحقًا باستخدام {{model}}",
+      "raw": "خام",
+      "copyRaw": "نسخ النص الخام",
+      "copyPostProcessed": "نسخ النص المعالج",
+      "compare": {
+        "title": "عرض المقارنة",
+        "diff": "الفروق",
+        "side_by_side": "جنبًا إلى جنب",
+        "stacked": "متراصّ"
+      },
+      "clearHistory": "مسح السجل",
+      "clearConfirmation": "إزالة {{count}} من إدخالات السجل غير المميّزة بنجمة و{{recordings}} من التسجيلات؟ ستبقى الإدخالات المميّزة بنجمة وتسجيلاتها.",
       "openFolder": "فتح مجلد التسجيلات",
       "loading": "جاري تحميل السجل...",
       "empty": "!لا يوجد تفريغ صوتي بعد. ابدأ التسجيل لبناء سجلك",
@@ -701,6 +796,8 @@
       "unsave": "إزالة من المحفوظات",
       "delete": "حذف الإدخال",
       "deleteError": ".فشل حذف الإدخال. يرجى المحاولة مرة أخرى",
+      "deleteConfirm": "هل تريد حذف هذا الإدخال وتسجيله؟",
+      "deleteConfirmAction": "حذف الإدخال",
       "retranscribe": "إعادة النسخ",
       "cancelTranscription": "إلغاء النسخ",
       "transcribing": "جارٍ النسخ...",
@@ -716,7 +813,14 @@
       "showMore": "عرض المزيد",
       "showLess": "عرض أقل",
       "dropTitle": "أفلت الملف لنسخه",
-      "dropDescription": "سيظهر في السجل."
+      "dropDescription": "سيظهر في السجل.",
+      "retentionConfirm": {
+        "preserveLimit": "هل تريد حذف الإدخالات غير المميزة بنجمة بعد أحدث {{count}} مع تسجيلاتها؟ يُحتفظ بالإدخالات المميزة بنجمة والملفات المفرّغة.",
+        "days3": "هل تريد حذف الإدخالات غير المميزة بنجمة الأقدم من 3 أيام مع تسجيلاتها؟ يُحتفظ بالإدخالات المميزة بنجمة والملفات المفرّغة.",
+        "weeks2": "هل تريد حذف الإدخالات غير المميزة بنجمة الأقدم من أسبوعين مع تسجيلاتها؟ يُحتفظ بالإدخالات المميزة بنجمة والملفات المفرّغة.",
+        "months3": "هل تريد حذف الإدخالات غير المميزة بنجمة الأقدم من 3 أشهر مع تسجيلاتها؟ يُحتفظ بالإدخالات المميزة بنجمة والملفات المفرّغة.",
+        "action": "حذف الإدخالات"
+      }
     },
     "debug": {
       "title": "تصحيح الأخطاء",
@@ -927,9 +1031,15 @@
     "open": "فتح",
     "copy": "نسخ",
     "clear": "مسح",
-    "noOptionsFound": "لم يتم العثور على خيارات"
+    "noOptionsFound": "لم يتم العثور على خيارات",
+    "cancel": "إلغاء"
   },
   "errors": {
+    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
+    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
+    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudClipboardUnreadableTitle": "تعذّرت قراءة الحافظة",
+    "readAloudClipboardUnreadable": "تعذّرت قراءة النص من الحافظة.",
     "loadDirectory": "خطأ في تحميل المجلد: {{error}}",
     "micPermissionDeniedTitle": "تم رفض الوصول إلى الميكروفون",
     "micPermissionDenied": {
@@ -957,7 +1067,9 @@
     "filePostProcessFailedTitle": "نُسخ بدون معالجة لاحقة",
     "filePostProcessFailed": "لم تكتمل المعالجة اللاحقة، لذا حُفظ النص المنسوخ كما هو.",
     "fileTranscriptionFailedTitle": "فشل التفريغ النصي للملف",
-    "transcriptionFailedTitle": "فشل التفريغ النصي"
+    "transcriptionFailedTitle": "فشل التفريغ النصي",
+    "vocabularyInvalidTitle": "ملف المفردات به خطأ",
+    "vocabularyInvalid": "استخدمت القراءة بصوت عالٍ المفردات المضمّنة لأن ملف المفردات الخاص بك لم يكن صالحًا للاستخدام. أصلح الملف المذكور أدناه لاستخدام مدخلاتك."
   },
   "notices": {
     "errorOne": "{{n}} خطأ",
@@ -980,9 +1092,10 @@
     }
   },
   "overlay": {
-    "transcribing": "جاري التفريغ...",
-    "processing": "جاري المعالجة...",
-    "loadingModel": "جارٍ تحميل النموذج..."
+    "transcribing": "جاري التفريغ",
+    "processing": "جارٍ تنظيف النص",
+    "loadingModel": "جارٍ تحميل النموذج",
+    "cancel": "إلغاء الإملاء"
   },
   "secureInput": {
     "blockedWithCulprit_one": "قد يحظر {{name}} اختصارًا واحدًا",
@@ -994,5 +1107,345 @@
     "learnMore": "كيفية الإصلاح",
     "recorderBlocked": "لا يمكن تسجيل الاختصارات الآن — يحجب Secure Input في macOS أحداث المفاتيح. عالج تحذير Secure Input أولاً.",
     "dismiss": "تجاهل"
+  },
+  "tts": {
+    "ratings": {
+      "quality": "الجودة",
+      "speed": "السرعة",
+      "recommended": "موصى به",
+      "tooltip": "أول صوت خلال {{firstAudio}} ث، أسرع {{faster}} مرة من الزمن الفعلي، يُحمَّل خلال {{load}} ث"
+    },
+    "devices": {
+      "auto": "تلقائي",
+      "cpu": "CPU",
+      "gpu": "GPU",
+      "npu": "NPU"
+    },
+    "errors": {
+      "notDownloaded": "نزّل هذا النموذج قبل القراءة.",
+      "audio": "تعذّر فتح جهاز الإخراج.",
+      "text": "تعذّر تجهيز هذا النص.",
+      "clock": "فشل توقيت التشغيل.",
+      "worker": "توقفت عملية تحويل النص إلى كلام.",
+      "unavailable": "تحويل النص إلى كلام غير متاح.",
+      "notReady": "ما زال تحويل النص إلى كلام قيد البدء.",
+      "generic": "فشل تحويل النص إلى كلام.",
+      "memory": "يلزم توفر 1 GiB على الأقل من الذاكرة.",
+      "gatedToken": "تتطلب أصوات Pocket رمز Hugging Face وقبول شروط الأصوات.",
+      "model": "اختر نموذجًا متاحًا لتحويل النص إلى كلام.",
+      "device": "هذا الجهاز غير متاح.",
+      "npuDriverTooOld": "برنامج تشغيل NPU قديم جدًا. حدّثه أو اختر جهازًا آخر.",
+      "selection": "تعذّر تطبيق التحديد.",
+      "busy": "عملية لتحويل النص إلى كلام قيد التشغيل بالفعل.",
+      "cancelled": "أُلغيت القراءة.",
+      "clipboard": "تعذّرت قراءة نص الحافظة.",
+      "deviceNotSupported": "هذا النموذج لا يدعم الجهاز المحدد.",
+      "deviceUnavailable": "الجهاز المحدد غير متاح.",
+      "download": "فشل تنزيل النموذج.",
+      "driverDiscovery": "تعذّر اكتشاف برنامج تشغيل NPU.",
+      "failed": "فشلت العملية ثلاث مرات. اختر نموذجًا لإعادة المحاولة.",
+      "integrity": "فشل ملف نموذج في فحص السلامة.",
+      "invalidControls": "اختر سرعة من 0.5x إلى 2.0x ودرجة صوت من -6 إلى +6 أنصاف نغمات.",
+      "invalidRatings": "تقييمات النموذج مفقودة أو غير صالحة.",
+      "invalidVoice": "اختر صوتًا للنموذج المحدد.",
+      "outputUnavailable": "جهاز الإخراج غير متاح.",
+      "path": "مجلد تخزين تحويل النص إلى كلام غير متاح.",
+      "prepareFailed": "تعذّر على الجهاز المحدد تجهيز هذا النموذج.",
+      "protocol": "أعادت عملية تحويل النص إلى كلام استجابة غير صالحة.",
+      "registry": "سجل نماذج تحويل النص إلى كلام غير صالح.",
+      "settings": "تعذّر حفظ إعدادات تحويل النص إلى كلام.",
+      "start": "تعذّر بدء عملية تحويل النص إلى كلام.",
+      "starting": "عملية تحويل النص إلى كلام قيد البدء.",
+      "tokenRejected": "رُفض رمز Hugging Face. تحقق من الوصول إلى شروط أصوات Pocket.",
+      "tokenRequired": "عيّن رمز Hugging Face واقبل شروط أصوات Pocket قبل تنزيل الأصوات.",
+      "unknownModel": "نموذج تحويل النص إلى كلام المحدد غير معروف.",
+      "window": "تعذّر فتح نافذة القراءة بصوت عالٍ.",
+      "accessDenied": "رُفض الوصول إلى ملفات النموذج.",
+      "localIo": "تعذّرت قراءة ملفات النموذج أو الكتابة إليها.",
+      "downloading": "هذا النموذج قيد التنزيل بالفعل."
+    },
+    "runOn": "التشغيل على",
+    "preparing": "جارٍ التجهيز لـ {{device}}: {{graph}}",
+    "buffering": "جارٍ التخزين المؤقت",
+    "title": "القراءة بصوت عالٍ",
+    "textLabel": "النص المراد قراءته",
+    "placeholder": "الصق النص المراد قراءته",
+    "play": "تشغيل",
+    "pause": "إيقاف مؤقت",
+    "stop": "إيقاف",
+    "close": "إغلاق",
+    "readClipboard": "قراءة الحافظة",
+    "editText": "تحرير النص",
+    "progress": "التقدم",
+    "time": "مرّت {{elapsed}} ث، تبقّت {{remaining}} ث",
+    "openModels": "نماذج تحويل النص إلى كلام",
+    "outputFallback": "يُستخدم جهاز الإخراج الافتراضي",
+    "states": {
+      "waiting": "في الانتظار",
+      "starting": "جارٍ البدء",
+      "buffering": "جارٍ التخزين المؤقت",
+      "playing": "قيد التشغيل",
+      "paused": "متوقف مؤقتًا",
+      "finished": "انتهى",
+      "error": "خطأ"
+    },
+    "modelsTitle": "نماذج تحويل النص إلى كلام",
+    "modelsSubtitle": "اختر نموذج صوت. قِيست أرقام السرعة على جهاز المطوّر، وقد تختلف على جهازك.",
+    "downloaded": "تم التنزيل",
+    "availableToDownload": "متاح للتنزيل",
+    "recommended": "موصى به",
+    "downloading": "جاري التنزيل",
+    "needsToken": "يتطلب رمز Hugging Face",
+    "tokenSet": "تم تعيين الرمز",
+    "active": "نشط",
+    "use": "استخدام",
+    "download": "تنزيل",
+    "delete": "حذف",
+    "deleteConfirm": "هل تريد حذف {{name}}؟ سيُحرّر {{size}}. تبقى مفرداتك وسجلك.",
+    "deleteConfirmSelected": "تتوقف القراءة بصوت عالٍ حتى تختار نموذجًا آخر.",
+    "deleteConfirmAction": "حذف النموذج",
+    "cancel": "إلغاء",
+    "token": "رمز Hugging Face",
+    "tokenHelp": "مطلوب فقط لأصوات Pocket المقيّدة بعد قبول شروط الأصوات على Hugging Face. يبقى الرمز في الذاكرة ويُمسح عند إعادة تشغيل Handy.",
+    "clearToken": "مسح الرمز",
+    "showToken": "إظهار الرمز",
+    "hideToken": "إخفاء الرمز",
+    "saveToken": "تعيين الرمز",
+    "model": "النموذج",
+    "voice": "الصوت",
+    "preview": "معاينة الصوت",
+    "speed": "السرعة: {{value}}x",
+    "pitch": "درجة الصوت: {{value}} أنصاف نغمات",
+    "output": "جهاز الإخراج",
+    "sameAsHandy": "مثل Handy",
+    "readCode": "قراءة كتل الشيفرة",
+    "technicalReading": "القراءة التقنية",
+    "fullPaths": "قراءة المسارات كاملة",
+    "fullLinks": "قراءة الروابط كاملة",
+    "pocketAttribution": "أصوات Pocket TTS مرخّصة بموجب CC-BY-4.0. اتبع شروط الإسناد والموافقة لكل صوت في بطاقة النموذج.",
+    "supertonicRestrictions": "يستخدم Supertonic 3 ترخيص OpenRAIL-M. راجع قيود الاستخدام في بطاقة النموذج.",
+    "kokoroAttribution": "أوزان نموذج Kokoro مرخّصة بموجب Apache-2.0.",
+    "paradeeAttribution": "Paradee-8M v1.2 من تطوير Sahil Mahendrakar، مستخلص من Kokoro-82M (hexgrad). مرخّص بموجب Apache-2.0.",
+    "phononAttribution": "Phonon 31m English من Gradium (Apache-2.0)، مبني على Pocket TTS وترميز Mimi من Kyutai (CC-BY-4.0). الأصوات من gradium/phonon-voices (Apache-2.0).",
+    "indicTinyEnglishAttribution": "Indic Tiny TTS (English) من Sulabh Katiyar, CC-BY-4.0. الأصوات مدرَّبة على LIMMITS 2024 (SYSPIN, Indian Institute of Science, Bangalore, SPIRE Lab), CC-BY-4.0. موافقة المتحدثين على الإصدار غير موثقة لدى المصدر. المُرمِّز الصوتي: Vocos من Charactr Inc., MIT.",
+    "indicTinyHindiAttribution": "Indic Tiny TTS (Hindi) من Sulabh Katiyar, CC-BY-4.0, مدرَّب على مجموعة بيانات AI4Bharat Rasa (CC-BY-4.0; Varadhan, Sankar, Raju و Khapra, INTERSPEECH 2024). المُرمِّز الصوتي: Vocos من Charactr Inc., MIT.",
+    "indicTinyPunjabiAttribution": "Indic Tiny TTS (Punjabi) من Sulabh Katiyar, CC-BY-4.0, مدرَّب على مجموعة بيانات AI4Bharat Rasa (CC-BY-4.0; Varadhan, Sankar, Raju و Khapra, INTERSPEECH 2024). المُرمِّز الصوتي: Vocos من Charactr Inc., MIT.",
+    "status": {
+      "failed": "فشل",
+      "ready": "جاهز",
+      "starting": "جارٍ البدء",
+      "stopping": "جارٍ الإيقاف",
+      "unloaded": "غير محمّل"
+    },
+    "previewSentence": "Reading clearly, one phrase at a time.",
+    "description": {
+      "pocket-en": "أصوات إنجليزية معبّرة بأعلى تقييم استماع.",
+      "supertonic-3": "توليف إنجليزي سريع مع تنفيذ على CPU وGPU وNPU.",
+      "kokoro-82m-int8": "أصوات إنجليزية مدمجة من نموذج INT8.",
+      "paradee-8m-int8": "أصوات إنجليزية صغيرة جدًا وسريعة من نموذج مستخلص من Kokoro.",
+      "phonon-31m-en": "أصوات إنجليزية صغيرة وطبيعية مبنية على Pocket TTS، مع 26 صوتًا.",
+      "indic-tiny-en": "أصوات صغيرة بالإنجليزية الهندية، أنثوية وذكورية.",
+      "indic-tiny-hi": "أصوات هندية صغيرة، أنثوية وذكورية. تُنطق الكلمات الإنجليزية حرفًا حرفًا.",
+      "indic-tiny-pa": "أصوات بنجابية (غورمخي) صغيرة، أنثوية وذكورية. تُنطق الكلمات الإنجليزية حرفًا حرفًا."
+    },
+    "voiceCount": "الأصوات: {{count}}",
+    "downloadProgress": "تقدم تنزيل النموذج",
+    "settingsTitle": "تحويل النص إلى كلام",
+    "speedLabel": "السرعة",
+    "pitchLabel": "درجة الصوت",
+    "help": {
+      "model": "اختر نموذجًا منزّلًا لتحويل النص إلى كلام.",
+      "voice": "اختر صوتًا لهذا النموذج وعاينه.",
+      "speed": "اضبط سرعة قراءة النص.",
+      "pitch": "اضبط درجة الصوت بأنصاف النغمات.",
+      "output": "اختر مكان تشغيل صوت القراءة.",
+      "readCode": "تضمين كتل الشيفرة المسوّرة عند القراءة.",
+      "technicalReading": "نطق المسارات وأسماء الملفات والخيارات وأسماء الشيفرة كاملة باستخدام ملف المفردات الخاص بك.",
+      "fullPaths": "قراءة كل مجلد في المسار. عند الإيقاف يُقرأ اسم الملف فقط.",
+      "fullLinks": "قراءة عنوان الويب بالكامل. عند الإيقاف يُذكر اسم الموقع فقط."
+    },
+    "tabs": {
+      "settings": "الإعدادات",
+      "history": "السجل",
+      "vocabulary": "المفردات"
+    },
+    "history": {
+      "title": "إعدادات السجل",
+      "reading": "الكلمات المكتوبة مع ما تم نطقه",
+      "hint": "اسحب فوق الكلمات لتحديد جزء وتصحيح طريقة قراءته.",
+      "empty": "لم تتم أي قراءة بصوت عالٍ بعد. تظهر هنا القراءات التي تشغلها.",
+      "limit": {
+        "title": "حد السجل",
+        "description": "أكبر عدد من القراءات يُحتفظ به في السجل",
+        "entries": "قراءات"
+      },
+      "retention": {
+        "title": "الحذف التلقائي",
+        "description": "احذف القراءات الأقدم تلقائيًا أيضًا",
+        "keepNothing": "عدم الاحتفاظ أبدًا",
+        "keepLimit": "الاحتفاظ بآخر {{count}}",
+        "days3": "بعد 3 أيام",
+        "weeks2": "بعد أسبوعين",
+        "months3": "بعد 3 أشهر"
+      },
+      "clear": {
+        "title": "مسح السجل",
+        "description": "احذف كل القراءات المخزنة. لن يتغير قاموس المفردات لديك.",
+        "confirmation": "هل تريد حذف جميع القراءات المخزنة وعددها {{count}}؟ لن يتغير قاموس المفردات لديك."
+      },
+      "retentionConfirm": {
+        "message_one": "هل تريد حذف قراءة مخزنة واحدة الآن؟ لن يتغير قاموس المفردات لديك.",
+        "message": "هل تريد حذف {{count}} من القراءات المخزنة الآن؟ لن يتغير قاموس المفردات لديك.",
+        "action": "حذف القراءات"
+      }
+    },
+    "vocabulary": {
+      "columns": {
+        "written": "المكتوب",
+        "spoken": "المنطوق",
+        "kind": "النوع",
+        "voices": "الأصوات",
+        "match": "المطابقة",
+        "enabled": "تشغيل",
+        "actions": "الإجراءات"
+      },
+      "kinds": {
+        "symbol": "رمز",
+        "extension": "امتداد",
+        "term": "مصطلح",
+        "acronym": "اختصار"
+      },
+      "voices": {
+        "all": "كل الأصوات",
+        "except": "باستثناء {{names}}",
+        "add": "+ صوت"
+      },
+      "origins": {
+        "builtin": "مدمج",
+        "owner": "خاص بك"
+      },
+      "skipped": "(متجاوَز)",
+      "buttons": {
+        "add": "إضافة إدخال",
+        "edit": "تعديل",
+        "listen": "استماع",
+        "delete": "حذف",
+        "reset": "إعادة إلى الافتراضي",
+        "save": "حفظ",
+        "cancel": "إلغاء"
+      },
+      "match": {
+        "whole": "كلمة كاملة",
+        "anywhere": "في أي موضع داخل الكلمة",
+        "prefix": "بداية الكلمة",
+        "suffix": "نهاية الكلمة",
+        "regex": "نمط",
+        "caseSensitive": "مراعاة حالة الأحرف",
+        "extension": "نهاية اسم الملف",
+        "symbol": "في أي موضع",
+        "acronym": "كلمة كاملة أو جزء من اسم"
+      },
+      "filter": "ابحث في المكتوب أو المنطوق",
+      "toggle": "استخدام {{written}}",
+      "editTitle": "تعديل الإدخال",
+      "fields": {
+        "skip": "تخطي",
+        "appliesTo": "ينطبق على"
+      },
+      "empty": "لا توجد إدخالات تطابق التصفية.",
+      "deleteConfirmation": "هل تريد حذف {{written}} من مفرداتك؟ لا يمكن التراجع عن ذلك.",
+      "resetConfirm": "هل تريد إعادة {{written}} إلى القراءة المضمّنة؟ سيُحذف إدخالك.",
+      "errors": {
+        "changed": "تغيّر ملف المفردات على القرص. أُعيد تحميل الجدول؛ كرّر تعديلك.",
+        "fileInvalid": "ملف المفردات لديك فيه خطأ، لذا لا يمكن تعديله هنا: {{message}}",
+        "invalidEdit": "تعذّر حفظ هذا الإدخال: {{message}}",
+        "tooLarge": "سيتجاوز ملف المفردات 1 ميبيبايت، لذا لم يُحفظ شيء.",
+        "io": "تعذّرت كتابة ملف المفردات: {{message}}",
+        "voicesChanged": "تغيّر المعجم أثناء الانتظار، لذا لم يُطبَّق تغيير الأصوات. اختر الأصوات مرة أخرى."
+      },
+      "problems": {
+        "shadowed": "لا ينطبق أبدًا: يفوز دائمًا الإدخال ذو الأولوية الأعلى",
+        "unreachable": "لا ينطبق أبدًا: {{reason}}",
+        "disabled": "متوقف"
+      },
+      "unreachable": {
+        "containsSpace": "تُطابَق المصطلحات كلمة كلمة، لذا لا يمكن أن يحتوي نصه المكتوب على مسافة",
+        "endsWithPunctuation": "تُفصل علامات الترقيم في نهاية الكلمة قبل مطابقة المصطلحات",
+        "notOneCharacter": "الرمز حرف واحد بالضبط",
+        "extensionNotAlphanumeric": "الامتداد يحتوي على أحرف وأرقام فقط",
+        "neverMatches": "لا يغيّر طريقة قراءة مثاله"
+      },
+      "derive": {
+        "unchanged": "الكلمات المنطوقة لم تتغير، فلا شيء للحفظ.",
+        "severalWords": "يمس التغيير أكثر من كلمة مكتوبة واحدة. صحّح كلمة واحدة في كل مرة.",
+        "notExplained": "لا توجد قاعدة واحدة تجعل النص يُقرأ هكذا.",
+        "invalid": "تعذّر الحفظ: {{detail}}"
+      },
+      "check": {
+        "title": "التحقق عبر الأصوات",
+        "playAll": "تشغيل الكل",
+        "playing": "جارٍ تشغيل {{model}}",
+        "checking": "جارٍ التحقق من كل صوت...",
+        "heardRight": "سُمع بشكل صحيح",
+        "missed": "لم يُفهم: {{heard}}",
+        "failed": "تعذّر التحقق: {{error}}",
+        "row": "{{model}}: {{outcome}}",
+        "advisory": "بعض الأصوات لم تقرأ هذا بشكل صحيح. لا يزال بإمكانك حفظه.",
+        "saveAllAnyway": "الحفظ لكل الأصوات على أي حال",
+        "savePassedOnly": "الحفظ فقط للأصوات التي نجحت",
+        "pickOne": "اختيار صوت واحد",
+        "dictating": "الإملاء قيد التشغيل. تحقّق مرة أخرى عند انتهائه.",
+        "transcribeFailed": "تعذّر على تحويل الكلام إلى نص نسخ الصوت."
+      },
+      "filters": {
+        "voice": "الصوت",
+        "kind": "النوع",
+        "source": "المصدر",
+        "all": "الكل",
+        "changed": "غيّرته أنت",
+        "onlyProblems": "المشكلات فقط"
+      },
+      "defaultLabel": "الافتراضي:",
+      "defaultLabelFor": "الافتراضي لـ {{voices}}:"
+    },
+    "correction": {
+      "add": "إضافة تصحيح",
+      "start": "إضافة تصحيح",
+      "writtenText": "النص المكتوب",
+      "next": "التالي",
+      "title": "تصحيح القراءة",
+      "selected": "المحدد",
+      "spokenAs": "يُنطق كـ",
+      "shouldSay": "ينبغي أن يقول",
+      "savesAs": "يُحفظ كـ",
+      "deriving": "جارٍ استنتاج القاعدة...",
+      "exactOnly": "هذا النص بالضبط فقط",
+      "chooseScope": "اختر مجال التطبيق",
+      "scopeRequired": "اختر كل الأصوات أو صوتًا واحدًا قبل الحفظ.",
+      "acronymStyle": "نمط الاختصارات لكل صوت",
+      "style": {
+        "spaced": "أحرف منفصلة (C L I)",
+        "capitals": "أحرف كبيرة (CLI)",
+        "inherit": "مثل كل الأصوات"
+      },
+      "reach": {
+        "extension": "تنطبق على كل ملف {{extension}}",
+        "acronym": "تنطبق على الاختصار {{acronym}} في كل مكان",
+        "term": "تنطبق على {{term}} في كل مكان",
+        "symbol": "تنطبق على {{symbol}} داخل كل كلمة تقنية",
+        "exact": "{{text}} فقط"
+      },
+      "savesAsFormat": "{{written}} -> \"{{spoken}}\" · {{reach}}",
+      "microphone": {
+        "idle": "قلها بدلاً من الكتابة",
+        "recording": "أوقف واملأ ما قلته",
+        "transcribing": "جارٍ تفريغ ما قلته...",
+        "busy": "يجري إملاء أو تسجيل أو تفريغ ملف. جرّب الميكروفون مرة أخرى عند انتهائه.",
+        "stopped": "توقف الميكروفون قبل سماع كلماتك، لذلك لم يُملأ شيء.",
+        "reading": "القراءة بصوت عالٍ مفتوحة. أغلقها، ثم استخدم الميكروفون.",
+        "failed": "تعذّر تشغيل الميكروفون.",
+        "transcribeFailed": "لم يتمكن تحويل الكلام إلى نص من تفريغ ما قلته."
+      }
+    }
   }
 }

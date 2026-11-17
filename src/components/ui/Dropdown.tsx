@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { menuPlacement } from "@/lib/utils/menuPlacement";
 
 export interface DropdownOption {
   value: string;
@@ -17,11 +18,13 @@ interface DropdownProps {
   placeholder?: string;
   disabled?: boolean;
   onOpen?: () => void;
-  /** Where the menu opens: below the button (default), or above it. */
+  /** Forces the menu below or above the button; by default it opens where it fits. */
   placement?: "below" | "above";
   /** Highlight colour for hover and selection. */
   tone?: "brand" | "neutral";
 }
+
+const MENU_HEIGHT = 240;
 
 export const Dropdown: React.FC<DropdownProps> = ({
   options,
@@ -32,13 +35,15 @@ export const Dropdown: React.FC<DropdownProps> = ({
   placeholder = "Select an option...",
   disabled = false,
   onOpen,
-  placement = "below",
+  placement,
   tone = "brand",
 }) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const [measured, setMeasured] = useState<"below" | "above">("below");
+  const side = placement ?? measured;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -69,7 +74,25 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
   const handleToggle = () => {
     if (disabled) return;
-    if (!isOpen) onOpen?.();
+    if (!isOpen) {
+      onOpen?.();
+      const trigger = triggerRef.current;
+      if (trigger && !placement) {
+        const box = trigger.getBoundingClientRect();
+        const limit = trigger
+          .closest("[data-settings-scroll]")
+          ?.getBoundingClientRect();
+        setMeasured(
+          menuPlacement({
+            triggerTop: box.top,
+            triggerBottom: box.bottom,
+            limitTop: limit?.top ?? 0,
+            limitBottom: limit?.bottom ?? window.innerHeight,
+            menuHeight: MENU_HEIGHT,
+          }),
+        );
+      }
+    }
     setIsOpen(!isOpen);
   };
 
@@ -116,7 +139,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
       </button>
       {isOpen && !disabled && (
         <div
-          className={`absolute ${placement === "above" ? "bottom-full mb-1" : "top-full mt-1"} bg-background border border-line rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto p-1 ${
+          className={`absolute ${side === "above" ? "bottom-full mb-1" : "top-full mt-1"} bg-background border border-line rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto p-1 ${
             menuClassName ?? "left-0 right-0"
           }`}
         >

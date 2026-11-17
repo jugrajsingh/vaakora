@@ -1,0 +1,1336 @@
+{
+ "language": "en",
+ "repo": "sulabhkatiyar/indic-tiny-tts-english",
+ "revision": "eea5d4a578c0f18173825a037487cf9c47ed4247",
+ "package_build_code_sha": "gf8f38ffb",
+ "normalization_version": "4",
+ "vocab_hash": "c9b582c535aa7921",
+ "vocab_mode": "chr",
+ "add_blank": true,
+ "en_mode": "chr",
+ "config_sha256": "473692ba1fdecbc7353957a5558199f741b69724f04e4ee2c550d5d6e1625ec5",
+ "package_files_hash_checked": 9,
+ "symbols": [
+  "<blank>",
+  "<unk>",
+  "c: ",
+  "c:!",
+  "c:\"",
+  "c:'",
+  "c:(",
+  "c:)",
+  "c:,",
+  "c:-",
+  "c:.",
+  "c::",
+  "c:;",
+  "c:?",
+  "c:A",
+  "c:B",
+  "c:C",
+  "c:D",
+  "c:E",
+  "c:F",
+  "c:G",
+  "c:H",
+  "c:I",
+  "c:J",
+  "c:K",
+  "c:L",
+  "c:M",
+  "c:N",
+  "c:O",
+  "c:P",
+  "c:Q",
+  "c:R",
+  "c:S",
+  "c:T",
+  "c:U",
+  "c:V",
+  "c:W",
+  "c:X",
+  "c:Y",
+  "c:Z",
+  "c:a",
+  "c:b",
+  "c:c",
+  "c:d",
+  "c:e",
+  "c:f",
+  "c:g",
+  "c:h",
+  "c:i",
+  "c:j",
+  "c:k",
+  "c:l",
+  "c:m",
+  "c:n",
+  "c:o",
+  "c:p",
+  "c:q",
+  "c:r",
+  "c:s",
+  "c:t",
+  "c:u",
+  "c:v",
+  "c:w",
+  "c:x",
+  "c:y",
+  "c:z",
+  "c:\u00e0",
+  "c:\u00e2",
+  "c:\u00e8",
+  "c:\u00e9",
+  "c:\u00ef",
+  "c:\u00f4",
+  "c:\u2013",
+  "c:\u2014",
+  "c:\u2018",
+  "c:\u2019",
+  "c:\u201c",
+  "c:\u201d",
+  "c:\ufe0f"
+ ],
+ "rows": [
+  {
+   "input": "0",
+   "text_for_chars": "zero"
+  },
+  {
+   "input": "1",
+   "text_for_chars": "one"
+  },
+  {
+   "input": "2",
+   "text_for_chars": "two"
+  },
+  {
+   "input": "3",
+   "text_for_chars": "three"
+  },
+  {
+   "input": "4",
+   "text_for_chars": "four"
+  },
+  {
+   "input": "5",
+   "text_for_chars": "five"
+  },
+  {
+   "input": "6",
+   "text_for_chars": "six"
+  },
+  {
+   "input": "7",
+   "text_for_chars": "seven"
+  },
+  {
+   "input": "8",
+   "text_for_chars": "eight"
+  },
+  {
+   "input": "9",
+   "text_for_chars": "nine"
+  },
+  {
+   "input": "10",
+   "text_for_chars": "ten"
+  },
+  {
+   "input": "11",
+   "text_for_chars": "eleven"
+  },
+  {
+   "input": "12",
+   "text_for_chars": "twelve"
+  },
+  {
+   "input": "13",
+   "text_for_chars": "thirteen"
+  },
+  {
+   "input": "14",
+   "text_for_chars": "fourteen"
+  },
+  {
+   "input": "15",
+   "text_for_chars": "fifteen"
+  },
+  {
+   "input": "16",
+   "text_for_chars": "sixteen"
+  },
+  {
+   "input": "17",
+   "text_for_chars": "seventeen"
+  },
+  {
+   "input": "18",
+   "text_for_chars": "eighteen"
+  },
+  {
+   "input": "19",
+   "text_for_chars": "nineteen"
+  },
+  {
+   "input": "20",
+   "text_for_chars": "twenty"
+  },
+  {
+   "input": "21",
+   "text_for_chars": "twenty one"
+  },
+  {
+   "input": "22",
+   "text_for_chars": "twenty two"
+  },
+  {
+   "input": "23",
+   "text_for_chars": "twenty three"
+  },
+  {
+   "input": "24",
+   "text_for_chars": "twenty four"
+  },
+  {
+   "input": "25",
+   "text_for_chars": "twenty five"
+  },
+  {
+   "input": "26",
+   "text_for_chars": "twenty six"
+  },
+  {
+   "input": "27",
+   "text_for_chars": "twenty seven"
+  },
+  {
+   "input": "28",
+   "text_for_chars": "twenty eight"
+  },
+  {
+   "input": "29",
+   "text_for_chars": "twenty nine"
+  },
+  {
+   "input": "30",
+   "text_for_chars": "thirty"
+  },
+  {
+   "input": "31",
+   "text_for_chars": "thirty one"
+  },
+  {
+   "input": "32",
+   "text_for_chars": "thirty two"
+  },
+  {
+   "input": "33",
+   "text_for_chars": "thirty three"
+  },
+  {
+   "input": "34",
+   "text_for_chars": "thirty four"
+  },
+  {
+   "input": "35",
+   "text_for_chars": "thirty five"
+  },
+  {
+   "input": "36",
+   "text_for_chars": "thirty six"
+  },
+  {
+   "input": "37",
+   "text_for_chars": "thirty seven"
+  },
+  {
+   "input": "38",
+   "text_for_chars": "thirty eight"
+  },
+  {
+   "input": "39",
+   "text_for_chars": "thirty nine"
+  },
+  {
+   "input": "40",
+   "text_for_chars": "forty"
+  },
+  {
+   "input": "41",
+   "text_for_chars": "forty one"
+  },
+  {
+   "input": "42",
+   "text_for_chars": "forty two"
+  },
+  {
+   "input": "43",
+   "text_for_chars": "forty three"
+  },
+  {
+   "input": "44",
+   "text_for_chars": "forty four"
+  },
+  {
+   "input": "45",
+   "text_for_chars": "forty five"
+  },
+  {
+   "input": "46",
+   "text_for_chars": "forty six"
+  },
+  {
+   "input": "47",
+   "text_for_chars": "forty seven"
+  },
+  {
+   "input": "48",
+   "text_for_chars": "forty eight"
+  },
+  {
+   "input": "49",
+   "text_for_chars": "forty nine"
+  },
+  {
+   "input": "50",
+   "text_for_chars": "fifty"
+  },
+  {
+   "input": "51",
+   "text_for_chars": "fifty one"
+  },
+  {
+   "input": "52",
+   "text_for_chars": "fifty two"
+  },
+  {
+   "input": "53",
+   "text_for_chars": "fifty three"
+  },
+  {
+   "input": "54",
+   "text_for_chars": "fifty four"
+  },
+  {
+   "input": "55",
+   "text_for_chars": "fifty five"
+  },
+  {
+   "input": "56",
+   "text_for_chars": "fifty six"
+  },
+  {
+   "input": "57",
+   "text_for_chars": "fifty seven"
+  },
+  {
+   "input": "58",
+   "text_for_chars": "fifty eight"
+  },
+  {
+   "input": "59",
+   "text_for_chars": "fifty nine"
+  },
+  {
+   "input": "60",
+   "text_for_chars": "sixty"
+  },
+  {
+   "input": "61",
+   "text_for_chars": "sixty one"
+  },
+  {
+   "input": "62",
+   "text_for_chars": "sixty two"
+  },
+  {
+   "input": "63",
+   "text_for_chars": "sixty three"
+  },
+  {
+   "input": "64",
+   "text_for_chars": "sixty four"
+  },
+  {
+   "input": "65",
+   "text_for_chars": "sixty five"
+  },
+  {
+   "input": "66",
+   "text_for_chars": "sixty six"
+  },
+  {
+   "input": "67",
+   "text_for_chars": "sixty seven"
+  },
+  {
+   "input": "68",
+   "text_for_chars": "sixty eight"
+  },
+  {
+   "input": "69",
+   "text_for_chars": "sixty nine"
+  },
+  {
+   "input": "70",
+   "text_for_chars": "seventy"
+  },
+  {
+   "input": "71",
+   "text_for_chars": "seventy one"
+  },
+  {
+   "input": "72",
+   "text_for_chars": "seventy two"
+  },
+  {
+   "input": "73",
+   "text_for_chars": "seventy three"
+  },
+  {
+   "input": "74",
+   "text_for_chars": "seventy four"
+  },
+  {
+   "input": "75",
+   "text_for_chars": "seventy five"
+  },
+  {
+   "input": "76",
+   "text_for_chars": "seventy six"
+  },
+  {
+   "input": "77",
+   "text_for_chars": "seventy seven"
+  },
+  {
+   "input": "78",
+   "text_for_chars": "seventy eight"
+  },
+  {
+   "input": "79",
+   "text_for_chars": "seventy nine"
+  },
+  {
+   "input": "80",
+   "text_for_chars": "eighty"
+  },
+  {
+   "input": "81",
+   "text_for_chars": "eighty one"
+  },
+  {
+   "input": "82",
+   "text_for_chars": "eighty two"
+  },
+  {
+   "input": "83",
+   "text_for_chars": "eighty three"
+  },
+  {
+   "input": "84",
+   "text_for_chars": "eighty four"
+  },
+  {
+   "input": "85",
+   "text_for_chars": "eighty five"
+  },
+  {
+   "input": "86",
+   "text_for_chars": "eighty six"
+  },
+  {
+   "input": "87",
+   "text_for_chars": "eighty seven"
+  },
+  {
+   "input": "88",
+   "text_for_chars": "eighty eight"
+  },
+  {
+   "input": "89",
+   "text_for_chars": "eighty nine"
+  },
+  {
+   "input": "90",
+   "text_for_chars": "ninety"
+  },
+  {
+   "input": "91",
+   "text_for_chars": "ninety one"
+  },
+  {
+   "input": "92",
+   "text_for_chars": "ninety two"
+  },
+  {
+   "input": "93",
+   "text_for_chars": "ninety three"
+  },
+  {
+   "input": "94",
+   "text_for_chars": "ninety four"
+  },
+  {
+   "input": "95",
+   "text_for_chars": "ninety five"
+  },
+  {
+   "input": "96",
+   "text_for_chars": "ninety six"
+  },
+  {
+   "input": "97",
+   "text_for_chars": "ninety seven"
+  },
+  {
+   "input": "98",
+   "text_for_chars": "ninety eight"
+  },
+  {
+   "input": "99",
+   "text_for_chars": "ninety nine"
+  },
+  {
+   "input": "100",
+   "text_for_chars": "one hundred"
+  },
+  {
+   "input": "101",
+   "text_for_chars": "one hundred one"
+  },
+  {
+   "input": "110",
+   "text_for_chars": "one hundred ten"
+  },
+  {
+   "input": "199",
+   "text_for_chars": "one hundred ninety nine"
+  },
+  {
+   "input": "200",
+   "text_for_chars": "two hundred"
+  },
+  {
+   "input": "250",
+   "text_for_chars": "two hundred fifty"
+  },
+  {
+   "input": "999",
+   "text_for_chars": "nine hundred ninety nine"
+  },
+  {
+   "input": "1000",
+   "text_for_chars": "one thousand"
+  },
+  {
+   "input": "1001",
+   "text_for_chars": "one thousand one"
+  },
+  {
+   "input": "1100",
+   "text_for_chars": "eleven hundred"
+  },
+  {
+   "input": "2000",
+   "text_for_chars": "two thousand"
+  },
+  {
+   "input": "2024",
+   "text_for_chars": "twenty twenty four"
+  },
+  {
+   "input": "5000",
+   "text_for_chars": "five thousand"
+  },
+  {
+   "input": "9999",
+   "text_for_chars": "nine thousand nine hundred ninety nine"
+  },
+  {
+   "input": "10000",
+   "text_for_chars": "ten thousand"
+  },
+  {
+   "input": "12345",
+   "text_for_chars": "twelve thousand three hundred forty five"
+  },
+  {
+   "input": "99999",
+   "text_for_chars": "ninety nine thousand nine hundred ninety nine"
+  },
+  {
+   "input": "1,50,000",
+   "text_for_chars": "one hundred fifty thousand"
+  },
+  {
+   "input": "2,50,00,000",
+   "text_for_chars": "twenty five million"
+  },
+  {
+   "input": "1,00,000",
+   "text_for_chars": "one hundred thousand"
+  },
+  {
+   "input": "10,00,000",
+   "text_for_chars": "one million"
+  },
+  {
+   "input": "1,00,00,000",
+   "text_for_chars": "ten million"
+  },
+  {
+   "input": "12,34,567",
+   "text_for_chars": "one million two hundred thirty four thousand five hundred sixty seven"
+  },
+  {
+   "input": "1,234",
+   "text_for_chars": "one thousand two hundred thirty four"
+  },
+  {
+   "input": "1,234,567",
+   "text_for_chars": "one million two hundred thirty four thousand five hundred sixty seven"
+  },
+  {
+   "input": "100000",
+   "text_for_chars": "one hundred thousand"
+  },
+  {
+   "input": "1000000",
+   "text_for_chars": "one million"
+  },
+  {
+   "input": "10000000",
+   "text_for_chars": "ten million"
+  },
+  {
+   "input": "100000000",
+   "text_for_chars": "one hundred million"
+  },
+  {
+   "input": "123456789",
+   "text_for_chars": "one hundred twenty three million four hundred fifty six thousand seven hundred eighty nine"
+  },
+  {
+   "input": "1234567890123",
+   "text_for_chars": "one two three four five six seven eight nine zero one two three"
+  },
+  {
+   "input": "3.14",
+   "text_for_chars": "three point one four"
+  },
+  {
+   "input": "0.5",
+   "text_for_chars": "zero point five"
+  },
+  {
+   "input": "0.05",
+   "text_for_chars": "zero point zero five"
+  },
+  {
+   "input": "10.25",
+   "text_for_chars": "ten point two five"
+  },
+  {
+   "input": "100.001",
+   "text_for_chars": "one hundred point zero zero one"
+  },
+  {
+   "input": "2.0",
+   "text_for_chars": "two point zero"
+  },
+  {
+   "input": "0.0",
+   "text_for_chars": "zero point zero"
+  },
+  {
+   "input": "99.99",
+   "text_for_chars": "ninety nine point nine nine"
+  },
+  {
+   "input": ".5",
+   "text_for_chars": ".five"
+  },
+  {
+   "input": "5.",
+   "text_for_chars": "five."
+  },
+  {
+   "input": "1.2.3",
+   "text_for_chars": "1.2.3"
+  },
+  {
+   "input": "3,14",
+   "text_for_chars": "three,fourteen"
+  },
+  {
+   "input": "50%",
+   "text_for_chars": "fifty percent"
+  },
+  {
+   "input": "12.5%",
+   "text_for_chars": "twelve point five percent"
+  },
+  {
+   "input": "100%",
+   "text_for_chars": "one hundred percent"
+  },
+  {
+   "input": "0%",
+   "text_for_chars": "zero percent"
+  },
+  {
+   "input": "5 %",
+   "text_for_chars": "five percent"
+  },
+  {
+   "input": "%5",
+   "text_for_chars": "%five"
+  },
+  {
+   "input": "\u20b9500",
+   "text_for_chars": "five hundred rupees"
+  },
+  {
+   "input": "\u20b9 500",
+   "text_for_chars": "five hundred rupees"
+  },
+  {
+   "input": "\u20b91,50,000",
+   "text_for_chars": "one hundred fifty thousand rupees"
+  },
+  {
+   "input": "Rs 500",
+   "text_for_chars": "Rs five hundred"
+  },
+  {
+   "input": "Rs. 500",
+   "text_for_chars": "Rs. five hundred"
+  },
+  {
+   "input": "Rs.1,000.50",
+   "text_for_chars": "Rs.one thousand point five zero"
+  },
+  {
+   "input": "500 Rs",
+   "text_for_chars": "five hundred Rs"
+  },
+  {
+   "input": "Rs500",
+   "text_for_chars": "Rs five hundred"
+  },
+  {
+   "input": "\u20b999.50",
+   "text_for_chars": "ninety nine point five zero rupees"
+  },
+  {
+   "input": "$100",
+   "text_for_chars": "$100"
+  },
+  {
+   "input": "USD 20",
+   "text_for_chars": "USD twenty"
+  },
+  {
+   "input": "500/-",
+   "text_for_chars": "five hundred/-"
+  },
+  {
+   "input": "Rs. 5 lakh",
+   "text_for_chars": "Rs. five lakh"
+  },
+  {
+   "input": "5 crore",
+   "text_for_chars": "five crore"
+  },
+  {
+   "input": "Rs 2,50,00,000",
+   "text_for_chars": "Rs twenty five million"
+  },
+  {
+   "input": "1999",
+   "text_for_chars": "nineteen ninety nine"
+  },
+  {
+   "input": "1947",
+   "text_for_chars": "nineteen forty seven"
+  },
+  {
+   "input": "1900",
+   "text_for_chars": "nineteen hundred"
+  },
+  {
+   "input": "2024-25",
+   "text_for_chars": "twenty twenty four-twenty five"
+  },
+  {
+   "input": "1857-1947",
+   "text_for_chars": "eighteen fifty seven-nineteen forty seven"
+  },
+  {
+   "input": "3:45",
+   "text_for_chars": "3:45"
+  },
+  {
+   "input": "10:30 PM",
+   "text_for_chars": "10:30 PM"
+  },
+  {
+   "input": "7:05 am",
+   "text_for_chars": "7:05 am"
+  },
+  {
+   "input": "12:00",
+   "text_for_chars": "12:00"
+  },
+  {
+   "input": "23:59",
+   "text_for_chars": "23:59"
+  },
+  {
+   "input": "3.45",
+   "text_for_chars": "three point four five"
+  },
+  {
+   "input": "9:15:30",
+   "text_for_chars": "9:15:30"
+  },
+  {
+   "input": "15/08/1947",
+   "text_for_chars": "15/08/1947"
+  },
+  {
+   "input": "15-08-1947",
+   "text_for_chars": "fifteen-zero eight-nineteen forty seven"
+  },
+  {
+   "input": "15.08.1947",
+   "text_for_chars": "15.08.1947"
+  },
+  {
+   "input": "2024-11-08",
+   "text_for_chars": "twenty twenty four-eleven-zero eight"
+  },
+  {
+   "input": "1/2",
+   "text_for_chars": "1/2"
+  },
+  {
+   "input": "3/4",
+   "text_for_chars": "3/4"
+  },
+  {
+   "input": "12/12",
+   "text_for_chars": "12/12"
+  },
+  {
+   "input": "-5",
+   "text_for_chars": "-five"
+  },
+  {
+   "input": "-100",
+   "text_for_chars": "-one hundred"
+  },
+  {
+   "input": "-3.5",
+   "text_for_chars": "-three point five"
+  },
+  {
+   "input": "+91",
+   "text_for_chars": "+ninety one"
+  },
+  {
+   "input": "+91 98765 43210",
+   "text_for_chars": "+ninety one ninety eight thousand seven hundred sixty five forty three thousand two hundred ten"
+  },
+  {
+   "input": "-0",
+   "text_for_chars": "-zero"
+  },
+  {
+   "input": "5-3",
+   "text_for_chars": "five-three"
+  },
+  {
+   "input": "5 - 3",
+   "text_for_chars": "five - three"
+  },
+  {
+   "input": "10-20",
+   "text_for_chars": "ten-twenty"
+  },
+  {
+   "input": "5kg",
+   "text_for_chars": "five kg"
+  },
+  {
+   "input": "10km",
+   "text_for_chars": "ten km"
+  },
+  {
+   "input": "3rd",
+   "text_for_chars": "third"
+  },
+  {
+   "input": "1st",
+   "text_for_chars": "first"
+  },
+  {
+   "input": "2nd",
+   "text_for_chars": "second"
+  },
+  {
+   "input": "A4",
+   "text_for_chars": "A four"
+  },
+  {
+   "input": "COVID19",
+   "text_for_chars": "COVID nineteen"
+  },
+  {
+   "input": "COVID-19",
+   "text_for_chars": "COVID-nineteen"
+  },
+  {
+   "input": "5G",
+   "text_for_chars": "five G"
+  },
+  {
+   "input": "4K",
+   "text_for_chars": "four K"
+  },
+  {
+   "input": "T20",
+   "text_for_chars": "T twenty"
+  },
+  {
+   "input": "B2B",
+   "text_for_chars": "B two B"
+  },
+  {
+   "input": "24x7",
+   "text_for_chars": "twenty four x seven"
+  },
+  {
+   "input": "100m",
+   "text_for_chars": "one hundred m"
+  },
+  {
+   "input": "x2",
+   "text_for_chars": "x two"
+  },
+  {
+   "input": "3D",
+   "text_for_chars": "three D"
+  },
+  {
+   "input": "J&K",
+   "text_for_chars": "J and K"
+  },
+  {
+   "input": "AT&T",
+   "text_for_chars": "AT and T"
+  },
+  {
+   "input": "Tom & Jerry",
+   "text_for_chars": "Tom and Jerry"
+  },
+  {
+   "input": "Q&A",
+   "text_for_chars": "Q and A"
+  },
+  {
+   "input": "&amp;",
+   "text_for_chars": "and"
+  },
+  {
+   "input": "R&amp;D",
+   "text_for_chars": "R and D"
+  },
+  {
+   "input": "a &nbsp; b",
+   "text_for_chars": "a b"
+  },
+  {
+   "input": "&#65;",
+   "text_for_chars": "A"
+  },
+  {
+   "input": "&#x41;",
+   "text_for_chars": "A"
+  },
+  {
+   "input": "\uff06",
+   "text_for_chars": "and"
+  },
+  {
+   "input": "\ufe60",
+   "text_for_chars": "and"
+  },
+  {
+   "input": "fish&chips",
+   "text_for_chars": "fish and chips"
+  },
+  {
+   "input": "a  &  b",
+   "text_for_chars": "a and b"
+  },
+  {
+   "input": "[noise]",
+   "text_for_chars": ""
+  },
+  {
+   "input": "hello [noise] world",
+   "text_for_chars": "hello world"
+  },
+  {
+   "input": "(laugh) ok",
+   "text_for_chars": "ok"
+  },
+  {
+   "input": "[background_noise] hi",
+   "text_for_chars": "hi"
+  },
+  {
+   "input": "hello (smart phone)",
+   "text_for_chars": "hello (smart phone)"
+  },
+  {
+   "input": "hello [smart phone]",
+   "text_for_chars": "hello [smart phone]"
+  },
+  {
+   "input": "word (a) (b) end",
+   "text_for_chars": "word (a) (b) end"
+  },
+  {
+   "input": "Hello, world.",
+   "text_for_chars": "Hello, world."
+  },
+  {
+   "input": "Hello!  World?",
+   "text_for_chars": "Hello! World?"
+  },
+  {
+   "input": "Wait... what?",
+   "text_for_chars": "Wait... what?"
+  },
+  {
+   "input": "Yes; no: maybe",
+   "text_for_chars": "Yes; no: maybe"
+  },
+  {
+   "input": "A \u2013 B \u2014 C",
+   "text_for_chars": "A \u2013 B \u2014 C"
+  },
+  {
+   "input": "\u201cquoted\u201d and \u2018single\u2019",
+   "text_for_chars": "\u201cquoted\u201d and \u2018single\u2019"
+  },
+  {
+   "input": "it's",
+   "text_for_chars": "it's"
+  },
+  {
+   "input": "O'Neil",
+   "text_for_chars": "O'Neil"
+  },
+  {
+   "input": "(paren) [bracket] {brace}",
+   "text_for_chars": "(paren) [bracket] {brace}"
+  },
+  {
+   "input": "a/b",
+   "text_for_chars": "a/b"
+  },
+  {
+   "input": "a\\b",
+   "text_for_chars": "a\\b"
+  },
+  {
+   "input": "a|b",
+   "text_for_chars": "a|b"
+  },
+  {
+   "input": "a~b",
+   "text_for_chars": "a~b"
+  },
+  {
+   "input": "a`b",
+   "text_for_chars": "a`b"
+  },
+  {
+   "input": "a_b",
+   "text_for_chars": "a_b"
+  },
+  {
+   "input": "a=b",
+   "text_for_chars": "a=b"
+  },
+  {
+   "input": "a^b",
+   "text_for_chars": "a^b"
+  },
+  {
+   "input": "a*b",
+   "text_for_chars": "a*b"
+  },
+  {
+   "input": "a+b",
+   "text_for_chars": "a+b"
+  },
+  {
+   "input": "a<b>c",
+   "text_for_chars": "a<b>c"
+  },
+  {
+   "input": "@home #tag",
+   "text_for_chars": "@home #tag"
+  },
+  {
+   "input": "$5 and 5%",
+   "text_for_chars": "$5 and five percent"
+  },
+  {
+   "input": "hello\u200dworld",
+   "text_for_chars": "helloworld"
+  },
+  {
+   "input": "hello\u200cworld",
+   "text_for_chars": "helloworld"
+  },
+  {
+   "input": "hello\u200bworld",
+   "text_for_chars": "helloworld"
+  },
+  {
+   "input": "\ufeffhello",
+   "text_for_chars": "hello"
+  },
+  {
+   "input": "hel\u00adlo",
+   "text_for_chars": "hello"
+  },
+  {
+   "input": "hello\u2060world",
+   "text_for_chars": "helloworld"
+  },
+  {
+   "input": "hello\u00a0world",
+   "text_for_chars": "hello world"
+  },
+  {
+   "input": "hello\tworld\nagain\r\nnow",
+   "text_for_chars": "hello world again now"
+  },
+  {
+   "input": "  spaced   out  ",
+   "text_for_chars": "spaced out"
+  },
+  {
+   "input": "Dr. Smith",
+   "text_for_chars": "Dr. Smith"
+  },
+  {
+   "input": "GPU",
+   "text_for_chars": "GPU"
+  },
+  {
+   "input": "README.md",
+   "text_for_chars": "README.md"
+  },
+  {
+   "input": "The GPU runs fast.",
+   "text_for_chars": "The GPU runs fast."
+  },
+  {
+   "input": "Hello World",
+   "text_for_chars": "Hello World"
+  },
+  {
+   "input": "HELLO WORLD",
+   "text_for_chars": "HELLO WORLD"
+  },
+  {
+   "input": "hello world",
+   "text_for_chars": "hello world"
+  },
+  {
+   "input": "Cafe\u0301",
+   "text_for_chars": "Caf\u00e9"
+  },
+  {
+   "input": "caf\u00e9",
+   "text_for_chars": "caf\u00e9"
+  },
+  {
+   "input": "na\u00efve",
+   "text_for_chars": "na\u00efve"
+  },
+  {
+   "input": "\u00dcber",
+   "text_for_chars": "\u00dcber"
+  },
+  {
+   "input": "\u00e9\u00e8\u00ea",
+   "text_for_chars": "\u00e9\u00e8\u00ea"
+  },
+  {
+   "input": "\u0141\u00f3d\u017a",
+   "text_for_chars": "\u0141\u00f3d\u017a"
+  },
+  {
+   "input": "M\u00fcnchen",
+   "text_for_chars": "M\u00fcnchen"
+  },
+  {
+   "input": "\u00d1and\u00fa",
+   "text_for_chars": "\u00d1and\u00fa"
+  },
+  {
+   "input": "\u65e5\u672c\u8a9e",
+   "text_for_chars": "\u65e5\u672c\u8a9e"
+  },
+  {
+   "input": "emoji \ud83d\ude00",
+   "text_for_chars": "emoji \ud83d\ude00"
+  },
+  {
+   "input": "\u041f\u0440\u0438\u0432\u0435\u0442",
+   "text_for_chars": "\u041f\u0440\u0438\u0432\u0435\u0442"
+  },
+  {
+   "input": "\u0645\u0631\u062d\u0628\u0627",
+   "text_for_chars": "\u0645\u0631\u062d\u0628\u0627"
+  },
+  {
+   "input": "\u0928\u092e\u0938\u094d\u0924\u0947",
+   "text_for_chars": "\u0928\u092e\u0938\u094d\u0924\u0947"
+  },
+  {
+   "input": "\u0a38\u0a24 \u0a38\u0a4d\u0a30\u0a40 \u0a05\u0a15\u0a3e\u0a32",
+   "text_for_chars": "\u0a38\u0a24 \u0a38\u0a4d\u0a30\u0a40 \u0a05\u0a15\u0a3e\u0a32"
+  },
+  {
+   "input": "",
+   "text_for_chars": ""
+  },
+  {
+   "input": "   ",
+   "text_for_chars": ""
+  },
+  {
+   "input": " \t\n ",
+   "text_for_chars": ""
+  },
+  {
+   "input": "...",
+   "text_for_chars": "..."
+  },
+  {
+   "input": "!?",
+   "text_for_chars": "!?"
+  },
+  {
+   "input": ", ; :",
+   "text_for_chars": ", ; :"
+  },
+  {
+   "input": "a",
+   "text_for_chars": "a"
+  },
+  {
+   "input": "I",
+   "text_for_chars": "I"
+  },
+  {
+   "input": "A.",
+   "text_for_chars": "A."
+  },
+  {
+   "input": ".a",
+   "text_for_chars": ".a"
+  },
+  {
+   "input": "The quick review is done and the branch is ready for you to read. Most of the work was small, and the tests all passed on the first run.",
+   "text_for_chars": "The quick review is done and the branch is ready for you to read. Most of the work was small, and the tests all passed on the first run."
+  },
+  {
+   "input": "Open src/tts/manager.rs:684 and check the retry loop before you merge.",
+   "text_for_chars": "Open src/tts/manager.rs:six hundred eighty four and check the retry loop before you merge."
+  },
+  {
+   "input": "Run cargo test with the --workspace flag, then run bun run lint.",
+   "text_for_chars": "Run cargo test with the --workspace flag, then run bun run lint."
+  },
+  {
+   "input": "Type /review to start a code review, or /help to see the other commands.",
+   "text_for_chars": "Type /review to start a code review, or /help to see the other commands."
+  },
+  {
+   "input": "The function parseHTTPRequest calls read_header and returns a Header.",
+   "text_for_chars": "The function parseHTTPRequest calls read_header and returns a Header."
+  },
+  {
+   "input": "Set HANDY_TTS_WORKER to the worker path if the default is wrong.",
+   "text_for_chars": "Set HANDY_TTS_WORKER to the worker path if the default is wrong."
+  },
+  {
+   "input": "The config lives in ~/.config/handy/settings.json and the log in handy.log.",
+   "text_for_chars": "The config lives in ~/.config/handy/settings.json and the log in handy.log."
+  },
+  {
+   "input": "Upgrade from v0.10.0 to v1.2.3 before the next release.",
+   "text_for_chars": "Upgrade from v0.10.0 to v1.2.3 before the next release."
+  },
+  {
+   "input": "See https://github.com/cjpais/Handy for the upstream project.",
+   "text_for_chars": "See https://github.com/cjpais/Handy for the upstream project."
+  },
+  {
+   "input": "The GPU runs the vocoder, the NPU runs the encoder, and the CPU runs the rest.",
+   "text_for_chars": "The GPU runs the vocoder, the NPU runs the encoder, and the CPU runs the rest."
+  },
+  {
+   "input": "Use kubectl apply with the manifest in deploy/app.yaml, then check the pods.",
+   "text_for_chars": "Use kubectl apply with the manifest in deploy/app.yaml, then check the pods."
+  },
+  {
+   "input": "The model reads 24 kHz audio and writes 44.1 kHz output in about 0.04 seconds per second.",
+   "text_for_chars": "The model reads twenty four kHz audio and writes forty four point one kHz output in about zero point zero four seconds per second."
+  },
+  {
+   "input": "Call fixtureBase() from the setup step, then delete build/dist/old.rpm by hand.",
+   "text_for_chars": "Call fixtureBase() from the setup step, then delete build/dist/old.rpm by hand."
+  },
+  {
+   "input": "I will check back in ten minutes and tell you what changed.",
+   "text_for_chars": "I will check back in ten minutes and tell you what changed."
+  },
+  {
+   "input": "src/tts/manager.rs",
+   "text_for_chars": "src/tts/manager.rs"
+  },
+  {
+   "input": "kubectl",
+   "text_for_chars": "kubectl"
+  },
+  {
+   "input": "--dry-run",
+   "text_for_chars": "--dry-run"
+  },
+  {
+   "input": "v1.2.3",
+   "text_for_chars": "v1.2.3"
+  },
+  {
+   "input": "fixture_base",
+   "text_for_chars": "fixture_base"
+  },
+  {
+   "input": "https://github.com/x/y",
+   "text_for_chars": "https://github.com/x/y"
+  }
+ ]
+}

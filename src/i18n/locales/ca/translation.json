@@ -3,20 +3,35 @@
     "settings": "Configuració...",
     "checkUpdates": "Comprova si hi ha actualitzacions...",
     "copyLastTranscript": "Copia l'última transcripció",
-    "unloadModel": "Allibera el model de la memòria",
+    "unloadModel": "Allibera el model de transcripció de la memòria",
+    "cleanup": "Model de postprocessament",
+    "cleanupReady": "a punt",
+    "cleanupNotLoaded": "no carregat",
+    "cleanupLoading": "s'està carregant",
+    "cleanupError": "error",
+    "noCleanupModel": "Cap model de postprocessament",
+    "unloadPostProcessingModel": "Allibera el model de postprocessament de la memòria",
     "model": "Model",
+    "transcriptionModel": "Model de transcripció",
     "quit": "Surt",
     "cancel": "Cancel·la",
     "secureInputWarning": "⚠ Dreceres blocades per l'entrada segura",
     "language": "Llengua",
     "autoLanguage": "Automàtica",
-    "otherLanguages": "Altres llengües"
+    "otherLanguages": "Altres llengües",
+    "ttsModel": "Model de text a veu",
+    "ttsUnload": "Allibera el model de text a veu de la memòria",
+    "ttsStarting": "S'està iniciant",
+    "ttsReady": "Carregat",
+    "ttsStopping": "S'està aturant",
+    "ttsFailed": "Ha fallat",
+    "ttsUnloaded": "Alliberat"
   },
   "sidebar": {
     "general": "General",
-    "models": "Models",
+    "models": "Models de transcripció",
     "advanced": "Avançat",
-    "postProcessing": "Postprocessament",
+    "postProcessing": "Models de postprocessament",
     "history": "Historial",
     "debug": "Depuració",
     "about": "Quant a"
@@ -144,6 +159,10 @@
       },
       "model": "Model",
       "showAll": "Mostra els {{count}} models",
+      "noPick": "Cap model recomanat cobreix {{languages}}.",
+      "noPickNext": "Mostra tots els models o torna enrere i canvia els teus idiomes.",
+      "showAllButton": "Mostra tots els models",
+      "pickOne": "Tria un model",
       "download": "Baixa {{size}}",
       "downloadInstead": "Baixa {{size}} en lloc seu",
       "pauses": "{{name}} es posa en pausa al {{percent}} %",
@@ -306,6 +325,8 @@
     "alreadyAdded_other": "{{languages}} ja estan afegides."
   },
   "modelSelector": {
+    "status": "Estat del model: {{modelName}}",
+    "size": "{{size}} MiB",
     "custom": "Personalitzat",
     "streaming": "En temps real",
     "active": "Actiu",
@@ -336,10 +357,14 @@
         "none": "No hi ha cap drecera configurada",
         "notFound": "No s'ha trobat la drecera",
         "pressKeys": "Premeu les tecles...",
+        "unassigned": "Sense assignar",
         "bindings": {
           "transcribe": {
             "name": "Drecera de transcripció",
             "description": "La drecera de teclat per enregistrar i transcriure la vostra veu."
+          },
+          "transcribe_raw": {
+            "name": "Drecera del text en brut"
           },
           "cancel": {
             "name": "Drecera de cancel·lació",
@@ -348,6 +373,10 @@
           "transcribe_with_post_process": {
             "name": "Drecera de postprocessament",
             "description": "Opcional: una drecera específica que sempre aplica postprocessament amb IA a la transcripció."
+          },
+          "read_aloud": {
+            "name": "Drecera de lectura en veu alta",
+            "description": "Obre la finestra emergent i llegeix en veu alta el text copiat."
           }
         },
         "errors": {
@@ -517,8 +546,8 @@
           }
         },
         "position": {
-          "title": "Posició de la finestra superposada",
-          "description": "On apareix la finestra superposada a la pantalla durant l'enregistrament i la transcripció.",
+          "title": "Posició de la finestra flotant",
+          "description": "«A dalt» deixa lliure la part inferior de la pantalla, útil quan dictes en un terminal.",
           "options": {
             "bottom": "A baix",
             "top": "A dalt"
@@ -628,8 +657,8 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "Drecera de teclat"
+      "provider": {
+        "title": "Proveïdor"
       },
       "api": {
         "title": "API",
@@ -688,10 +717,76 @@
         "cancel": "Cancel·leu",
         "selectToEdit": "Seleccioneu una indicació more amunt per veure'n i editar-ne els detalls.",
         "createFirst": "Feu clic a «Creeu una indicació nova» més amunt per crear la primera indicació de postprocessament."
+      },
+      "localLlm": {
+        "noCleanupModel": "Cap model de postprocessament",
+        "s1Description": "Utilitza els controls d'estil, estructura i context.",
+        "plainDescription": "Utilitza la indicació del Handy seleccionada.",
+        "groupTitle": "Model local",
+        "size": "{{size}} MiB",
+        "downloaded": "Baixat",
+        "use": "Utilitza",
+        "download": "Baixa",
+        "downloading": "S'està baixant {{percent}}%",
+        "delete": "Suprimeix",
+        "deleteConfirm": "Vols suprimir {{name}}? Allibera {{size}}.",
+        "deleteConfirmAction": "Suprimeix el model",
+        "status": {
+          "title": "Estat",
+          "description": "El model es carrega quan comença un dictat amb postprocessament i s'allibera de la memòria passat el temps d'espera d'alliberament del model.",
+          "notLoaded": "No carregat",
+          "loading": "S'està carregant",
+          "ready": "A punt",
+          "error": "Error: {{reason}}"
+        },
+        "styling": {
+          "title": "Estil",
+          "description": "Com de formal sona el text postprocessat.",
+          "options": {
+            "casual": "Informal",
+            "semi_casual": "Semiinformal",
+            "semi_formal": "Semiformal",
+            "formal": "Formal"
+          }
+        },
+        "structure": {
+          "title": "Estructura",
+          "description": "Paràgrafs en prosa o llistes en Markdown.",
+          "options": {
+            "prose": "Prosa",
+            "lists": "Llistes"
+          }
+        },
+        "context": {
+          "title": "Context",
+          "description": "Text general o un format de correu electrònic.",
+          "options": {
+            "general": "General",
+            "email": "Correu electrònic"
+          }
+        },
+        "licenseNotes": {
+          "s1Name": "Apache-2.0 amb una condició addicional: el model s'ha d'anomenar sempre \"S1-mini\" de \"Superwhisper\", amb aquestes majúscules i minúscules exactes."
+        },
+        "promptRequired": "Seleccioneu una indicació del Handy no buida al grup Indicacions. Fins aleshores, el postprocessament s'omet i s'utilitza la transcripció en brut.",
+        "promptHidden": "Aquest model utilitza la seva pròpia indicació fixa i els paràmetres d'Estil, Estructura i Context de dalt, de manera que l'editor d'indicacions està amagat."
       }
     },
     "history": {
       "title": "Historial",
+      "cleaned": "Postprocessat",
+      "cleanedWith": "Postprocessat amb {{model}}",
+      "raw": "En brut",
+      "copyRaw": "Copia el text en brut",
+      "copyPostProcessed": "Copia el text postprocessat",
+      "compare": {
+        "title": "Vista de comparació",
+        "diff": "Diferències",
+        "side_by_side": "Un al costat de l'altre",
+        "stacked": "Apilat"
+      },
+      "clearHistory": "Esborra l'historial",
+      "clearConfirmation": "Voleu suprimir {{count}} entrades de l'historial sense destacar i {{recordings}} enregistraments? Les entrades destacades i els seus enregistraments es conservaran.",
       "openFolder": "Obriu la carpeta d'enregistraments",
       "loading": "S'està carregant l'historial...",
       "empty": "Encara no hi ha transcripcions. Comenceu a enregistrar per crear l'historial!",
@@ -701,6 +796,8 @@
       "unsave": "Treu de les desades",
       "delete": "Suprimeix l'entrada",
       "deleteError": "No s'ha pogut suprimir l'entrada. Torneu-ho a provar.",
+      "deleteConfirm": "Vols suprimir aquesta entrada i la seva gravació?",
+      "deleteConfirmAction": "Suprimeix l'entrada",
       "retranscribe": "Torneu a transcriure",
       "cancelTranscription": "Cancel·la la transcripció",
       "transcribing": "S'està transcrivint...",
@@ -716,7 +813,14 @@
       "showMore": "Mostra'n més",
       "showLess": "Mostra'n menys",
       "dropTitle": "Deixa anar per transcriure",
-      "dropDescription": "Apareixerà a l'historial."
+      "dropDescription": "Apareixerà a l'historial.",
+      "retentionConfirm": {
+        "preserveLimit": "Voleu suprimir les entrades sense estrella més enllà de les {{count}} més recents i els seus enregistraments? Les entrades amb estrella i els fitxers transcrits es conserven.",
+        "days3": "Voleu suprimir les entrades sense estrella de fa més de 3 dies i els seus enregistraments? Les entrades amb estrella i els fitxers transcrits es conserven.",
+        "weeks2": "Voleu suprimir les entrades sense estrella de fa més de 2 setmanes i els seus enregistraments? Les entrades amb estrella i els fitxers transcrits es conserven.",
+        "months3": "Voleu suprimir les entrades sense estrella de fa més de 3 mesos i els seus enregistraments? Les entrades amb estrella i els fitxers transcrits es conserven.",
+        "action": "Suprimeix les entrades"
+      }
     },
     "debug": {
       "title": "Depuració",
@@ -927,9 +1031,15 @@
     "open": "Obre",
     "copy": "Copia",
     "clear": "Neteja",
-    "noOptionsFound": "No s'ha trobat cap opció"
+    "noOptionsFound": "No s'ha trobat cap opció",
+    "cancel": "Cancel·la"
   },
   "errors": {
+    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
+    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
+    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudClipboardUnreadableTitle": "Porta-retalls illegible",
+    "readAloudClipboardUnreadable": "No s'ha pogut llegir el text del porta-retalls.",
     "loadDirectory": "Error en carregar el directori: {{error}}",
     "micPermissionDeniedTitle": "Accés al micròfon denegat",
     "micPermissionDenied": {
@@ -957,7 +1067,9 @@
     "filePostProcessFailedTitle": "Transcrit sense postprocessament",
     "filePostProcessFailed": "El postprocessament no ha acabat, així que la transcripció s'ha desat tal qual.",
     "fileTranscriptionFailedTitle": "La transcripció del fitxer ha fallat",
-    "transcriptionFailedTitle": "La transcripció ha fallat"
+    "transcriptionFailedTitle": "La transcripció ha fallat",
+    "vocabularyInvalidTitle": "El fitxer de vocabulari té un error",
+    "vocabularyInvalid": "La lectura en veu alta ha fet servir el vocabulari integrat perquè no s'ha pogut fer servir el vostre fitxer de vocabulari. Corregiu el fitxer indicat a sota per utilitzar les vostres entrades."
   },
   "notices": {
     "errorOne": "{{n}} error",
@@ -980,9 +1092,10 @@
     }
   },
   "overlay": {
-    "transcribing": "S'està transcrivint...",
-    "processing": "S'està processant...",
-    "loadingModel": "S'està carregant el model..."
+    "transcribing": "S'està transcrivint",
+    "processing": "S'està netejant",
+    "loadingModel": "S'està carregant el model",
+    "cancel": "Cancel·la el dictat"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} pot estar blocant 1 drecera",
@@ -994,5 +1107,345 @@
     "learnMore": "Com es resol",
     "recorderBlocked": "Ara no se'n poden enregistrar dreceres: l'entrada segura del macOS bloca els esdeveniments de tecla. Resol primer l'avís d'entrada segura.",
     "dismiss": "Descarta"
+  },
+  "tts": {
+    "ratings": {
+      "quality": "Qualitat",
+      "speed": "Velocitat",
+      "recommended": "Recomanat",
+      "tooltip": "Primer àudio en {{firstAudio}} s, {{faster}}x més ràpid que en temps real, es carrega en {{load}} s"
+    },
+    "devices": {
+      "auto": "Automàtic",
+      "cpu": "CPU",
+      "gpu": "GPU",
+      "npu": "NPU"
+    },
+    "errors": {
+      "notDownloaded": "Baixa aquest model abans de llegir.",
+      "audio": "No s'ha pogut obrir el dispositiu de sortida.",
+      "text": "No s'ha pogut preparar aquest text.",
+      "clock": "La sincronització de la reproducció ha fallat.",
+      "worker": "El procés de text a veu s'ha aturat.",
+      "unavailable": "El text a veu no està disponible.",
+      "notReady": "El text a veu encara s'està iniciant.",
+      "generic": "El text a veu ha fallat.",
+      "memory": "Cal almenys 1 GiB de memòria disponible.",
+      "gatedToken": "Les veus de Pocket requereixen un testimoni de Hugging Face i haver acceptat les condicions de les veus.",
+      "model": "Trieu un model de text a veu disponible.",
+      "device": "Aquest dispositiu no està disponible.",
+      "npuDriverTooOld": "El controlador de la NPU és massa antic. Actualitzeu-lo o trieu un altre dispositiu.",
+      "selection": "No s'ha pogut aplicar la selecció.",
+      "busy": "Ja hi ha una operació de text a veu en curs.",
+      "cancelled": "S'ha cancel·lat la lectura.",
+      "clipboard": "No s'ha pogut llegir el text del porta-retalls.",
+      "deviceNotSupported": "Aquest model no admet el dispositiu seleccionat.",
+      "deviceUnavailable": "El dispositiu seleccionat no està disponible.",
+      "download": "La baixada del model ha fallat.",
+      "driverDiscovery": "No s'ha pogut detectar el controlador de la NPU.",
+      "failed": "El procés ha fallat tres vegades. Seleccioneu un model per tornar-ho a provar.",
+      "integrity": "Un fitxer del model no ha superat la comprovació d'integritat.",
+      "invalidControls": "Trieu una velocitat de 0.5x a 2.0x i un to de -6 a +6 semitons.",
+      "invalidRatings": "Les valoracions del model falten o no són vàlides.",
+      "invalidVoice": "Trieu una veu per al model seleccionat.",
+      "outputUnavailable": "El dispositiu de sortida no està disponible.",
+      "path": "El directori d'emmagatzematge del text a veu no està disponible.",
+      "prepareFailed": "El dispositiu seleccionat no ha pogut preparar aquest model.",
+      "protocol": "El procés de text a veu ha retornat una resposta no vàlida.",
+      "registry": "El registre de models de text a veu no és vàlid.",
+      "settings": "No s'han pogut desar els paràmetres del text a veu.",
+      "start": "No s'ha pogut iniciar el procés de text a veu.",
+      "starting": "El procés de text a veu s'està iniciant.",
+      "tokenRejected": "S'ha rebutjat el testimoni de Hugging Face. Comproveu l'accés a les condicions de les veus de Pocket.",
+      "tokenRequired": "Definiu un testimoni de Hugging Face i accepteu les condicions de les veus de Pocket abans de baixar veus.",
+      "unknownModel": "El model de text a veu seleccionat és desconegut.",
+      "window": "No s'ha pogut obrir la finestra de lectura en veu alta.",
+      "accessDenied": "S'ha denegat l'accés als fitxers del model.",
+      "localIo": "No s'han pogut llegir ni escriure els fitxers del model.",
+      "downloading": "Aquest model ja s'està baixant."
+    },
+    "runOn": "Executa a",
+    "preparing": "S'està preparant per a {{device}}: {{graph}}",
+    "buffering": "S'està emmagatzemant a la memòria intermèdia",
+    "title": "Lectura en veu alta",
+    "textLabel": "Text a llegir",
+    "placeholder": "Enganxa el text a llegir",
+    "play": "Reprodueix",
+    "pause": "Pausa",
+    "stop": "Atura",
+    "close": "Tanca",
+    "readClipboard": "Llegeix el porta-retalls",
+    "editText": "Edita el text",
+    "progress": "Progrés",
+    "time": "{{elapsed}} s transcorreguts, {{remaining}} s restants",
+    "openModels": "Models de text a veu",
+    "outputFallback": "S'està utilitzant el dispositiu de sortida predeterminat",
+    "states": {
+      "waiting": "En espera",
+      "starting": "S'està iniciant",
+      "buffering": "S'està emmagatzemant a la memòria intermèdia",
+      "playing": "S'està reproduint",
+      "paused": "En pausa",
+      "finished": "Finalitzat",
+      "error": "Error"
+    },
+    "modelsTitle": "Models de text a veu",
+    "modelsSubtitle": "Trieu un model de veu. Les xifres de velocitat s'han mesurat a l'ordinador del desenvolupador; les vostres poden diferir.",
+    "downloaded": "Baixat",
+    "availableToDownload": "Disponible per baixar",
+    "recommended": "Recomanat",
+    "downloading": "S'està baixant",
+    "needsToken": "Necessita un testimoni de Hugging Face",
+    "tokenSet": "Testimoni definit",
+    "active": "Actiu",
+    "use": "Utilitza",
+    "download": "Baixa",
+    "delete": "Suprimeix",
+    "deleteConfirm": "Vols suprimir {{name}}? Allibera {{size}}. El vocabulari i l'historial es conserven.",
+    "deleteConfirmSelected": "La lectura en veu alta deixa de funcionar fins que triïs un altre model.",
+    "deleteConfirmAction": "Suprimeix el model",
+    "cancel": "Cancel·la",
+    "token": "Testimoni de Hugging Face",
+    "tokenHelp": "Només cal per a les veus restringides de Pocket després d'acceptar les condicions de les veus a Hugging Face. El testimoni es manté a la memòria i s'esborra quan es reinicia el Handy.",
+    "clearToken": "Esborra el testimoni",
+    "showToken": "Mostra el testimoni",
+    "hideToken": "Amaga el testimoni",
+    "saveToken": "Defineix el testimoni",
+    "model": "Model",
+    "voice": "Veu",
+    "preview": "Escolta la veu",
+    "speed": "Velocitat: {{value}}x",
+    "pitch": "To: {{value}} semitons",
+    "output": "Dispositiu de sortida",
+    "sameAsHandy": "Igual que el Handy",
+    "readCode": "Llegeix els blocs de codi",
+    "technicalReading": "Lectura tècnica",
+    "fullPaths": "Llegeix els camins complets",
+    "fullLinks": "Llegeix els enllaços complets",
+    "pocketAttribution": "Les veus de Pocket TTS tenen llicència CC-BY-4.0. Seguiu les condicions d'atribució i consentiment de cada veu a la fitxa del model.",
+    "supertonicRestrictions": "Supertonic 3 utilitza OpenRAIL-M. Reviseu-ne les restriccions d'ús a la fitxa del model.",
+    "kokoroAttribution": "Els pesos del model Kokoro utilitzen la llicència Apache-2.0.",
+    "paradeeAttribution": "Paradee-8M v1.2 de Sahil Mahendrakar, destil·lat de Kokoro-82M (hexgrad). Llicència Apache-2.0.",
+    "phononAttribution": "Phonon 31m English de Gradium (Apache-2.0), basat en Pocket TTS i el còdec Mimi de Kyutai (CC-BY-4.0). Veus de gradium/phonon-voices (Apache-2.0).",
+    "indicTinyEnglishAttribution": "Indic Tiny TTS (English) de Sulabh Katiyar, CC-BY-4.0. Veus entrenades amb LIMMITS 2024 (SYSPIN, Indian Institute of Science, Bangalore, SPIRE Lab), CC-BY-4.0. La font no documenta el consentiment dels locutors per a la publicació. Vocoder: Vocos de Charactr Inc., MIT.",
+    "indicTinyHindiAttribution": "Indic Tiny TTS (Hindi) de Sulabh Katiyar, CC-BY-4.0, entrenat amb el conjunt de dades AI4Bharat Rasa (CC-BY-4.0; Varadhan, Sankar, Raju i Khapra, INTERSPEECH 2024). Vocoder: Vocos de Charactr Inc., MIT.",
+    "indicTinyPunjabiAttribution": "Indic Tiny TTS (Punjabi) de Sulabh Katiyar, CC-BY-4.0, entrenat amb el conjunt de dades AI4Bharat Rasa (CC-BY-4.0; Varadhan, Sankar, Raju i Khapra, INTERSPEECH 2024). Vocoder: Vocos de Charactr Inc., MIT.",
+    "status": {
+      "failed": "Ha fallat",
+      "ready": "A punt",
+      "starting": "S'està iniciant",
+      "stopping": "S'està aturant",
+      "unloaded": "Alliberat"
+    },
+    "previewSentence": "Reading clearly, one phrase at a time.",
+    "description": {
+      "pocket-en": "Veus angleses expressives amb la millor puntuació d'escolta.",
+      "supertonic-3": "Síntesi ràpida en anglès amb execució a la CPU, la GPU i la NPU.",
+      "kokoro-82m-int8": "Veus angleses compactes d'un model INT8.",
+      "paradee-8m-int8": "Veus angleses molt petites i ràpides d'un model destil·lat de Kokoro.",
+      "phonon-31m-en": "Veus angleses petites i naturals basades en Pocket TTS, amb 26 veus.",
+      "indic-tiny-en": "Veus petites d'anglès indi, femenina i masculina.",
+      "indic-tiny-hi": "Veus petites d'hindi, femenina i masculina. Les paraules angleses es lletregen lletra per lletra.",
+      "indic-tiny-pa": "Veus petites de panjabi (gurmukhi), femenina i masculina. Les paraules angleses es lletregen lletra per lletra."
+    },
+    "voiceCount": "{{count}} veus",
+    "downloadProgress": "Progrés de la baixada del model",
+    "settingsTitle": "Text a veu",
+    "speedLabel": "Velocitat",
+    "pitchLabel": "To",
+    "help": {
+      "model": "Trieu un model de text a veu baixat.",
+      "voice": "Trieu una veu per a aquest model i escolteu-la.",
+      "speed": "Ajusteu la velocitat de lectura del text.",
+      "pitch": "Ajusteu el to de la veu en semitons.",
+      "output": "Trieu on es reprodueix l'àudio de la lectura en veu alta.",
+      "readCode": "Inclou els blocs de codi delimitats en llegir.",
+      "technicalReading": "Pronuncia camins, noms de fitxer, opcions i noms de codi sencers, amb el vostre fitxer de vocabulari.",
+      "fullPaths": "Llegeix totes les carpetes d'un camí. Desactivat, només llegeix el nom del fitxer.",
+      "fullLinks": "Llegeix l'adreça web sencera. Desactivat, només diu el nom del lloc."
+    },
+    "tabs": {
+      "settings": "Configuració",
+      "history": "Historial",
+      "vocabulary": "Vocabulari"
+    },
+    "history": {
+      "title": "Configuració de l'historial",
+      "reading": "Paraules escrites amb el que s'ha dit",
+      "hint": "Arrossegueu sobre les paraules per seleccionar un fragment i corregir com s'ha llegit.",
+      "empty": "Encara no s'ha llegit res en veu alta. Les lectures que reproduïu apareixen aquí.",
+      "limit": {
+        "title": "Límit de l'historial",
+        "description": "Màxim de lectures que es conserven a l'historial",
+        "entries": "lectures"
+      },
+      "retention": {
+        "title": "Supressió automàtica",
+        "description": "Suprimeix també automàticament les lectures més antigues",
+        "keepNothing": "No en conservis mai",
+        "keepLimit": "Conserva les {{count}} últimes",
+        "days3": "Al cap de 3 dies",
+        "weeks2": "Al cap de 2 setmanes",
+        "months3": "Al cap de 3 mesos"
+      },
+      "clear": {
+        "title": "Esborra l'historial",
+        "description": "Elimina totes les lectures desades. El vostre vocabulari no canvia.",
+        "confirmation": "Voleu eliminar les {{count}} lectures desades? El vostre vocabulari no canvia."
+      },
+      "retentionConfirm": {
+        "message_one": "Voleu suprimir ara {{count}} lectura desada? El vostre vocabulari no canvia.",
+        "message": "Voleu suprimir ara {{count}} lectures desades? El vostre vocabulari no canvia.",
+        "action": "Suprimeix les lectures"
+      }
+    },
+    "vocabulary": {
+      "columns": {
+        "written": "Escrit",
+        "spoken": "Pronunciat",
+        "kind": "Tipus",
+        "voices": "Veus",
+        "match": "Coincidència",
+        "enabled": "Actiu",
+        "actions": "Accions"
+      },
+      "kinds": {
+        "symbol": "Símbol",
+        "extension": "Extensió",
+        "term": "Terme",
+        "acronym": "Acrònim"
+      },
+      "voices": {
+        "all": "Totes les veus",
+        "except": "excepte {{names}}",
+        "add": "+ veu"
+      },
+      "origins": {
+        "builtin": "Integrat",
+        "owner": "Teu"
+      },
+      "skipped": "(omès)",
+      "buttons": {
+        "add": "Afegeix una entrada",
+        "edit": "Edita",
+        "listen": "Escolta",
+        "delete": "Suprimeix",
+        "reset": "Restableix el valor per defecte",
+        "save": "Desa",
+        "cancel": "Cancel·la"
+      },
+      "match": {
+        "whole": "Paraula sencera",
+        "anywhere": "A qualsevol lloc d'una paraula",
+        "prefix": "Inici d'una paraula",
+        "suffix": "Final d'una paraula",
+        "regex": "Patró",
+        "caseSensitive": "Distingeix majúscules",
+        "extension": "Final d'un nom de fitxer",
+        "symbol": "A qualsevol lloc",
+        "acronym": "Paraula sencera o part d'un nom"
+      },
+      "filter": "Cerca en el text escrit o el parlat",
+      "toggle": "Usa {{written}}",
+      "editTitle": "Edita l'entrada",
+      "fields": {
+        "skip": "Omet",
+        "appliesTo": "S'aplica a"
+      },
+      "empty": "Cap entrada coincideix amb el filtre.",
+      "deleteConfirmation": "Vols suprimir {{written}} del vocabulari? No es pot desfer.",
+      "resetConfirm": "Vols restablir {{written}} a la lectura integrada? La teva entrada se suprimeix.",
+      "errors": {
+        "changed": "El fitxer de vocabulari ha canviat al disc. S'ha tornat a carregar la taula; torna a fer el canvi.",
+        "fileInvalid": "El teu fitxer de vocabulari té un error i no es pot editar aquí: {{message}}",
+        "invalidEdit": "No s'ha pogut desar aquesta entrada: {{message}}",
+        "tooLarge": "El fitxer de vocabulari superaria 1 MiB, així que no s'ha desat res.",
+        "io": "No s'ha pogut escriure el fitxer de vocabulari: {{message}}",
+        "voicesChanged": "El vocabulari ha canviat mentre esperava, de manera que el canvi de veus no s'ha aplicat. Torna a triar les veus."
+      },
+      "problems": {
+        "shadowed": "Mai s'aplica: sempre guanya una entrada de prioritat més alta",
+        "unreachable": "Mai s'aplica: {{reason}}",
+        "disabled": "Desactivada"
+      },
+      "unreachable": {
+        "containsSpace": "un terme es compara paraula per paraula, així que el seu text no pot contenir espais",
+        "endsWithPunctuation": "la puntuació al final d'una paraula se separa abans de comparar els termes",
+        "notOneCharacter": "un símbol és exactament un caràcter",
+        "extensionNotAlphanumeric": "una extensió només conté lletres i dígits",
+        "neverMatches": "no canvia com es llegeix el seu exemple"
+      },
+      "derive": {
+        "unchanged": "Les paraules dites no han canviat, no hi ha res per desar.",
+        "severalWords": "El canvi afecta més d'una paraula escrita. Corregeix una paraula cada vegada.",
+        "notExplained": "Cap regla única fa que el text es llegeixi així.",
+        "invalid": "No es pot desar: {{detail}}"
+      },
+      "check": {
+        "title": "Comprova amb totes les veus",
+        "playAll": "Reprodueix-ho tot",
+        "playing": "S'està reproduint {{model}}",
+        "checking": "S'està comprovant cada veu...",
+        "heardRight": "s'ha entès bé",
+        "missed": "no s'ha entès: {{heard}}",
+        "failed": "no s'ha pogut comprovar: {{error}}",
+        "row": "{{model}}: {{outcome}}",
+        "advisory": "Algunes veus no ho han llegit bé. Encara ho pots desar.",
+        "saveAllAnyway": "Desa per a totes les veus igualment",
+        "savePassedOnly": "Desa només per a les veus que han passat",
+        "pickOne": "Tria una veu",
+        "dictating": "Hi ha un dictat en curs. Torna a comprovar-ho quan acabi.",
+        "transcribeFailed": "La transcripció de veu no ha pogut transcriure la veu."
+      },
+      "filters": {
+        "voice": "Veu",
+        "kind": "Tipus",
+        "source": "Origen",
+        "all": "Tots",
+        "changed": "Canviat per tu",
+        "onlyProblems": "Només problemes"
+      },
+      "defaultLabel": "per defecte:",
+      "defaultLabelFor": "per defecte per a {{voices}}:"
+    },
+    "correction": {
+      "add": "Afegeix una correcció",
+      "start": "Afegeix una correcció",
+      "writtenText": "Text escrit",
+      "next": "Següent",
+      "title": "Corregeix una lectura",
+      "selected": "Seleccionat",
+      "spokenAs": "Es diu com",
+      "shouldSay": "Hauria de dir",
+      "savesAs": "Es desa com",
+      "deriving": "Calculant la regla...",
+      "exactOnly": "Només aquest text exacte",
+      "chooseScope": "Tria on s'aplica",
+      "scopeRequired": "Tria Totes les veus o una veu abans de desar.",
+      "acronymStyle": "Estil de sigles per veu",
+      "style": {
+        "spaced": "Lletres separades (C L I)",
+        "capitals": "Majúscules (CLI)",
+        "inherit": "Igual que totes les veus"
+      },
+      "reach": {
+        "extension": "afecta tots els fitxers {{extension}}",
+        "acronym": "afecta la sigla {{acronym}} a tot arreu",
+        "term": "afecta {{term}} a tot arreu",
+        "symbol": "afecta {{symbol}} dins de cada paraula tècnica",
+        "exact": "només {{text}}"
+      },
+      "savesAsFormat": "{{written}} -> \"{{spoken}}\" · {{reach}}",
+      "microphone": {
+        "idle": "Digues-ho en lloc d'escriure-ho",
+        "recording": "Atura i omple el que has dit",
+        "transcribing": "S'està transcrivint el que has dit...",
+        "busy": "Hi ha un dictat, una gravació o una transcripció de fitxer en curs. Torna a provar el micròfon quan acabi.",
+        "stopped": "El micròfon s'ha aturat abans de sentir les teves paraules, així que no s'ha omplert res.",
+        "reading": "La lectura en veu alta és oberta. Tanca-la i després fes servir el micròfon.",
+        "failed": "No s'ha pogut iniciar el micròfon.",
+        "transcribeFailed": "La conversió de veu a text no ha pogut transcriure el que has dit."
+      }
+    }
   }
 }

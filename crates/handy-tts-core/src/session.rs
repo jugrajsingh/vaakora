@@ -1,0 +1,3985 @@
+use crate::{
+    dsp,
+    feed::Segment,
+    playback::segment::{Output, OutputEvent, Playback},
+    protocol::Pcm,
+    scheduler::{AudioChunk, PlaybackState, QUEUED_AUDIO_CEILING, Queue, Ticket},
+    selection::{Selection, SelectionChange, SelectionError, select_with, text_changed},
+    text::{AlignedChunk, TextChunk, TextCursor},
+    vocabulary::{TechnicalOptions, Vocabulary},
+};
+use std::cell::Cell;
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::sync::Arc;
+
+type ReportedPosition = (u32, u32, f64, f64);
+type CursorFactory = for<'s> fn(
+    &'s str,
+    bool,
+    Option<Arc<Vocabulary>>,
+    TechnicalOptions,
+) -> Result<TextCursor<'s>, String>;
+
+fn text_cursor(
+    source: &str,
+    read_code: bool,
+    vocabulary: Option<Arc<Vocabulary>>,
+    technical: TechnicalOptions,
+) -> Result<TextCursor<'_>, String> {
+    TextCursor::streaming_with(source, read_code, vocabulary, technical)
+        .map_err(|_| "tts.errors.text".to_string())
+}
+
+/// The vocabulary a selection reads with: the session's resolved for the selection's model, and
+/// only when technical reading is on. A model without overrides shares the session's vocabulary.
+fn reading_vocabulary(
+    selection: &Selection,
+    vocabulary: Option<&Arc<Vocabulary>>,
+) -> Option<Arc<Vocabulary>> {
+    vocabulary
+        .filter(|_| selection.technical)
+        .map(|vocabulary| {
+            if vocabulary.has_model(&selection.model_id) {
+                Arc::new(vocabulary.for_model(&selection.model_id))
+            } else {
+                vocabulary.clone()
+            }
+        })
+}
+
+/// The whole of `source` as a session with `selection` and `vocabulary` prepares it: every chunk
+/// the voice is sent, with its word spans.
+pub fn reading(
+    source: &str,
+    selection: &Selection,
+    vocabulary: Option<&Arc<Vocabulary>>,
+) -> Result<Vec<AlignedChunk>, String> {
+    crate::text::prepare_reading(
+        source,
+        selection.read_code,
+        reading_vocabulary(selection, vocabulary),
+        selection.technical_options(),
+    )
+    .map_err(|_| "tts.errors.text".to_string())
+}
+
+fn dsp_clock() -> Box<dyn Fn() -> f64 + Send> {
+    #[cfg(test)]
+    {
+        Box::new(|| 0.0)
+    }
+    #[cfg(not(test))]
+    {
+        let origin = std::time::Instant::now();
+        Box::new(move || origin.elapsed().as_secs_f64())
+    }
+}
+
+fn render(pcm: Pcm, stretch: f32, pitch: f32) -> Result<Pcm, dsp::DspError> {
+    let mut pcm = dsp::stretch(pcm, stretch, pitch)?;
+    pcm.samples = crate::edges::trim(pcm.samples, pcm.sample_rate).samples;
+    Ok(pcm)
+}
+
+/// Splits NPU input at word boundaries using the engine's token or frame capacity check.
+pub fn synthesize_for_device(
+    device: crate::device::Device,
+    text: &str,
+    mut fits: impl FnMut(&str) -> Result<bool, String>,
+    mut synthesize: impl FnMut(&str) -> Result<Pcm, String>,
+) -> Result<Pcm, String> {
+    if device != crate::device::Device::Npu {
+        return synthesize(text);
+    }
+    let mut pending = vec![text.trim()];
+    let mut result: Option<Pcm> = None;
+    while let Some(part) = pending.pop() {
+        if part.is_empty() {
+            return Err("tts.errors.text".into());
+        }
+        if !fits(part)? {
+            let split = part
+                .char_indices()
+                .filter(|(_, ch)| ch.is_whitespace())
+                .min_by_key(|(index, _)| index.abs_diff(part.len() / 2))
+                .map(|(index, _)| index)
+                .ok_or_else(|| "tts.errors.text".to_string())?;
+            pending.push(part[split..].trim_start());
+            pending.push(part[..split].trim_end());
+            continue;
+        }
+        let pcm = synthesize(part)?;
+        if pcm.samples.is_empty()
+            || !(8000..=48000).contains(&pcm.sample_rate)
+            || pcm.samples.iter().any(|sample| !sample.is_finite())
+            || pcm.samples.len() > crate::protocol::MAX_SAMPLES
+        {
+            return Err("tts.errors.audio".into());
+        }
+        match &mut result {
+            Some(combined) => {
+                if pcm.sample_rate != combined.sample_rate
+                    || pcm.id != combined.id
+                    || pcm.samples.len() > crate::protocol::MAX_SAMPLES - combined.samples.len()
+                {
+                    return Err("tts.errors.audio".into());
+                }
+                combined.samples.extend(pcm.samples);
+            }
+            None => result = Some(pcm),
+        }
+    }
+    result.ok_or_else(|| "tts.errors.audio".into())
+}
+
+/// Worker result and synthesis time for one request.
+pub struct Completion {
+    pub ticket: Ticket,
+    pub result: Result<Pcm, String>,
+    pub synthesis_seconds: f64,
+}
+/// Nonblocking transport implemented by a supervised worker adapter.
+pub trait Worker {
+    fn request(&mut self, ticket: Ticket, text: &str, selection: &Selection) -> Result<(), String>;
+    /// Returns false when admission must wait for worker capacity.
+    fn try_request(
+        &mut self,
+        ticket: Ticket,
+        text: &str,
+        selection: &Selection,
+    ) -> Result<bool, String> {
+        self.request(ticket, text, selection).map(|()| true)
+    }
+    /// Cancels requests no longer retained by the scheduler.
+    fn retain_requests(&mut self, _tickets: &[Ticket]) {}
+    fn poll(&mut self) -> Option<Completion>;
+    /// Observes rendered speech before queue splitting and punctuation pauses.
+    fn rendered(&mut self, _ticket: Ticket, _pcm: &Pcm) {}
+    /// Supplies an optional request limit before each new request, including memory adapt-down.
+    fn available_lanes(&mut self) -> Option<usize> {
+        None
+    }
+
+    fn cancel(&mut self, ticket: Ticket);
+    fn selection_changed(&mut self);
+    /// Clears a failed worker latch after an explicit selection.
+    fn retry_failed_selection(&mut self) {}
+    /// Installs an optional actor notification for transports that complete off-thread.
+    fn set_completion_waker(&mut self, _wake: std::sync::Arc<dyn Fn() + Send + Sync>) {}
+}
+/// Playback progress and errors suitable for frontend events.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, specta::Type)]
+pub struct SessionSnapshot {
+    pub epoch: u64,
+    pub state: PlaybackState,
+    pub source_start: u32,
+    pub source_end: u32,
+    pub elapsed_seconds: f64,
+    pub remaining_seconds: f64,
+    pub progress: f64,
+    pub error: Option<String>,
+    pub output_fallback: bool,
+    pub queued_audio_seconds: f64,
+    pub buffering_pauses: usize,
+    pub head_start_seconds: Option<f64>,
+}
+fn split_samples(
+    pcm: Pcm,
+    native: Vec<f32>,
+    plan: crate::speed::SpeedPlan,
+    pause_ms: u32,
+) -> VecDeque<(Pcm, Vec<f32>)> {
+    let pause_seconds = crate::edges::pause_samples(pause_ms, plan.requested, pcm.sample_rate)
+        as f64
+        / f64::from(pcm.sample_rate);
+    let output_len = pcm.samples.len();
+    let native_len = native.len();
+    let played_limit =
+        ((QUEUED_AUDIO_CEILING - pause_seconds) * f64::from(pcm.sample_rate)).floor() as usize;
+    let stored_frames =
+        (crate::scheduler::STORED_SECONDS_CEILING * f64::from(pcm.sample_rate)).floor() as usize;
+    let retained_samples = (output_len as u128 + native_len as u128).max(1);
+    let stored_limit = (stored_frames as u128 * output_len as u128 / retained_samples) as usize;
+    let limit = played_limit.min(stored_limit);
+    let mut data = pcm.samples.into_iter();
+    let mut native_data = native.into_iter();
+    let mut consumed = 0;
+    let mut native_consumed = 0;
+    let mut samples = VecDeque::new();
+    loop {
+        let next: Vec<f32> = data.by_ref().take(limit.max(1)).collect();
+        if next.is_empty() {
+            break;
+        }
+        consumed += next.len();
+        let native_end = ((consumed as u128 * native_len as u128 + output_len as u128 / 2)
+            / output_len as u128) as usize;
+        let native_part = native_data
+            .by_ref()
+            .take(native_end - native_consumed)
+            .collect();
+        native_consumed = native_end;
+        samples.push_back((
+            Pcm {
+                id: pcm.id,
+                sample_rate: pcm.sample_rate,
+                samples: next,
+            },
+            native_part,
+        ));
+    }
+    samples
+}
+struct Parts {
+    ticket: Ticket,
+    samples: VecDeque<(Pcm, Vec<f32>)>,
+    plan: crate::speed::SpeedPlan,
+    elapsed_per_second: f64,
+}
+type ControlResult = Result<Pcm, String>;
+type ControlRenderer = std::sync::Arc<dyn Fn(Pcm, f32, f32) -> ControlResult + Send + Sync>;
+struct ControlRender {
+    chosen: Selection,
+    cancelled: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    result: std::sync::mpsc::Receiver<VecDeque<ControlResult>>,
+    join: std::thread::JoinHandle<()>,
+}
+fn control_pcm(
+    pcm: Pcm,
+    stretch: f32,
+    pitch: f32,
+    results: &mut Option<VecDeque<ControlResult>>,
+) -> ControlResult {
+    if let Some(results) = results {
+        results
+            .pop_front()
+            .unwrap_or_else(|| Err("tts.errors.audio".into()))
+    } else {
+        render(pcm, stretch, pitch).map_err(|_| "tts.errors.audio".to_string())
+    }
+}
+struct Appended {
+    sentence: usize,
+    segment: usize,
+    samples: usize,
+}
+/// Owns incremental text, bounded audio scheduling and output playback.
+pub struct Session<'a, W: Worker, O: Output> {
+    source: &'a str,
+    async_controls: bool,
+    control_renderer: ControlRenderer,
+    control_render: Option<ControlRender>,
+    pending_controls: Option<Selection>,
+    control_results: Option<VecDeque<ControlResult>>,
+    source_utf16: usize,
+    handy_output: Option<String>,
+    cursor: TextCursor<'a>,
+    cursor_factory: CursorFactory,
+    vocabulary: Option<Arc<Vocabulary>>,
+    /// Where cursors resume after a text option change: a UTF-16 source offset and the index of
+    /// the chunk that starts there. (0, 0) is the start of the source; playback that restarts
+    /// from the beginning returns to it.
+    text_origin: (u32, usize),
+    pending_text: Option<TextChunk>,
+    dsp_clock: Box<dyn Fn() -> f64 + Send>,
+    reported_position: Cell<Option<ReportedPosition>>,
+    pub worker: W,
+    pub playback: Playback<O>,
+    pub queue: Queue,
+    selection: Selection,
+    native_window: fn(&str) -> Result<crate::speed::NativeWindow, String>,
+    metadata: BTreeMap<usize, TextChunk>,
+    parts: BTreeMap<usize, Parts>,
+    appended: VecDeque<Appended>,
+    retracted_segments: VecDeque<(usize, usize)>,
+    seen_sentences: BTreeSet<usize>,
+    next_part_index: usize,
+    audible_range: Option<(u32, u32)>,
+    started_sentence: Option<usize>,
+    request_plans: BTreeMap<usize, crate::speed::SpeedPlan>,
+    restart_from: Option<usize>,
+    sample_rate: u32,
+    content_origin: u64,
+    elapsed_offset: f64,
+    completed_chars: u32,
+    played_seconds: f64,
+    now: f64,
+    initial_wait: Option<f64>,
+    first_play: Option<f64>,
+    error: Option<String>,
+    output_fallback: bool,
+}
+impl<'a, W: Worker, O: Output> Session<'a, W, O> {
+    /// Creates an idle session without opening an output device.
+    pub fn new(
+        source: &'a str,
+        selection: Selection,
+        worker: W,
+        output: O,
+        handy_output: Option<&str>,
+    ) -> Result<Self, String> {
+        Self::with_vocabulary(source, selection, worker, output, handy_output, None)
+    }
+    /// Creates an idle session that reads technical tokens with `vocabulary` whenever the
+    /// selection has technical reading on, including cursors rebuilt after a selection change.
+    pub fn with_vocabulary(
+        source: &'a str,
+        selection: Selection,
+        worker: W,
+        output: O,
+        handy_output: Option<&str>,
+        vocabulary: Option<Arc<Vocabulary>>,
+    ) -> Result<Self, String> {
+        let cursor = text_cursor(
+            source,
+            selection.read_code,
+            reading_vocabulary(&selection, vocabulary.as_ref()),
+            selection.technical_options(),
+        )?;
+        let playback = Playback::idle(output);
+        Ok(Self {
+            source,
+            async_controls: !cfg!(test),
+            control_renderer: std::sync::Arc::new(|pcm, stretch, pitch| {
+                render(pcm, stretch, pitch).map_err(|_| "tts.errors.audio".into())
+            }),
+            control_render: None,
+            pending_controls: None,
+            control_results: None,
+            source_utf16: source.encode_utf16().count(),
+            handy_output: handy_output.map(str::to_owned),
+            cursor,
+            cursor_factory: text_cursor,
+            vocabulary,
+            text_origin: (0, 0),
+            pending_text: None,
+            dsp_clock: dsp_clock(),
+            reported_position: Cell::new(None),
+            worker,
+            playback,
+            queue: Queue::with_speed(selection.speed),
+            selection,
+            native_window: |id| {
+                crate::catalog::entry(id)
+                    .map(|entry| entry.native_speed)
+                    .map_err(|error| error.to_string())
+            },
+            metadata: BTreeMap::new(),
+            parts: BTreeMap::new(),
+            appended: VecDeque::new(),
+            retracted_segments: VecDeque::new(),
+            seen_sentences: BTreeSet::new(),
+            next_part_index: 0,
+            audible_range: None,
+            started_sentence: None,
+            request_plans: BTreeMap::new(),
+            restart_from: None,
+            sample_rate: 0,
+            content_origin: 0,
+            elapsed_offset: 0.0,
+            completed_chars: 0,
+            played_seconds: 0.0,
+            now: 0.0,
+            initial_wait: None,
+            first_play: None,
+            error: None,
+            output_fallback: false,
+        })
+    }
+    /// Supplies the monotonic DSP clock used when measuring completion latency.
+    pub fn set_dsp_clock(&mut self, clock: impl Fn() -> f64 + Send + 'static) {
+        self.dsp_clock = Box::new(clock);
+    }
+    fn prepare_cursor(
+        &self,
+        selection: &Selection,
+        index: usize,
+        position: Option<u32>,
+    ) -> Result<(TextCursor<'a>, Option<TextChunk>), String> {
+        self.cursor_from(selection, self.text_origin, index, position)
+    }
+    /// Builds the cursor for `selection` resuming at `origin` and returns its first chunk at or
+    /// after `index`, or with `position`, the first chunk that ends after that source offset.
+    fn cursor_from(
+        &self,
+        selection: &Selection,
+        origin: (u32, usize),
+        index: usize,
+        position: Option<u32>,
+    ) -> Result<(TextCursor<'a>, Option<TextChunk>), String> {
+        let mut cursor = (self.cursor_factory)(
+            self.source,
+            selection.read_code,
+            reading_vocabulary(selection, self.vocabulary.as_ref()),
+            selection.technical_options(),
+        )?;
+        cursor.resume_at(origin.0, origin.1);
+        while let Some(text) = cursor
+            .next_chunk()
+            .map_err(|_| "tts.errors.text".to_string())?
+        {
+            let found = position.map_or(text.index >= index, |pos| text.source_end > pos);
+            if found {
+                return Ok((cursor, Some(text)));
+            }
+        }
+        Ok((cursor, None))
+    }
+    fn seek(&mut self, origin: (u32, usize), index: usize) -> Result<(), String> {
+        let (cursor, pending) = self.cursor_from(&self.selection, origin, index, None)?;
+        self.text_origin = origin;
+        self.cursor = cursor;
+        self.pending_text = pending;
+        self.metadata.clear();
+        if let Some(text) = &self.pending_text {
+            self.metadata.insert(text.index, text.clone());
+        }
+        self.parts.clear();
+        self.appended.clear();
+        self.retracted_segments.clear();
+        self.seen_sentences.clear();
+        self.next_part_index = 0;
+        self.request_plans.clear();
+        self.restart_from = None;
+        self.started_sentence = None;
+        Ok(())
+    }
+    /// Starts, resumes or retries playback from the retained cursor.
+    pub fn play(&mut self) -> Result<(), String> {
+        if self.source.trim().is_empty() {
+            return Ok(());
+        }
+        self.playback
+            .ensure_open(
+                self.selection.output_device.as_deref(),
+                self.handy_output.as_deref(),
+            )
+            .map_err(|_| "tts.errors.audio".to_string())?;
+        let old = self.queue.state;
+        self.queue.play();
+        if old == PlaybackState::Paused {
+            self.playback.resume();
+        } else if !matches!(old, PlaybackState::Playing | PlaybackState::Buffering) {
+            self.elapsed_offset = if old == PlaybackState::Error {
+                self.snapshot().elapsed_seconds
+            } else {
+                0.0
+            };
+            if matches!(old, PlaybackState::Error | PlaybackState::Finished) {
+                self.playback.stop();
+            }
+            self.content_origin = self.playback.content_samples();
+            let origin = if matches!(old, PlaybackState::Error | PlaybackState::Starting) {
+                self.text_origin
+            } else {
+                (0, 0)
+            };
+            self.seek(origin, self.queue.next_index)?;
+            if old != PlaybackState::Error {
+                self.reported_position.set(None);
+                self.played_seconds = 0.0;
+                self.content_origin = self.playback.content_samples();
+                self.completed_chars = 0;
+                self.audible_range = None;
+            }
+            self.initial_wait = Some(self.now);
+            self.first_play = None;
+            self.error = None;
+        }
+        Ok(())
+    }
+    /// Updates the inherited output choice before Play.
+    pub fn set_handy_output(&mut self, handy: Option<String>) -> Result<(), String> {
+        if self.handy_output != handy {
+            if self.selection.output_device.is_none() {
+                let prepared = self
+                    .playback
+                    .prepare(None, handy.as_deref())
+                    .map_err(|_| "tts.errors.audio".to_string())?;
+                self.playback.commit(prepared);
+            }
+            self.handy_output = handy;
+        }
+        Ok(())
+    }
+    /// Stops reading and releases the output stream.
+    pub fn close(&mut self) {
+        self.stop();
+        self.playback.close();
+    }
+    /// Pauses output and generation requests while preserving queued audio.
+    pub fn pause(&mut self) {
+        if !matches!(
+            self.queue.state,
+            PlaybackState::Playing | PlaybackState::Buffering
+        ) {
+            return;
+        }
+        self.queue.pause();
+        self.playback.pause();
+    }
+    /// Drops audio and invalidates pending requests.
+    pub fn stop(&mut self) {
+        self.pending_controls = None;
+        self.control_results = None;
+        if let Some(render) = &self.control_render {
+            render
+                .cancelled
+                .store(true, std::sync::atomic::Ordering::Release);
+            let _ = render.result.try_recv();
+        }
+        for ticket in self.queue.in_flight.values().copied() {
+            self.worker.cancel(ticket);
+        }
+        self.playback.stop();
+        self.queue.stop();
+        self.metadata.clear();
+        self.parts.clear();
+        self.appended.clear();
+        self.retracted_segments.clear();
+        self.seen_sentences.clear();
+        self.next_part_index = 0;
+        self.request_plans.clear();
+        self.restart_from = None;
+        self.error = None;
+        self.pending_text = None;
+        self.reported_position.set(None);
+        self.played_seconds = 0.0;
+        self.content_origin = self.playback.content_samples();
+        self.first_play = None;
+        self.audible_range = None;
+        self.started_sentence = None;
+        self.elapsed_offset = 0.0;
+        self.completed_chars = 0;
+    }
+    /// Stops at the active sentence and rejects stale audio until retry.
+    pub fn fail(&mut self, error: String) {
+        self.pending_controls = None;
+        if let Some(render) = &self.control_render {
+            render
+                .cancelled
+                .store(true, std::sync::atomic::Ordering::Release);
+        }
+
+        for ticket in self.queue.in_flight.values().copied() {
+            self.worker.cancel(ticket);
+        }
+        self.elapsed_offset = self.snapshot().elapsed_seconds;
+        self.playback.stop();
+        let index = self.queue.switch_selection(true);
+        self.queue.failed_index = Some(index);
+        self.queue.state = PlaybackState::Error;
+        self.parts.clear();
+        self.appended.clear();
+        self.retracted_segments.clear();
+        self.seen_sentences.clear();
+        self.next_part_index = 0;
+        self.request_plans.clear();
+        self.restart_from = None;
+        self.content_origin = self.playback.content_samples();
+        self.error = Some(error);
+    }
+    /// Applies a selection and replays the current sentence when active.
+    pub fn select(
+        &mut self,
+        selection: Selection,
+        downloaded: bool,
+        persist: impl FnOnce(&Selection) -> Result<(), SelectionError>,
+    ) -> Result<SelectionChange, SelectionError> {
+        if downloaded && crate::selection::speed_pitch_only(&self.selection, &selection) {
+            let changed = select_with(
+                &mut self.queue,
+                &self.selection,
+                selection.clone(),
+                downloaded,
+                persist,
+            )?;
+            self.set_speed_pitch(selection.speed, selection.pitch)
+                .map_err(|_| SelectionError::Controls)?;
+            return Ok(changed);
+        }
+        self.pending_controls = None;
+        if let Some(render) = &self.control_render {
+            render
+                .cancelled
+                .store(true, std::sync::atomic::Ordering::Release);
+        }
+        let index = self.queue.next_unspoken();
+        let position = text_changed(&self.selection, &selection)
+            .then(|| self.metadata.get(&index).map(|text| text.source_start))
+            .flatten();
+        let (cursor, pending) = self
+            .prepare_cursor(&selection, index, position)
+            .map_err(|_| SelectionError::Controls)?;
+        // The new text may chunk differently: a chunk that starts before the position also holds
+        // text already spoken, so preparation resumes at the position instead, keeping the index.
+        let (origin, (cursor, pending)) = match (position, pending) {
+            (Some(pos), Some(text)) if text.source_start < pos => {
+                let origin = (pos, text.index);
+                let resumed = self
+                    .cursor_from(&selection, origin, text.index, None)
+                    .map_err(|_| SelectionError::Controls)?;
+                (origin, resumed)
+            }
+            (_, pending) => (self.text_origin, (cursor, pending)),
+        };
+        let new_index = pending.as_ref().map_or(index, |text| text.index);
+        let old_tickets = self.queue.in_flight.clone();
+        let reload = self.selection.model_id != selection.model_id
+            || self.selection.voice != selection.voice;
+        let output_changed = self.selection.output_device != selection.output_device;
+        let elapsed = self.snapshot().elapsed_seconds;
+        let mut changed = select_with(
+            &mut self.queue,
+            &self.selection,
+            selection.clone(),
+            downloaded,
+            |value| {
+                let prepared = if output_changed {
+                    Some(
+                        self.playback
+                            .prepare(
+                                selection.output_device.as_deref(),
+                                self.handy_output.as_deref(),
+                            )
+                            .map_err(|_| SelectionError::Controls)?,
+                    )
+                } else {
+                    None
+                };
+                persist(value)?;
+                self.playback.stop();
+                if let Some(prepared) = prepared {
+                    self.playback.commit(prepared);
+                }
+                Ok(())
+            },
+        )?;
+        self.elapsed_offset = elapsed;
+        for ticket in old_tickets.values().copied() {
+            self.worker.cancel(ticket);
+        }
+        if reload {
+            self.worker.selection_changed();
+        } else {
+            self.worker.retry_failed_selection();
+        }
+        self.selection = selection;
+        self.queue.speed = self.selection.speed;
+        self.queue.set_cursor(new_index);
+        if self.queue.failed_index.is_some() {
+            self.queue.failed_index = Some(new_index);
+        }
+        changed.sentence_index = new_index;
+        self.text_origin = origin;
+        self.cursor = cursor;
+        self.pending_text = pending;
+        self.metadata.clear();
+        if let Some(text) = &self.pending_text {
+            self.metadata.insert(text.index, text.clone());
+        }
+        self.parts.clear();
+        self.appended.clear();
+        self.retracted_segments.clear();
+        self.seen_sentences.clear();
+        self.next_part_index = 0;
+        self.request_plans.clear();
+        self.restart_from = None;
+        self.content_origin = self.playback.content_samples();
+        self.started_sentence = None;
+        self.error = changed
+            .missing_download
+            .then(|| "tts.errors.notDownloaded".into());
+        Ok(changed)
+    }
+    fn speed_plan(&self) -> Result<crate::speed::SpeedPlan, String> {
+        let window = (self.native_window)(&self.selection.model_id)?;
+        crate::speed::plan(self.selection.speed, window).map_err(|_| "tts.errors.audio".into())
+    }
+    fn received(&mut self, completion: Completion) {
+        if completion.ticket.epoch != self.queue.epoch
+            || self.queue.in_flight.get(&completion.ticket.index) != Some(&completion.ticket)
+        {
+            return;
+        }
+        if self
+            .restart_from
+            .is_some_and(|index| completion.ticket.index >= index)
+        {
+            self.queue.in_flight.remove(&completion.ticket.index);
+            self.request_plans.remove(&completion.ticket.index);
+            return;
+        }
+        let pcm = match completion.result {
+            Ok(pcm) => pcm,
+            Err(error) => {
+                self.error = Some(error);
+                self.queue.complete(completion.ticket, Err(()));
+                return;
+            }
+        };
+        let plan = match self
+            .request_plans
+            .get(&completion.ticket.index)
+            .copied()
+            .and_then(|old| {
+                crate::speed::restretch(old.native, self.selection.speed).map(|stretch| {
+                    crate::speed::SpeedPlan {
+                        requested: self.selection.speed,
+                        native: old.native,
+                        stretch,
+                    }
+                })
+            })
+            .ok_or_else(|| "tts.errors.audio".to_string())
+        {
+            Ok(plan) => plan,
+            Err(control_error) => {
+                self.error = Some(control_error);
+                self.queue.complete(completion.ticket, Err(()));
+                return;
+            }
+        };
+        let began = (self.dsp_clock)();
+        let native = crate::edges::trim(pcm.samples, pcm.sample_rate).samples;
+        let pcm = match render(
+            Pcm {
+                samples: native.clone(),
+                ..pcm
+            },
+            plan.stretch,
+            self.selection.pitch,
+        ) {
+            Ok(pcm) => pcm,
+            Err(_) => {
+                self.error = Some("tts.errors.audio".into());
+                self.queue.complete(completion.ticket, Err(()));
+                return;
+            }
+        };
+        let elapsed = completion.synthesis_seconds + ((self.dsp_clock)() - began).max(0.0);
+        self.worker.rendered(completion.ticket, &pcm);
+        let seconds = pcm.samples.len() as f64 / f64::from(pcm.sample_rate);
+        let pause_ms = self
+            .metadata
+            .get(&completion.ticket.index)
+            .map_or(0, |text| text.pause_ms);
+        let samples = split_samples(pcm, native, plan, pause_ms);
+        self.parts.insert(
+            completion.ticket.index,
+            Parts {
+                ticket: completion.ticket,
+                samples,
+                plan,
+                elapsed_per_second: elapsed / seconds,
+            },
+        );
+    }
+    fn admit_parts(&mut self) {
+        let indices: Vec<_> = self.parts.keys().copied().collect();
+        for index in indices {
+            let Some(mut parts) = self.parts.remove(&index) else {
+                continue;
+            };
+            if self.queue.in_flight.get(&index) != Some(&parts.ticket) {
+                continue;
+            }
+            while let Some((pcm, native)) = parts.samples.pop_front() {
+                let seconds = pcm.samples.len() as f64 / f64::from(pcm.sample_rate);
+                let Some(text) = self.metadata.get(&index) else {
+                    self.error = Some("tts.errors.text".into());
+                    self.queue.complete(parts.ticket, Err(()));
+                    break;
+                };
+                let last = parts.samples.is_empty();
+                let audio = AudioChunk {
+                    native,
+                    plan: parts.plan,
+                    pause_ms: if last { text.pause_ms } else { 0 },
+                    ticket: parts.ticket,
+                    pcm,
+                    source_start: text.source_start,
+                    source_end: text.source_end,
+                };
+                let remainder = self.queue.complete_part(
+                    parts.ticket,
+                    Ok(audio),
+                    seconds * parts.elapsed_per_second,
+                    last,
+                );
+                if let Some(audio) = remainder {
+                    parts.samples.push_front((audio.pcm, audio.native));
+                    self.parts.insert(index, parts);
+                    break;
+                }
+            }
+        }
+    }
+    fn advance(&mut self) {
+        self.queue.advance_at(self.now);
+    }
+    fn output_events(&mut self) -> Result<(), String> {
+        for event in self
+            .playback
+            .events()
+            .map_err(|_| "tts.errors.audio".to_string())?
+        {
+            match event {
+                OutputEvent::Started(segment) => {
+                    let index = self
+                        .appended
+                        .iter()
+                        .find(|audio| audio.segment == segment)
+                        .map(|audio| audio.sentence)
+                        .ok_or_else(|| "tts.errors.audio".to_string())?;
+                    self.started_sentence = Some(index);
+                    if let Some(text) = self.metadata.get(&index) {
+                        self.audible_range = Some((text.source_start, text.source_end));
+                        self.reported_position.set(None);
+                    }
+                    self.queue.playback_started();
+                    self.first_play.get_or_insert(self.now);
+                }
+                OutputEvent::Finished { index, delivered } => {
+                    let Some(scheduled) = self.appended.pop_front() else {
+                        return Err("tts.errors.audio".into());
+                    };
+                    if index != scheduled.segment || delivered != scheduled.samples {
+                        return Err("tts.errors.audio".into());
+                    }
+                    if let Some(audio) = &self.queue.playing {
+                        self.played_seconds += audio.seconds();
+                        self.completed_chars = audio.source_end;
+                    }
+                    self.queue.playback_finished();
+                }
+                OutputEvent::Underrun => {
+                    if self.queue.state == PlaybackState::Playing && self.queue.playing.is_none() {
+                        self.advance();
+                    }
+                }
+                OutputEvent::DeviceLost => {}
+            }
+        }
+        Ok(())
+    }
+    fn append_ahead(&mut self) -> Result<(), String> {
+        if self.queue.state != PlaybackState::Playing {
+            return Ok(());
+        }
+        let audible = self.playback.current_index().is_some();
+        let ahead = self.appended.len().saturating_sub(usize::from(audible));
+        for (position, audio) in self
+            .queue
+            .playing
+            .iter()
+            .chain(self.queue.waiting.iter())
+            .skip(self.appended.len())
+            .enumerate()
+        {
+            let (ticket, pcm, pause_ms, speed) = (
+                audio.ticket,
+                &audio.pcm,
+                audio.pause_ms,
+                audio.plan.requested,
+            );
+            if ahead + position >= 2 {
+                break;
+            }
+            self.sample_rate = pcm.sample_rate;
+            self.playback
+                .output
+                .set_sample_rate(pcm.sample_rate)
+                .map_err(|_| "tts.errors.audio".to_string())?;
+            let index = if self
+                .retracted_segments
+                .front()
+                .is_some_and(|(sentence, _)| *sentence == ticket.index)
+            {
+                self.retracted_segments
+                    .pop_front()
+                    .map(|(_, segment)| segment)
+                    .ok_or_else(|| "tts.errors.audio".to_string())?
+            } else if self.seen_sentences.insert(ticket.index) {
+                ticket.index
+            } else {
+                let index = self
+                    .source_utf16
+                    .checked_add(self.next_part_index)
+                    .ok_or_else(|| "tts.errors.audio".to_string())?;
+                self.next_part_index = self
+                    .next_part_index
+                    .checked_add(1)
+                    .ok_or_else(|| "tts.errors.audio".to_string())?;
+                index
+            };
+            let segment = Segment {
+                epoch: ticket.epoch,
+                index,
+                pause: crate::edges::pause_samples(pause_ms, speed, pcm.sample_rate),
+                speech: pcm.samples.clone(),
+            };
+            let samples = segment.samples();
+            self.playback
+                .append(segment)
+                .map_err(|_| "tts.errors.audio".to_string())?;
+            self.appended.push_back(Appended {
+                sentence: ticket.index,
+                segment: index,
+                samples,
+            });
+        }
+        Ok(())
+    }
+    /// Applies playback controls from the next sentence without changing the epoch.
+    pub fn set_speed_pitch(&mut self, speed: f32, pitch: f32) -> Result<(), String> {
+        let mut chosen = self.selection.clone();
+        chosen.speed = speed;
+        chosen.pitch = pitch;
+        crate::selection::clamp_selection(chosen.clone())
+            .map_err(|_| "tts.errors.audio".to_string())?;
+        if self.async_controls {
+            self.selection = chosen.clone();
+            self.pending_controls = Some(chosen);
+            if let Some(render) = &self.control_render {
+                render
+                    .cancelled
+                    .store(true, std::sync::atomic::Ordering::Release);
+            }
+            self.poll_controls()?;
+            return Ok(());
+        }
+        self.restretch_unstarted(chosen)?;
+        self.append_ahead()
+    }
+    fn retract_controls(&mut self) -> Result<(), String> {
+        self.output_events()?;
+        let retracted = self.playback.retract_unstarted();
+        self.output_events()?;
+        for segment in &retracted {
+            if let Some(position) = self
+                .appended
+                .iter()
+                .rposition(|audio| audio.segment == segment.index)
+                && let Some(audio) = self.appended.remove(position)
+            {
+                self.retracted_segments
+                    .push_back((audio.sentence, audio.segment));
+            }
+        }
+        Ok(())
+    }
+    fn poll_controls(&mut self) -> Result<bool, String> {
+        if let Some(work) = &self.control_render {
+            match work.result.try_recv() {
+                Ok(results) => {
+                    let work = self.control_render.take().ok_or("tts.errors.audio")?;
+                    let _ = work.join.join();
+                    if !work.cancelled.load(std::sync::atomic::Ordering::Acquire) {
+                        self.control_results = Some(results);
+                        let result = self.restretch_unstarted(work.chosen);
+                        self.control_results = None;
+                        result?;
+                    }
+                }
+                Err(std::sync::mpsc::TryRecvError::Empty) => return Ok(true),
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    let cancelled = work.cancelled.load(std::sync::atomic::Ordering::Acquire);
+                    self.control_render = None;
+                    if !cancelled {
+                        return Err("tts.errors.audio".into());
+                    }
+                }
+            }
+        }
+        let Some(chosen) = self.pending_controls.take() else {
+            return Ok(false);
+        };
+        self.retract_controls()?;
+        let audible_index = self.started_sentence.filter(|index| {
+            self.queue
+                .playing
+                .as_ref()
+                .is_some_and(|a| a.ticket.index == *index)
+        });
+        let mut jobs = Vec::new();
+        for audio in self
+            .queue
+            .playing
+            .iter()
+            .chain(self.queue.waiting.iter())
+            .chain(self.queue.ready.values())
+        {
+            if Some(audio.ticket.index) != audible_index
+                && let Some(stretch) = crate::speed::restretch(audio.plan.native, chosen.speed)
+            {
+                jobs.push((
+                    Pcm {
+                        samples: audio.native.clone(),
+                        ..audio.pcm.clone()
+                    },
+                    stretch,
+                ));
+            }
+        }
+        for (index, parts) in &self.parts {
+            if Some(*index) == audible_index {
+                continue;
+            }
+            if let Some(stretch) = crate::speed::restretch(parts.plan.native, chosen.speed)
+                && let Some((first, _)) = parts.samples.front()
+            {
+                jobs.push((
+                    Pcm {
+                        id: first.id,
+                        sample_rate: first.sample_rate,
+                        samples: parts
+                            .samples
+                            .iter()
+                            .flat_map(|(_, native)| native.iter().copied())
+                            .collect(),
+                    },
+                    stretch,
+                ));
+            }
+        }
+        let cancelled = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let flag = cancelled.clone();
+        let renderer = self.control_renderer.clone();
+        let (send, result) = std::sync::mpsc::sync_channel(1);
+        let pitch = chosen.pitch;
+        let join = std::thread::spawn(move || {
+            let mut rendered = VecDeque::new();
+            for (pcm, stretch) in jobs {
+                if flag.load(std::sync::atomic::Ordering::Acquire) {
+                    break;
+                }
+                rendered.push_back(renderer(pcm, stretch, pitch));
+            }
+            if flag.load(std::sync::atomic::Ordering::Acquire) {
+                rendered.clear();
+            }
+            let _ = send.send(rendered);
+        });
+        self.control_render = Some(ControlRender {
+            chosen,
+            cancelled,
+            result,
+            join,
+        });
+        Ok(true)
+    }
+    fn restretch_unstarted(&mut self, chosen: Selection) -> Result<(), String> {
+        let speed = chosen.speed;
+        let pitch = chosen.pitch;
+        self.retract_controls()?;
+        let mut results = self.control_results.take();
+        self.selection = chosen;
+        self.queue.speed = speed;
+        let audible_index = self.started_sentence.filter(|index| {
+            self.queue
+                .playing
+                .as_ref()
+                .is_some_and(|audio| audio.ticket.index == *index)
+        });
+        let current_started = audible_index.is_some();
+        let mut restart = None;
+        for audio in self
+            .queue
+            .playing
+            .iter_mut()
+            .skip(usize::from(current_started))
+            .chain(self.queue.waiting.iter_mut())
+            .chain(self.queue.ready.values_mut())
+        {
+            if Some(audio.ticket.index) == audible_index {
+                continue;
+            }
+            if let Some(stretch) = crate::speed::restretch(audio.plan.native, speed) {
+                audio.pcm = control_pcm(
+                    Pcm {
+                        samples: audio.native.clone(),
+                        ..audio.pcm.clone()
+                    },
+                    stretch,
+                    pitch,
+                    &mut results,
+                )
+                .map_err(|_| "tts.errors.audio".to_string())?;
+                audio.plan.requested = speed;
+                audio.plan.stretch = stretch;
+            } else {
+                restart =
+                    Some(restart.map_or(audio.ticket.index, |i: usize| i.min(audio.ticket.index)));
+            }
+        }
+        for (index, plan) in &self.request_plans {
+            if Some(*index) != audible_index
+                && self.queue.in_flight.contains_key(index)
+                && crate::speed::restretch(plan.native, speed).is_none()
+            {
+                restart = Some(restart.map_or(*index, |i| i.min(*index)));
+            }
+        }
+        for (index, parts) in &mut self.parts {
+            if Some(*index) == audible_index {
+                continue;
+            }
+            if let Some(stretch) = crate::speed::restretch(parts.plan.native, speed) {
+                let old_samples: usize =
+                    parts.samples.iter().map(|(pcm, _)| pcm.samples.len()).sum();
+                if let Some((first, _)) = parts.samples.front() {
+                    let rate = first.sample_rate;
+                    let id = first.id;
+                    let native: Vec<_> = parts
+                        .samples
+                        .iter_mut()
+                        .flat_map(|(_, native)| std::mem::take(native))
+                        .collect();
+                    let pcm = control_pcm(
+                        Pcm {
+                            id,
+                            sample_rate: rate,
+                            samples: native.clone(),
+                        },
+                        stretch,
+                        pitch,
+                        &mut results,
+                    )
+                    .map_err(|_| "tts.errors.audio".to_string())?;
+                    let new_samples = pcm.samples.len();
+                    if new_samples > 0 {
+                        parts.elapsed_per_second *= old_samples as f64 / new_samples as f64;
+                    }
+                    parts.plan.requested = speed;
+                    parts.plan.stretch = stretch;
+                    let pause_ms = self.metadata.get(index).map_or(0, |text| text.pause_ms);
+                    parts.samples = split_samples(pcm, native, parts.plan, pause_ms);
+                }
+            } else {
+                restart = Some(restart.map_or(*index, |i| i.min(*index)));
+            }
+        }
+        let mut played = 0.0;
+        let mut stored = 0.0;
+        for audio in self
+            .queue
+            .playing
+            .iter()
+            .chain(self.queue.waiting.iter())
+            .chain(self.queue.ready.values())
+        {
+            let current = self
+                .queue
+                .playing
+                .as_ref()
+                .is_some_and(|first| std::ptr::eq(first, audio));
+            if !current {
+                played += audio.seconds();
+            }
+            stored += audio.stored_seconds();
+            if played > QUEUED_AUDIO_CEILING + 0.00001
+                || stored > crate::scheduler::STORED_SECONDS_CEILING + 0.00001
+            {
+                restart = Some(restart.map_or(audio.ticket.index, |i| i.min(audio.ticket.index)));
+                break;
+            }
+        }
+        if let Some(index) = restart {
+            self.restart_from = Some(index);
+            self.retracted_segments
+                .retain(|(sentence, _)| *sentence < index);
+            self.seen_sentences.retain(|sentence| *sentence < index);
+            self.queue
+                .waiting
+                .retain(|audio| audio.ticket.index < index);
+            self.queue.ready.retain(|i, _| *i < index);
+            let discarded: Vec<_> = self
+                .parts
+                .keys()
+                .filter(|i| **i >= index)
+                .copied()
+                .collect();
+            for i in discarded {
+                self.queue.in_flight.remove(&i);
+            }
+            self.parts.retain(|i, _| *i < index);
+            if !current_started
+                && self
+                    .queue
+                    .playing
+                    .as_ref()
+                    .is_some_and(|a| a.ticket.index >= index)
+            {
+                self.queue.playing = None;
+            }
+        }
+        Ok(())
+    }
+    /// Polls worker and output using a monotonic caller-supplied clock.
+    pub fn tick(&mut self, now: f64) -> Result<(), String> {
+        if !now.is_finite() || now < self.now {
+            return Err("tts.errors.clock".into());
+        }
+        self.now = now;
+        self.output_events()?;
+        if self.poll_controls()? {
+            return Ok(());
+        }
+        self.advance();
+        while let Some(completion) = self.worker.poll() {
+            self.received(completion);
+        }
+        self.admit_parts();
+        let retained: Vec<_> = self.queue.in_flight.values().copied().collect();
+        self.worker.retain_requests(&retained);
+        if let Some(index) = self.restart_from
+            && self.queue.failed_index.is_none()
+            && self.queue.in_flight.is_empty()
+            && self.parts.is_empty()
+            && self.queue.ready.is_empty()
+        {
+            let (cursor, pending) = self.prepare_cursor(&self.selection, index, None)?;
+            self.cursor = cursor;
+            self.pending_text = pending;
+            self.metadata.retain(|i, _| *i < index);
+            self.request_plans.retain(|i, _| *i < index);
+            self.queue.rerequest_from(index);
+            self.restart_from = None;
+        }
+        while self.restart_from.is_none() {
+            if let Some(lanes) = self.worker.available_lanes() {
+                self.queue.set_lanes(lanes);
+                if lanes == 0 {
+                    break;
+                }
+            }
+            let Some(ticket) = self.queue.request_next() else {
+                break;
+            };
+            let next = match self.pending_text.take() {
+                Some(text) => Some(text),
+                None => self
+                    .cursor
+                    .next_chunk()
+                    .map_err(|_| "tts.errors.text".to_string())?,
+            };
+            match next {
+                Some(mut text) => {
+                    text.index = ticket.index;
+                    let result = self.speed_plan().and_then(|plan| {
+                        self.request_plans.insert(ticket.index, plan);
+                        let mut native_selection = self.selection.clone();
+                        native_selection.speed = plan.native;
+                        self.worker
+                            .try_request(ticket, &text.text, &native_selection)
+                    });
+                    match result {
+                        Ok(false) => {
+                            self.queue.defer_request(ticket);
+                            self.request_plans.remove(&ticket.index);
+                            self.pending_text = Some(text);
+                            break;
+                        }
+                        Ok(true) => {
+                            self.metadata.insert(ticket.index, text);
+                        }
+                        Err(error) => {
+                            self.metadata.insert(ticket.index, text);
+                            self.error = Some(error);
+                            self.queue.complete(ticket, Err(()));
+                            let retained: Vec<_> = self.queue.in_flight.values().copied().collect();
+                            self.worker.retain_requests(&retained);
+                        }
+                    }
+                }
+                None => {
+                    self.queue.in_flight.remove(&ticket.index);
+                    self.queue.source_finished = true;
+                    break;
+                }
+            }
+        }
+        self.advance();
+        self.append_ahead()?;
+        let min = self
+            .queue
+            .playing
+            .as_ref()
+            .map(|c| c.ticket.index)
+            .or_else(|| self.queue.waiting.front().map(|c| c.ticket.index))
+            .or_else(|| self.queue.in_flight.keys().next().copied())
+            .or(self.queue.failed_index)
+            .unwrap_or(self.queue.next_index);
+        self.metadata.retain(|index, _| *index >= min);
+        self.seen_sentences.retain(|index| *index >= min);
+        self.request_plans.retain(|index, _| *index >= min);
+        self.output_fallback |= self.playback.take_fallback();
+        Ok(())
+    }
+    /// The selection the session reads with.
+    pub fn selection(&self) -> &Selection {
+        &self.selection
+    }
+    /// True once audio of the current play or selection has started on the output; Play, Stop
+    /// and a selection change that rebuilds the text reset it.
+    pub fn audio_started(&self) -> bool {
+        self.started_sentence.is_some()
+    }
+    /// Returns the current source range, progress and playback state.
+    pub fn snapshot(&self) -> SessionSnapshot {
+        let range = if self.queue.state == PlaybackState::Error {
+            self.queue
+                .failed_index
+                .and_then(|i| self.metadata.get(&i))
+                .map(|t| (t.source_start, t.source_end))
+                .or(self.audible_range)
+                .unwrap_or((0, 0))
+        } else {
+            self.audible_range.unwrap_or((0, 0))
+        };
+        let chars = self.source_utf16 as f64;
+        let progress = if self.queue.state == PlaybackState::Finished {
+            1.0
+        } else if chars > 0.0 {
+            f64::from(range.0) / chars
+        } else {
+            0.0
+        };
+        let content = self
+            .playback
+            .content_samples()
+            .saturating_sub(self.content_origin);
+        let elapsed = self.elapsed_offset
+            + if self.sample_rate > 0 {
+                content as f64 / f64::from(self.sample_rate)
+            } else {
+                0.0
+            };
+        let rate = if self.completed_chars > 0 && self.played_seconds > 0.0 {
+            f64::from(self.completed_chars) / self.played_seconds
+        } else {
+            15.0 * f64::from(self.selection.speed)
+        };
+        let mut position = (
+            range.0,
+            range.1,
+            progress,
+            if self.queue.state == PlaybackState::Finished {
+                0.0
+            } else {
+                ((chars - f64::from(range.0)) / rate).max(0.0)
+            },
+        );
+        if matches!(
+            self.queue.state,
+            PlaybackState::Buffering | PlaybackState::Paused | PlaybackState::Starting
+        ) {
+            position = self.reported_position.get().unwrap_or(position);
+        } else {
+            self.reported_position.set(Some(position));
+        }
+        SessionSnapshot {
+            epoch: self.queue.epoch,
+            state: self.queue.state,
+            source_start: position.0,
+            source_end: position.1,
+            elapsed_seconds: elapsed,
+            remaining_seconds: position.3,
+            progress: position.2,
+            error: if self.queue.state == PlaybackState::Error {
+                self.error.clone()
+            } else {
+                None
+            },
+            output_fallback: self.output_fallback,
+            queued_audio_seconds: self.queue.queued_seconds(),
+            buffering_pauses: self.queue.buffering_pauses,
+            head_start_seconds: self.first_play.zip(self.initial_wait).map(|(a, b)| a - b),
+        }
+    }
+}
+impl<W: Worker, O: Output> Drop for Session<'_, W, O> {
+    fn drop(&mut self) {
+        self.stop();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rendered_edges_redetect_faded_crossings_and_capped_leading_quiet() {
+        let rate = 24000;
+        for leading in [3360, 31234] {
+            let mut raw = vec![0.0; leading + 12000 + 4800];
+            if leading == 3360 {
+                raw[2] = crate::edges::THRESHOLD;
+                let last = raw.len() - 3;
+                raw[last] = crate::edges::THRESHOLD;
+            }
+            raw[leading..leading + 12000].fill(0.25);
+            raw[leading + 4000..leading + 6000].fill(0.0);
+            let native = crate::edges::trim(raw, rate);
+            assert_eq!(native.lead_removed, if leading == 3360 { 0 } else { 24000 });
+            let rendered = render(
+                Pcm {
+                    id: 1,
+                    sample_rate: rate,
+                    samples: native.samples,
+                },
+                1.0,
+                0.0,
+            )
+            .unwrap();
+            let first = rendered
+                .samples
+                .iter()
+                .position(|s| s.abs() >= crate::edges::THRESHOLD)
+                .unwrap();
+            let last = rendered
+                .samples
+                .iter()
+                .rposition(|s| s.abs() >= crate::edges::THRESHOLD)
+                .unwrap();
+            assert_eq!(first, 240, "rendered leading quiet must equal the guard");
+            assert_eq!(rendered.samples.len() - last - 1, 240);
+            assert_eq!(rendered.samples.len(), 12480);
+            assert_eq!(&rendered.samples[240..4240], &[0.25; 4000]);
+            assert_eq!(&rendered.samples[4240..6240], &[0.0; 2000]);
+            assert_eq!(&rendered.samples[6240..12240], &[0.25; 6000]);
+        }
+    }
+    use crate::playback::PlaybackError;
+    use std::rc::Rc;
+    #[derive(Default)]
+    struct FakeWorker {
+        now: f64,
+        rtf: f64,
+        pending: Option<(f64, Completion)>,
+        requested: Vec<Ticket>,
+        native_speeds: Vec<Option<f32>>,
+        cancelled: Vec<Ticket>,
+        fail_once: Option<usize>,
+        busy_once: bool,
+        seconds: f64,
+        selections: usize,
+        texts: Vec<String>,
+        fail_next: bool,
+    }
+    impl Worker for FakeWorker {
+        fn request(
+            &mut self,
+            ticket: Ticket,
+            text: &str,
+            selection: &Selection,
+        ) -> Result<(), String> {
+            self.requested.push(ticket);
+            self.texts.push(text.to_owned());
+            self.native_speeds.push(Some(selection.speed));
+            let fail_this = self.fail_once == Some(ticket.index);
+            let result = if fail_this || std::mem::take(&mut self.fail_next) {
+                if fail_this {
+                    self.fail_once = None;
+                }
+                Err("tts.errors.worker".into())
+            } else {
+                Ok(Pcm {
+                    id: ticket.index as u64 + 1,
+                    sample_rate: 8000,
+                    samples: vec![0.0; (self.seconds * 8000.0) as usize],
+                })
+            };
+            self.pending = Some((
+                self.now + self.rtf * self.seconds,
+                Completion {
+                    ticket,
+                    result,
+                    synthesis_seconds: self.rtf * self.seconds,
+                },
+            ));
+            Ok(())
+        }
+        fn try_request(
+            &mut self,
+            ticket: Ticket,
+            text: &str,
+            selection: &Selection,
+        ) -> Result<bool, String> {
+            if std::mem::take(&mut self.busy_once) {
+                return Ok(false);
+            }
+            self.request(ticket, text, selection).map(|()| true)
+        }
+        fn poll(&mut self) -> Option<Completion> {
+            if self
+                .pending
+                .as_ref()
+                .is_some_and(|(due, _)| *due <= self.now)
+            {
+                self.pending.take().map(|(_, c)| c)
+            } else {
+                None
+            }
+        }
+        fn cancel(&mut self, t: Ticket) {
+            self.cancelled.push(t);
+        }
+        fn selection_changed(&mut self) {
+            self.selections += 1;
+        }
+    }
+    struct PreparedStream {
+        name: Option<String>,
+        live: Rc<Cell<usize>>,
+    }
+    impl Drop for PreparedStream {
+        fn drop(&mut self) {
+            self.live.set(self.live.get() - 1);
+        }
+    }
+    #[derive(Default)]
+    struct FakeOutput {
+        now: f64,
+        deadline: Option<f64>,
+        paused: bool,
+        played: Vec<u64>,
+        sample_counts: Vec<usize>,
+        stops: usize,
+        pauses: Vec<u32>,
+        opens: usize,
+        names: Vec<String>,
+        last_open: Option<String>,
+        fail_open: bool,
+        fail_after_open: Option<usize>,
+        prepared: Rc<Cell<usize>>,
+        commits: Rc<Cell<usize>>,
+        feed: Option<crate::feed::Feed>,
+        available: usize,
+        clock: f64,
+    }
+    impl Output for FakeOutput {
+        type Prepared = PreparedStream;
+        fn names(&self) -> Result<Vec<String>, PlaybackError> {
+            Ok(self.names.clone())
+        }
+        fn open(&mut self, name: Option<&str>) -> Result<(), PlaybackError> {
+            let prepared = self.prepare(name)?;
+            self.commit(prepared);
+            Ok(())
+        }
+        fn prepare(&mut self, name: Option<&str>) -> Result<Self::Prepared, PlaybackError> {
+            if self.fail_open
+                || self
+                    .fail_after_open
+                    .is_some_and(|limit| self.opens >= limit)
+            {
+                return Err(PlaybackError::Unavailable);
+            }
+            self.opens += 1;
+            self.prepared.set(self.prepared.get() + 1);
+            Ok(PreparedStream {
+                name: name.map(str::to_owned),
+                live: self.prepared.clone(),
+            })
+        }
+        fn commit(&mut self, prepared: Self::Prepared) {
+            self.last_open = prepared.name.clone();
+            self.deadline = None;
+            self.commits.set(self.commits.get() + 1);
+        }
+        fn set_sample_rate(&mut self, rate: u32) -> Result<(), PlaybackError> {
+            if self.feed.is_none() {
+                self.feed = Some(crate::feed::Feed::new(rate));
+            }
+            Ok(())
+        }
+        fn append(&mut self, segment: Segment) -> Result<(), PlaybackError> {
+            self.sample_counts.push(segment.speech.len());
+            self.pauses.push(
+                (segment.pause * 1000 / self.feed.as_ref().unwrap().sample_rate() as usize) as u32,
+            );
+            self.available += segment.samples();
+            self.deadline = Some(self.now + segment.samples() as f64 / 8000.0);
+            self.feed.as_mut().unwrap().push(segment);
+            Ok(())
+        }
+        fn events(&mut self) -> Vec<OutputEvent> {
+            let delta = (self.now - self.clock).max(0.0);
+            self.clock = self.now;
+            let Some(feed) = &mut self.feed else {
+                return vec![];
+            };
+            if !self.paused {
+                let count =
+                    ((delta * f64::from(feed.sample_rate())).round() as usize).min(self.available);
+                feed.pull(&mut vec![0.0; count]);
+                self.available -= count;
+            }
+            let events: Vec<_> = feed
+                .drain_events()
+                .into_iter()
+                .map(OutputEvent::from)
+                .collect();
+            for event in &events {
+                if let OutputEvent::Started(index) = event {
+                    self.played.push(*index as u64 + 1);
+                }
+            }
+            events
+        }
+        fn retract_unstarted(&mut self) -> Vec<Segment> {
+            let retracted = self
+                .feed
+                .as_mut()
+                .map(|f| f.retract_unstarted())
+                .unwrap_or_default();
+            self.available -= retracted.iter().map(Segment::samples).sum::<usize>();
+            retracted
+        }
+        fn content_samples(&self) -> u64 {
+            self.feed.as_ref().map_or(0, |f| f.content_samples())
+        }
+        fn pause(&mut self) {
+            self.paused = true;
+        }
+        fn resume(&mut self) {
+            self.paused = false;
+            self.clock = self.now;
+        }
+        fn stop(&mut self) {
+            self.deadline = None;
+            self.feed = None;
+            self.available = 0;
+            self.clock = self.now;
+            self.paused = false;
+            self.stops += 1;
+        }
+    }
+    fn selection() -> Selection {
+        Selection {
+            model_id: "supertonic-3".into(),
+            voice: "F1".into(),
+            speed: 2.0,
+            pitch: 0.0,
+            output_device: None,
+            read_code: false,
+            technical: false,
+            full_paths: true,
+            full_links: false,
+        }
+    }
+    fn session(source: &str, rtf: f64) -> Session<'_, FakeWorker, FakeOutput> {
+        Session::new(
+            source,
+            selection(),
+            FakeWorker {
+                rtf,
+                seconds: 1.0,
+                ..FakeWorker::default()
+            },
+            FakeOutput::default(),
+            None,
+        )
+        .unwrap()
+    }
+    #[test]
+    fn worker_backpressure_retains_ticket_and_text_until_admitted() {
+        let source = "Every sentence contains enough characters for its own speech chunk.";
+        let mut session = session(source, 0.1);
+        session.worker.busy_once = true;
+        session.play().unwrap();
+        session.tick(0.0).unwrap();
+        assert_eq!(session.queue.failed_index, None);
+        assert_eq!(session.queue.next_index, 0);
+        assert!(session.queue.in_flight.is_empty());
+        assert!(session.worker.requested.is_empty());
+        assert_eq!(session.pending_text.as_ref().unwrap().text, source);
+        assert_eq!(session.snapshot().error, None);
+        session.tick(0.0).unwrap();
+        assert_eq!(
+            session.worker.requested,
+            [Ticket {
+                epoch: session.queue.epoch,
+                index: 0
+            }]
+        );
+        assert_eq!(session.metadata[&0].text, source);
+        assert_eq!(session.queue.failed_index, None);
+        assert!(session.queue.in_flight.contains_key(&0));
+    }
+
+    #[test]
+    fn variable_length_requests_sustain_playback_within_the_read_ahead_budget() {
+        struct VariableWorker {
+            now: f64,
+            cost_per_character: f64,
+            pending: Vec<(f64, Completion)>,
+            texts: Vec<String>,
+        }
+        impl Worker for VariableWorker {
+            fn request(&mut self, ticket: Ticket, text: &str, _: &Selection) -> Result<(), String> {
+                let chars = text.chars().count();
+                let elapsed = chars as f64 * self.cost_per_character;
+                self.texts.push(text.into());
+                self.pending.push((
+                    self.now + elapsed,
+                    Completion {
+                        ticket,
+                        result: Ok(Pcm {
+                            id: ticket.index as u64,
+                            sample_rate: 8000,
+                            samples: vec![0.25; (chars * 8000).div_ceil(15)],
+                        }),
+                        synthesis_seconds: elapsed,
+                    },
+                ));
+                Ok(())
+            }
+            fn poll(&mut self) -> Option<Completion> {
+                let index = self.pending.iter().position(|(end, _)| *end <= self.now)?;
+                Some(self.pending.remove(index).1)
+            }
+            fn available_lanes(&mut self) -> Option<usize> {
+                Some(3)
+            }
+            fn cancel(&mut self, ticket: Ticket) {
+                self.pending.retain(|(_, c)| c.ticket != ticket);
+            }
+            fn selection_changed(&mut self) {}
+        }
+        let source = "ordinary words ".repeat(100);
+        for (speed, cost) in [(1.0, 0.055), (2.0, 0.02)] {
+            let worker = VariableWorker {
+                now: 0.0,
+                cost_per_character: cost,
+                pending: vec![],
+                texts: vec![],
+            };
+            let mut s = Session::new(
+                &source,
+                Selection {
+                    speed,
+                    ..selection()
+                },
+                worker,
+                FakeOutput::default(),
+                None,
+            )
+            .unwrap();
+            s.play().unwrap();
+            for step in 0..6000 {
+                let now = f64::from(step) * 0.05;
+                s.worker.now = now;
+                s.playback.output.now = now;
+                s.tick(now).unwrap();
+                assert!(s.queue.queued_seconds() <= 30.0);
+                assert!(s.queue.stored_seconds() <= 60.0);
+                if s.queue.state == PlaybackState::Finished {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.state, PlaybackState::Finished);
+            assert_eq!(
+                s.queue.buffering_pauses, 0,
+                "variable-length synthesis must stay ahead"
+            );
+            let words: Vec<_> = s
+                .worker
+                .texts
+                .iter()
+                .flat_map(|t| t.split_whitespace())
+                .collect();
+            assert_eq!(words.len(), 200);
+            assert_eq!(
+                words[..199],
+                source.split_whitespace().take(199).collect::<Vec<_>>()
+            );
+            assert_eq!(words[199], "words.");
+            assert_eq!(s.playback.output.played.len(), s.worker.texts.len());
+        }
+    }
+    mod streaming {
+        use super::*;
+        use crate::{
+            feed::{Feed, Segment},
+            playback::segment::{Output, OutputEvent},
+        };
+
+        struct Audio {
+            feed: Feed,
+            paused: bool,
+            pause_calls: usize,
+            trace: Vec<OutputEvent>,
+            appended: Vec<(usize, usize)>,
+            expected_speech: Option<Vec<f32>>,
+        }
+        impl Default for Audio {
+            fn default() -> Self {
+                Self {
+                    feed: Feed::new(8000),
+                    paused: false,
+                    pause_calls: 0,
+                    trace: vec![],
+                    appended: vec![],
+                    expected_speech: None,
+                }
+            }
+        }
+        impl Output for Audio {
+            type Prepared = ();
+            fn names(&self) -> Result<Vec<String>, PlaybackError> {
+                Ok(vec![])
+            }
+            fn open(&mut self, _: Option<&str>) -> Result<(), PlaybackError> {
+                Ok(())
+            }
+            fn prepare(&mut self, _: Option<&str>) -> Result<(), PlaybackError> {
+                Ok(())
+            }
+            fn commit(&mut self, _: ()) {}
+            fn set_sample_rate(&mut self, rate: u32) -> Result<(), PlaybackError> {
+                assert_eq!(rate, 8000);
+                Ok(())
+            }
+            fn append(&mut self, segment: Segment) -> Result<(), PlaybackError> {
+                if let Some(expected) = &self.expected_speech {
+                    assert_eq!(&segment.speech, expected);
+                }
+                self.appended.push((segment.index, segment.speech.len()));
+                self.feed.push(segment);
+                Ok(())
+            }
+            fn events(&mut self) -> Vec<OutputEvent> {
+                let events: Vec<_> = self
+                    .feed
+                    .drain_events()
+                    .into_iter()
+                    .map(OutputEvent::from)
+                    .collect();
+                self.trace.extend(&events);
+                events
+            }
+            fn retract_unstarted(&mut self) -> Vec<Segment> {
+                self.feed.retract_unstarted()
+            }
+            fn content_samples(&self) -> u64 {
+                self.feed.content_samples()
+            }
+            fn pause(&mut self) {
+                self.pause_calls += 1;
+                self.paused = true;
+            }
+            fn resume(&mut self) {
+                self.paused = false;
+            }
+            fn stop(&mut self) {
+                self.feed = Feed::new(8000);
+                self.paused = false;
+            }
+        }
+        #[derive(Default)]
+        struct Lanes {
+            pending: VecDeque<Completion>,
+            requests: Vec<(Ticket, f32)>,
+            texts: Vec<String>,
+            cancelled: Vec<Ticket>,
+            failed: Option<usize>,
+            slow: bool,
+            native_samples: Option<usize>,
+        }
+        impl Worker for Lanes {
+            fn request(
+                &mut self,
+                ticket: Ticket,
+                text: &str,
+                selection: &Selection,
+            ) -> Result<(), String> {
+                self.requests.push((ticket, selection.speed));
+                self.texts.push(text.to_owned());
+                self.pending.push_front(Completion {
+                    ticket,
+                    result: if self.failed == Some(ticket.index) {
+                        Err("tts.errors.worker".into())
+                    } else {
+                        Ok(Pcm {
+                            id: ticket.index as u64,
+                            sample_rate: 8000,
+                            samples: vec![0.25; self.native_samples.unwrap_or(8000)],
+                        })
+                    },
+                    synthesis_seconds: if self.slow { 3.0 } else { 0.01 },
+                });
+                Ok(())
+            }
+            fn poll(&mut self) -> Option<Completion> {
+                self.pending.pop_front()
+            }
+            fn cancel(&mut self, ticket: Ticket) {
+                self.cancelled.push(ticket);
+            }
+            fn selection_changed(&mut self) {}
+        }
+        fn create(source: &str, speed: f32) -> Session<'_, Lanes, Audio> {
+            let mut s = Session::new(
+                source,
+                Selection {
+                    speed,
+                    ..selection()
+                },
+                Lanes::default(),
+                Audio::default(),
+                None,
+            )
+            .unwrap();
+            s.queue.set_lanes(3);
+            s.play().unwrap();
+            s
+        }
+        fn pump(s: &mut Session<'_, Lanes, Audio>, now: f64, pull: usize) {
+            s.tick(now).unwrap();
+            if s.queue.state == PlaybackState::Playing && !s.playback.output.paused {
+                s.playback.output.feed.pull(&mut vec![0.0; pull]);
+            }
+        }
+        #[test]
+        fn wbfix_pause_after_two_finished_segments_never_reappends_waiting_audio() {
+            let source =
+                "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(8);
+            let mut s = create(&source, 2.0);
+            s.tick(0.0).unwrap();
+            s.tick(0.01).unwrap();
+            assert_eq!(s.appended.len(), 2);
+            s.playback.output.feed.pull(&mut [0.0]);
+            s.tick(0.02).unwrap();
+            assert_eq!(s.appended.len(), 3);
+            let samples: usize = s.appended.iter().take(2).map(|a| a.samples).sum();
+            s.playback.output.feed.pull(&mut vec![0.0; samples - 1]);
+            s.pause();
+            s.tick(0.03).unwrap();
+            s.play().unwrap();
+            for step in 4..2000 {
+                pump(&mut s, f64::from(step) * 0.02, 160);
+                if s.queue.state == PlaybackState::Finished {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.state, PlaybackState::Finished);
+            let started: Vec<_> = s
+                .playback
+                .output
+                .trace
+                .iter()
+                .filter_map(|e| {
+                    if let OutputEvent::Started(i) = e {
+                        Some(*i)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            assert_eq!(
+                started,
+                (0..8).collect::<Vec<_>>(),
+                "every segment must play exactly once"
+            );
+        }
+        #[test]
+        fn wbfix_stop_and_current_audio_remain_live_during_a_blocked_render() {
+            let source =
+                "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(8);
+            let mut s = create(&source, 1.0);
+            s.tick(0.0).unwrap();
+            s.tick(0.01).unwrap();
+            s.playback.output.feed.pull(&mut [0.0]);
+            s.tick(0.02).unwrap();
+            let epoch = s.queue.epoch;
+            s.async_controls = true;
+            let (entered, wait) = std::sync::mpsc::channel();
+            let (release, blocked) = std::sync::mpsc::channel();
+            let blocked = std::sync::Mutex::new(blocked);
+            s.control_renderer = std::sync::Arc::new(move |pcm, stretch, pitch| {
+                entered.send(()).unwrap();
+                blocked.lock().unwrap().recv().unwrap();
+                render(pcm, stretch, pitch).map_err(|_| "tts.errors.audio".into())
+            });
+            let began = std::time::Instant::now();
+            s.set_speed_pitch(2.0, 0.0).unwrap();
+            let control_time = began.elapsed();
+            wait.recv_timeout(std::time::Duration::from_secs(2))
+                .unwrap();
+            let before = s.playback.output.feed.content_samples();
+            s.playback.output.feed.pull(&mut [0.0; 1024]);
+            assert_eq!(s.playback.output.feed.content_samples(), before + 1024);
+            assert_eq!(s.queue.epoch, epoch);
+            assert_eq!(s.queue.playing.as_ref().unwrap().plan.requested, 1.0);
+            let began = std::time::Instant::now();
+            s.stop();
+            let stop_time = began.elapsed();
+            assert!(
+                control_time < std::time::Duration::from_millis(50),
+                "control render must leave actor free"
+            );
+            assert!(
+                stop_time < std::time::Duration::from_millis(50),
+                "Stop must not wait for rendering"
+            );
+            release.send(()).unwrap();
+            let work = s.control_render.take().unwrap();
+            work.join.join().unwrap();
+            assert!(
+                work.result.recv().unwrap().is_empty(),
+                "Stop must discard rendered audio"
+            );
+            println!(
+                "blocked-render control={control_time:?} stop={stop_time:?} continued_samples=1024"
+            );
+            assert_eq!(s.queue.state, PlaybackState::Waiting);
+            assert!(s.appended.is_empty());
+        }
+        #[test]
+        fn wbfix_background_speed_change_delivers_every_segment_at_the_next_boundary() {
+            let source =
+                "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(8);
+            let mut s = create(&source, 1.0);
+            s.tick(0.0).unwrap();
+            s.tick(0.01).unwrap();
+            s.playback.output.feed.pull(&mut [0.0]);
+            s.tick(0.02).unwrap();
+            let epoch = s.queue.epoch;
+            s.async_controls = true;
+            s.set_speed_pitch(2.0, 0.0).unwrap();
+            for _ in 0..2000 {
+                s.tick(0.02).unwrap();
+                if s.control_render.is_none() && s.pending_controls.is_none() {
+                    break;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(1));
+            }
+            assert!(
+                s.control_render.is_none(),
+                "background rendering must finish"
+            );
+            for step in 2..2000 {
+                pump(&mut s, f64::from(step) * 0.02, 160);
+                if s.queue.state == PlaybackState::Finished {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.epoch, epoch);
+            assert_eq!(s.queue.state, PlaybackState::Finished);
+            let finished: Vec<_> = s
+                .playback
+                .output
+                .trace
+                .iter()
+                .filter_map(|e| {
+                    if let OutputEvent::Finished { index, delivered } = e {
+                        assert_eq!(*delivered, if *index == 0 { 11_600 } else { 5800 });
+                        Some(*index)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            assert_eq!(finished, (0..8).collect::<Vec<_>>());
+            assert_eq!(s.playback.output.pause_calls, 0);
+        }
+        #[test]
+        fn wbfix_speed_change_never_pauses_the_audible_segment() {
+            let source =
+                "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(8);
+            let mut s = create(&source, 1.0);
+            s.tick(0.0).unwrap();
+            s.tick(0.01).unwrap();
+            s.playback.output.feed.pull(&mut [0.0]);
+            s.tick(0.02).unwrap();
+            let pauses = s.playback.output.pause_calls;
+            s.set_speed_pitch(2.0, 0.0).unwrap();
+            assert_eq!(
+                s.playback.output.pause_calls, pauses,
+                "current speech must never be paused for rendering"
+            );
+        }
+        #[test]
+        fn resume_from_buffering_keeps_native_audio_until_started() {
+            let source =
+                "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(8);
+            for (speed, pitch) in [(2.0, 0.0), (1.0, 2.0), (2.0, 2.0)] {
+                let mut s = create(&source, 1.0);
+                s.tick(0.0).unwrap();
+                s.pause();
+                s.tick(0.01).unwrap();
+                assert!(s.queue.playing.is_none());
+                assert!(!s.queue.waiting.is_empty());
+                let epoch = s.queue.epoch;
+                s.play().unwrap();
+                s.tick(0.02).unwrap();
+                assert!(s.playback.current_index().is_none());
+                assert_eq!(s.playback.content_samples(), 0);
+                let native = crate::edges::trim(vec![0.25; 8000], 8000).samples;
+                let expected = render(
+                    Pcm {
+                        id: 0,
+                        sample_rate: 8000,
+                        samples: native,
+                    },
+                    speed,
+                    pitch,
+                )
+                .unwrap();
+                s.playback.output.expected_speech = Some(expected.samples.clone());
+                s.set_speed_pitch(speed, pitch).unwrap();
+                assert_eq!(s.queue.epoch, epoch);
+                assert!(!s.playback.output.paused);
+                assert_eq!(s.queue.state, PlaybackState::Playing);
+                for i in 2..2000 {
+                    pump(&mut s, f64::from(i) * 0.02, 160);
+                    if s.queue.state == PlaybackState::Finished {
+                        break;
+                    }
+                }
+                assert_eq!(s.queue.state, PlaybackState::Finished);
+                assert_eq!(s.snapshot().error, None);
+                let started: Vec<_> = s
+                    .playback
+                    .output
+                    .trace
+                    .iter()
+                    .filter_map(|event| match event {
+                        OutputEvent::Started(index) => Some(*index),
+                        _ => None,
+                    })
+                    .collect();
+                let finished: Vec<_> = s
+                    .playback
+                    .output
+                    .trace
+                    .iter()
+                    .filter_map(|event| match event {
+                        OutputEvent::Finished { index, delivered } => {
+                            assert_eq!(
+                                *delivered,
+                                expected.samples.len()
+                                    + crate::edges::pause_samples(450, speed, 8000)
+                            );
+                            Some(*index)
+                        }
+                        _ => None,
+                    })
+                    .collect();
+                assert_eq!(started, (0..8).collect::<Vec<_>>());
+                assert_eq!(finished, started);
+                assert_eq!(
+                    s.worker
+                        .texts
+                        .iter()
+                        .flat_map(|text| text.split_whitespace())
+                        .collect::<Vec<_>>(),
+                    source.split_whitespace().collect::<Vec<_>>()
+                );
+            }
+        }
+        #[test]
+        fn buffered_resume_charges_retained_native_to_storage_budget() {
+            let source =
+                "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(12);
+            let mut s = create(&source, 2.0);
+            let bounded = |s: &Session<'_, Lanes, Audio>| {
+                let retained: f64 = s
+                    .queue
+                    .playing
+                    .iter()
+                    .chain(s.queue.waiting.iter())
+                    .chain(s.queue.ready.values())
+                    .map(|audio| {
+                        (audio.pcm.samples.len() + audio.native.len()) as f64
+                            / f64::from(audio.pcm.sample_rate)
+                    })
+                    .sum();
+                assert!(
+                    retained <= crate::scheduler::STORED_SECONDS_CEILING + 0.00001,
+                    "retained PCM exceeds storage ceiling: {retained}"
+                );
+                assert!(s.queue.queued_seconds() <= QUEUED_AUDIO_CEILING + 0.00001);
+            };
+            s.worker.native_samples = Some(104_000);
+            s.tick(0.0).unwrap();
+            bounded(&s);
+            assert_eq!(s.worker.pending.len(), 3);
+            for completion in &mut s.worker.pending {
+                completion.synthesis_seconds = 60.0;
+            }
+            s.pause();
+            bounded(&s);
+            s.tick(0.01).unwrap();
+            bounded(&s);
+            assert!(s.queue.playing.is_none());
+            assert_eq!(s.queue.waiting.len(), 3);
+            assert!((s.queue.stored_seconds() - 58.5).abs() < 0.00001);
+            s.worker.native_samples = Some(24_000);
+            s.play().unwrap();
+            bounded(&s);
+            s.tick(0.02).unwrap();
+            bounded(&s);
+            assert_eq!(s.worker.pending.len(), 3);
+            s.tick(0.03).unwrap();
+            assert_eq!(s.playback.content_samples(), 0);
+            bounded(&s);
+            assert_eq!(s.queue.playing.as_ref().unwrap().native.len(), 104_000);
+            s.playback.output.feed.pull(&mut [0.0]);
+            bounded(&s);
+            s.tick(0.04).unwrap();
+            bounded(&s);
+            assert!(s.queue.playing.as_ref().unwrap().native.is_empty());
+            for i in 4..6000 {
+                pump(&mut s, f64::from(i) * 0.02, 160);
+                bounded(&s);
+                if s.queue.state == PlaybackState::Finished {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.state, PlaybackState::Finished);
+            let started: Vec<_> = s
+                .playback
+                .output
+                .trace
+                .iter()
+                .filter_map(|event| match event {
+                    OutputEvent::Started(index) => Some(*index),
+                    _ => None,
+                })
+                .collect();
+            let finished: Vec<_> = s
+                .playback
+                .output
+                .trace
+                .iter()
+                .filter_map(|event| match event {
+                    OutputEvent::Finished { index, delivered } => {
+                        let speech = if *index < 3 { 52_000 } else { 12_000 };
+                        assert_eq!(*delivered, speech + 1800);
+                        Some(*index)
+                    }
+                    _ => None,
+                })
+                .collect();
+            assert_eq!(started, (0..12).collect::<Vec<_>>());
+            assert_eq!(finished, started);
+            assert_eq!(s.queue.stored_seconds(), 0.0);
+            assert_eq!(
+                s.worker
+                    .texts
+                    .iter()
+                    .flat_map(|text| text.split_whitespace())
+                    .collect::<Vec<_>>(),
+                source.split_whitespace().collect::<Vec<_>>()
+            );
+        }
+        #[test]
+        fn failed_control_render_resumes_output_before_returning_error() {
+            let source =
+                "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(8);
+            let mut s = create(&source, 1.0);
+            s.tick(0.0).unwrap();
+            s.tick(0.01).unwrap();
+            let native = &mut s.queue.playing.as_mut().unwrap().native;
+            assert!(!native.is_empty());
+            native[0] = f32::NAN;
+            assert_eq!(s.set_speed_pitch(2.0, 0.0), Err("tts.errors.audio".into()));
+            assert_eq!(s.queue.state, PlaybackState::Playing);
+            assert!(!s.playback.output.paused);
+        }
+        #[test]
+        fn twenty_minute_document_plays_gapless_at_2x_with_fast_worker() {
+            let source = "Every sentence has enough characters to form its own speech chunk.\n\n"
+                .repeat(1700);
+            let mut s = create(&source, 2.0);
+            for i in 0..200_000 {
+                pump(&mut s, f64::from(i) * 0.02, 160);
+                assert!(
+                    s.playback.output.feed.unstarted_len() <= 2,
+                    "append_ahead_is_bounded"
+                );
+                if s.queue.state == PlaybackState::Finished {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.state, PlaybackState::Finished);
+            let trace = &s.playback.output.trace;
+            let started: Vec<_> = trace
+                .iter()
+                .filter_map(|e| {
+                    if let OutputEvent::Started(i) = e {
+                        Some(*i)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            let finished: Vec<_> = trace
+                .iter()
+                .filter_map(|e| {
+                    if let OutputEvent::Finished { index, .. } = e {
+                        Some(*index)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            assert_eq!(started, (0..1700).collect::<Vec<_>>());
+            assert!(s.snapshot().elapsed_seconds >= 1200.0);
+            assert_eq!(finished, started);
+            assert_eq!(s.queue.buffering_pauses, 0);
+            assert_eq!(s.playback.output.feed.underrun_samples(), 0);
+            for event in trace {
+                if let OutputEvent::Finished { delivered, .. } = event {
+                    assert_eq!(*delivered, 5800);
+                }
+            }
+        }
+        #[test]
+        fn highlight_follows_started_event_not_append() {
+            let source =
+                "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(8);
+            let mut s = create(&source, 2.0);
+            s.tick(0.0).unwrap();
+            s.tick(0.01).unwrap();
+            assert!(!s.playback.output.appended.is_empty());
+            assert_eq!(s.snapshot().source_end, 0);
+            s.playback.output.feed.pull(&mut [0.0]);
+            s.tick(0.02).unwrap();
+            let first = s.snapshot();
+            assert!(first.source_end > first.source_start);
+            assert!(s.playback.output.feed.unstarted_len() > 0);
+            assert_eq!(first.elapsed_seconds, 1.0 / 8000.0);
+            assert_eq!(s.snapshot().source_start, first.source_start);
+            s.tick(0.03).unwrap();
+            assert_eq!(s.snapshot().elapsed_seconds, 1.0 / 8000.0);
+            s.playback.output.feed.pull(&mut vec![0.0; 5799]);
+            s.tick(0.04).unwrap();
+            assert_eq!(s.snapshot().source_start, first.source_start);
+            s.playback.output.feed.pull(&mut [0.0]);
+            s.tick(0.05).unwrap();
+            assert_eq!(s.snapshot().source_start, s.metadata[&1].source_start);
+            assert!(s.snapshot().source_start > first.source_start);
+        }
+        #[test]
+        fn speed_change_applies_at_next_boundary_without_restart() {
+            let source =
+                "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(20);
+            let mut s = create(&source, 1.0);
+            let epoch = s.queue.epoch;
+            let mut changed = false;
+            let mut previous = 0;
+            for i in 0..5000 {
+                pump(&mut s, f64::from(i) * 0.02, 160);
+                let range = s.snapshot().source_start;
+                assert!(range >= previous);
+                previous = range;
+                if !changed && s.playback.current_index() == Some(3) {
+                    let chosen = Selection {
+                        speed: 2.0,
+                        ..s.selection.clone()
+                    };
+                    let mut persisted = 0;
+                    let changed_selection = s
+                        .select(chosen, true, |_| {
+                            persisted += 1;
+                            Ok(())
+                        })
+                        .unwrap();
+                    assert_eq!(persisted, 1);
+                    assert_eq!(changed_selection.epoch, epoch);
+                    changed = true;
+                    assert_eq!(s.queue.epoch, epoch);
+                }
+                if s.queue.state == PlaybackState::Finished {
+                    break;
+                }
+            }
+            assert!(changed);
+            assert_eq!(s.queue.state, PlaybackState::Finished);
+            let started: Vec<_> = s
+                .playback
+                .output
+                .trace
+                .iter()
+                .filter_map(|e| {
+                    if let OutputEvent::Started(i) = e {
+                        Some(*i)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            assert_eq!(started, (0..20).collect::<Vec<_>>());
+            for (index, count) in &s.playback.output.appended {
+                if *index <= 3 {
+                    assert_eq!(*count, 8000);
+                }
+            }
+            for index in 4..20 {
+                assert_eq!(
+                    s.playback
+                        .output
+                        .appended
+                        .iter()
+                        .rev()
+                        .find(|(i, _)| *i == index)
+                        .unwrap()
+                        .1,
+                    4000
+                );
+            }
+        }
+        #[test]
+        fn speed_change_with_out_of_range_restretch_rerequests_from_that_chunk() {
+            let source =
+                "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(12);
+            let mut s = create(&source, 2.0);
+            s.native_window = |_| Ok(crate::speed::NativeWindow { min: 0.5, max: 2.0 });
+            s.tick(0.0).unwrap();
+            s.tick(0.01).unwrap();
+            s.playback.output.feed.pull(&mut [0.0]);
+            s.tick(0.02).unwrap();
+            let epoch = s.queue.epoch;
+            s.set_speed_pitch(0.5, 0.0).unwrap();
+            assert_eq!(s.queue.epoch, epoch);
+            for i in 2..5000 {
+                pump(&mut s, f64::from(i) * 0.02, 160);
+                if s.queue.state == PlaybackState::Finished {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.state, PlaybackState::Finished);
+            assert!(
+                s.worker
+                    .requests
+                    .iter()
+                    .filter(|(t, _)| t.index == 1)
+                    .count()
+                    >= 2
+            );
+            let started: Vec<_> = s
+                .playback
+                .output
+                .trace
+                .iter()
+                .filter_map(|e| {
+                    if let OutputEvent::Started(i) = e {
+                        Some(*i)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            assert_eq!(started, (0..12).collect::<Vec<_>>());
+        }
+        #[test]
+        fn failed_middle_lane_stops_at_its_sentence_after_earlier_audio() {
+            let source =
+                "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(12);
+            let mut s = create(&source, 2.0);
+            s.worker.failed = Some(4);
+            for i in 0..5000 {
+                pump(&mut s, f64::from(i) * 0.02, 160);
+                if s.queue.state == PlaybackState::Error {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.state, PlaybackState::Error);
+            assert_eq!(s.queue.failed_index, Some(4));
+            let finished: Vec<_> = s
+                .playback
+                .output
+                .trace
+                .iter()
+                .filter_map(|e| {
+                    if let OutputEvent::Finished { index, .. } = e {
+                        Some(*index)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            assert_eq!(finished, [0, 1, 2, 3]);
+            s.worker.failed = None;
+            s.play().unwrap();
+            for i in 5000..10_000 {
+                pump(&mut s, f64::from(i) * 0.02, 160);
+                if s.queue.state == PlaybackState::Finished {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.state, PlaybackState::Finished);
+        }
+        #[test]
+        fn slowing_prepared_audio_keeps_queue_bounded_and_every_sentence() {
+            let source =
+                "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(40);
+            let mut s = create(&source, 2.0);
+            s.worker.slow = true;
+            for i in 0..25 {
+                pump(&mut s, f64::from(i) * 0.02, 160);
+            }
+            assert!(s.queue.queued_seconds() > 10.0);
+            let epoch = s.queue.epoch;
+            s.set_speed_pitch(0.5, 0.0).unwrap();
+            assert_eq!(s.queue.epoch, epoch);
+            assert!(s.queue.queued_seconds() <= QUEUED_AUDIO_CEILING + 0.00001);
+            assert!(s.queue.stored_seconds() <= crate::scheduler::STORED_SECONDS_CEILING + 0.00001);
+            for i in 25..20_000 {
+                pump(&mut s, f64::from(i) * 0.02, 160);
+                assert!(s.queue.queued_seconds() <= QUEUED_AUDIO_CEILING + 0.00001);
+                if s.queue.state == PlaybackState::Finished {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.state, PlaybackState::Finished);
+            let started: Vec<_> = s
+                .playback
+                .output
+                .trace
+                .iter()
+                .filter_map(|event| {
+                    if let OutputEvent::Started(i) = event {
+                        Some(*i)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            assert_eq!(started, (0..40).collect::<Vec<_>>());
+        }
+        #[test]
+        fn split_sentence_segments_have_distinct_ids_and_keep_the_same_highlight() {
+            let source = "Every sentence has enough characters to form its own speech chunk.";
+            let mut s = create(source, 0.5);
+            s.worker.native_samples = Some(160_000);
+            for i in 0..4000 {
+                pump(&mut s, f64::from(i) * 0.02, 160);
+                if s.started_sentence.is_some() {
+                    assert_eq!(s.snapshot().source_start, 0);
+                }
+                if s.queue.state == PlaybackState::Finished {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.state, PlaybackState::Finished);
+            let started: Vec<_> = s
+                .playback
+                .output
+                .trace
+                .iter()
+                .filter_map(|event| {
+                    if let OutputEvent::Started(i) = event {
+                        Some(*i)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            assert_eq!(started.len(), 2);
+            assert_ne!(started[0], started[1]);
+            assert_eq!(s.playback.output.feed.underrun_samples(), 0);
+            let delivered: usize = s
+                .playback
+                .output
+                .trace
+                .iter()
+                .filter_map(|event| {
+                    if let OutputEvent::Finished { delivered, .. } = event {
+                        Some(*delivered)
+                    } else {
+                        None
+                    }
+                })
+                .sum();
+            assert_eq!(delivered, 320_000 + 7200);
+        }
+
+        #[test]
+        fn retained_edge_pcm_is_delivered_in_order_with_bounded_parts_after_rerender() {
+            let speech: Vec<_> = (0..66 * 8000)
+                .map(|i| 0.1 + (i % 257) as f32 * 0.0001)
+                .collect();
+            let mut raw = vec![0.0; 72 * 8000];
+            raw[2 * 8000..68 * 8000].copy_from_slice(&speech);
+            let mut expected = vec![0.0; 80];
+            expected.extend_from_slice(&speech);
+            expected.resize(expected.len() + 80 + 3600, 0.0);
+            for initial_speed in [1.0, 2.0] {
+                let mut s = create(
+                    "A paragraph with one long native result.\n\n",
+                    initial_speed,
+                );
+                s.selection.model_id = "supertonic-3".into();
+                s.tick(0.0).unwrap();
+                s.pause();
+                let mut completion = s.worker.pending.pop_front().unwrap();
+                completion.result = Ok(Pcm {
+                    id: 0,
+                    sample_rate: 8000,
+                    samples: raw.clone(),
+                });
+                s.received(completion);
+                assert_eq!(s.metadata[&0].pause_ms, 450);
+                assert_eq!(
+                    s.parts[&0]
+                        .samples
+                        .iter()
+                        .map(|(_, n)| n.len())
+                        .sum::<usize>(),
+                    552000
+                );
+                if initial_speed != 1.0 {
+                    s.set_speed_pitch(1.0, 0.0).unwrap();
+                }
+                s.play().unwrap();
+                let mut delivered = Vec::new();
+                for step in 0..2000 {
+                    s.tick(0.01 + f64::from(step) * 0.1).unwrap();
+                    assert!(
+                        s.queue.failed_index.is_none(),
+                        "residual-edge PCM must not fail admission"
+                    );
+                    assert_ne!(s.queue.state, PlaybackState::Error);
+                    assert!(s.queue.queued_seconds() <= 30.0 + 0.00001);
+                    assert!(s.queue.stored_seconds() <= 60.0 + 0.00001);
+                    for parts in s.parts.values() {
+                        assert!(
+                            parts
+                                .samples
+                                .iter()
+                                .all(|(pcm, native)| pcm.samples.len() + native.len() <= 60 * 8000)
+                        );
+                    }
+                    if s.queue.state == PlaybackState::Finished {
+                        break;
+                    }
+                    if s.queue.state == PlaybackState::Playing {
+                        let before = s.playback.output.feed.content_samples();
+                        let mut block = [0.0; 800];
+                        s.playback.output.feed.pull(&mut block);
+                        let count = (s.playback.output.feed.content_samples() - before) as usize;
+                        delivered.extend_from_slice(&block[..count]);
+                    }
+                }
+                assert_eq!(
+                    s.queue.state,
+                    PlaybackState::Finished,
+                    "long PCM must finish in bounded time"
+                );
+                assert_eq!(delivered, expected);
+                let finished: Vec<_> = s
+                    .playback
+                    .output
+                    .trace
+                    .iter()
+                    .filter_map(|event| {
+                        if let OutputEvent::Finished { index, delivered } = event {
+                            Some((*index, *delivered))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                assert_eq!(finished.len(), s.playback.output.appended.len());
+                for (position, ((index, delivered), (appended, speech))) in
+                    finished.iter().zip(&s.playback.output.appended).enumerate()
+                {
+                    assert_eq!(index, appended);
+                    assert_eq!(
+                        *delivered,
+                        speech
+                            + if position + 1 == finished.len() {
+                                3600
+                            } else {
+                                0
+                            }
+                    );
+                }
+                assert_eq!(s.worker.requests.len(), 1);
+                assert!(s.parts.is_empty());
+            }
+        }
+        #[test]
+        fn stop_with_three_lanes_returns_without_waiting_and_drops_late_replies() {
+            let source =
+                "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(12);
+            let mut s = create(&source, 2.0);
+            s.tick(0.0).unwrap();
+            assert_eq!(s.queue.in_flight.len(), 3);
+            s.stop();
+            assert_eq!(s.worker.cancelled.len(), 3);
+            s.tick(0.01).unwrap();
+            assert!(s.playback.output.appended.is_empty());
+            assert_eq!(s.queue.state, PlaybackState::Waiting);
+        }
+    }
+    #[test]
+    fn session_requests_native_speed_from_plan() {
+        for (id, window, expected) in [
+            (
+                "pocket-en",
+                crate::speed::NativeWindow { min: 1.0, max: 1.0 },
+                1.0,
+            ),
+            (
+                "supertonic-3",
+                crate::speed::NativeWindow { min: 1.0, max: 1.3 },
+                1.3,
+            ),
+        ] {
+            let mut s = session(
+                "Every word in this sentence must reach the listener completely.",
+                0.0,
+            );
+            s.selection.model_id = id.into();
+            s.native_window = |id| {
+                Ok(crate::speed::NativeWindow {
+                    min: 1.0,
+                    max: if id == "pocket-en" { 1.0 } else { 1.3 },
+                })
+            };
+            assert_eq!((s.native_window)(id).unwrap(), window);
+            s.play().unwrap();
+            step(&mut s, 0.0);
+            assert_eq!(s.worker.native_speeds, [Some(expected)]);
+            step(&mut s, 0.1);
+            assert_eq!(
+                s.playback.output.sample_counts,
+                [(8000.0 / (2.0 / expected)).round() as usize]
+            );
+        }
+    }
+    #[test]
+    fn fix1_idle_output_failure_does_not_block_stop_and_recovers_on_play() {
+        let mut s = Session::new(
+            "The reading document stays available when audio returns.",
+            selection(),
+            FakeWorker::default(),
+            FakeOutput {
+                fail_open: true,
+                ..FakeOutput::default()
+            },
+            None,
+        )
+        .unwrap();
+        assert_eq!(s.playback.output.opens, 0);
+        s.stop();
+        assert_eq!(s.play().unwrap_err(), "tts.errors.audio");
+        s.stop();
+        s.playback.output.fail_open = false;
+        s.play().unwrap();
+        assert_eq!(s.playback.output.opens, 1);
+        assert_eq!(s.queue.state, PlaybackState::Buffering);
+    }
+    fn step(s: &mut Session<'_, FakeWorker, FakeOutput>, now: f64) {
+        s.worker.now = now;
+        s.playback.output.now = now;
+        s.tick(now).unwrap();
+        assert!(s.queue.queued_seconds() <= 30.00001);
+    }
+    #[test]
+    fn followup_n1_code_toggle_after_retry_before_tick_retains_destination() {
+        let source = format!(
+            "# Start\n\n```\n{}\n```\n\nThe destination sentence must remain the active source after switching.\n\nAnother long sentence follows the destination sentence here.",
+            "alpha beta gamma delta ".repeat(60)
+        );
+        let target = source.find("The destination").unwrap() as u32;
+        let mut cursor = TextCursor::streaming(&source, true).unwrap();
+        let mut destination = None;
+        while let Some(chunk) = cursor.next_chunk().unwrap() {
+            if chunk.source_start == target {
+                destination = Some(chunk.index);
+                break;
+            }
+        }
+        let destination = destination.unwrap();
+        assert_eq!(destination, 16);
+        let mut cursor = TextCursor::streaming(&source, false).unwrap();
+        let mut expected = Vec::new();
+        while let Some(chunk) = cursor.next_chunk().unwrap() {
+            if chunk.source_start >= target {
+                expected.push(chunk.index as u64 + 1);
+            }
+        }
+        for pause_before_select in [false, true] {
+            let mut s = session(&source, 0.01);
+            s.selection.read_code = true;
+            s.worker.fail_once = Some(destination);
+            s.play().unwrap();
+            let mut now = 0.0;
+            for _ in 0..500 {
+                step(&mut s, now);
+                now += 0.1;
+                if s.queue.state == PlaybackState::Error {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.state, PlaybackState::Error);
+            assert_eq!(s.snapshot().source_start, target);
+            let played_before = s.playback.output.played.len();
+            s.play().unwrap();
+            if pause_before_select {
+                s.pause();
+            }
+            s.select(selection(), true, |_| Ok(())).unwrap();
+            s.pause();
+            let requested = s.worker.requested.len();
+            step(&mut s, now);
+            now += 0.1;
+            assert_eq!(s.worker.requested.len(), requested);
+            s.play().unwrap();
+            let mut first_source = None;
+            for _ in 0..200 {
+                step(&mut s, now);
+                now += 0.1;
+                if let Some(audio) = &s.queue.playing {
+                    first_source.get_or_insert(audio.source_start);
+                }
+                if s.queue.state == PlaybackState::Finished {
+                    break;
+                }
+            }
+            assert_eq!(first_source, Some(target));
+            assert_eq!(s.queue.state, PlaybackState::Finished);
+            assert_eq!(&s.playback.output.played[played_before..], expected);
+        }
+    }
+    #[test]
+    fn followup_n2_failed_persist_does_not_reopen_or_repeat_active_sentence() {
+        let source =
+            "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(20);
+        for restore_would_fail in [false, true] {
+            let mut s = session(&source, 0.1);
+            s.playback.output.names.push("Headphones".into());
+            s.play().unwrap();
+            for i in 0..12 {
+                step(&mut s, f64::from(i) * 0.1);
+            }
+            let before = (
+                s.playback.output.opens,
+                s.playback.output.stops,
+                s.queue.epoch,
+            );
+            let old_selection = s.selection.clone();
+            let old_deadline = s.playback.output.deadline;
+            let old_ticket = s.queue.playing.as_ref().unwrap().ticket;
+            let old_pending = s.queue.in_flight.clone();
+            let old_waiting: Vec<_> = s.queue.waiting.iter().map(|c| c.ticket).collect();
+            let prepared = s.playback.output.prepared.clone();
+            let commits = s.playback.output.commits.clone();
+            let old_commits = commits.get();
+            if restore_would_fail {
+                s.playback.output.fail_after_open = Some(before.0 + 1);
+            }
+            let mut chosen = selection();
+            chosen.output_device = Some("Headphones".into());
+            assert_eq!(
+                s.select(chosen, true, |_| {
+                    assert_eq!(prepared.get(), 1);
+                    assert_eq!(commits.get(), old_commits);
+                    Err(SelectionError::Persist)
+                }),
+                Err(SelectionError::Persist)
+            );
+            assert_eq!(prepared.get(), 0);
+            assert_eq!(commits.get(), old_commits);
+            assert_eq!(s.playback.output.last_open, None);
+            assert_eq!(s.playback.output.deadline, old_deadline);
+            assert_eq!(s.selection, old_selection);
+            assert_eq!(s.queue.playing.as_ref().unwrap().ticket, old_ticket);
+            assert_eq!(s.queue.in_flight, old_pending);
+            assert_eq!(
+                s.queue.waiting.iter().map(|c| c.ticket).collect::<Vec<_>>(),
+                old_waiting
+            );
+            assert!(s.worker.cancelled.is_empty());
+            assert_eq!(s.worker.selections, 0);
+            step(&mut s, 1.2);
+            assert_eq!(s.playback.output.stops, 0);
+            assert!(s.playback.output.opens <= before.0 + 1);
+            assert_eq!(s.queue.epoch, before.2);
+            assert_eq!(s.selection.output_device, None);
+            assert_eq!(
+                s.playback
+                    .output
+                    .played
+                    .iter()
+                    .filter(|id| **id == 1)
+                    .count(),
+                1
+            );
+        }
+    }
+    #[test]
+    fn followup_output_change_commits_only_after_persistence() {
+        let source =
+            "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(20);
+        let mut s = session(&source, 0.1);
+        s.playback.output.names.push("Headphones".into());
+        s.play().unwrap();
+        for i in 0..5 {
+            step(&mut s, f64::from(i) * 0.1);
+        }
+        let prepared = s.playback.output.prepared.clone();
+        let commits = s.playback.output.commits.clone();
+        let before = (s.queue.epoch, s.playback.output.opens, commits.get());
+        let mut chosen = selection();
+        chosen.output_device = Some("Headphones".into());
+        let changed = s
+            .select(chosen.clone(), true, |value| {
+                assert_eq!(value, &chosen);
+                assert_eq!(prepared.get(), 1);
+                assert_eq!(commits.get(), before.2);
+                Ok(())
+            })
+            .unwrap();
+        assert_eq!(prepared.get(), 0);
+        assert_eq!(commits.get(), before.2 + 1);
+        assert_eq!(s.playback.output.opens, before.1 + 1);
+        assert_eq!(s.playback.output.last_open.as_deref(), Some("Headphones"));
+        assert_eq!(s.playback.output.stops, 2);
+        assert_eq!(changed.epoch, before.0 + 1);
+        assert_eq!(changed.sentence_index, 0);
+        assert_eq!(s.selection, chosen);
+        for i in 5..10 {
+            step(&mut s, f64::from(i) * 0.1);
+        }
+        assert_eq!(s.playback.output.played, [1, 1]);
+    }
+    #[test]
+    fn fix2_reopen_or_seek_error_preserves_the_entire_old_session() {
+        let source =
+            "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(20);
+        for seek_error in [false, true] {
+            let mut s = session(&source, 0.1);
+            s.play().unwrap();
+            for i in 0..5 {
+                step(&mut s, f64::from(i) * 0.1);
+            }
+            let old_selection = s.selection.clone();
+            let epoch = s.queue.epoch;
+            let ticket = s.queue.playing.as_ref().unwrap().ticket;
+            let waiting: Vec<_> = s.queue.waiting.iter().map(|c| c.ticket).collect();
+            let in_flight = s.queue.in_flight.clone();
+            let old_output = (
+                s.playback.output.deadline,
+                s.playback.output.paused,
+                s.playback.output.stops,
+            );
+            if seek_error {
+                s.cursor_factory = |_, _, _, _| Err("tts.errors.text".into());
+            } else {
+                s.playback.output.fail_open = true;
+            }
+            let mut chosen = selection();
+            chosen.voice = "M1".into();
+            chosen.output_device = Some("Default".into());
+            assert_eq!(
+                s.select(chosen, true, |_| panic!(
+                    "failed preparation must not persist"
+                )),
+                Err(SelectionError::Controls)
+            );
+            assert_eq!(s.selection, old_selection);
+            assert_eq!(s.queue.epoch, epoch);
+            assert_eq!(s.queue.playing.as_ref().unwrap().ticket, ticket);
+            assert_eq!(
+                s.queue.waiting.iter().map(|c| c.ticket).collect::<Vec<_>>(),
+                waiting
+            );
+            assert_eq!(s.queue.in_flight, in_flight);
+            assert_eq!(
+                (
+                    s.playback.output.deadline,
+                    s.playback.output.paused,
+                    s.playback.output.stops
+                ),
+                old_output
+            );
+            assert!(s.worker.cancelled.is_empty());
+            assert_eq!(s.worker.selections, 0);
+        }
+    }
+    #[test]
+    fn fix2_dsp_time_uses_the_injected_clock_for_pocket_audio() {
+        use std::sync::{
+            Arc,
+            atomic::{AtomicUsize, Ordering},
+        };
+        let mut s = session("A sufficiently long sentence for an audio request.", 0.1);
+        s.selection.model_id = "pocket-en".into();
+        s.selection.voice = "alba".into();
+        s.selection.speed = 2.0;
+        let calls = Arc::new(AtomicUsize::new(0));
+        let clock = calls.clone();
+        s.dsp_clock = Box::new(move || clock.fetch_add(1, Ordering::SeqCst) as f64 * 0.25);
+        s.play().unwrap();
+        step(&mut s, 0.0);
+        step(&mut s, 0.2);
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        let played_seconds = s.queue.playing.as_ref().unwrap().seconds();
+        assert!((s.queue.rtf_played - 0.35 / played_seconds).abs() < 1e-12);
+    }
+    #[test]
+    fn fix2_paused_selection_plays_all_waiting_sentences_before_failure() {
+        let source =
+            "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(12);
+        let mut s = session(&source, 1.2);
+        s.worker.fail_once = Some(2);
+        s.play().unwrap();
+        let mut now = 0.0;
+        for _ in 0..200 {
+            step(&mut s, now);
+            now += 0.1;
+            if s.queue.in_flight.contains_key(&2) {
+                break;
+            }
+        }
+        assert_eq!(s.queue.state, PlaybackState::Buffering);
+        assert_eq!(s.queue.waiting.len(), 2);
+        s.pause();
+        for _ in 0..20 {
+            step(&mut s, now);
+            now += 0.1;
+        }
+        assert_eq!(s.queue.failed_index, Some(2));
+        let chosen = Selection {
+            voice: "M1".into(),
+            ..selection()
+        };
+        assert_eq!(
+            s.select(chosen, true, |_| Ok(())).unwrap().sentence_index,
+            0
+        );
+        s.play().unwrap();
+        for _ in 0..400 {
+            step(&mut s, now);
+            now += 0.1;
+        }
+        assert_eq!(s.playback.output.played, (1..=12).collect::<Vec<_>>());
+    }
+    #[test]
+    fn fix2_buffering_and_paused_snapshots_retain_reported_position() {
+        let source =
+            "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(40);
+        let mut s = session(&source, 1.6);
+        s.play().unwrap();
+        let mut last = s.snapshot();
+        let mut now = 0.0;
+        for _ in 0..1000 {
+            step(&mut s, now);
+            now += 0.1;
+            let snap = s.snapshot();
+            if snap.state == PlaybackState::Buffering && snap.buffering_pauses > 0 {
+                assert!(last.source_start > 0);
+                assert_eq!(
+                    (
+                        snap.source_start,
+                        snap.source_end,
+                        snap.progress,
+                        snap.remaining_seconds
+                    ),
+                    (
+                        last.source_start,
+                        last.source_end,
+                        last.progress,
+                        last.remaining_seconds
+                    )
+                );
+                s.pause();
+                step(&mut s, now + 1.0);
+                let paused = s.snapshot();
+                assert_eq!(
+                    (
+                        paused.source_start,
+                        paused.source_end,
+                        paused.progress,
+                        paused.remaining_seconds
+                    ),
+                    (
+                        last.source_start,
+                        last.source_end,
+                        last.progress,
+                        last.remaining_seconds
+                    )
+                );
+                s.select(
+                    Selection {
+                        voice: "M1".into(),
+                        ..selection()
+                    },
+                    true,
+                    |_| Ok(()),
+                )
+                .unwrap();
+                let selected = s.snapshot();
+                assert_eq!(
+                    (
+                        selected.source_start,
+                        selected.source_end,
+                        selected.progress,
+                        selected.remaining_seconds
+                    ),
+                    (
+                        last.source_start,
+                        last.source_end,
+                        last.progress,
+                        last.remaining_seconds
+                    )
+                );
+                s.stop();
+                assert_eq!(s.snapshot().source_start, 0);
+                return;
+            }
+            last = snap;
+        }
+        panic!("no underrun observed");
+    }
+    #[test]
+    fn fix2_error_is_exposed_only_after_earlier_audio_drains() {
+        let source =
+            "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(20);
+        let mut s = session(&source, 0.1);
+        s.worker.fail_once = Some(5);
+        s.play().unwrap();
+        let mut draining = false;
+        for i in 0..300 {
+            step(&mut s, f64::from(i) * 0.1);
+            if s.queue.failed_index.is_some() && s.queue.state != PlaybackState::Error {
+                draining = true;
+                assert!(s.snapshot().error.is_none());
+            }
+            if s.queue.state == PlaybackState::Error {
+                assert!(draining);
+                assert_eq!(s.snapshot().error.as_deref(), Some("tts.errors.worker"));
+                return;
+            }
+        }
+        panic!("failure did not drain");
+    }
+    #[test]
+    fn fix2_missing_part_metadata_ends_the_pending_request() {
+        let mut s = session("A sufficiently long sentence for an audio request.", 0.1);
+        s.play().unwrap();
+        step(&mut s, 0.0);
+        s.metadata.clear();
+        step(&mut s, 0.2);
+        assert!(s.queue.in_flight.is_empty());
+        assert_eq!(s.queue.state, PlaybackState::Error);
+        assert!(s.snapshot().error.is_some());
+    }
+    #[test]
+    fn fix2_read_code_toggle_preserves_original_position_in_both_directions() {
+        let source = format!(
+            "# Start\n\n```\n{}\n```\n\nThe destination sentence must remain the active source after switching.\n\nAnother long sentence follows the destination sentence here.",
+            "alpha beta gamma delta ".repeat(60)
+        );
+        let target = source.find("The destination").unwrap() as u32;
+        for initial in [false, true] {
+            let mut s = session(&source, 0.01);
+            s.selection.read_code = initial;
+            s.play().unwrap();
+            let mut now = 0.0;
+            for _ in 0..500 {
+                step(&mut s, now);
+                now += 0.1;
+                if s.snapshot().source_start == target {
+                    break;
+                }
+            }
+            assert_eq!(s.snapshot().source_start, target);
+            let mut chosen = s.selection.clone();
+            chosen.read_code = !initial;
+            s.select(chosen, true, |_| Ok(())).unwrap();
+            for _ in 0..20 {
+                step(&mut s, now);
+                now += 0.1;
+                if s.queue.playing.is_some() {
+                    break;
+                }
+            }
+            assert_eq!(s.snapshot().source_start, target);
+        }
+    }
+    #[test]
+    fn technical_selection_uses_vocabulary_and_off_does_not() {
+        let source = "First we edit tests/lib.sh in the repository today.\n\nThen we run tests/lib.sh again to check the result.\n\nLast we commit tests/lib.sh and close the task.";
+        let start = |chosen: Selection, vocabulary: Option<Arc<Vocabulary>>| {
+            let worker = FakeWorker {
+                rtf: 0.01,
+                seconds: 1.0,
+                ..FakeWorker::default()
+            };
+            let mut s = Session::with_vocabulary(
+                source,
+                chosen,
+                worker,
+                FakeOutput::default(),
+                None,
+                vocabulary,
+            )
+            .unwrap();
+            s.play().unwrap();
+            s
+        };
+        let finish = |s: &mut Session<'_, FakeWorker, FakeOutput>, mut now: f64| {
+            for _ in 0..500 {
+                step(s, now);
+                now += 0.1;
+                if s.queue.state == PlaybackState::Finished {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.state, PlaybackState::Finished);
+            now
+        };
+        let vocabulary = Some(Arc::new(Vocabulary::builtin()));
+        let technical = Selection {
+            technical: true,
+            ..selection()
+        };
+        let mut on = start(technical.clone(), vocabulary.clone());
+        finish(&mut on, 0.0);
+        let spoken = on.worker.texts.join(" ");
+        assert_eq!(
+            spoken.matches("tests slash lib dot S H").count(),
+            3,
+            "{spoken}"
+        );
+        assert!(!spoken.contains("lib.sh"), "{spoken}");
+        for (chosen, vocabulary) in [(selection(), vocabulary.clone()), (technical.clone(), None)] {
+            let mut off = start(chosen, vocabulary);
+            finish(&mut off, 0.0);
+            let spoken = off.worker.texts.join(" ");
+            assert_eq!(spoken.matches("lib.sh").count(), 3, "{spoken}");
+            assert!(!spoken.contains("slash"), "{spoken}");
+        }
+        let mut changed = start(selection(), vocabulary);
+        let mut now = 0.0;
+        for _ in 0..50 {
+            step(&mut changed, now);
+            now += 0.1;
+            if !changed.worker.texts.is_empty() {
+                break;
+            }
+        }
+        assert!(changed.worker.texts[0].contains("lib.sh"));
+        let chosen = Selection {
+            speed: 1.5,
+            full_paths: false,
+            ..technical
+        };
+        changed.select(chosen, true, |_| Ok(())).unwrap();
+        let before = changed.worker.texts.len();
+        finish(&mut changed, now);
+        let after = changed.worker.texts[before..].join(" ");
+        assert_eq!(after.matches("lib dot S H").count(), 3, "{after}");
+        assert!(
+            !after.contains("slash") && !after.contains("lib.sh"),
+            "{after}"
+        );
+    }
+    #[test]
+    fn reading_matches_what_the_worker_was_sent() {
+        let source = "First we edit tests/lib.sh in the repository today.\n\nThen we run tests/lib.sh again to check the result.\n\nLast we commit tests/lib.sh and close the task.";
+        for technical in [true, false] {
+            let worker = FakeWorker {
+                rtf: 0.01,
+                seconds: 1.0,
+                ..FakeWorker::default()
+            };
+            let chosen = Selection {
+                technical,
+                ..selection()
+            };
+            let vocabulary = Arc::new(Vocabulary::builtin());
+            let mut s = Session::with_vocabulary(
+                source,
+                chosen,
+                worker,
+                FakeOutput::default(),
+                None,
+                Some(vocabulary.clone()),
+            )
+            .unwrap();
+            s.play().unwrap();
+            let mut now = 0.0;
+            for _ in 0..500 {
+                step(&mut s, now);
+                now += 0.1;
+                if s.queue.state == PlaybackState::Finished {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.state, PlaybackState::Finished);
+            let prepared: Vec<String> = reading(source, s.selection(), Some(&vocabulary))
+                .unwrap()
+                .into_iter()
+                .map(|aligned| aligned.chunk.text)
+                .collect();
+            assert_eq!(
+                prepared.join(" "),
+                s.worker.texts.join(" "),
+                "technical {technical}"
+            );
+        }
+    }
+    /// Plays `source` with `before` until its second chunk is audible, changes to `after` and
+    /// checks that the next request, its retry and the audible range all resume at that chunk:
+    /// the request starts with `next`, never holds `earlier`, and the position survives a
+    /// failed request's retry and Pause then Play.
+    fn assert_text_change_resumes(
+        source: &str,
+        before: Selection,
+        after: Selection,
+        next: &str,
+        earlier: &str,
+    ) {
+        assert_text_change_resumes_with(
+            Vocabulary::builtin(),
+            source,
+            before,
+            after,
+            next,
+            earlier,
+        );
+    }
+    fn assert_text_change_resumes_with(
+        vocabulary: Vocabulary,
+        source: &str,
+        before: Selection,
+        after: Selection,
+        next: &str,
+        earlier: &str,
+    ) {
+        let worker = FakeWorker {
+            rtf: 0.01,
+            seconds: 1.0,
+            ..FakeWorker::default()
+        };
+        let vocabulary = Some(Arc::new(vocabulary));
+        let mut s = Session::with_vocabulary(
+            source,
+            before,
+            worker,
+            FakeOutput::default(),
+            None,
+            vocabulary,
+        )
+        .unwrap();
+        s.play().unwrap();
+        let mut now = 0.0;
+        for _ in 0..100 {
+            step(&mut s, now);
+            now += 0.1;
+            if s.snapshot().source_start > 0 {
+                break;
+            }
+        }
+        let resume = s.snapshot().source_start;
+        assert!(resume > 0, "the second chunk never became audible");
+        let requested = s.worker.texts.len();
+        s.worker.fail_next = true;
+        s.select(after, true, |_| Ok(())).unwrap();
+        for _ in 0..50 {
+            step(&mut s, now);
+            now += 0.1;
+            if s.queue.state == PlaybackState::Error {
+                break;
+            }
+        }
+        assert_eq!(s.queue.state, PlaybackState::Error, "{source}");
+        s.play().unwrap();
+        s.pause();
+        s.play().unwrap();
+        for _ in 0..50 {
+            step(&mut s, now);
+            now += 0.1;
+            if s.queue.playing.is_some() {
+                break;
+            }
+        }
+        let after_change = &s.worker.texts[requested..];
+        assert!(after_change.len() >= 2, "{after_change:?}");
+        for text in &after_change[..2] {
+            assert!(text.starts_with(next), "{text:?} must start with {next:?}");
+        }
+        for text in after_change {
+            assert!(!text.contains(earlier), "{text:?} replays {earlier:?}");
+        }
+        let playing = s.queue.playing.as_ref().map(|audio| audio.source_start);
+        assert_eq!(playing, Some(resume), "{source}");
+        assert_eq!(s.snapshot().source_start, resume, "{source}");
+    }
+    #[test]
+    fn technical_option_change_preserves_position_after_completed_chunk() {
+        let source = "tests/a.sh tests/b.sh tests/c.sh tests/d.sh tests/e.sh tests/f.sh tests/g.sh tests/h.sh";
+        let full = Selection {
+            technical: true,
+            ..selection()
+        };
+        let short = Selection {
+            full_paths: false,
+            ..full.clone()
+        };
+        assert_text_change_resumes(
+            source,
+            full,
+            short,
+            "d dot S H e dot S H f dot S H g dot S H h dot S H",
+            "c dot S H",
+        );
+        assert_eq!(source.find("tests/d.sh"), Some(33));
+    }
+    #[test]
+    fn model_change_re_resolves_the_vocabulary_and_keeps_position() {
+        let user = Vocabulary::parse(
+            r#"{"version":1,"models":{"pocket-en":{"extensions":{"sh":"ess aitch"}}}}"#,
+        )
+        .unwrap();
+        let vocabulary = Arc::new(Vocabulary::merged(&user));
+        let source = "tests/a.sh tests/b.sh tests/c.sh tests/d.sh tests/e.sh tests/f.sh tests/g.sh tests/h.sh";
+        let supertonic = Selection {
+            technical: true,
+            full_paths: false,
+            ..selection()
+        };
+        let pocket = Selection {
+            model_id: "pocket-en".into(),
+            voice: "alba".into(),
+            ..supertonic.clone()
+        };
+        let worker = FakeWorker {
+            rtf: 0.01,
+            seconds: 1.0,
+            ..FakeWorker::default()
+        };
+        let mut s = Session::with_vocabulary(
+            source,
+            supertonic,
+            worker,
+            FakeOutput::default(),
+            None,
+            Some(vocabulary),
+        )
+        .unwrap();
+        s.play().unwrap();
+        let mut now = 0.0;
+        for _ in 0..100 {
+            step(&mut s, now);
+            now += 0.1;
+            if s.snapshot().source_start > 0 {
+                break;
+            }
+        }
+        let resume = s.snapshot().source_start;
+        assert!(resume > 0, "the second chunk never became audible");
+        let before = s.worker.texts.join(" ");
+        assert!(
+            before.contains("dot S H") && !before.contains("ess aitch"),
+            "{before}"
+        );
+        let requested = s.worker.texts.len();
+        s.select(pocket, true, |_| Ok(())).unwrap();
+        for _ in 0..50 {
+            step(&mut s, now);
+            now += 0.1;
+            if s.worker.texts.len() > requested {
+                break;
+            }
+        }
+        let after = &s.worker.texts[requested..];
+        assert!(!after.is_empty(), "no request followed the model change");
+        assert!(
+            after[0].starts_with("h dot ess aitch"),
+            "the next chunk reads with the new model's vocabulary: {after:?}"
+        );
+        for text in after {
+            assert!(!text.contains("S H") && !text.contains("g dot"), "{text:?}");
+        }
+        assert_eq!(s.snapshot().source_start, resume);
+    }
+    #[test]
+    fn technical_and_link_toggles_preserve_position_after_completed_chunk() {
+        let source = "Step one edits tests/alpha.sh and keeps going with more words here. Step two edits tests/bravo.sh and keeps going with more words here. Step three edits tests/charlie.sh to finish the list.";
+        assert_text_change_resumes(
+            source,
+            selection(),
+            Selection {
+                technical: true,
+                ..selection()
+            },
+            "Step two edits tests slash bravo dot S H",
+            "alpha",
+        );
+        let source = "See https://github.com/cjpais/Handy?tab=readme#top for the first long example here. Then https://example.com/docs/readme.md is the second long example here. Last https://github.com/a/b ends it.";
+        let short_links = Selection {
+            technical: true,
+            ..selection()
+        };
+        assert_text_change_resumes(
+            source,
+            short_links.clone(),
+            Selection {
+                full_links: true,
+                ..short_links
+            },
+            "Then example dot com slash docs slash readme dot markdown",
+            "first",
+        );
+    }
+    #[test]
+    fn repeated_play_and_idle_pause_do_not_stall_output() {
+        let source = "A sentence long enough to begin playback without delay.\n\n".repeat(10);
+        let mut s = session(&source, 0.1);
+        s.pause();
+        s.play().unwrap();
+        for i in 0..5 {
+            step(&mut s, f64::from(i) * 0.1);
+        }
+        assert!(!s.playback.output.paused);
+        assert_eq!(s.queue.state, PlaybackState::Playing);
+        s.play().unwrap();
+        assert_eq!(s.queue.state, PlaybackState::Playing);
+        for i in 5..200 {
+            step(&mut s, f64::from(i) * 0.1);
+        }
+        assert_eq!(s.queue.state, PlaybackState::Finished);
+        assert_eq!(s.snapshot().remaining_seconds, 0.0);
+        s.play().unwrap();
+        assert_eq!(s.snapshot().elapsed_seconds, 0.0);
+    }
+
+    #[test]
+    fn external_failure_cancels_pending_audio_and_play_retries_current_sentence() {
+        let source = "A sentence long enough to begin playback without delay.\n\n".repeat(10);
+        let mut s = session(&source, 0.1);
+        s.play().unwrap();
+        for i in 0..20 {
+            step(&mut s, f64::from(i) * 0.1);
+        }
+        let current = s.queue.playing.as_ref().unwrap().ticket;
+        let old = s.queue.in_flight.clone();
+        s.fail("tts.errors.audio".into());
+        assert_eq!(s.queue.failed_index, Some(current.index));
+        assert!(s.queue.playing.is_none());
+        assert!(s.parts.is_empty());
+        assert!(s.appended.is_empty());
+        for ticket in old.values() {
+            assert!(s.worker.cancelled.contains(ticket));
+        }
+        s.play().unwrap();
+        step(&mut s, 2.0);
+        assert_eq!(s.worker.requested.last().unwrap().index, current.index);
+        assert_ne!(s.worker.requested.last().unwrap().epoch, current.epoch);
+        for i in 21..40 {
+            step(&mut s, f64::from(i) * 0.1);
+        }
+        assert!(
+            s.playback
+                .output
+                .played
+                .iter()
+                .filter(|id| **id == current.index as u64 + 1)
+                .count()
+                >= 2
+        );
+    }
+    #[test]
+    fn npu_over_cap_chunk_preserves_all_words_and_audio_through_fake_worker() {
+        use crate::device::Device;
+        struct NpuWorker {
+            pending: Option<Completion>,
+            calls: Vec<String>,
+            requests: Vec<String>,
+            model: &'static str,
+        }
+        impl Worker for NpuWorker {
+            fn request(&mut self, ticket: Ticket, text: &str, _: &Selection) -> Result<(), String> {
+                self.requests.push(text.to_owned());
+                let model = self.model;
+                let fits = |part: &str| match model {
+                    "pocket-en" => part.chars().count() <= 64,
+                    _ => part.split_whitespace().count() * 80 <= 512,
+                };
+                let result = synthesize_for_device(
+                    Device::Npu,
+                    text,
+                    |part| Ok(fits(part)),
+                    |part| {
+                        if !fits(part) {
+                            return Err("static shape exceeded".into());
+                        }
+                        self.calls.push(part.to_owned());
+                        Ok(Pcm {
+                            id: ticket.index as u64,
+                            sample_rate: 8000,
+                            samples: part
+                                .split_whitespace()
+                                .map(|word| word.len() as f32)
+                                .collect(),
+                        })
+                    },
+                );
+                self.pending = Some(Completion {
+                    ticket,
+                    result,
+                    synthesis_seconds: 0.0,
+                });
+                Ok(())
+            }
+            fn poll(&mut self) -> Option<Completion> {
+                self.pending.take()
+            }
+            fn cancel(&mut self, _: Ticket) {
+                self.pending = None;
+            }
+            fn selection_changed(&mut self) {}
+        }
+        let source = format!("# A starting heading.\n\n{}", "tiny ".repeat(55));
+        for (model, voice) in [("pocket-en", "alba"), ("supertonic-3", "F1")] {
+            let worker = NpuWorker {
+                pending: None,
+                calls: vec![],
+                requests: vec![],
+                model,
+            };
+            let chosen = Selection {
+                model_id: model.into(),
+                voice: voice.into(),
+                speed: 1.0,
+                ..selection()
+            };
+            let mut s = Session::new(&source, chosen, worker, FakeOutput::default(), None).unwrap();
+            s.play().unwrap();
+            for i in 0..100 {
+                let now = f64::from(i) * 0.1;
+                s.playback.output.now = now;
+                s.tick(now).unwrap();
+                assert!(s.snapshot().error.is_none());
+                if s.queue.state == PlaybackState::Finished {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.state, PlaybackState::Finished);
+            assert!(s.worker.requests.iter().any(|text| text.len() > 64));
+            assert!(s.worker.calls.len() > s.worker.requests.len());
+            let requested_words: Vec<_> = s
+                .worker
+                .requests
+                .iter()
+                .flat_map(|text| text.split_whitespace())
+                .collect();
+            let synthesized_words: Vec<_> = s
+                .worker
+                .calls
+                .iter()
+                .flat_map(|text| text.split_whitespace())
+                .collect();
+            assert_eq!(synthesized_words, requested_words);
+            assert_eq!(
+                s.playback.output.sample_counts.iter().sum::<usize>(),
+                requested_words.len()
+            );
+        }
+        let mut called = Vec::new();
+        let pcm = synthesize_for_device(
+            Device::Cpu,
+            "an unchanged CPU request",
+            |_| panic!("CPU has no static cap"),
+            |part| {
+                called.push(part.to_owned());
+                Ok(Pcm {
+                    id: 0,
+                    sample_rate: 8000,
+                    samples: vec![0.5],
+                })
+            },
+        )
+        .unwrap();
+        assert_eq!(called, ["an unchanged CPU request"]);
+        assert_eq!(pcm.samples, [0.5]);
+    }
+    #[test]
+    fn selection_in_error_keeps_failed_sentence_until_play_retries_new_voice_or_model() {
+        let source =
+            "Every sentence has enough characters to form its own speech chunk. ".repeat(20);
+        for model_change in [false, true] {
+            let mut s = session(&source, 0.1);
+            s.worker.fail_once = Some(3);
+            s.play().unwrap();
+            let mut now = 0.0;
+            for _ in 0..200 {
+                step(&mut s, now);
+                now += 0.1;
+                if s.queue.state == PlaybackState::Error {
+                    break;
+                }
+            }
+            assert_eq!(s.queue.state, PlaybackState::Error);
+            assert_eq!(s.queue.failed_index, Some(3));
+            let range = (s.snapshot().source_start, s.snapshot().source_end);
+            let mut chosen = selection();
+            if model_change {
+                chosen.model_id = "pocket-en".into();
+                chosen.voice = "alba".into();
+            } else {
+                chosen.voice = "M1".into();
+            }
+            let changed = s.select(chosen, true, |_| Ok(())).unwrap();
+            assert_eq!(changed.sentence_index, 3);
+            assert!(!changed.resume);
+            assert_eq!(s.queue.state, PlaybackState::Error);
+            assert_eq!(s.queue.failed_index, Some(3));
+            assert_eq!((s.snapshot().source_start, s.snapshot().source_end), range);
+            let requests = s.worker.requested.len();
+            step(&mut s, now);
+            assert_eq!(s.worker.requested.len(), requests);
+            s.play().unwrap();
+            step(&mut s, now + 0.1);
+            assert_eq!(s.worker.requested.last().unwrap().index, 3);
+            assert_eq!(s.worker.selections, 1);
+        }
+    }
+    #[test]
+    fn returning_to_same_as_handy_retains_the_inherited_device_without_worker_reload() {
+        let output = FakeOutput {
+            names: vec!["Handy headphones".into(), "Alternate".into()],
+            ..FakeOutput::default()
+        };
+        let mut chosen = selection();
+        chosen.output_device = Some("Alternate".into());
+        let mut s = Session::new(
+            "A full sentence to read.",
+            chosen,
+            FakeWorker::default(),
+            output,
+            Some("Handy headphones"),
+        )
+        .unwrap();
+        assert_eq!(s.playback.output.last_open, None);
+        s.play().unwrap();
+        assert_eq!(s.playback.output.last_open.as_deref(), Some("Alternate"));
+        s.select(selection(), true, |_| Ok(())).unwrap();
+        assert_eq!(
+            s.playback.output.last_open.as_deref(),
+            Some("Handy headphones")
+        );
+        assert_eq!(s.worker.selections, 0);
+    }
+    #[test]
+    fn split_audio_pauses_once_and_output_change_reopens_without_worker_reload() {
+        let mut s = session("# A heading which has a structural pause after it.", 0.01);
+        s.worker.seconds = 130.0;
+        s.play().unwrap();
+        for step in 0..2000 {
+            let now = f64::from(step) * 0.05;
+            s.worker.now = now;
+            s.playback.output.now = now;
+            s.tick(now).unwrap();
+            if s.queue.state == PlaybackState::Finished {
+                break;
+            }
+        }
+        let pauses = &s.playback.output.pauses;
+        assert!(pauses.len() >= 3);
+        assert_eq!(pauses.iter().filter(|pause| **pause > 0).count(), 1);
+        let mut chosen = selection();
+        chosen.output_device = Some("gone headset".into());
+        let opens = s.playback.output.opens;
+        s.select(chosen, true, |_| Ok(())).unwrap();
+        assert_eq!(s.playback.output.opens, opens + 1);
+        assert_eq!(s.worker.selections, 0);
+    }
+    #[test]
+    fn controlled_fast_borderline_and_slow_workers_drive_buffering_and_adaptive_head_start() {
+        let source =
+            "Reading one measured sentence at a time makes this test deterministic. ".repeat(2000);
+        for rtf in [0.1, 0.49, 1.2] {
+            let mut s = session(&source, rtf);
+            s.play().unwrap();
+            for i in 0..1200 {
+                step(&mut s, i as f64 * 0.1);
+            }
+            let snap = s.snapshot();
+            assert!(snap.head_start_seconds.unwrap() > 0.0);
+            if rtf < 1.0 {
+                assert_eq!(snap.buffering_pauses, 0);
+            } else {
+                assert!(snap.buffering_pauses > 0);
+            }
+            s.pause();
+            let count = s.worker.requested.len();
+            for i in 1200..1300 {
+                step(&mut s, i as f64 * 0.1);
+            }
+            assert_eq!(s.worker.requested.len(), count);
+            assert_eq!(s.queue.state, PlaybackState::Paused);
+            s.stop();
+            assert!(s.parts.is_empty());
+            assert!(s.queue.waiting.is_empty());
+            assert!(s.queue.playing.is_none());
+        }
+    }
+    #[test]
+    fn twenty_minute_document_crash_resumes_failed_sentence_without_skipping_preceding_audio() {
+        let source =
+            "Every sentence has enough characters to form its own speech chunk.\n\n".repeat(1500);
+        let mut cursor = TextCursor::new(&source, false).unwrap();
+        let mut chunks = Vec::new();
+        while let Some(chunk) = cursor.next_chunk().unwrap() {
+            chunks.push(chunk);
+        }
+        let crash = chunks.len() / 2;
+        assert!(crash > 600);
+        let mut s = session(&source, 0.1);
+        s.worker.fail_once = Some(crash);
+        s.play().unwrap();
+        let mut now = 0.0;
+        let mut draining = false;
+        for _ in 0..20000 {
+            step(&mut s, now);
+            now += 0.1;
+            if s.queue.failed_index.is_some()
+                && let Some(playing) = &s.queue.playing
+            {
+                draining = true;
+                assert!(!s.queue.waiting.is_empty() || playing.ticket.index == crash - 1);
+                assert_eq!(s.worker.requested.last().unwrap().index, crash);
+            }
+            if s.queue.state == PlaybackState::Error {
+                break;
+            }
+        }
+        assert!(draining);
+        assert_eq!(s.queue.state, PlaybackState::Error);
+        assert_eq!(s.queue.failed_index, Some(crash));
+        assert_eq!(s.snapshot().source_start, chunks[crash].source_start);
+        assert_eq!(s.snapshot().source_end, chunks[crash].source_end);
+        assert!(s.snapshot().source_end > s.snapshot().source_start);
+        assert_eq!(
+            s.playback.output.played,
+            (1..=crash as u64).collect::<Vec<_>>()
+        );
+        s.play().unwrap();
+        for _ in 0..20000 {
+            step(&mut s, now);
+            now += 0.1;
+            if s.queue.state == PlaybackState::Finished {
+                break;
+            }
+        }
+        assert_eq!(s.queue.state, PlaybackState::Finished);
+        assert_eq!(
+            s.worker
+                .requested
+                .iter()
+                .filter(|t| t.index == crash)
+                .count(),
+            2
+        );
+        assert_eq!(
+            s.playback.output.played,
+            (1..=chunks.len() as u64).collect::<Vec<_>>()
+        );
+        let mut expected_requests: Vec<_> = (0..chunks.len()).collect();
+        expected_requests.insert(crash, crash);
+        assert_eq!(
+            s.worker
+                .requested
+                .iter()
+                .map(|t| t.index)
+                .collect::<Vec<_>>(),
+            expected_requests
+        );
+    }
+    #[test]
+    fn selection_and_missing_model_preserve_cursor_and_old_epoch_completion_is_dropped() {
+        let source = "The first sentence has enough words and length for playback. The second sentence is also worth reading aloud.";
+        let mut s = session(source, 0.1);
+        s.play().unwrap();
+        for i in 0..5 {
+            step(&mut s, i as f64 * 0.1);
+        }
+        let current = s.queue.playing.as_ref().unwrap().ticket.index;
+        let old = s.queue.in_flight.clone();
+        let mut chosen = selection();
+        chosen.voice = "M1".into();
+        let changed = s.select(chosen.clone(), true, |_| Ok(())).unwrap();
+        assert_eq!(changed.sentence_index, current);
+        for ticket in old.values().copied() {
+            s.received(Completion {
+                ticket,
+                result: Ok(Pcm {
+                    id: 99,
+                    sample_rate: 8000,
+                    samples: vec![0.0; 8000],
+                }),
+                synthesis_seconds: 0.1,
+            });
+        }
+        assert!(s.queue.waiting.is_empty());
+        assert!(s.parts.is_empty());
+        step(&mut s, 0.6);
+        assert_eq!(s.worker.requested.last().unwrap().index, current);
+        let changed = s.select(chosen, false, |_| Ok(())).unwrap();
+        assert_eq!(changed.sentence_index, current);
+        assert_eq!(s.queue.state, PlaybackState::Error);
+        assert_eq!(
+            s.snapshot().error.as_deref(),
+            Some("tts.errors.notDownloaded")
+        );
+    }
+    #[test]
+    fn oversized_result_is_split_into_bounded_pcm_parts_and_stop_discards_late_reply() {
+        let source =
+            "This single sentence produces an unusually long audio result in the fake worker.";
+        let mut s = session(source, 0.001);
+        s.worker.seconds = 130.0;
+        s.play().unwrap();
+        step(&mut s, 0.0);
+        step(&mut s, 0.2);
+        assert!(s.queue.playing.as_ref().unwrap().seconds() <= 30.0);
+        assert!(!s.parts.is_empty());
+        assert!(!s.queue.in_flight.is_empty());
+        let old = *s.queue.in_flight.values().next().unwrap();
+        s.stop();
+        s.received(Completion {
+            ticket: old,
+            result: Ok(Pcm {
+                id: 1,
+                sample_rate: 8000,
+                samples: vec![0.0; 8000],
+            }),
+            synthesis_seconds: 0.1,
+        });
+        assert!(s.parts.is_empty());
+        assert!(s.queue.waiting.is_empty());
+        assert_eq!(s.queue.state, PlaybackState::Waiting);
+    }
+    #[test]
+    fn starting_without_audio_keeps_last_reported_position() {
+        let source = "A sentence with sufficient characters for the opening chunk.\n\n".repeat(20);
+        let mut s = session(&source, 0.1);
+        s.play().unwrap();
+        for i in 0..30 {
+            step(&mut s, i as f64 * 0.1);
+        }
+        let prior = s.snapshot();
+        assert!(prior.progress > 0.0);
+        s.queue.playing = None;
+        s.queue.failed_index = None;
+        s.queue.state = PlaybackState::Starting;
+        let now = s.snapshot();
+        assert_eq!(now.source_start, prior.source_start);
+        assert_eq!(now.source_end, prior.source_end);
+        assert_eq!(now.progress, prior.progress);
+        assert_eq!(now.remaining_seconds, prior.remaining_seconds);
+    }
+}

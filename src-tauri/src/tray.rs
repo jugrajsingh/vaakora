@@ -20,12 +20,13 @@
 //! a hidden tray relies on tray-icon recreating it from the last applied
 //! icon/menu/tooltip, so those must only ever be set through the applier.
 
+use crate::local_llm::{manager::LocalLlmStateKind, registry, LocalLlmManager, LocalLlmStatus};
 use crate::managers::history::{HistoryEntry, HistoryManager};
 use crate::managers::model::{ModelInfo, ModelManager};
 use crate::managers::transcription::TranscriptionManager;
 use crate::notices::{self, NoticeCode};
 use crate::settings;
-use crate::tray_i18n::get_tray_translations;
+use crate::tray_i18n::{get_tray_translations, TrayStrings};
 use log::{debug, error, info, trace, warn};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -52,6 +53,135 @@ impl TrayIconState {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct CleanupMenu {
+    state: LocalLlmStateKind,
+    model_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct TrayModelChoice {
+    id: String,
+    label: String,
+    checked: bool,
+}
+
+fn model_choices(
+    models: &[(String, String)],
+    selected: Option<&str>,
+    prefix: &str,
+) -> Vec<TrayModelChoice> {
+    models
+        .iter()
+        .map(|(id, label)| TrayModelChoice {
+            id: format!("{prefix}:{id}"),
+            label: label.clone(),
+            checked: selected == Some(id.as_str()),
+        })
+        .collect()
+}
+
+/// Selects a downloaded local model when local post-processing is enabled.
+pub(crate) fn select_cleanup_with(
+    enabled: bool,
+    provider: &str,
+    model_id: &str,
+    downloaded: &[(String, String)],
+    select: impl FnOnce(String) -> Result<(), String>,
+) -> Result<bool, String> {
+    if !enabled
+        || provider != settings::LOCAL_LLM_PROVIDER_ID
+        || !downloaded.iter().any(|(id, _)| id == model_id)
+    {
+        return Ok(false);
+    }
+    select(model_id.to_string())?;
+    Ok(true)
+}
+
+/// Dispatches local model selection on a std worker.
+pub(crate) fn select_cleanup_on_worker(
+    work: impl FnOnce() -> Result<(), String> + Send + 'static,
+) -> std::thread::JoinHandle<Result<(), String>> {
+    std::thread::spawn(work)
+}
+
+/// Reconciles native model checkmarks after every selection outcome.
+pub(crate) fn activate_model_check_with<T>(
+    activate: impl FnOnce() -> T,
+    reconcile: impl FnOnce(),
+) -> T {
+    let result = activate();
+    reconcile();
+    result
+}
+
+fn cleanup_unload_enabled(cleanup: &CleanupMenu) -> bool {
+    cleanup.state == LocalLlmStateKind::Ready
+}
+
+fn tray_label<'a>(localized: &'a str, english: &'a str) -> &'a str {
+    if localized.is_empty() {
+        english
+    } else {
+        localized
+    }
+}
+
+fn cleanup_status_label(
+    state: LocalLlmStateKind,
+    model_name: &str,
+    strings: &TrayStrings,
+    english: &TrayStrings,
+) -> String {
+    let state_label = match state {
+        LocalLlmStateKind::Ready => tray_label(&strings.cleanup_ready, &english.cleanup_ready),
+        LocalLlmStateKind::Starting | LocalLlmStateKind::Stopping => {
+            tray_label(&strings.cleanup_loading, &english.cleanup_loading)
+        }
+        LocalLlmStateKind::Failed => tray_label(&strings.cleanup_error, &english.cleanup_error),
+        LocalLlmStateKind::Unloaded => {
+            tray_label(&strings.cleanup_not_loaded, &english.cleanup_not_loaded)
+        }
+    };
+    let prefix = tray_label(&strings.cleanup, &english.cleanup);
+    format!("{prefix}: {model_name} ({state_label})")
+}
+
+fn cleanup_menu(
+    enabled: bool,
+    busy: bool,
+    provider: &str,
+    selected_model: Option<&str>,
+    no_cleanup_model: &str,
+    downloaded_models: &[(String, String)],
+    status: impl FnOnce() -> Option<LocalLlmStatus>,
+) -> Option<CleanupMenu> {
+    if !enabled || busy || provider != settings::LOCAL_LLM_PROVIDER_ID {
+        return None;
+    }
+    status().map(|status| {
+        let model_name = selected_model
+            .and_then(registry::find)
+            .filter(|entry| downloaded_models.iter().any(|(id, _)| id == entry.id))
+            .map(|entry| entry.display_name.to_string())
+            .unwrap_or_else(|| no_cleanup_model.to_string());
+        let state = if selected_model.is_some() && status.model_id.as_deref() == selected_model {
+            status.state
+        } else {
+            LocalLlmStateKind::Unloaded
+        };
+        CleanupMenu { state, model_name }
+    })
+}
+
+/// Dispatches the blocking cleanup unload on a std thread.
+pub(crate) fn unload_cleanup_on_worker(
+    unload: impl FnOnce() + Send + 'static,
+) -> std::thread::JoinHandle<()> {
+    std::thread::spawn(unload)
+}
+
 /// Everything the tray *menu* (and tooltip) depends on. When two snapshots
 /// compare equal the menu is not rebuilt.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -64,6 +194,10 @@ struct MenuInputs {
     secure_input: bool,
     /// The notice to show as a menu line.
     notice: Option<NoticeCode>,
+    cleanup: Option<CleanupMenu>,
+    tts: handy_tts_core::tray::TtsMenu,
+    selected_cleanup_model: Option<String>,
+    downloaded_cleanup_models: Vec<(String, String)>,
     model_loaded: bool,
     selected_model: String,
     /// `(id, name)` of downloaded models, sorted by name.
@@ -109,6 +243,10 @@ struct TrayInner {
     /// is derived from the same inputs and set best-effort alongside the menu;
     /// it is not tracked separately.
     applied_menu: Option<MenuInputs>,
+    /// Revision of native check-item invalidations.
+    menu_revision: u64,
+    /// Revision captured by the last successful native menu application.
+    applied_menu_revision: u64,
     /// An apply is scheduled on the main thread.
     pending: bool,
     /// Decoded icons by resource path so the main thread never touches disk.
@@ -118,6 +256,35 @@ struct TrayInner {
     next_seq: u64,
     /// Sequence number of the request that produced `desired`.
     desired_seq: u64,
+}
+
+impl TrayInner {
+    fn accept_desired(&mut self, seq: u64, desired: TrayDesired) -> bool {
+        if seq < self.desired_seq {
+            trace!(
+                "tray sync: request {seq} superseded by {}",
+                self.desired_seq
+            );
+            return false;
+        }
+        self.desired = Some(desired);
+        self.desired_seq = seq;
+        !std::mem::replace(&mut self.pending, true)
+    }
+
+    fn invalidate_menu(&mut self) {
+        self.menu_revision += 1;
+    }
+
+    fn menu_needs_rebuild(&self, desired: &MenuInputs) -> bool {
+        self.menu_revision != self.applied_menu_revision
+            || self.applied_menu.as_ref() != Some(desired)
+    }
+
+    fn mark_menu_applied(&mut self, menu: MenuInputs, revision: u64) {
+        self.applied_menu = Some(menu);
+        self.applied_menu_revision = revision;
+    }
 }
 
 /// Tauri managed state owning the tray's desired/applied snapshots.
@@ -130,6 +297,8 @@ impl TrayState {
             desired: None,
             applied_icon: None,
             applied_menu: None,
+            menu_revision: 0,
+            applied_menu_revision: 0,
             pending: false,
             icons: HashMap::new(),
             next_seq: 0,
@@ -262,19 +431,20 @@ pub fn update_tray_menu(app: &AppHandle) {
     sync_tray(app);
 }
 
-/// Rebuild the menu even if nothing it shows changed: clicking a check item
-/// toggles it natively, so re-picking the active one would leave it unchecked.
 pub fn rebuild_tray_menu(app: &AppHandle) {
-    sync_tray_with(app, |inner| inner.applied_menu = None);
+    reconcile_model_checkmarks(app);
+}
+
+/// Rebuilds native check states from persisted settings on the existing applier.
+pub(crate) fn reconcile_model_checkmarks(app: &AppHandle) {
+    sync_tray_with(app, TrayInner::invalidate_menu);
 }
 
 /// Records the current desired tray state and schedules one apply on the main
 /// thread (or lets an already-pending apply pick it up). Never blocks on the
 /// main thread.
 ///
-/// The snapshot (settings, model list, loaded state) is computed on the
-/// *calling* thread on purpose: the main-thread applier must not take manager
-/// locks that a worker may hold across slow work (see #1716).
+/// Snapshot reads and icon decoding run on a std worker before native application.
 pub fn sync_tray(app: &AppHandle) {
     sync_tray_with(app, |_| {});
 }
@@ -299,6 +469,14 @@ fn sync_tray_with(app: &AppHandle, update: impl FnOnce(&mut TrayInner)) {
         return;
     }
 
+    let app = app.clone();
+    std::thread::spawn(move || compute_and_accept(&app, seq, icon_state));
+}
+
+fn compute_and_accept(app: &AppHandle, seq: u64, icon_state: TrayIconState) {
+    let Some(state) = app.try_state::<TrayState>() else {
+        return;
+    };
     let desired = compute_desired(app, icon_state);
 
     // Decode the icon off the main thread, once per path, outside the lock.
@@ -323,20 +501,7 @@ fn sync_tray_with(app: &AppHandle, update: impl FnOnce(&mut TrayInner)) {
         if let Some(image) = loaded_icon {
             inner.icons.insert(desired.icon_path, image);
         }
-        if seq < inner.desired_seq {
-            // A request triggered after this one already stored its snapshot
-            // (and scheduled an apply). Ours is stale; drop it.
-            trace!(
-                "tray sync: request {seq} superseded by {}",
-                inner.desired_seq
-            );
-            return;
-        }
-        inner.desired = Some(desired);
-        inner.desired_seq = seq;
-        // If an apply is already pending it will read the snapshot we just
-        // stored; otherwise schedule one.
-        !std::mem::replace(&mut inner.pending, true)
+        inner.accept_desired(seq, desired)
     };
 
     if schedule {
@@ -381,6 +546,36 @@ fn compute_desired(app: &AppHandle, icon_state: TrayIconState) -> TrayDesired {
             })
     };
 
+    let strings = get_tray_translations(Some(settings.app_language.clone()));
+    let english = get_tray_translations(Some("en".to_string()));
+    let downloaded_cleanup_models: Vec<(String, String)> = app
+        .try_state::<Arc<LocalLlmManager>>()
+        .and_then(|manager| {
+            manager.models_root().map(|root| {
+                let mut models = registry::MODELS
+                    .iter()
+                    .filter(|entry| crate::local_llm::download::is_downloaded(root, entry))
+                    .map(|entry| (entry.id.to_string(), entry.display_name.to_string()))
+                    .collect::<Vec<_>>();
+                models.sort_by(|left, right| left.1.cmp(&right.1));
+                models
+            })
+        })
+        .unwrap_or_default();
+
+    let cleanup = cleanup_menu(
+        settings.post_process_enabled,
+        icon_state.is_busy(),
+        &settings.post_process_provider_id,
+        settings.local_llm_model_id.as_deref(),
+        tray_label(&strings.no_cleanup_model, &english.no_cleanup_model),
+        &downloaded_cleanup_models,
+        || {
+            app.try_state::<Arc<LocalLlmManager>>()
+                .map(|manager| manager.status())
+        },
+    );
+
     TrayDesired {
         icon_path: get_icon_path(theme, icon_state, badge),
         menu: MenuInputs {
@@ -388,6 +583,19 @@ fn compute_desired(app: &AppHandle, icon_state: TrayIconState) -> TrayDesired {
             models_locked,
             secure_input,
             notice: notice.map(|notice| notice.code),
+            cleanup,
+            tts: app
+                .try_state::<Arc<crate::tts::service::TtsService>>()
+                .map(|service| service.tray_snapshot())
+                .unwrap_or_else(|| {
+                    handy_tts_core::tray::tts_menu(
+                        &[],
+                        None,
+                        handy_tts_core::lifecycle::State::Unloaded,
+                    )
+                }),
+            selected_cleanup_model: settings.local_llm_model_id.clone(),
+            downloaded_cleanup_models,
             model_loaded,
             selected_model: settings.selected_model,
             downloaded_models,
@@ -531,20 +739,26 @@ fn apply_on_main(app: &AppHandle) {
     };
 
     let started = Instant::now();
-    let (desired, icon, icon_changed, menu_changed) = {
+    let (desired, icon, icon_changed, menu_changed, menu_revision) = {
         let mut inner = state.lock();
         inner.pending = false;
         let Some(desired) = inner.desired.clone() else {
             return;
         };
         let icon_changed = inner.applied_icon != Some(desired.icon_path);
-        let menu_changed = inner.applied_menu.as_ref() != Some(&desired.menu);
+        let menu_changed = inner.menu_needs_rebuild(&desired.menu);
         if !icon_changed && !menu_changed {
             trace!("tray apply: nothing changed");
             return;
         }
         let icon = inner.icons.get(desired.icon_path).cloned();
-        (desired, icon, icon_changed, menu_changed)
+        (
+            desired,
+            icon,
+            icon_changed,
+            menu_changed,
+            inner.menu_revision,
+        )
     };
 
     // Each part is recorded as applied only if its native call succeeded, so a
@@ -588,7 +802,7 @@ fn apply_on_main(app: &AppHandle) {
             inner.applied_icon = Some(desired.icon_path);
         }
         if menu_ok {
-            inner.applied_menu = Some(desired.menu.clone());
+            inner.mark_menu_applied(desired.menu.clone(), menu_revision);
         }
     }
 
@@ -710,36 +924,86 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
             ],
         )?
     } else {
-        // Build model submenu — label is the active model name
-        let submenu_label = inputs
+        let english = get_tray_translations(Some("en".to_string()));
+        let selected_name = inputs
             .downloaded_models
             .iter()
             .find(|(id, _)| *id == inputs.selected_model)
             .map(|(_, name)| name.clone())
             .unwrap_or_else(|| strings.model.clone());
 
+        let submenu_label = format!(
+            "{}: {}",
+            tray_label(&strings.transcription_model, &english.transcription_model),
+            selected_name
+        );
         let model_submenu =
             Submenu::with_id(app, "model_submenu", &submenu_label, !inputs.models_locked)?;
-        for (id, name) in &inputs.downloaded_models {
-            let is_active = *id == inputs.selected_model;
-            let item_id = format!("model_select:{}", id);
-            let item = CheckMenuItem::with_id(app, &item_id, name, true, is_active, None::<&str>)?;
+        for choice in model_choices(
+            &inputs.downloaded_models,
+            Some(&inputs.selected_model),
+            "model_select",
+        ) {
+            let item = CheckMenuItem::with_id(
+                app,
+                choice.id,
+                choice.label,
+                true,
+                choice.checked,
+                None::<&str>,
+            )?;
             model_submenu.append(&item)?;
         }
 
         let unload_model_i = MenuItem::with_id(
             app,
             "unload_model",
-            &strings.unload_model,
+            tray_label(&strings.unload_model, &english.unload_model),
             inputs.model_loaded && !inputs.models_locked,
             None::<&str>,
         )?;
+
+        let cleanup_items = if let Some(cleanup) = &inputs.cleanup {
+            let label =
+                cleanup_status_label(cleanup.state, &cleanup.model_name, &strings, &english);
+            let choices = model_choices(
+                &inputs.downloaded_cleanup_models,
+                inputs.selected_cleanup_model.as_deref(),
+                "cleanup_model_select",
+            );
+            let submenu =
+                Submenu::with_id(app, "cleanup_model_submenu", &label, !choices.is_empty())?;
+            for choice in choices {
+                submenu.append(&CheckMenuItem::with_id(
+                    app,
+                    choice.id,
+                    choice.label,
+                    true,
+                    choice.checked,
+                    None::<&str>,
+                )?)?;
+            }
+            Some((
+                submenu,
+                MenuItem::with_id(
+                    app,
+                    "unload_post_processing_model",
+                    tray_label(
+                        &strings.unload_post_processing_model,
+                        &english.unload_post_processing_model,
+                    ),
+                    cleanup_unload_enabled(cleanup),
+                    None::<&str>,
+                )?,
+            ))
+        } else {
+            None
+        };
 
         let menu = Menu::with_items(
             app,
             &[
                 &version_i,
-                &separator()?,
                 &copy_last_transcript_i,
                 &separator()?,
                 &model_submenu,
@@ -747,7 +1011,6 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
                 &separator()?,
                 &settings_i,
                 &check_updates_i,
-                &separator()?,
                 &quit_i,
             ],
         )?;
@@ -755,6 +1018,40 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
         if let Some(language) = &inputs.language {
             menu.insert(&language_submenu(app, &strings, language)?, 5)?;
         }
+        if let Some((status_item, unload_item)) = cleanup_items {
+            menu.insert(&status_item, 6)?;
+            menu.insert(&unload_item, 7)?;
+            menu.insert(&separator()?, 8)?;
+        }
+        let tts_label = tray_label(&strings.tts_model, &english.tts_model);
+        let tts_submenu = Submenu::with_id(app, "tts_model_submenu", tts_label, true)?;
+        for choice in &inputs.tts.choices {
+            tts_submenu.append(&CheckMenuItem::with_id(
+                app,
+                &choice.id,
+                &choice.label,
+                true,
+                choice.checked,
+                None::<&str>,
+            )?)?;
+        }
+        let status = tts_status_label(&inputs.tts.status_key, &strings, &english);
+        tts_submenu.append(&MenuItem::with_id(
+            app,
+            "tts_status",
+            status,
+            false,
+            None::<&str>,
+        )?)?;
+        tts_submenu.append(&MenuItem::with_id(
+            app,
+            "unload_tts_model",
+            tray_label(&strings.tts_unload, &english.tts_unload),
+            inputs.tts.unload_enabled,
+            None::<&str>,
+        )?)?;
+        menu.insert(&tts_submenu, 4)?;
+        menu.insert(&separator()?, 5)?;
         menu
     };
 
@@ -775,7 +1072,7 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
     if let Some(warning_item) = secure_input_warning {
         menu.insert(&warning_item, position)?;
         position += 1;
-        tooltip = format!("{} — {}", tooltip, warning_item.text().unwrap_or_default());
+        tooltip = format!("{} - {}", tooltip, warning_item.text().unwrap_or_default());
     }
     if let Some(notice_item) = notice_line {
         menu.insert(&notice_item, position)?;
@@ -786,6 +1083,17 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
     }
 
     Ok((menu, tooltip))
+}
+
+fn tts_status_label<'a>(key: &str, strings: &'a TrayStrings, english: &'a TrayStrings) -> &'a str {
+    let (translated, fallback) = match key {
+        "tts.status.starting" => (&strings.tts_starting, &english.tts_starting),
+        "tts.status.ready" => (&strings.tts_ready, &english.tts_ready),
+        "tts.status.stopping" => (&strings.tts_stopping, &english.tts_stopping),
+        "tts.status.failed" => (&strings.tts_failed, &english.tts_failed),
+        _ => (&strings.tts_unloaded, &english.tts_unloaded),
+    };
+    tray_label(translated, fallback)
 }
 
 fn last_transcript_text(entry: &HistoryEntry) -> &str {
@@ -862,10 +1170,8 @@ pub fn copy_last_transcript(app: &AppHandle) {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        get_icon_path, language_menu, last_transcript_text, load_tray_icon, AppTheme, MenuInputs,
-        TrayDesired, TrayIconState,
-    };
+    use super::*;
+    use crate::local_llm::manager::LocalLlmStateKind;
     use crate::managers::history::HistoryEntry;
     use crate::managers::model::{ModelInfo, ModelSource};
     use crate::settings::{get_default_settings, AppSettings};
@@ -960,6 +1266,432 @@ mod tests {
         );
     }
 
+    fn downloaded_registry_models() -> Vec<(String, String)> {
+        registry::MODELS
+            .iter()
+            .map(|entry| (entry.id.to_string(), entry.display_name.to_string()))
+            .collect()
+    }
+
+    mod missing_cleanup_download {
+        use super::*;
+
+        #[test]
+        fn registry_selection_without_file_has_no_model_label_or_checked_row() {
+            let downloaded = vec![("s1-mini-q4km".into(), "S1-mini by Superwhisper".into())];
+            for selected in ["quill-0.8b-q4km", "unknown"] {
+                let snapshot = cleanup_menu(
+                    true,
+                    false,
+                    settings::LOCAL_LLM_PROVIDER_ID,
+                    Some(selected),
+                    "No post-processing model",
+                    &downloaded,
+                    || {
+                        Some(LocalLlmStatus {
+                            state: LocalLlmStateKind::Unloaded,
+                            model_id: None,
+                            error: None,
+                        })
+                    },
+                )
+                .unwrap();
+                assert_eq!(snapshot.model_name, "No post-processing model");
+                assert!(
+                    model_choices(&downloaded, Some(selected), "cleanup_model_select")
+                        .iter()
+                        .all(|row| !row.checked)
+                );
+            }
+        }
+    }
+
+    fn assert_toggle_refreshes_unloaded_group(initially_enabled: bool) {
+        let h = crate::local_llm::manager::tests::harness();
+        let mut saved = h.settings.clone();
+        saved.post_process_enabled = initially_enabled;
+        let context = crate::shortcut::policy::command_path_tests::CommandTestContext::new(saved);
+        if initially_enabled {
+            context.seed_dictation();
+        }
+        let visible = std::cell::Cell::new(initially_enabled);
+        let refreshes = std::cell::Cell::new(0);
+        crate::shortcut::change_post_process_enabled_with(&context, !initially_enabled, || {
+            let saved = context.persisted();
+            visible.set(
+                cleanup_menu(
+                    saved.post_process_enabled,
+                    false,
+                    &saved.post_process_provider_id,
+                    saved.local_llm_model_id.as_deref(),
+                    "No post-processing model",
+                    &downloaded_registry_models(),
+                    || Some(h.manager.status()),
+                )
+                .is_some(),
+            );
+            refreshes.set(refreshes.get() + 1);
+        })
+        .unwrap();
+        assert_eq!(refreshes.get(), 1);
+        assert_eq!(visible.get(), !initially_enabled);
+        assert_eq!(h.manager.status().state, LocalLlmStateKind::Unloaded);
+        assert!(h.events.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn disabling_refreshes_unloaded_post_processing_group() {
+        assert_toggle_refreshes_unloaded_group(true);
+    }
+
+    #[test]
+    fn enabling_refreshes_unloaded_post_processing_group() {
+        assert_toggle_refreshes_unloaded_group(false);
+    }
+
+    #[derive(Clone, Copy)]
+    enum CheckOutcome {
+        Same,
+        Changed,
+        Refused,
+        Failed,
+    }
+
+    fn assert_check_activation_reconciles(transcription: bool, outcome: CheckOutcome) {
+        let state = TrayState::new();
+        let mut original = inputs(false);
+        original.cleanup = Some(cleanup(LocalLlmStateKind::Unloaded));
+        original.selected_cleanup_model = Some("s1-mini-q4km".into());
+        original.downloaded_cleanup_models = vec![
+            ("s1-mini-q4km".into(), "S1-mini".into()),
+            ("quill-0.8b-q4km".into(), "Quill 0.8B".into()),
+        ];
+        original
+            .downloaded_models
+            .push(("medium".into(), "Medium".into()));
+        let rows = |menu: &MenuInputs| {
+            let mut rows = model_choices(
+                &menu.downloaded_models,
+                Some(&menu.selected_model),
+                "model_select",
+            );
+            rows.extend(model_choices(
+                &menu.downloaded_cleanup_models,
+                menu.selected_cleanup_model.as_deref(),
+                "cleanup_model_select",
+            ));
+            rows
+        };
+        let mut native = rows(&original);
+        {
+            let mut inner = state.lock();
+            inner.applied_menu = Some(original.clone());
+            inner.desired = Some(TrayDesired {
+                icon_path: "resources/tray_idle.png",
+                menu: original.clone(),
+            });
+        }
+        let same = matches!(outcome, CheckOutcome::Same);
+        let clicked = match (transcription, same) {
+            (true, true) => "model_select:small",
+            (true, false) => "model_select:medium",
+            (false, true) => "cleanup_model_select:s1-mini-q4km",
+            (false, false) => "cleanup_model_select:quill-0.8b-q4km",
+        };
+        let row = native.iter_mut().find(|row| row.id == clicked).unwrap();
+        row.checked = !row.checked;
+        let saved = std::cell::RefCell::new(original);
+        let published = std::cell::Cell::new(0);
+        let result = activate_model_check_with(
+            || -> Result<bool, String> {
+                match outcome {
+                    CheckOutcome::Refused => Ok(false),
+                    CheckOutcome::Failed => Err("persist failed".into()),
+                    CheckOutcome::Same => {
+                        published.set(published.get() + 1);
+                        Ok(true)
+                    }
+                    CheckOutcome::Changed => {
+                        if transcription {
+                            saved.borrow_mut().selected_model = "medium".into();
+                        } else {
+                            saved.borrow_mut().selected_cleanup_model =
+                                Some("quill-0.8b-q4km".into());
+                        }
+                        published.set(published.get() + 1);
+                        Ok(true)
+                    }
+                }
+            },
+            || {
+                let mut inner = state.lock();
+                inner.invalidate_menu();
+                inner.accept_desired(
+                    1,
+                    TrayDesired {
+                        icon_path: "resources/tray_idle.png",
+                        menu: saved.borrow().clone(),
+                    },
+                );
+            },
+        );
+        assert_eq!(result.is_err(), matches!(outcome, CheckOutcome::Failed));
+        let mut inner = state.lock();
+        inner.pending = false;
+        let desired = inner.desired.clone().unwrap();
+        if inner.menu_needs_rebuild(&desired.menu) {
+            native = rows(&desired.menu);
+            let revision = inner.menu_revision;
+            inner.mark_menu_applied(desired.menu, revision);
+        }
+        let checked = native
+            .iter()
+            .filter(|row| row.checked)
+            .map(|row| row.id.as_str())
+            .collect::<Vec<_>>();
+        let expected_transcription = if transcription && matches!(outcome, CheckOutcome::Changed) {
+            "model_select:medium"
+        } else {
+            "model_select:small"
+        };
+        let expected_cleanup = if !transcription && matches!(outcome, CheckOutcome::Changed) {
+            "cleanup_model_select:quill-0.8b-q4km"
+        } else {
+            "cleanup_model_select:s1-mini-q4km"
+        };
+        assert_eq!(checked, vec![expected_transcription, expected_cleanup]);
+        assert_eq!(
+            published.get(),
+            usize::from(matches!(
+                outcome,
+                CheckOutcome::Same | CheckOutcome::Changed
+            ))
+        );
+        assert!(!inner.menu_needs_rebuild(&saved.borrow()));
+    }
+
+    #[test]
+    fn local_check_same_selection_reconciles_native_toggle() {
+        assert_check_activation_reconciles(false, CheckOutcome::Same);
+    }
+    #[test]
+    fn local_check_changed_selection_reconciles_native_toggle() {
+        assert_check_activation_reconciles(false, CheckOutcome::Changed);
+    }
+    #[test]
+    fn local_check_refusal_reconciles_native_toggle() {
+        assert_check_activation_reconciles(false, CheckOutcome::Refused);
+    }
+    #[test]
+    fn local_check_persistence_failure_reconciles_native_toggle() {
+        assert_check_activation_reconciles(false, CheckOutcome::Failed);
+    }
+    #[test]
+    fn transcription_check_same_selection_reconciles_native_toggle() {
+        assert_check_activation_reconciles(true, CheckOutcome::Same);
+    }
+    #[test]
+    fn transcription_check_changed_selection_reconciles_native_toggle() {
+        assert_check_activation_reconciles(true, CheckOutcome::Changed);
+    }
+    #[test]
+    fn transcription_check_refusal_reconciles_native_toggle() {
+        assert_check_activation_reconciles(true, CheckOutcome::Refused);
+    }
+    #[test]
+    fn transcription_check_failure_reconciles_native_toggle() {
+        assert_check_activation_reconciles(true, CheckOutcome::Failed);
+    }
+
+    #[test]
+    fn native_menu_invalidation_survives_apply_and_coalesces_bursts() {
+        let state = TrayState::new();
+        let menu = inputs(false);
+        let desired = TrayDesired {
+            icon_path: "resources/tray_idle.png",
+            menu: menu.clone(),
+        };
+        let mut inner = state.lock();
+        inner.applied_menu = Some(menu.clone());
+        let mut scheduled = 0;
+        for seq in 1..=100 {
+            inner.invalidate_menu();
+            scheduled += usize::from(inner.accept_desired(seq, desired.clone()));
+        }
+        assert_eq!(scheduled, 1);
+        assert!(inner.menu_needs_rebuild(&menu));
+        let applying_revision = inner.menu_revision;
+        inner.pending = false;
+        inner.invalidate_menu();
+        assert!(inner.accept_desired(101, desired));
+        inner.mark_menu_applied(menu.clone(), applying_revision);
+        assert!(inner.menu_needs_rebuild(&menu));
+        let revision = inner.menu_revision;
+        inner.mark_menu_applied(menu.clone(), revision);
+        assert!(!inner.menu_needs_rebuild(&menu));
+    }
+
+    #[test]
+    fn model_choices_keep_full_names_and_check_only_selected_downloads() {
+        let long = "Qwen3-4B-Instruct-2507 with an exceptionally long display name";
+        let models = vec![
+            ("s1-mini-q4km".into(), "S1-mini by Superwhisper".into()),
+            ("qwen3-4b-instruct-2507-q4km".into(), long.into()),
+        ];
+        let choices = model_choices(
+            &models,
+            Some("qwen3-4b-instruct-2507-q4km"),
+            "cleanup_model_select",
+        );
+        assert_eq!(choices[0].id, "cleanup_model_select:s1-mini-q4km");
+        assert!(!choices[0].checked);
+        assert!(choices[1].checked);
+        assert_eq!(choices[1].label, long);
+        assert!(
+            model_choices(&models, Some("missing"), "cleanup_model_select")
+                .iter()
+                .all(|choice| !choice.checked)
+        );
+        let english = get_tray_translations(Some("en".into()));
+        assert_eq!(
+            cleanup_status_label(LocalLlmStateKind::Ready, long, &english, &english),
+            format!("Post-processing model: {long} (ready)")
+        );
+    }
+
+    #[test]
+    fn disabled_post_processing_never_reads_status_or_exposes_group() {
+        assert!(cleanup_menu(
+            false,
+            false,
+            settings::LOCAL_LLM_PROVIDER_ID,
+            Some("s1-mini-q4km"),
+            "No post-processing model",
+            &downloaded_registry_models(),
+            || panic!("disabled group must not inspect manager")
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn selected_model_label_does_not_claim_another_loaded_model_is_ready() {
+        let snapshot = cleanup_menu(
+            true,
+            false,
+            settings::LOCAL_LLM_PROVIDER_ID,
+            Some("quill-0.8b-q4km"),
+            "No post-processing model",
+            &downloaded_registry_models(),
+            || {
+                Some(LocalLlmStatus {
+                    state: LocalLlmStateKind::Ready,
+                    model_id: Some("s1-mini-q4km".into()),
+                    error: None,
+                })
+            },
+        )
+        .unwrap();
+        assert_eq!(snapshot.model_name, "Quill 0.8B");
+        assert_eq!(snapshot.state, LocalLlmStateKind::Unloaded);
+    }
+
+    #[test]
+    fn tray_selection_worker_never_runs_on_callback_thread() {
+        let caller = std::thread::current().id();
+        let worker = select_cleanup_on_worker(move || {
+            assert_ne!(caller, std::thread::current().id());
+            Ok(())
+        });
+        worker.join().unwrap().unwrap();
+    }
+
+    #[test]
+    fn tray_selection_refuses_disabled_remote_and_missing_models() {
+        let downloaded = vec![("s1-mini-q4km".into(), "S1-mini by Superwhisper".into())];
+        for (enabled, provider, id) in [
+            (false, "local_llm", "s1-mini-q4km"),
+            (true, "openai", "s1-mini-q4km"),
+            (true, "local_llm", "unknown"),
+            (true, "local_llm", "qwen3-4b-instruct-2507-q4km"),
+        ] {
+            assert!(
+                !select_cleanup_with(enabled, provider, id, &downloaded, |_| panic!(
+                    "refused selection must not call persistence"
+                ))
+                .unwrap()
+            );
+        }
+        let mut selected = None;
+        assert!(
+            select_cleanup_with(true, "local_llm", "s1-mini-q4km", &downloaded, |id| {
+                selected = Some(id);
+                Ok(())
+            })
+            .unwrap()
+        );
+        assert_eq!(selected.as_deref(), Some("s1-mini-q4km"));
+        assert!(
+            select_cleanup_with(true, "local_llm", "s1-mini-q4km", &downloaded, |_| Err(
+                "persist failed".into()
+            ))
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn disabled_group_and_action_each_protect_selection() {
+        let downloaded = vec![("s1-mini-q4km".into(), "S1-mini by Superwhisper".into())];
+        let group = cleanup_menu(
+            false,
+            false,
+            "local_llm",
+            Some("s1-mini-q4km"),
+            "No post-processing model",
+            &downloaded_registry_models(),
+            || {
+                Some(LocalLlmStatus {
+                    state: LocalLlmStateKind::Ready,
+                    model_id: Some("s1-mini-q4km".into()),
+                    error: None,
+                })
+            },
+        );
+        let mut called = false;
+        if group.is_some() {
+            select_cleanup_with(false, "local_llm", "s1-mini-q4km", &downloaded, |_| {
+                called = true;
+                Ok(())
+            })
+            .unwrap();
+        }
+        assert!(!called);
+    }
+
+    #[test]
+    fn identical_bursts_rebuild_once_with_either_coalescing_layer() {
+        let state = TrayState::new();
+        let desired = TrayDesired {
+            icon_path: "resources/tray_idle.png",
+            menu: inputs(false),
+        };
+        let mut queued = Vec::new();
+        for seq in 1..=100 {
+            if state.lock().accept_desired(seq, desired.clone()) {
+                queued.push(desired.clone());
+            }
+        }
+        let mut rebuilds = 0;
+        for next in queued {
+            let mut inner = state.lock();
+            inner.pending = false;
+            if inner.menu_needs_rebuild(&next.menu) {
+                rebuilds += 1;
+                inner.applied_menu = Some(next.menu);
+            }
+        }
+        assert_eq!(rebuilds, 1);
+    }
+
     fn build_entry(transcription: &str, post_processed: Option<&str>) -> HistoryEntry {
         HistoryEntry {
             id: 1,
@@ -974,6 +1706,8 @@ mod tests {
             source_name: None,
             language: None,
             language_source: None,
+            post_process_provider: None,
+            post_process_model: None,
         }
     }
 
@@ -983,12 +1717,476 @@ mod tests {
             models_locked: false,
             secure_input: false,
             notice: None,
+            cleanup: None,
+            tts: handy_tts_core::tray::tts_menu(
+                &[],
+                None,
+                handy_tts_core::lifecycle::State::Unloaded,
+            ),
+            selected_cleanup_model: None,
+            downloaded_cleanup_models: Vec::new(),
             model_loaded: true,
             selected_model: "small".to_string(),
             downloaded_models: vec![("small".to_string(), "Small".to_string())],
             locale: "en".to_string(),
             update_checks_enabled: true,
             language: None,
+        }
+    }
+
+    fn cleanup(state: LocalLlmStateKind) -> CleanupMenu {
+        CleanupMenu {
+            state,
+            model_name: "S1-mini".into(),
+        }
+    }
+
+    #[test]
+    fn tts_menu_snapshot_changes_are_coalesced_and_status_uses_english_fallback() {
+        let downloaded = vec![("pocket-en".into(), "Pocket TTS (English)".into())];
+        let mut first = inputs(false);
+        first.tts = handy_tts_core::tray::tts_menu(
+            &downloaded,
+            Some("pocket-en"),
+            handy_tts_core::lifecycle::State::Unloaded,
+        );
+        let mut later = first.clone();
+        later.tts = handy_tts_core::tray::tts_menu(
+            &downloaded,
+            Some("pocket-en"),
+            handy_tts_core::lifecycle::State::Ready,
+        );
+        let state = TrayState::new();
+        let mut inner = state.lock();
+        inner.mark_menu_applied(first.clone(), 0);
+        assert!(!inner.menu_needs_rebuild(&first));
+        assert!(inner.menu_needs_rebuild(&later));
+        let english = get_tray_translations(Some("en".into()));
+        let mut missing = english.clone();
+        missing.tts_ready.clear();
+        assert_eq!(
+            tts_status_label("tts.status.ready", &missing, &english),
+            english.tts_ready
+        );
+        assert_eq!(
+            tts_status_label("tts.status.failed", &english, &english),
+            english.tts_failed
+        );
+    }
+
+    #[test]
+    fn cleanup_unload_is_enabled_only_in_ready_and_snapshot_tracks_status() {
+        for state in [
+            LocalLlmStateKind::Unloaded,
+            LocalLlmStateKind::Starting,
+            LocalLlmStateKind::Stopping,
+            LocalLlmStateKind::Failed,
+        ] {
+            assert!(!cleanup_unload_enabled(&cleanup(state)));
+        }
+        assert!(cleanup_unload_enabled(&cleanup(LocalLlmStateKind::Ready)));
+        let mut ready = inputs(false);
+        ready.cleanup = Some(cleanup(LocalLlmStateKind::Ready));
+        let mut unloaded = ready.clone();
+        unloaded.cleanup = Some(cleanup(LocalLlmStateKind::Unloaded));
+        assert_ne!(ready, unloaded);
+        assert_eq!(
+            tray_label("", "Unload post-processing model"),
+            "Unload post-processing model"
+        );
+        assert_eq!(tray_label("Localized", "English"), "Localized");
+    }
+
+    #[test]
+    fn cleanup_event_burst_coalesces_and_last_snapshot_wins() {
+        let state = TrayState::new();
+        let mut scheduled = 0;
+        for seq in 1..=100 {
+            let mut menu = inputs(false);
+            menu.cleanup = Some(cleanup(if seq == 100 {
+                LocalLlmStateKind::Ready
+            } else {
+                LocalLlmStateKind::Starting
+            }));
+            let desired = TrayDesired {
+                icon_path: "resources/tray_idle.png",
+                menu,
+            };
+            if state.lock().accept_desired(seq, desired) {
+                scheduled += 1;
+            }
+        }
+        assert_eq!(scheduled, 1);
+        let mut inner = state.lock();
+        let newest = inner.desired.clone().unwrap();
+        assert_eq!(newest.menu.cleanup, Some(cleanup(LocalLlmStateKind::Ready)));
+        assert!(!inner.accept_desired(
+            99,
+            TrayDesired {
+                icon_path: "resources/tray_idle.png",
+                menu: inputs(false),
+            }
+        ));
+        assert_eq!(inner.desired, Some(newest.clone()));
+        inner.pending = false;
+        assert!(inner.accept_desired(101, newest));
+    }
+
+    #[test]
+    fn equal_cleanup_snapshots_do_not_rebuild_and_status_changes_do() {
+        let state = TrayState::new();
+        let mut ready = inputs(false);
+        ready.cleanup = Some(cleanup(LocalLlmStateKind::Ready));
+        let mut inner = state.lock();
+        inner.applied_menu = Some(ready.clone());
+        assert!(!inner.menu_needs_rebuild(&ready));
+        let mut unloaded = ready.clone();
+        unloaded.cleanup = Some(cleanup(LocalLlmStateKind::Unloaded));
+        assert!(inner.menu_needs_rebuild(&unloaded));
+    }
+
+    #[test]
+    fn cleanup_snapshot_is_idle_and_local_only_and_uses_registry_or_fallback() {
+        for (busy, provider) in [(true, settings::LOCAL_LLM_PROVIDER_ID), (false, "openai")] {
+            assert_eq!(
+                cleanup_menu(
+                    true,
+                    busy,
+                    provider,
+                    None,
+                    "No post-processing model",
+                    &downloaded_registry_models(),
+                    || { panic!("irrelevant cleanup status must not be read") }
+                ),
+                None
+            );
+        }
+        let status = LocalLlmStatus {
+            state: LocalLlmStateKind::Ready,
+            model_id: Some("s1-mini-q4km".into()),
+            error: None,
+        };
+        let snapshot = cleanup_menu(
+            true,
+            false,
+            settings::LOCAL_LLM_PROVIDER_ID,
+            Some("s1-mini-q4km"),
+            "No post-processing model",
+            &downloaded_registry_models(),
+            || Some(status.clone()),
+        )
+        .unwrap();
+        assert_eq!(
+            snapshot.model_name,
+            registry::find("s1-mini-q4km").unwrap().display_name
+        );
+        let unloaded = LocalLlmStatus {
+            state: LocalLlmStateKind::Unloaded,
+            model_id: None,
+            error: None,
+        };
+        let snapshot = cleanup_menu(
+            true,
+            false,
+            settings::LOCAL_LLM_PROVIDER_ID,
+            Some("s1-mini-q4km"),
+            "No post-processing model",
+            &downloaded_registry_models(),
+            || Some(unloaded.clone()),
+        )
+        .unwrap();
+        assert_eq!(
+            snapshot.model_name,
+            registry::find("s1-mini-q4km").unwrap().display_name
+        );
+        let missing = cleanup_menu(
+            true,
+            false,
+            settings::LOCAL_LLM_PROVIDER_ID,
+            None,
+            "No post-processing model",
+            &downloaded_registry_models(),
+            || Some(unloaded),
+        )
+        .unwrap();
+        assert_eq!(missing.model_name, "No post-processing model");
+        let failed = LocalLlmStatus {
+            state: LocalLlmStateKind::Failed,
+            model_id: Some("unknown".into()),
+            error: Some("first error".into()),
+        };
+        let snapshot = cleanup_menu(
+            true,
+            false,
+            settings::LOCAL_LLM_PROVIDER_ID,
+            Some("unknown"),
+            "No post-processing model",
+            &downloaded_registry_models(),
+            || Some(failed.clone()),
+        )
+        .unwrap();
+        assert_eq!(snapshot.state, LocalLlmStateKind::Failed);
+        assert_eq!(snapshot.model_name, "No post-processing model");
+        let mut other_error = failed;
+        other_error.error = Some("second error".into());
+        assert_eq!(
+            Some(snapshot),
+            cleanup_menu(
+                true,
+                false,
+                settings::LOCAL_LLM_PROVIDER_ID,
+                Some("unknown"),
+                "No post-processing model",
+                &downloaded_registry_models(),
+                || Some(other_error)
+            )
+        );
+        assert_eq!(
+            cleanup_menu(
+                true,
+                false,
+                settings::LOCAL_LLM_PROVIDER_ID,
+                None,
+                "No post-processing model",
+                &downloaded_registry_models(),
+                || None
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn cleanup_unload_runs_on_a_different_thread() {
+        let caller = std::thread::current().id();
+        let (sender, receiver) = std::sync::mpsc::channel();
+        let worker = unload_cleanup_on_worker(move || {
+            sender.send(std::thread::current().id()).unwrap();
+        });
+        worker.join().unwrap();
+        assert_ne!(receiver.recv().unwrap(), caller);
+    }
+
+    fn unloaded_cleanup_snapshot(saved: &settings::AppSettings) -> Option<CleanupMenu> {
+        cleanup_menu(
+            saved.post_process_enabled,
+            false,
+            &saved.post_process_provider_id,
+            saved.local_llm_model_id.as_deref(),
+            "No post-processing model",
+            &downloaded_registry_models(),
+            || {
+                Some(LocalLlmStatus {
+                    state: LocalLlmStateKind::Unloaded,
+                    model_id: None,
+                    error: None,
+                })
+            },
+        )
+    }
+
+    #[test]
+    fn provider_selection_refreshes_saved_snapshot_and_failed_persist_does_not_refresh() {
+        let mut initial = settings::get_default_settings();
+        initial.post_process_enabled = true;
+        initial.post_process_provider_id = "openai".into();
+        initial.local_llm_model_id = Some("s1-mini-q4km".into());
+        let store = Mutex::new(initial);
+        let refreshed = Mutex::new(Vec::new());
+        for provider in [settings::LOCAL_LLM_PROVIDER_ID, "openai"] {
+            crate::shortcut::set_post_process_provider_with_settings(
+                provider.into(),
+                || store.lock().unwrap().clone(),
+                |saved| {
+                    *store.lock().unwrap() = saved;
+                    Ok(())
+                },
+                || {
+                    let saved = store.lock().unwrap();
+                    refreshed.lock().unwrap().push((
+                        saved.post_process_provider_id.clone(),
+                        unloaded_cleanup_snapshot(&saved),
+                    ));
+                },
+            )
+            .unwrap();
+        }
+        let snapshots = refreshed.lock().unwrap();
+        assert_eq!(
+            snapshots.len(),
+            2,
+            "each successful provider persist must refresh"
+        );
+        assert_eq!(snapshots[0].0, settings::LOCAL_LLM_PROVIDER_ID);
+        assert_eq!(
+            snapshots[0].1,
+            Some(CleanupMenu {
+                state: LocalLlmStateKind::Unloaded,
+                model_name: registry::find("s1-mini-q4km").unwrap().display_name.into()
+            })
+        );
+        assert_eq!(snapshots[1], ("openai".into(), None));
+        drop(snapshots);
+        let before = store.lock().unwrap().clone();
+        let result = crate::shortcut::set_post_process_provider_with_settings(
+            settings::LOCAL_LLM_PROVIDER_ID.into(),
+            || store.lock().unwrap().clone(),
+            |_| Err("persist failed".into()),
+            || panic!("failed provider persist must not refresh"),
+        );
+        assert_eq!(result, Err("persist failed".into()));
+        assert_eq!(
+            store.lock().unwrap().post_process_provider_id,
+            before.post_process_provider_id
+        );
+        assert_eq!(refreshed.lock().unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn unloaded_model_selection_and_clear_refresh_saved_snapshot_without_state_events() {
+        let h = crate::local_llm::manager::tests::harness();
+        let mut initial = h.settings.clone();
+        initial.post_process_enabled = true;
+        initial.local_llm_model_id = None;
+        let store = Mutex::new(initial);
+        let refreshed = Mutex::new(Vec::new());
+        for model in [Some("s1-mini-q4km".to_string()), None] {
+            crate::local_llm::commands::set_local_llm_model_with_settings(
+                h.manager.clone(),
+                model.clone(),
+                || store.lock().unwrap().clone(),
+                |saved| {
+                    *store.lock().unwrap() = saved;
+                    Ok(())
+                },
+                || {
+                    let saved = store.lock().unwrap();
+                    refreshed.lock().unwrap().push((
+                        saved.local_llm_model_id.clone(),
+                        unloaded_cleanup_snapshot(&saved),
+                    ));
+                },
+            )
+            .await
+            .unwrap();
+            assert_eq!(h.manager.status().state, LocalLlmStateKind::Unloaded);
+            assert!(
+                h.events.lock().unwrap().is_empty(),
+                "unloaded manager emits no compensating refresh event"
+            );
+        }
+        {
+            let snapshots = refreshed.lock().unwrap();
+            assert_eq!(
+                snapshots.len(),
+                2,
+                "select and clear must each refresh after persistence"
+            );
+            assert_eq!(snapshots[0].0.as_deref(), Some("s1-mini-q4km"));
+            assert_eq!(
+                snapshots[0].1.as_ref().unwrap().model_name,
+                registry::find("s1-mini-q4km").unwrap().display_name
+            );
+            assert_eq!(snapshots[1].0, None);
+            assert_eq!(
+                snapshots[1].1,
+                Some(CleanupMenu {
+                    state: LocalLlmStateKind::Unloaded,
+                    model_name: "No post-processing model".into()
+                })
+            );
+        }
+        let result = crate::local_llm::commands::set_local_llm_model_with_settings(
+            h.manager.clone(),
+            Some("s1-mini-q4km".into()),
+            || store.lock().unwrap().clone(),
+            |_| Err("persist failed".into()),
+            || panic!("failed model persist must not refresh"),
+        )
+        .await;
+        assert_eq!(result, Err("persist failed".into()));
+        assert_eq!(store.lock().unwrap().local_llm_model_id, None);
+        assert_eq!(refreshed.lock().unwrap().len(), 2);
+        assert!(h.events.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn cleanup_status_label_maps_every_state_in_english_and_a_translated_locale() {
+        let english = get_tray_translations(Some("en".into()));
+        let german = get_tray_translations(Some("de".into()));
+        let locale: serde_json::Value =
+            serde_json::from_str(include_str!("../../src/i18n/locales/de/translation.json"))
+                .expect("de translation.json parses");
+        let tray = |key: &str| {
+            locale["tray"][key]
+                .as_str()
+                .unwrap_or_else(|| panic!("de tray.{key} is a string"))
+                .to_string()
+        };
+        for (state, english_text, german_key) in [
+            (LocalLlmStateKind::Ready, "ready", "cleanupReady"),
+            (
+                LocalLlmStateKind::Unloaded,
+                "not loaded",
+                "cleanupNotLoaded",
+            ),
+            (LocalLlmStateKind::Starting, "loading", "cleanupLoading"),
+            (LocalLlmStateKind::Stopping, "loading", "cleanupLoading"),
+            (LocalLlmStateKind::Failed, "error", "cleanupError"),
+        ] {
+            assert_eq!(
+                cleanup_status_label(state, "S1-mini", &english, &english),
+                format!("Post-processing model: S1-mini ({english_text})")
+            );
+            assert_eq!(
+                cleanup_status_label(state, "S1-mini", &german, &english),
+                format!("{}: S1-mini ({})", tray("cleanup"), tray(german_key))
+            );
+        }
+    }
+
+    #[test]
+    fn cleanup_status_label_falls_back_to_english_for_missing_cleanup_strings() {
+        let english = get_tray_translations(Some("en".into()));
+        let mut missing = get_tray_translations(Some("de".into()));
+        missing.cleanup = String::new();
+        missing.cleanup_ready = String::new();
+        missing.cleanup_not_loaded = String::new();
+        missing.cleanup_loading = String::new();
+        missing.cleanup_error = String::new();
+        for (state, text) in [
+            (LocalLlmStateKind::Ready, "ready"),
+            (LocalLlmStateKind::Unloaded, "not loaded"),
+            (LocalLlmStateKind::Starting, "loading"),
+            (LocalLlmStateKind::Stopping, "loading"),
+            (LocalLlmStateKind::Failed, "error"),
+        ] {
+            assert_eq!(
+                cleanup_status_label(state, "S1-mini", &missing, &english),
+                format!("Post-processing model: S1-mini ({text})")
+            );
+        }
+    }
+
+    #[test]
+    fn cleanup_status_label_preserves_localized_prefix_state_and_model_name() {
+        let english = get_tray_translations(Some("en".into()));
+        let mut localized = english.clone();
+        localized.cleanup = "Bereinigung".into();
+        localized.cleanup_ready = "bereit".into();
+        localized.cleanup_not_loaded = "nicht geladen".into();
+        localized.cleanup_loading = "laden".into();
+        localized.cleanup_error = "Fehler".into();
+        for (state, text) in [
+            (LocalLlmStateKind::Ready, "bereit"),
+            (LocalLlmStateKind::Unloaded, "nicht geladen"),
+            (LocalLlmStateKind::Starting, "laden"),
+            (LocalLlmStateKind::Stopping, "laden"),
+            (LocalLlmStateKind::Failed, "Fehler"),
+        ] {
+            assert_eq!(
+                cleanup_status_label(state, "Another model", &localized, &english),
+                format!("Bereinigung: Another model ({text})")
+            );
         }
     }
 

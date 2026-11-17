@@ -3,20 +3,35 @@
     "settings": "Nastavení...",
     "checkUpdates": "Zkontrolovat aktualizace...",
     "copyLastTranscript": "Zkopírovat poslední přepis",
-    "unloadModel": "Uvolnit model",
+    "unloadModel": "Uvolnit model přepisu",
+    "cleanup": "Model následného zpracování",
+    "cleanupReady": "připraven",
+    "cleanupNotLoaded": "nenačten",
+    "cleanupLoading": "načítá se",
+    "cleanupError": "chyba",
+    "noCleanupModel": "Žádný model následného zpracování",
+    "unloadPostProcessingModel": "Uvolnit model následného zpracování",
     "model": "Model",
+    "transcriptionModel": "Model přepisu",
     "quit": "Ukončit",
     "cancel": "Zrušit",
     "secureInputWarning": "⚠ Zkratky blokuje Secure Input",
     "language": "Jazyk",
     "autoLanguage": "Automaticky",
-    "otherLanguages": "Další jazyky"
+    "otherLanguages": "Další jazyky",
+    "ttsModel": "Model převodu textu na řeč",
+    "ttsUnload": "Uvolnit model převodu textu na řeč",
+    "ttsStarting": "Spouští se",
+    "ttsReady": "Načten",
+    "ttsStopping": "Zastavuje se",
+    "ttsFailed": "Selhalo",
+    "ttsUnloaded": "Uvolněn"
   },
   "sidebar": {
     "general": "Obecné",
-    "models": "Modely",
+    "models": "Modely přepisu",
     "advanced": "Pokročilé",
-    "postProcessing": "Následné zpracování",
+    "postProcessing": "Modely následného zpracování",
     "history": "Historie",
     "debug": "Ladění",
     "about": "O aplikaci"
@@ -144,6 +159,10 @@
       },
       "model": "Model",
       "showAll": "Zobrazit všech {{count}} modelů",
+      "noPick": "Žádný doporučený model nepokrývá {{languages}}.",
+      "noPickNext": "Zobrazte všechny modely, nebo se vraťte a změňte své jazyky.",
+      "showAllButton": "Zobrazit všechny modely",
+      "pickOne": "Vyberte model",
       "download": "Stáhnout {{size}}",
       "downloadInstead": "Stáhnout raději {{size}}",
       "pauses": "{{name}} se pozastaví na {{percent}} %",
@@ -306,6 +325,8 @@
     "alreadyAdded_other": "{{languages}} jsou již přidány."
   },
   "modelSelector": {
+    "status": "Stav modelu: {{modelName}}",
+    "size": "{{size}} MiB",
     "custom": "Vlastní",
     "streaming": "Streaming",
     "active": "Aktivní",
@@ -336,18 +357,26 @@
         "none": "Žádné zkratky nejsou nastavené",
         "notFound": "Zkratka nenalezena",
         "pressKeys": "Stiskněte klávesy...",
+        "unassigned": "Nepřiřazeno",
         "bindings": {
           "transcribe": {
             "name": "Zkratka přepisu",
             "description": "Klávesová zkratka pro nahrávání a přepis vašeho hlasu."
+          },
+          "transcribe_raw": {
+            "name": "Zkratka pro nezpracovaný přepis"
           },
           "cancel": {
             "name": "Zkratka zrušení",
             "description": "Klávesová zkratka pro zrušení aktuálního nahrávání."
           },
           "transcribe_with_post_process": {
-            "name": "Klávesa pro následné zpracování",
+            "name": "Zkratka následného zpracování",
             "description": "Volitelné: Vyhrazená klávesová zkratka, která vždy použije AI následné zpracování na váš přepis."
+          },
+          "read_aloud": {
+            "name": "Zkratka pro čtení nahlas",
+            "description": "Otevře okno a přečte zkopírovaný text nahlas."
           }
         },
         "errors": {
@@ -517,8 +546,8 @@
           }
         },
         "position": {
-          "title": "Pozice překryvu",
-          "description": "Zobrazovat vizuální překryv během nahrávání a přepisu. Na Linuxu je doporučeno 'Žádné'.",
+          "title": "Umístění plovoucího okna",
+          "description": "Možnost „Nahoře“ ponechá spodní část obrazovky volnou, což se hodí při diktování do terminálu.",
           "options": {
             "bottom": "Dole",
             "top": "Nahoře"
@@ -628,8 +657,8 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "Klávesová zkratka"
+      "provider": {
+        "title": "Poskytovatel"
       },
       "api": {
         "title": "API",
@@ -688,10 +717,76 @@
         "cancel": "Zrušit",
         "selectToEdit": "Vyberte výše prompt, abyste zobrazili a upravili jeho podrobnosti.",
         "createFirst": "Klikněte nahoře na 'Vytvořit nový prompt' a vytvořte svůj první prompt pro následné zpracování."
+      },
+      "localLlm": {
+        "noCleanupModel": "Žádný model následného zpracování",
+        "s1Description": "Používá ovládání stylu, struktury a kontextu.",
+        "plainDescription": "Používá vybraný prompt Handy.",
+        "groupTitle": "Místní model",
+        "size": "{{size}} MiB",
+        "downloaded": "Staženo",
+        "use": "Použít",
+        "download": "Stáhnout",
+        "downloading": "Stahování {{percent}}%",
+        "delete": "Smazat",
+        "deleteConfirm": "Smazat {{name}}? Uvolní {{size}}.",
+        "deleteConfirmAction": "Smazat model",
+        "status": {
+          "title": "Stav",
+          "description": "Model se načte při spuštění diktování s následným zpracováním a uvolní se po uplynutí časového limitu uvolnění modelu.",
+          "notLoaded": "Nenačten",
+          "loading": "Načítá se",
+          "ready": "Připraven",
+          "error": "Chyba: {{reason}}"
+        },
+        "styling": {
+          "title": "Styl",
+          "description": "Jak formálně text po zpracování působí.",
+          "options": {
+            "casual": "Neformální",
+            "semi_casual": "Spíše neformální",
+            "semi_formal": "Spíše formální",
+            "formal": "Formální"
+          }
+        },
+        "structure": {
+          "title": "Struktura",
+          "description": "Odstavce souvislého textu nebo seznamy v Markdownu.",
+          "options": {
+            "prose": "Souvislý text",
+            "lists": "Seznamy"
+          }
+        },
+        "context": {
+          "title": "Kontext",
+          "description": "Obecný text nebo rozvržení e-mailu.",
+          "options": {
+            "general": "Obecný",
+            "email": "E-mail"
+          }
+        },
+        "licenseNotes": {
+          "s1Name": "Apache-2.0 s jednou podmínkou navíc: model musí být vždy uváděn jako \"S1-mini\" od \"Superwhisper\", přesně s tímto psaním velkých a malých písmen."
+        },
+        "promptRequired": "Ve skupině Prompty vyberte neprázdný prompt Handy. Do té doby se následné zpracování přeskakuje a použije se nezpracovaný přepis.",
+        "promptHidden": "Tento model používá vlastní pevný prompt a výše uvedená nastavení Styl, Struktura a Kontext, proto je editor promptů skrytý."
       }
     },
     "history": {
       "title": "Historie",
+      "cleaned": "Po následném zpracování",
+      "cleanedWith": "Zpracováno modelem {{model}}",
+      "raw": "Nezpracované",
+      "copyRaw": "Kopírovat nezpracovaný text",
+      "copyPostProcessed": "Kopírovat zpracovaný text",
+      "compare": {
+        "title": "Zobrazení porovnání",
+        "diff": "Rozdíly",
+        "side_by_side": "Vedle sebe",
+        "stacked": "Pod sebou"
+      },
+      "clearHistory": "Vymazat historii",
+      "clearConfirmation": "Odebrat nehvězdičkované záznamy historie (počet: {{count}}) a nahrávky (počet: {{recordings}})? Záznamy s hvězdičkou a jejich nahrávky zůstanou zachovány.",
       "openFolder": "Otevřít složku nahrávek",
       "loading": "Načítám historii...",
       "empty": "Zatím žádné přepisy. Začněte nahrávat a vytvořte si historii!",
@@ -701,6 +796,8 @@
       "unsave": "Odebrat z uložených",
       "delete": "Smazat záznam",
       "deleteError": "Nepodařilo se smazat záznam. Zkuste to prosím znovu.",
+      "deleteConfirm": "Smazat tento záznam a jeho nahrávku?",
+      "deleteConfirmAction": "Smazat záznam",
       "retranscribe": "Přepsat znovu",
       "cancelTranscription": "Zrušit přepis",
       "transcribing": "Přepisuji...",
@@ -716,7 +813,14 @@
       "showMore": "Zobrazit více",
       "showLess": "Zobrazit méně",
       "dropTitle": "Pusťte pro přepis",
-      "dropDescription": "Zobrazí se v historii."
+      "dropDescription": "Zobrazí se v historii.",
+      "retentionConfirm": {
+        "preserveLimit": "Smazat záznamy bez hvězdičky nad rámec posledních {{count}} i s jejich nahrávkami? Záznamy s hvězdičkou a přepsané soubory zůstanou.",
+        "days3": "Smazat záznamy bez hvězdičky starší než 3 dny i s jejich nahrávkami? Záznamy s hvězdičkou a přepsané soubory zůstanou.",
+        "weeks2": "Smazat záznamy bez hvězdičky starší než 2 týdny i s jejich nahrávkami? Záznamy s hvězdičkou a přepsané soubory zůstanou.",
+        "months3": "Smazat záznamy bez hvězdičky starší než 3 měsíce i s jejich nahrávkami? Záznamy s hvězdičkou a přepsané soubory zůstanou.",
+        "action": "Smazat záznamy"
+      }
     },
     "debug": {
       "title": "Ladění",
@@ -927,9 +1031,15 @@
     "open": "Otevřít",
     "copy": "Kopírovat",
     "clear": "Vymazat",
-    "noOptionsFound": "Nenalezeny žádné možnosti"
+    "noOptionsFound": "Nenalezeny žádné možnosti",
+    "cancel": "Zrušit"
   },
   "errors": {
+    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
+    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
+    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudClipboardUnreadableTitle": "Schránku nelze přečíst",
+    "readAloudClipboardUnreadable": "Text ze schránky se nepodařilo přečíst.",
     "loadDirectory": "Chyba při načítání adresáře: {{error}}",
     "micPermissionDeniedTitle": "Přístup k mikrofonu byl odepřen",
     "micPermissionDenied": {
@@ -957,7 +1067,9 @@
     "filePostProcessFailedTitle": "Přepsáno bez následného zpracování",
     "filePostProcessFailed": "Následné zpracování se nedokončilo, takže byl přepis uložen beze změn.",
     "fileTranscriptionFailedTitle": "Přepis souboru selhal",
-    "transcriptionFailedTitle": "Přepis selhal"
+    "transcriptionFailedTitle": "Přepis selhal",
+    "vocabularyInvalidTitle": "Soubor slovníku obsahuje chybu",
+    "vocabularyInvalid": "Čtení nahlas použilo vestavěný slovník, protože váš slovníkový soubor nešlo použít. Opravte soubor uvedený níže, aby se použily vaše vlastní položky."
   },
   "notices": {
     "errorOne": "{{n}} chyba",
@@ -980,9 +1092,10 @@
     }
   },
   "overlay": {
-    "transcribing": "Přepisuji...",
-    "processing": "Zpracovávám...",
-    "loadingModel": "Načítání modelu..."
+    "transcribing": "Přepisuji",
+    "processing": "Čištění textu",
+    "loadingModel": "Načítání modelu",
+    "cancel": "Zrušit diktování"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} může blokovat 1 zkratku",
@@ -994,5 +1107,345 @@
     "learnMore": "Jak to vyřešit",
     "recorderBlocked": "Zkratky teď nelze nahrát — Secure Input v macOS blokuje události kláves. Nejprve vyřešte upozornění na Secure Input.",
     "dismiss": "Zavřít"
+  },
+  "tts": {
+    "ratings": {
+      "quality": "Kvalita",
+      "speed": "Rychlost",
+      "recommended": "Doporučeno",
+      "tooltip": "První zvuk za {{firstAudio}} s, {{faster}}x rychleji než v reálném čase, načtení za {{load}} s"
+    },
+    "devices": {
+      "auto": "Automaticky",
+      "cpu": "CPU",
+      "gpu": "GPU",
+      "npu": "NPU"
+    },
+    "errors": {
+      "notDownloaded": "Před čtením tento model stáhněte.",
+      "audio": "Výstupní zařízení se nepodařilo otevřít.",
+      "text": "Tento text se nepodařilo připravit.",
+      "clock": "Časování přehrávání selhalo.",
+      "worker": "Pracovní proces převodu textu na řeč se zastavil.",
+      "unavailable": "Převod textu na řeč není dostupný.",
+      "notReady": "Převod textu na řeč se stále spouští.",
+      "generic": "Převod textu na řeč selhal.",
+      "memory": "Je vyžadována alespoň 1 GiB volné paměti.",
+      "gatedToken": "Hlasy Pocket vyžadují token Hugging Face a přijaté podmínky hlasů.",
+      "model": "Vyberte dostupný model převodu textu na řeč.",
+      "device": "Toto zařízení není dostupné.",
+      "npuDriverTooOld": "Ovladač NPU je příliš starý. Aktualizujte jej nebo vyberte jiné zařízení.",
+      "selection": "Výběr se nepodařilo použít.",
+      "busy": "Operace převodu textu na řeč už běží.",
+      "cancelled": "Čtení bylo zrušeno.",
+      "clipboard": "Text ze schránky se nepodařilo přečíst.",
+      "deviceNotSupported": "Tento model vybrané zařízení nepodporuje.",
+      "deviceUnavailable": "Vybrané zařízení není dostupné.",
+      "download": "Stažení modelu selhalo.",
+      "driverDiscovery": "Ovladač NPU se nepodařilo zjistit.",
+      "failed": "Pracovní proces třikrát selhal. Pro opakování vyberte model.",
+      "integrity": "Soubor modelu neprošel kontrolou integrity.",
+      "invalidControls": "Vyberte rychlost od 0.5x do 2.0x a výšku tónu od -6 do +6 půltónů.",
+      "invalidRatings": "Hodnocení modelů chybí nebo je neplatné.",
+      "invalidVoice": "Vyberte hlas pro vybraný model.",
+      "outputUnavailable": "Výstupní zařízení není dostupné.",
+      "path": "Adresář úložiště převodu textu na řeč není dostupný.",
+      "prepareFailed": "Vybrané zařízení nedokázalo tento model připravit.",
+      "protocol": "Pracovní proces převodu textu na řeč vrátil neplatnou odpověď.",
+      "registry": "Registr modelů převodu textu na řeč je neplatný.",
+      "settings": "Nastavení převodu textu na řeč se nepodařilo uložit.",
+      "start": "Pracovní proces převodu textu na řeč se nepodařilo spustit.",
+      "starting": "Pracovní proces převodu textu na řeč se spouští.",
+      "tokenRejected": "Token Hugging Face byl odmítnut. Zkontrolujte přístup k podmínkám hlasů Pocket.",
+      "tokenRequired": "Před stažením hlasů nastavte token Hugging Face a přijměte podmínky hlasů Pocket.",
+      "unknownModel": "Vybraný model převodu textu na řeč není znám.",
+      "window": "Okno čtení nahlas se nepodařilo otevřít.",
+      "accessDenied": "Přístup k souborům modelu byl odepřen.",
+      "localIo": "Soubory modelu se nepodařilo přečíst nebo zapsat.",
+      "downloading": "Tento model se již stahuje."
+    },
+    "runOn": "Spustit na",
+    "preparing": "Příprava pro {{device}}: {{graph}}",
+    "buffering": "Ukládání do vyrovnávací paměti",
+    "title": "Čtení nahlas",
+    "textLabel": "Text ke čtení",
+    "placeholder": "Vložte text ke čtení",
+    "play": "Přehrát",
+    "pause": "Pozastavit",
+    "stop": "Zastavit",
+    "close": "Zavřít",
+    "readClipboard": "Přečíst schránku",
+    "editText": "Upravit text",
+    "progress": "Průběh",
+    "time": "Uplynulo {{elapsed}} s, zbývá {{remaining}} s",
+    "openModels": "Modely převodu textu na řeč",
+    "outputFallback": "Používá se výchozí výstupní zařízení",
+    "states": {
+      "waiting": "Čeká se",
+      "starting": "Spouští se",
+      "buffering": "Ukládání do vyrovnávací paměti",
+      "playing": "Přehrává se",
+      "paused": "Pozastaveno",
+      "finished": "Dokončeno",
+      "error": "Chyba"
+    },
+    "modelsTitle": "Modely převodu textu na řeč",
+    "modelsSubtitle": "Vyberte hlasový model. Údaje o rychlosti byly změřeny na počítači vývojáře; u vás se mohou lišit.",
+    "downloaded": "Staženo",
+    "availableToDownload": "K dispozici ke stažení",
+    "recommended": "Doporučeno",
+    "downloading": "Stahování",
+    "needsToken": "Vyžaduje token Hugging Face",
+    "tokenSet": "Token nastaven",
+    "active": "Aktivní",
+    "use": "Použít",
+    "download": "Stáhnout",
+    "delete": "Smazat",
+    "deleteConfirm": "Smazat {{name}}? Uvolní {{size}}. Slovník a historie zůstanou zachovány.",
+    "deleteConfirmSelected": "Čtení nahlas přestane fungovat, dokud nevyberete jiný model.",
+    "deleteConfirmAction": "Smazat model",
+    "cancel": "Zrušit",
+    "token": "Token Hugging Face",
+    "tokenHelp": "Potřeba pouze pro uzamčené hlasy Pocket po přijetí podmínek hlasů na Hugging Face. Token zůstává v paměti a po restartu Handy se vymaže.",
+    "clearToken": "Vymazat token",
+    "showToken": "Zobrazit token",
+    "hideToken": "Skrýt token",
+    "saveToken": "Nastavit token",
+    "model": "Model",
+    "voice": "Hlas",
+    "preview": "Poslechnout ukázku hlasu",
+    "speed": "Rychlost: {{value}}x",
+    "pitch": "Výška tónu: {{value}} půltónů",
+    "output": "Výstupní zařízení",
+    "sameAsHandy": "Stejné jako Handy",
+    "readCode": "Číst bloky kódu",
+    "technicalReading": "Technické čtení",
+    "fullPaths": "Číst celé cesty",
+    "fullLinks": "Číst celé odkazy",
+    "pocketAttribution": "Hlasy Pocket TTS jsou licencovány pod CC-BY-4.0. Dodržujte podmínky uvedení autorství a souhlasu u každého hlasu na stránce modelu.",
+    "supertonicRestrictions": "Supertonic 3 používá licenci OpenRAIL-M. Seznamte se s omezeními použití na stránce modelu.",
+    "kokoroAttribution": "Váhy modelu Kokoro používají licenci Apache-2.0.",
+    "paradeeAttribution": "Paradee-8M v1.2 od Sahila Mahendrakara, destilovaný z Kokoro-82M (hexgrad). Licence Apache-2.0.",
+    "phononAttribution": "Phonon 31m English od Gradium (Apache-2.0), založený na Pocket TTS a kodeku Mimi od Kyutai (CC-BY-4.0). Hlasy z gradium/phonon-voices (Apache-2.0).",
+    "indicTinyEnglishAttribution": "Indic Tiny TTS (English) od Sulabh Katiyar, CC-BY-4.0. Hlasy trénované na LIMMITS 2024 (SYSPIN, Indian Institute of Science, Bangalore, SPIRE Lab), CC-BY-4.0. Souhlas mluvčích s vydáním zdroj nedokumentuje. Vokodér: Vocos od Charactr Inc., MIT.",
+    "indicTinyHindiAttribution": "Indic Tiny TTS (Hindi) od Sulabh Katiyar, CC-BY-4.0, trénováno na datové sadě AI4Bharat Rasa (CC-BY-4.0; Varadhan, Sankar, Raju a Khapra, INTERSPEECH 2024). Vokodér: Vocos od Charactr Inc., MIT.",
+    "indicTinyPunjabiAttribution": "Indic Tiny TTS (Punjabi) od Sulabh Katiyar, CC-BY-4.0, trénováno na datové sadě AI4Bharat Rasa (CC-BY-4.0; Varadhan, Sankar, Raju a Khapra, INTERSPEECH 2024). Vokodér: Vocos od Charactr Inc., MIT.",
+    "status": {
+      "failed": "Selhalo",
+      "ready": "Připraven",
+      "starting": "Spouští se",
+      "stopping": "Zastavuje se",
+      "unloaded": "Uvolněn"
+    },
+    "previewSentence": "Reading clearly, one phrase at a time.",
+    "description": {
+      "pocket-en": "Výrazné anglické hlasy s nejvyšším hodnocením poslechu.",
+      "supertonic-3": "Rychlá anglická syntéza s během na CPU, GPU a NPU.",
+      "kokoro-82m-int8": "Kompaktní anglické hlasy z modelu INT8.",
+      "paradee-8m-int8": "Velmi malé a rychlé anglické hlasy z modelu destilovaného z Kokoro.",
+      "phonon-31m-en": "Malé, přirozené anglické hlasy založené na Pocket TTS, s 26 hlasy.",
+      "indic-tiny-en": "Malé hlasy v indické angličtině, ženský a mužský.",
+      "indic-tiny-hi": "Malé hlasy v hindštině, ženský a mužský. Anglická slova se čtou písmeno po písmenu.",
+      "indic-tiny-pa": "Malé hlasy v paňdžábštině (gurmukhí), ženský a mužský. Anglická slova se čtou písmeno po písmenu."
+    },
+    "voiceCount": "Počet hlasů: {{count}}",
+    "downloadProgress": "Průběh stahování modelu",
+    "settingsTitle": "Převod textu na řeč",
+    "speedLabel": "Rychlost",
+    "pitchLabel": "Výška tónu",
+    "help": {
+      "model": "Vyberte stažený model převodu textu na řeč.",
+      "voice": "Vyberte hlas pro tento model a poslechněte si ukázku.",
+      "speed": "Upravte, jak rychle se text čte.",
+      "pitch": "Upravte výšku hlasu v půltónech.",
+      "output": "Vyberte, kde se přehrává zvuk čtení nahlas.",
+      "readCode": "Při čtení zahrnout bloky kódu v ohraničení.",
+      "technicalReading": "Vyslovuje cesty, názvy souborů, přepínače a názvy v kódu celé podle vašeho slovníkového souboru.",
+      "fullPaths": "Přečte každou složku v cestě. Když je vypnuto, přečte jen název souboru.",
+      "fullLinks": "Přečte celou webovou adresu. Když je vypnuto, řekne jen název webu."
+    },
+    "tabs": {
+      "settings": "Nastavení",
+      "history": "Historie",
+      "vocabulary": "Slovník"
+    },
+    "history": {
+      "title": "Nastavení historie",
+      "reading": "Psaná slova s tím, co bylo řečeno",
+      "hint": "Tažením přes slova vyberte úsek a opravte, jak byl přečten.",
+      "empty": "Zatím nebylo nic přečteno nahlas. Přehraná čtení se zobrazí zde.",
+      "limit": {
+        "title": "Limit historie",
+        "description": "Nejvyšší počet čtení uchovaných v historii",
+        "entries": "čtení"
+      },
+      "retention": {
+        "title": "Automatické mazání",
+        "description": "Starší čtení také automaticky smazat",
+        "keepNothing": "Nikdy neuchovávat",
+        "keepLimit": "Ponechat posledních {{count}}",
+        "days3": "Po 3 dnech",
+        "weeks2": "Po 2 týdnech",
+        "months3": "Po 3 měsících"
+      },
+      "clear": {
+        "title": "Vymazat historii",
+        "description": "Odstraní všechna uložená čtení. Slovník se nezmění.",
+        "confirmation": "Odstranit všech {{count}} uložených čtení? Slovník se nezmění."
+      },
+      "retentionConfirm": {
+        "message_one": "Smazat nyní {{count}} uložené čtení? Slovník se nezmění.",
+        "message": "Smazat nyní uložená čtení ({{count}})? Slovník se nezmění.",
+        "action": "Smazat čtení"
+      }
+    },
+    "vocabulary": {
+      "columns": {
+        "written": "Zápis",
+        "spoken": "Výslovnost",
+        "kind": "Druh",
+        "voices": "Hlasy",
+        "match": "Shoda",
+        "enabled": "Zapnuto",
+        "actions": "Akce"
+      },
+      "kinds": {
+        "symbol": "Symbol",
+        "extension": "Přípona",
+        "term": "Termín",
+        "acronym": "Zkratka"
+      },
+      "voices": {
+        "all": "Všechny hlasy",
+        "except": "kromě {{names}}",
+        "add": "+ hlas"
+      },
+      "origins": {
+        "builtin": "Vestavěný",
+        "owner": "Váš"
+      },
+      "skipped": "(přeskočeno)",
+      "buttons": {
+        "add": "Přidat položku",
+        "edit": "Upravit",
+        "listen": "Poslechnout",
+        "delete": "Smazat",
+        "reset": "Obnovit výchozí",
+        "save": "Uložit",
+        "cancel": "Zrušit"
+      },
+      "match": {
+        "whole": "Celé slovo",
+        "anywhere": "Kdekoli ve slově",
+        "prefix": "Začátek slova",
+        "suffix": "Konec slova",
+        "regex": "Vzor",
+        "caseSensitive": "Rozlišovat velikost písmen",
+        "extension": "Konec názvu souboru",
+        "symbol": "Kdekoli",
+        "acronym": "Celé slovo nebo část jména"
+      },
+      "filter": "Hledat v psaném nebo mluveném tvaru",
+      "toggle": "Použít {{written}}",
+      "editTitle": "Upravit položku",
+      "fields": {
+        "skip": "Přeskočit",
+        "appliesTo": "Platí pro"
+      },
+      "empty": "Filtru neodpovídá žádná položka.",
+      "deleteConfirmation": "Smazat {{written}} z vašeho slovníku? Tuto akci nelze vrátit.",
+      "resetConfirm": "Obnovit {{written}} na vestavěné čtení? Váš záznam bude smazán.",
+      "errors": {
+        "changed": "Soubor slovníku se na disku změnil. Tabulka byla načtena znovu; proveďte úpravu znovu.",
+        "fileInvalid": "Váš soubor slovníku obsahuje chybu, proto jej zde nelze upravovat: {{message}}",
+        "invalidEdit": "Položku se nepodařilo uložit: {{message}}",
+        "tooLarge": "Soubor slovníku by byl větší než 1 MiB, proto se nic neuložilo.",
+        "io": "Soubor slovníku se nepodařilo zapsat: {{message}}",
+        "voicesChanged": "Slovník se během čekání změnil, proto se změna hlasů neprovedla. Zvolte hlasy znovu."
+      },
+      "problems": {
+        "shadowed": "Nikdy se neuplatní: vždy vyhraje položka s vyšší prioritou",
+        "unreachable": "Nikdy se neuplatní: {{reason}}",
+        "disabled": "Vypnuto"
+      },
+      "unreachable": {
+        "containsSpace": "termín se porovnává po jednom slově, takže jeho text nesmí obsahovat mezeru",
+        "endsWithPunctuation": "interpunkce na konci slova se před porovnáním termínů oddělí",
+        "notOneCharacter": "symbol je přesně jeden znak",
+        "extensionNotAlphanumeric": "přípona obsahuje jen písmena a číslice",
+        "neverMatches": "nemění způsob, jakým se čte její ukázka"
+      },
+      "derive": {
+        "unchanged": "Vyslovená slova se nezměnila, není co ukládat.",
+        "severalWords": "Změna se týká více než jednoho psaného slova. Opravujte jedno slovo po druhém.",
+        "notExplained": "Žádné jediné pravidlo nezpůsobí, že se text čte takto.",
+        "invalid": "Nelze uložit: {{detail}}"
+      },
+      "check": {
+        "title": "Kontrola napříč hlasy",
+        "playAll": "Přehrát vše",
+        "playing": "Přehrává se {{model}}",
+        "checking": "Kontroluje se každý hlas...",
+        "heardRight": "slyšeno správně",
+        "missed": "nerozpoznáno: {{heard}}",
+        "failed": "nelze zkontrolovat: {{error}}",
+        "row": "{{model}}: {{outcome}}",
+        "advisory": "Některé hlasy to nepřečetly správně. Přesto to můžete uložit.",
+        "saveAllAnyway": "Přesto uložit pro všechny hlasy",
+        "savePassedOnly": "Uložit jen pro hlasy, které prošly",
+        "pickOne": "Vybrat jeden hlas",
+        "dictating": "Probíhá diktování. Zkontrolujte znovu, až skončí.",
+        "transcribeFailed": "Převod řeči na text nedokázal přepsat hlas."
+      },
+      "filters": {
+        "voice": "Hlas",
+        "kind": "Druh",
+        "source": "Zdroj",
+        "all": "Vše",
+        "changed": "Změněno vámi",
+        "onlyProblems": "Jen problémy"
+      },
+      "defaultLabel": "výchozí:",
+      "defaultLabelFor": "výchozí pro {{voices}}:"
+    },
+    "correction": {
+      "add": "Přidat opravu",
+      "start": "Přidat opravu",
+      "writtenText": "Psaný text",
+      "next": "Další",
+      "title": "Opravit čtení",
+      "selected": "Vybráno",
+      "spokenAs": "Vyslovuje se jako",
+      "shouldSay": "Mělo by říkat",
+      "savesAs": "Uloží se jako",
+      "deriving": "Hledám pravidlo...",
+      "exactOnly": "Jen přesně tento text",
+      "chooseScope": "Vyberte, kde platí",
+      "scopeRequired": "Před uložením zvolte Všechny hlasy nebo jeden hlas.",
+      "acronymStyle": "Styl zkratek podle hlasu",
+      "style": {
+        "spaced": "Oddělená písmena (C L I)",
+        "capitals": "Velká písmena (CLI)",
+        "inherit": "Stejně jako u všech hlasů"
+      },
+      "reach": {
+        "extension": "týká se každého souboru {{extension}}",
+        "acronym": "týká se zkratky {{acronym}} všude",
+        "term": "týká se {{term}} všude",
+        "symbol": "týká se {{symbol}} v každém technickém slově",
+        "exact": "jen {{text}}"
+      },
+      "savesAsFormat": "{{written}} -> \"{{spoken}}\" · {{reach}}",
+      "microphone": {
+        "idle": "Řekněte to místo psaní",
+        "recording": "Zastavit a vyplnit, co jste řekli",
+        "transcribing": "Přepisuje se, co jste řekli...",
+        "busy": "Probíhá diktování, nahrávání nebo přepis souboru. Zkuste mikrofon znovu, až skončí.",
+        "stopped": "Mikrofon se zastavil dříve, než byla vaše slova slyšet, takže se nic nevyplnilo.",
+        "reading": "Čtení nahlas je otevřené. Zavřete ho a pak použijte mikrofon.",
+        "failed": "Mikrofon se nepodařilo spustit.",
+        "transcribeFailed": "Převod řeči na text nedokázal přepsat, co jste řekli."
+      }
+    }
   }
 }

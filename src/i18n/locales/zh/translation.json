@@ -3,20 +3,35 @@
     "settings": "设置...",
     "checkUpdates": "检查更新...",
     "copyLastTranscript": "复制最新转录",
-    "unloadModel": "卸载模型",
+    "unloadModel": "卸载转录模型",
+    "cleanup": "后处理模型",
+    "cleanupReady": "就绪",
+    "cleanupNotLoaded": "未加载",
+    "cleanupLoading": "加载中",
+    "cleanupError": "错误",
+    "noCleanupModel": "无后处理模型",
+    "unloadPostProcessingModel": "卸载后处理模型",
     "model": "模型",
+    "transcriptionModel": "转录模型",
     "quit": "退出",
     "cancel": "取消",
     "secureInputWarning": "⚠ 快捷键被 Secure Input 阻止",
     "language": "语言",
     "autoLanguage": "自动",
-    "otherLanguages": "其他语言"
+    "otherLanguages": "其他语言",
+    "ttsModel": "文本转语音模型",
+    "ttsUnload": "卸载文本转语音模型",
+    "ttsStarting": "启动中",
+    "ttsReady": "已加载",
+    "ttsStopping": "停止中",
+    "ttsFailed": "失败",
+    "ttsUnloaded": "已卸载"
   },
   "sidebar": {
     "general": "通用",
-    "models": "模型",
+    "models": "转录模型",
     "advanced": "高级",
-    "postProcessing": "后处理",
+    "postProcessing": "后处理模型",
     "history": "历史记录",
     "debug": "调试",
     "about": "关于"
@@ -144,6 +159,10 @@
       },
       "model": "模型",
       "showAll": "显示全部 {{count}} 个模型",
+      "noPick": "没有推荐模型支持{{languages}}。",
+      "noPickNext": "显示所有模型，或返回并更改你的语言。",
+      "showAllButton": "显示所有模型",
+      "pickOne": "选择一个模型",
       "download": "下载（{{size}}）",
       "downloadInstead": "改为下载（{{size}}）",
       "pauses": "{{name}}将在 {{percent}}% 时暂停",
@@ -306,6 +325,8 @@
     "alreadyAdded_other": "已添加{{languages}}。"
   },
   "modelSelector": {
+    "status": "模型状态:{{modelName}}",
+    "size": "{{size}} MiB",
     "custom": "自定义",
     "streaming": "流式",
     "active": "活跃",
@@ -336,10 +357,14 @@
         "none": "未配置快捷键",
         "notFound": "未找到快捷键",
         "pressKeys": "请按键...",
+        "unassigned": "未分配",
         "bindings": {
           "transcribe": {
             "name": "转录快捷键",
             "description": "用于录制和转录语音的键盘快捷键。"
+          },
+          "transcribe_raw": {
+            "name": "原始文本快捷键"
           },
           "cancel": {
             "name": "取消快捷键",
@@ -348,6 +373,10 @@
           "transcribe_with_post_process": {
             "name": "后处理快捷键",
             "description": "可选：一个专用快捷键，始终对您的转录应用 AI 后处理。"
+          },
+          "read_aloud": {
+            "name": "朗读快捷键",
+            "description": "打开弹窗并朗读已复制的文本。"
           }
         },
         "errors": {
@@ -518,7 +547,7 @@
         },
         "position": {
           "title": "悬浮窗位置",
-          "description": "在录制和转录期间显示可视反馈悬浮窗。在 Linux 上建议选择「无」。",
+          "description": "选择“顶部”可让屏幕底部保持空闲，便于在终端中听写。",
           "options": {
             "bottom": "底部",
             "top": "顶部"
@@ -628,8 +657,8 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "快捷键"
+      "provider": {
+        "title": "提供商"
       },
       "api": {
         "title": "API",
@@ -688,10 +717,76 @@
         "cancel": "取消",
         "selectToEdit": "选择上方的提示词以查看和编辑其详细信息。",
         "createFirst": "点击上方的「创建新提示词」来创建您的第一个后处理提示词。"
+      },
+      "localLlm": {
+        "noCleanupModel": "无后处理模型",
+        "s1Description": "使用风格、结构和场景控制。",
+        "plainDescription": "使用你所选的 Handy 提示词。",
+        "groupTitle": "本地模型",
+        "size": "{{size}} MiB",
+        "downloaded": "已下载",
+        "use": "使用",
+        "download": "下载",
+        "downloading": "下载中 {{percent}}%",
+        "delete": "删除",
+        "deleteConfirm": "要删除 {{name}} 吗？将释放 {{size}}。",
+        "deleteConfirmAction": "删除模型",
+        "status": {
+          "title": "状态",
+          "description": "模型在后处理听写开始时加载,并在模型卸载超时后卸载。",
+          "notLoaded": "未加载",
+          "loading": "加载中",
+          "ready": "就绪",
+          "error": "错误:{{reason}}"
+        },
+        "styling": {
+          "title": "风格",
+          "description": "后处理文本的正式程度。",
+          "options": {
+            "casual": "随意",
+            "semi_casual": "半随意",
+            "semi_formal": "半正式",
+            "formal": "正式"
+          }
+        },
+        "structure": {
+          "title": "结构",
+          "description": "段落文本或 Markdown 列表。",
+          "options": {
+            "prose": "段落",
+            "lists": "列表"
+          }
+        },
+        "context": {
+          "title": "场景",
+          "description": "通用文本或电子邮件格式。",
+          "options": {
+            "general": "通用",
+            "email": "电子邮件"
+          }
+        },
+        "licenseNotes": {
+          "s1Name": "Apache-2.0，另加一项条款：该模型必须始终称为 \"Superwhisper\" 的 \"S1-mini\"，且大小写须完全一致。"
+        },
+        "promptRequired": "请在“提示词”分组中选择一个非空的 Handy 提示词。在此之前,将跳过后处理并使用原始转录文本。",
+        "promptHidden": "此模型使用自带的固定提示词以及上方的风格、结构和场景设置,因此提示词编辑器已隐藏。"
       }
     },
     "history": {
       "title": "历史记录",
+      "cleaned": "已后处理",
+      "cleanedWith": "已使用 {{model}} 后处理",
+      "raw": "原始",
+      "copyRaw": "复制原始文本",
+      "copyPostProcessed": "复制后处理文本",
+      "compare": {
+        "title": "对比视图",
+        "diff": "差异",
+        "side_by_side": "并排",
+        "stacked": "堆叠"
+      },
+      "clearHistory": "清除历史记录",
+      "clearConfirmation": "要移除 {{count}} 条未加星标的历史记录和 {{recordings}} 个录音吗?已加星标的记录及其录音将被保留。",
       "openFolder": "打开录音文件夹",
       "loading": "加载历史记录中...",
       "empty": "还没有转录记录。开始录制以建立您的历史记录！",
@@ -701,6 +796,8 @@
       "unsave": "从已保存中移除",
       "delete": "删除条目",
       "deleteError": "删除条目失败，请重试。",
+      "deleteConfirm": "要删除此条目及其录音吗？",
+      "deleteConfirmAction": "删除条目",
       "retranscribe": "重新转录",
       "cancelTranscription": "取消转录",
       "transcribing": "转录中...",
@@ -716,7 +813,14 @@
       "showMore": "显示更多",
       "showLess": "收起",
       "dropTitle": "拖放到此处进行转录",
-      "dropDescription": "它会出现在历史记录中。"
+      "dropDescription": "它会出现在历史记录中。",
+      "retentionConfirm": {
+        "preserveLimit": "删除最新 {{count}} 条之外未加星标的条目及其录音？已加星标的条目和已转录的文件会保留。",
+        "days3": "删除超过 3 天的未加星标条目及其录音？已加星标的条目和已转录的文件会保留。",
+        "weeks2": "删除超过 2 周的未加星标条目及其录音？已加星标的条目和已转录的文件会保留。",
+        "months3": "删除超过 3 个月的未加星标条目及其录音？已加星标的条目和已转录的文件会保留。",
+        "action": "删除条目"
+      }
     },
     "debug": {
       "title": "调试",
@@ -927,9 +1031,15 @@
     "open": "打开",
     "copy": "复制",
     "clear": "清除",
-    "noOptionsFound": "未找到选项"
+    "noOptionsFound": "未找到选项",
+    "cancel": "取消"
   },
   "errors": {
+    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
+    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
+    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudClipboardUnreadableTitle": "无法读取剪贴板",
+    "readAloudClipboardUnreadable": "无法读取剪贴板中的文本。",
     "loadDirectory": "加载目录时出错: {{error}}",
     "micPermissionDeniedTitle": "麦克风访问被拒绝",
     "micPermissionDenied": {
@@ -957,7 +1067,9 @@
     "filePostProcessFailedTitle": "已转录，未经后处理",
     "filePostProcessFailed": "后处理未完成，因此按原样保存转录内容。",
     "fileTranscriptionFailedTitle": "文件转录失败",
-    "transcriptionFailedTitle": "转录失败"
+    "transcriptionFailedTitle": "转录失败",
+    "vocabularyInvalidTitle": "词汇文件有错误",
+    "vocabularyInvalid": "由于无法使用你的词汇文件，朗读使用了内置词汇。请修复下方指出的文件，以使用你自己的条目。"
   },
   "notices": {
     "errorOne": "{{n}} 个错误",
@@ -980,9 +1092,10 @@
     }
   },
   "overlay": {
-    "transcribing": "正在转录...",
-    "processing": "处理中...",
-    "loadingModel": "正在加载模型..."
+    "transcribing": "正在转录",
+    "processing": "正在整理",
+    "loadingModel": "正在加载模型",
+    "cancel": "取消听写"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 可能正在阻止 1 个快捷键",
@@ -994,5 +1107,345 @@
     "learnMore": "如何解决",
     "recorderBlocked": "当前无法录制快捷键——macOS 的 Secure Input 正在阻止按键事件。请先解决 Secure Input 警告。",
     "dismiss": "关闭"
+  },
+  "tts": {
+    "ratings": {
+      "quality": "质量",
+      "speed": "速度",
+      "recommended": "推荐",
+      "tooltip": "首次出声 {{firstAudio}} 秒,比实时快 {{faster}} 倍,加载用时 {{load}} 秒"
+    },
+    "devices": {
+      "auto": "自动",
+      "cpu": "CPU",
+      "gpu": "GPU",
+      "npu": "NPU"
+    },
+    "errors": {
+      "notDownloaded": "朗读前请先下载此模型。",
+      "audio": "无法打开输出设备。",
+      "text": "无法处理此文本。",
+      "clock": "播放计时失败。",
+      "worker": "文本转语音工作进程已停止。",
+      "unavailable": "文本转语音不可用。",
+      "notReady": "文本转语音仍在启动中。",
+      "generic": "文本转语音失败。",
+      "memory": "至少需要 1 GiB 的可用内存。",
+      "gatedToken": "Pocket 语音需要 Hugging Face 令牌,并需接受语音条款。",
+      "model": "请选择一个可用的文本转语音模型。",
+      "device": "此设备不可用。",
+      "npuDriverTooOld": "NPU 驱动版本过旧。请更新驱动或选择其他设备。",
+      "selection": "无法应用所选内容。",
+      "busy": "已有文本转语音操作正在运行。",
+      "cancelled": "朗读已取消。",
+      "clipboard": "无法读取剪贴板文本。",
+      "deviceNotSupported": "此模型不支持所选设备。",
+      "deviceUnavailable": "所选设备不可用。",
+      "download": "模型下载失败。",
+      "driverDiscovery": "无法检测 NPU 驱动。",
+      "failed": "工作进程连续失败三次。请选择模型以重试。",
+      "integrity": "模型文件未通过完整性检查。",
+      "invalidControls": "请选择 0.5x 至 2.0x 的速度,以及 -6 至 +6 半音的音高。",
+      "invalidRatings": "模型评分缺失或无效。",
+      "invalidVoice": "请为所选模型选择一种语音。",
+      "outputUnavailable": "输出设备不可用。",
+      "path": "文本转语音存储目录不可用。",
+      "prepareFailed": "所选设备无法准备此模型。",
+      "protocol": "文本转语音工作进程返回了无效的响应。",
+      "registry": "文本转语音模型注册表无效。",
+      "settings": "无法保存文本转语音设置。",
+      "start": "无法启动文本转语音工作进程。",
+      "starting": "文本转语音工作进程正在启动。",
+      "tokenRejected": "Hugging Face 令牌被拒绝。请检查是否有权访问 Pocket 语音条款。",
+      "tokenRequired": "下载语音前,请设置 Hugging Face 令牌并接受 Pocket 语音条款。",
+      "unknownModel": "所选的文本转语音模型未知。",
+      "window": "无法打开朗读窗口。",
+      "accessDenied": "访问模型文件被拒绝。",
+      "localIo": "无法读取或写入模型文件。",
+      "downloading": "此模型已在下载中。"
+    },
+    "runOn": "运行设备",
+    "preparing": "正在为 {{device}} 准备:{{graph}}",
+    "buffering": "缓冲中",
+    "title": "朗读",
+    "textLabel": "待朗读文本",
+    "placeholder": "粘贴要朗读的文本",
+    "play": "播放",
+    "pause": "暂停",
+    "stop": "停止",
+    "close": "关闭",
+    "readClipboard": "朗读剪贴板",
+    "editText": "编辑文本",
+    "progress": "进度",
+    "time": "已用 {{elapsed}} 秒,剩余 {{remaining}} 秒",
+    "openModels": "文本转语音模型",
+    "outputFallback": "使用默认输出设备",
+    "states": {
+      "waiting": "等待中",
+      "starting": "启动中",
+      "buffering": "缓冲中",
+      "playing": "播放中",
+      "paused": "已暂停",
+      "finished": "已完成",
+      "error": "错误"
+    },
+    "modelsTitle": "文本转语音模型",
+    "modelsSubtitle": "选择语音模型。速度数据是在开发者的电脑上测得的，你的电脑上可能有所不同。",
+    "downloaded": "已下载",
+    "availableToDownload": "可下载",
+    "recommended": "推荐",
+    "downloading": "下载中",
+    "needsToken": "需要 Hugging Face 令牌",
+    "tokenSet": "令牌已设置",
+    "active": "使用中",
+    "use": "使用",
+    "download": "下载",
+    "delete": "删除",
+    "deleteConfirm": "要删除 {{name}} 吗？将释放 {{size}}。你的词汇和历史记录会保留。",
+    "deleteConfirmSelected": "在你选择其他模型之前，朗读将无法使用。",
+    "deleteConfirmAction": "删除模型",
+    "cancel": "取消",
+    "token": "Hugging Face 令牌",
+    "tokenHelp": "仅在接受 Hugging Face 上的语音条款后下载 Pocket 受限语音时需要。令牌仅保存在内存中,Handy 重启时会被清除。",
+    "clearToken": "清除令牌",
+    "showToken": "显示令牌",
+    "hideToken": "隐藏令牌",
+    "saveToken": "设置令牌",
+    "model": "模型",
+    "voice": "语音",
+    "preview": "试听语音",
+    "speed": "速度:{{value}}x",
+    "pitch": "音高:{{value}} 半音",
+    "output": "输出设备",
+    "sameAsHandy": "与 Handy 相同",
+    "readCode": "朗读代码块",
+    "technicalReading": "技术朗读",
+    "fullPaths": "朗读完整路径",
+    "fullLinks": "朗读完整链接",
+    "pocketAttribution": "Pocket TTS 语音采用 CC-BY-4.0 许可。请遵守模型卡上各语音的署名和授权条款。",
+    "supertonicRestrictions": "Supertonic 3 采用 OpenRAIL-M。请查阅模型卡上的使用限制。",
+    "kokoroAttribution": "Kokoro 模型权重采用 Apache-2.0 许可。",
+    "paradeeAttribution": "Paradee-8M v1.2，作者 Sahil Mahendrakar，由 Kokoro-82M (hexgrad) 蒸馏而来。Apache-2.0 许可。",
+    "phononAttribution": "Phonon 31m English，作者 Gradium (Apache-2.0)，基于 Kyutai 的 Pocket TTS 和 Mimi 编解码器 (CC-BY-4.0)。语音来自 gradium/phonon-voices (Apache-2.0)。",
+    "indicTinyEnglishAttribution": "Indic Tiny TTS (English) 作者: Sulabh Katiyar, CC-BY-4.0. 语音训练数据: LIMMITS 2024 (SYSPIN, Indian Institute of Science, Bangalore, SPIRE Lab), CC-BY-4.0. 来源未记录说话人对发布的同意。声码器: Vocos 作者: Charactr Inc., MIT.",
+    "indicTinyHindiAttribution": "Indic Tiny TTS (Hindi) 作者: Sulabh Katiyar, CC-BY-4.0, 在 AI4Bharat Rasa 数据集上训练 (CC-BY-4.0; Varadhan, Sankar, Raju 和 Khapra, INTERSPEECH 2024). 声码器: Vocos 作者: Charactr Inc., MIT.",
+    "indicTinyPunjabiAttribution": "Indic Tiny TTS (Punjabi) 作者: Sulabh Katiyar, CC-BY-4.0, 在 AI4Bharat Rasa 数据集上训练 (CC-BY-4.0; Varadhan, Sankar, Raju 和 Khapra, INTERSPEECH 2024). 声码器: Vocos 作者: Charactr Inc., MIT.",
+    "status": {
+      "failed": "失败",
+      "ready": "就绪",
+      "starting": "启动中",
+      "stopping": "停止中",
+      "unloaded": "已卸载"
+    },
+    "previewSentence": "Reading clearly, one phrase at a time.",
+    "description": {
+      "pocket-en": "富有表现力的英语语音,听感评分最高。",
+      "supertonic-3": "快速的英语合成,支持 CPU、GPU 和 NPU 运行。",
+      "kokoro-82m-int8": "来自 INT8 模型的小巧英语语音。",
+      "paradee-8m-int8": "由 Kokoro 蒸馏而来的模型，提供体积极小、速度很快的英语语音。",
+      "phonon-31m-en": "基于 Pocket TTS 的小巧自然英语语音，共 26 种。",
+      "indic-tiny-en": "小巧的印度英语语音 (女声和男声)。",
+      "indic-tiny-hi": "小巧的印地语语音 (女声和男声)。英文单词会逐个字母拼读。",
+      "indic-tiny-pa": "小巧的旁遮普语 (古木基文) 语音 (女声和男声)。英文单词会逐个字母拼读。"
+    },
+    "voiceCount": "{{count}} 种语音",
+    "downloadProgress": "模型下载进度",
+    "settingsTitle": "文本转语音",
+    "speedLabel": "速度",
+    "pitchLabel": "音高",
+    "help": {
+      "model": "选择已下载的文本转语音模型。",
+      "voice": "为此模型选择语音并试听。",
+      "speed": "调整文本朗读的速度。",
+      "pitch": "以半音为单位调整语音音高。",
+      "output": "选择朗读音频的播放位置。",
+      "readCode": "朗读时包含围栏代码块。",
+      "technicalReading": "借助你的词汇文件，完整朗读路径、文件名、命令行标志和代码名称。",
+      "fullPaths": "朗读路径中的每个文件夹。关闭后只朗读文件名。",
+      "fullLinks": "朗读完整的网址。关闭后只说网站名称。"
+    },
+    "tabs": {
+      "settings": "设置",
+      "history": "历史",
+      "vocabulary": "词汇"
+    },
+    "history": {
+      "title": "历史设置",
+      "reading": "书写的词语与所读内容",
+      "hint": "在词语上拖动以选择一段，并更正它的读法。",
+      "empty": "还没有朗读过任何内容。你播放的朗读会显示在这里。",
+      "limit": {
+        "title": "历史上限",
+        "description": "历史中最多保留的朗读次数",
+        "entries": "条"
+      },
+      "retention": {
+        "title": "自动删除",
+        "description": "同时自动删除较早的朗读",
+        "keepNothing": "不保留",
+        "keepLimit": "保留最近 {{count}} 条",
+        "days3": "3 天后",
+        "weeks2": "2 周后",
+        "months3": "3 个月后"
+      },
+      "clear": {
+        "title": "清除历史",
+        "description": "删除所有已保存的朗读。你的词汇表不会改变。",
+        "confirmation": "删除全部 {{count}} 条已保存的朗读？你的词汇表不会改变。"
+      },
+      "retentionConfirm": {
+        "message_one": "现在删除 {{count}} 条已保存的朗读？你的词汇表不会改变。",
+        "message": "现在删除 {{count}} 条已保存的朗读？你的词汇表不会改变。",
+        "action": "删除朗读"
+      }
+    },
+    "vocabulary": {
+      "columns": {
+        "written": "书写",
+        "spoken": "读法",
+        "kind": "类型",
+        "voices": "语音",
+        "match": "匹配",
+        "enabled": "启用",
+        "actions": "操作"
+      },
+      "kinds": {
+        "symbol": "符号",
+        "extension": "扩展名",
+        "term": "术语",
+        "acronym": "缩写"
+      },
+      "voices": {
+        "all": "所有语音",
+        "except": "{{names}}除外",
+        "add": "+ 语音"
+      },
+      "origins": {
+        "builtin": "内置",
+        "owner": "自定义"
+      },
+      "skipped": "(跳过)",
+      "buttons": {
+        "add": "添加条目",
+        "edit": "编辑",
+        "listen": "试听",
+        "delete": "删除",
+        "reset": "恢复默认",
+        "save": "保存",
+        "cancel": "取消"
+      },
+      "match": {
+        "whole": "整词",
+        "anywhere": "词中任意位置",
+        "prefix": "词的开头",
+        "suffix": "词的结尾",
+        "regex": "模式",
+        "caseSensitive": "区分大小写",
+        "extension": "文件名的结尾",
+        "symbol": "任意位置",
+        "acronym": "整词或名称片段"
+      },
+      "filter": "搜索书写或朗读内容",
+      "toggle": "使用 {{written}}",
+      "editTitle": "编辑条目",
+      "fields": {
+        "skip": "跳过",
+        "appliesTo": "适用于"
+      },
+      "empty": "没有条目符合筛选条件。",
+      "deleteConfirmation": "要从你的词汇中删除 {{written}} 吗？此操作无法撤销。",
+      "resetConfirm": "要将 {{written}} 恢复为内置读法吗？你的条目将被删除。",
+      "errors": {
+        "changed": "词汇文件在磁盘上已更改。表格已重新加载，请重新进行修改。",
+        "fileInvalid": "你的词汇文件有错误，无法在此编辑：{{message}}",
+        "invalidEdit": "无法保存此条目：{{message}}",
+        "tooLarge": "词汇文件将超过 1 MiB，因此未保存任何内容。",
+        "io": "无法写入词汇文件：{{message}}",
+        "voicesChanged": "等待期间词汇已更改，因此语音更改未应用。请重新选择语音。"
+      },
+      "problems": {
+        "shadowed": "永不生效：优先级更高的条目总会胜出",
+        "unreachable": "永不生效：{{reason}}",
+        "disabled": "已关闭"
+      },
+      "unreachable": {
+        "containsSpace": "术语按单词逐个匹配，因此其书写内容不能包含空格",
+        "endsWithPunctuation": "词尾的标点会在匹配术语之前被分离",
+        "notOneCharacter": "符号必须恰好是一个字符",
+        "extensionNotAlphanumeric": "扩展名只能包含字母和数字",
+        "neverMatches": "它不会改变其示例的读法"
+      },
+      "derive": {
+        "unchanged": "朗读的词没有变化，没有可保存的内容。",
+        "severalWords": "这个修改涉及不止一个词。请一次修正一个词。",
+        "notExplained": "没有单一规则能让文本这样读。",
+        "invalid": "无法保存：{{detail}}"
+      },
+      "check": {
+        "title": "在所有语音上检查",
+        "playAll": "全部播放",
+        "playing": "正在播放 {{model}}",
+        "checking": "正在检查每个语音...",
+        "heardRight": "识别正确",
+        "missed": "识别错误：{{heard}}",
+        "failed": "无法检查：{{error}}",
+        "row": "{{model}}：{{outcome}}",
+        "advisory": "部分语音没有读对。你仍然可以保存。",
+        "saveAllAnyway": "仍为所有语音保存",
+        "savePassedOnly": "仅为通过的语音保存",
+        "pickOne": "选择一个语音",
+        "dictating": "正在听写。结束后请再检查一次。",
+        "transcribeFailed": "语音转文字无法转写该语音。"
+      },
+      "filters": {
+        "voice": "语音",
+        "kind": "类型",
+        "source": "来源",
+        "all": "全部",
+        "changed": "你修改过的",
+        "onlyProblems": "仅显示有问题的"
+      },
+      "defaultLabel": "默认：",
+      "defaultLabelFor": "{{voices}}的默认值："
+    },
+    "correction": {
+      "add": "添加修正",
+      "start": "添加修正",
+      "writtenText": "书写文本",
+      "next": "下一步",
+      "title": "修正读法",
+      "selected": "已选内容",
+      "spokenAs": "当前读法",
+      "shouldSay": "应读作",
+      "savesAs": "将保存为",
+      "deriving": "正在推导规则...",
+      "exactOnly": "仅限这段确切文本",
+      "chooseScope": "选择适用范围",
+      "scopeRequired": "保存前请选择“所有语音”或一个语音。",
+      "acronymStyle": "每种语音的缩写样式",
+      "style": {
+        "spaced": "逐字母 (C L I)",
+        "capitals": "大写 (CLI)",
+        "inherit": "与所有语音相同"
+      },
+      "reach": {
+        "extension": "影响每个 {{extension}} 文件",
+        "acronym": "在任何地方影响缩写 {{acronym}}",
+        "term": "在任何地方影响 {{term}}",
+        "symbol": "影响每个技术词中的 {{symbol}}",
+        "exact": "仅 {{text}}"
+      },
+      "savesAsFormat": "{{written}} -> \"{{spoken}}\" · {{reach}}",
+      "microphone": {
+        "idle": "用说代替输入",
+        "recording": "停止并填入你说的内容",
+        "transcribing": "正在转写你说的内容...",
+        "busy": "正在进行听写、录音或文件转写。结束后请再试一次麦克风。",
+        "stopped": "麦克风在听到你的话之前就停止了，因此没有填入任何内容。",
+        "reading": "朗读已打开。请先关闭，再使用麦克风。",
+        "failed": "无法启动麦克风。",
+        "transcribeFailed": "语音转文字无法转写你说的内容。"
+      }
+    }
   }
 }

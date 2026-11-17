@@ -35,7 +35,7 @@ import { formatModelSize } from "@/lib/utils/format";
 import { OnboardingShell, ScreenHeader, ScreenMain } from "../OnboardingShell";
 import { useOnboardingStore } from "../onboardingStore";
 import { useDownloadWords } from "../DownloadStatus";
-import { languageName } from "@/lib/constants/languages";
+import { languageList, languageName } from "@/lib/constants/languages";
 import type { CatalogModel, ModelRow, PickRole } from "@/lib/models/catalog";
 import type { useOnboardingModels } from "../useOnboardingModels";
 import { moveModels } from "./modelTransitions";
@@ -74,20 +74,56 @@ interface ModelProps {
   onChoose: (modelId: string) => void;
 }
 
+/** Whether the full table is open, and the actions that open and close it. */
+interface ModelList {
+  showAll: boolean;
+  open: (initialQuery?: string) => void;
+  close: () => void;
+  /** Runs an update inside the screen's view transition. */
+  move: (update: () => void) => void;
+  rootRef: React.RefObject<HTMLDivElement>;
+  filterState: ReturnType<typeof useModelFilters>;
+}
+
 /** Screen 3: pick one of three suggested models, or Show all for the table. */
-export const Model: React.FC<ModelProps> = ({
+export const Model: React.FC<ModelProps> = (props) => {
+  const [showAll, setShowAll] = useState(false);
+  const filterState = useModelFilters();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const { setFilters } = filterState;
+  const move = (update: () => void) => moveModels(rootRef.current, update);
+  const open = (initialQuery = "") =>
+    move(() => {
+      setFilters({ ...NO_FILTERS, query: initialQuery });
+      setShowAll(true);
+    });
+  const close = () =>
+    move(() => {
+      setShowAll(false);
+      setFilters(NO_FILTERS);
+    });
+  return (
+    <ModelView
+      {...props}
+      list={{ showAll, open, close, move, rootRef, filterState }}
+    />
+  );
+};
+
+/** The screen for a given list state: the picks, the recovery state or the table. */
+export const ModelView: React.FC<ModelProps & { list: ModelList }> = ({
   progress,
   models,
   onBack,
   onChoose,
+  list,
 }) => {
   const { t, i18n } = useTranslation();
   const words = useDownloadWords();
   const speedWords = useSpeedWords();
   const { modelId, extraModelId, downloadId, set } = useOnboardingStore();
-  const [showAll, setShowAll] = useState(false);
-  const { filters, setFilters, matches } = useModelFilters();
-  const rootRef = useRef<HTMLDivElement>(null);
+  const { showAll, open, close, move, rootRef } = list;
+  const { filters, setFilters, matches } = list.filterState;
 
   const { picks, groups, offered, grading } = models;
   const langs = grading.langs;
@@ -156,19 +192,6 @@ export const Model: React.FC<ModelProps> = ({
       <Fragment key={c}>{capabilityTag(m, c)}</Fragment>
     ));
 
-  const move = (update: () => void) => moveModels(rootRef.current, update);
-
-  const open = (initialQuery = "") =>
-    move(() => {
-      setFilters({ ...NO_FILTERS, query: initialQuery });
-      setShowAll(true);
-    });
-  const close = () =>
-    move(() => {
-      setShowAll(false);
-      setFilters(NO_FILTERS);
-    });
-
   // The extra model follows from modelId (extraId above).
   const choose = (id: string, animate: boolean) => {
     const update = () => set({ modelId: id });
@@ -191,8 +214,10 @@ export const Model: React.FC<ModelProps> = ({
     // open() is stable enough for a listener re-added with showAll
   }, [showAll]);
 
-  if (!pick || !selectedId) return null;
-  const selected = byId.get(selectedId) ?? pick.model;
+  // Undefined when the full list is open and nothing is chosen yet.
+  const selected: CatalogModel | undefined = selectedId
+    ? (byId.get(selectedId) ?? pick?.model)
+    : undefined;
 
   /* ---------------- the download ---------------- */
 
@@ -483,18 +508,23 @@ export const Model: React.FC<ModelProps> = ({
     loading && loading.id !== selectedId && loadingState.state === "downloading"
       ? { name: loading.name, percent: words.percent(loadingState) }
       : null;
-  const primary = (
-    <Button variant="primary" size="lg" onClick={() => onChoose(selectedId)}>
-      {continuing
-        ? t("onboarding.shell.continue")
-        : t(
-            switching
-              ? "onboarding.model.downloadInstead"
-              : "onboarding.model.download",
-            { size: sizeOf(selected) },
-          )}
-    </Button>
-  );
+  const primary =
+    selectedId && selected ? (
+      <Button variant="primary" size="lg" onClick={() => onChoose(selectedId)}>
+        {continuing
+          ? t("onboarding.shell.continue")
+          : t(
+              switching
+                ? "onboarding.model.downloadInstead"
+                : "onboarding.model.download",
+              { size: sizeOf(selected) },
+            )}
+      </Button>
+    ) : (
+      <Button variant="primary" size="lg" disabled>
+        {t("onboarding.model.pickOne")}
+      </Button>
+    );
   const hint = switching ? (
     <div className="text-start leading-[1.35]">
       <div className="truncate font-medium text-text">
@@ -514,6 +544,33 @@ export const Model: React.FC<ModelProps> = ({
   const sub = <span data-vt="mf-sub">{t("onboarding.model.subtitle")}</span>;
 
   /* ---------------- the picks ---------------- */
+
+  if (!showAll && !pick) {
+    return (
+      <OnboardingShell
+        progress={progress}
+        onBack={onBack}
+        primary={
+          <Button variant="primary" size="lg" onClick={() => open()}>
+            {t("onboarding.model.showAllButton")}
+          </Button>
+        }
+      >
+        <ScreenMain
+          ref={rootRef}
+          data-model-root=""
+          header={<ScreenHeader title={title} sub={sub} />}
+        >
+          <p className="m-0 text-text">
+            {t("onboarding.model.noPick", {
+              languages: languageList(langs, ui),
+            })}
+          </p>
+          <p className="m-0 text-ink-2">{t("onboarding.model.noPickNext")}</p>
+        </ScreenMain>
+      </OnboardingShell>
+    );
+  }
 
   if (!showAll) {
     const extra = extraId ? rowFor(extraId) : undefined;

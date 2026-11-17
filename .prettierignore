@@ -15,6 +15,9 @@ src-tauri/gen
 # Generated files
 src/bindings.ts
 src-tauri/src/catalog/catalog.json
+crates/handy-tts/tests/fixtures/phonon/tokenizer.json
+crates/handy-tts/tests/fixtures/phonon/golden.json
+crates/handy-tts/tests/fixtures/indic-tiny/*.json
 
 # Misc
 .DS_Store

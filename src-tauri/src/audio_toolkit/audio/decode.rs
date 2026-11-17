@@ -122,6 +122,13 @@ pub fn decode_audio_file(path: &Path) -> Result<Vec<f32>> {
     resampled.finish()
 }
 
+/// Mono audio at `rate` resampled to 16 kHz.
+pub(crate) fn resample_to_16k(samples: &[f32], rate: u32) -> Result<Vec<f32>> {
+    let mut resampled = Resampled::new(rate)?;
+    resampled.push(samples.iter().copied())?;
+    resampled.finish()
+}
+
 /// Mono audio at the file's rate in, 16 kHz out, one resampler step at a
 /// time, so the file's audio is never held whole at its own rate.
 struct Resampled {
@@ -342,6 +349,24 @@ mod tests {
                 assert!(max_error < 0.04, "{} Hz: error {}", rate, max_error);
             }
         }
+    }
+
+    #[test]
+    fn resample_to_16k_matches_the_file_path() {
+        for rate in [16_000, 24_000, 44_100] {
+            let mono = tone(rate, rate as usize);
+            assert_eq!(
+                resample_to_16k(&mono, rate).unwrap(),
+                resample_in_packets(&mono, rate, 4096),
+                "{rate} Hz"
+            );
+        }
+        assert_eq!(
+            resample_to_16k(&tone(24_000, 24_000), 24_000)
+                .unwrap()
+                .len(),
+            16_000
+        );
     }
 
     #[test]

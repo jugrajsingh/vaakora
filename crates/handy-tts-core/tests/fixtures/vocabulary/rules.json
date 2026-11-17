@@ -1,0 +1,187 @@
+{
+  "version": 1,
+  "symbols": {
+    "/": "slash",
+    "_": "underscore",
+    ".": "dot",
+    "-": "dash",
+    "~": "home",
+    "=": "equals"
+  },
+  "extensions": {
+    "sh": "S H",
+    "rs": "R S",
+    "ts": "T S",
+    "tsx": "T S X",
+    "js": "J S",
+    "jsx": "J S X",
+    "py": "P Y",
+    "c": "C",
+    "h": "H",
+    "go": "go",
+    "md": "markdown",
+    "json": "jason",
+    "yaml": "Y A M L",
+    "yml": "Y A M L",
+    "toml": "tommel",
+    "sql": "sequel",
+    "txt": "text",
+    "log": "log",
+    "html": "H T M L",
+    "css": "C S S",
+    "com": "com",
+    "org": "org",
+    "net": "net",
+    "dev": "dev",
+    "app": "app",
+    "gov": "gov",
+    "edu": "edu"
+  },
+  "terms": {
+    "src": "source",
+    "kubectl": "cube control",
+    "S1-mini": "S one mini",
+    "and/or": "and or",
+    "I/O": "I O",
+    "sudo": "sue doo",
+    "systemd": "system D",
+    "nginx": "engine X"
+  },
+  "acronyms": [
+    "TTS",
+    "NPU",
+    "GPU",
+    "CPU",
+    "API",
+    "LLM",
+    "ASR",
+    "AI",
+    "URL",
+    "HTTP",
+    "HTTPS",
+    "CLI",
+    "UI",
+    "SSH",
+    "RPM",
+    "USB",
+    "SDK",
+    "HTML",
+    "CSS",
+    "IDE",
+    "DNS",
+    "TCP",
+    "UDP",
+    "PDF",
+    "CI"
+  ],
+  "examples": [
+    { "text": "tests/lib.sh", "spoken": "tests slash lib dot S H" },
+    {
+      "text": "notes/.cache/demo/.tests",
+      "spoken": "notes slash dot cache slash demo slash dot tests"
+    },
+    { "text": "fixture_base", "spoken": "fixture underscore base" },
+    { "text": "/review", "spoken": "slash review" },
+    { "text": "--dry-run", "spoken": "dash dash dry dash run" },
+    { "text": ".sh", "spoken": "dot S H" },
+    { "text": "~/notes.md", "spoken": "home slash notes dot markdown" },
+    { "text": "manager.rs:684", "spoken": "manager dot R S at line 684" },
+    {
+      "text": "manager.rs:684:7",
+      "spoken": "manager dot R S at line 684 column 7"
+    },
+    { "text": "fixture_base()", "spoken": "fixture underscore base" },
+    { "text": "parseHTTPRequest", "spoken": "parse H T T P request" },
+    { "text": "os.path", "spoken": "os dot path" },
+    {
+      "text": "HANDY_TTS_WORKER",
+      "spoken": "HANDY underscore T T S underscore WORKER"
+    },
+    { "text": "--speed=1.5", "spoken": "dash dash speed equals 1.5" },
+    { "text": "kubectl", "spoken": "cube control" },
+    { "text": "GPU,", "spoken": "G P U," },
+    { "text": "https://github.com/x/y", "spoken": "link to github.com" },
+    { "text": "v1.2.3", "spoken": "version 1 dot 2 dot 3" },
+    { "text": "v0.10.0", "spoken": "version 0 dot 10 dot 0" },
+    { "text": "0.10.0", "spoken": "0 dot 10 dot 0" },
+    { "text": "src", "spoken": "source" },
+    {
+      "text": "src/tts/manager.rs",
+      "spoken": "source slash tts slash manager dot R S"
+    },
+    { "text": "deploy/app.yaml", "spoken": "deploy slash app dot Y A M L" },
+    { "text": "ci.yml", "spoken": "ci dot Y A M L" },
+    {
+      "text": "tests/lib.sh",
+      "spoken": "tests स्लैश lib डॉट S H",
+      "model": "indic-tiny-hi"
+    },
+    {
+      "text": "tests/lib.sh",
+      "spoken": "tests ਸਲੈਸ਼ lib ਡੌਟ S H",
+      "model": "indic-tiny-pa"
+    },
+    {
+      "text": "fixture_base",
+      "spoken": "fixture अंडरस्कोर base",
+      "model": "indic-tiny-hi"
+    },
+    {
+      "text": "--dry-run",
+      "spoken": "डैश डैश dry डैश run",
+      "model": "indic-tiny-hi"
+    },
+    {
+      "text": "~/notes.md",
+      "spoken": "होम स्लैश notes डॉट markdown",
+      "model": "indic-tiny-hi"
+    },
+    {
+      "text": "--speed=1.5",
+      "spoken": "डैश डैश speed इक्वल्स 1.5",
+      "model": "indic-tiny-hi"
+    },
+    {
+      "text": "fixture_base",
+      "spoken": "fixture ਅੰਡਰਸਕੋਰ base",
+      "model": "indic-tiny-pa"
+    },
+    {
+      "text": "--dry-run",
+      "spoken": "ਡੈਸ਼ ਡੈਸ਼ dry ਡੈਸ਼ run",
+      "model": "indic-tiny-pa"
+    },
+    {
+      "text": "~/notes.md",
+      "spoken": "ਹੋਮ ਸਲੈਸ਼ notes ਡੌਟ markdown",
+      "model": "indic-tiny-pa"
+    },
+    {
+      "text": "--speed=1.5",
+      "spoken": "ਡੈਸ਼ ਡੈਸ਼ speed ਇਕੁਅਲਸ 1.5",
+      "model": "indic-tiny-pa"
+    }
+  ],
+  "models": {
+    "indic-tiny-hi": {
+      "symbols": {
+        "/": "स्लैश",
+        "_": "अंडरस्कोर",
+        ".": "डॉट",
+        "-": "डैश",
+        "~": "होम",
+        "=": "इक्वल्स"
+      }
+    },
+    "indic-tiny-pa": {
+      "symbols": {
+        "/": "ਸਲੈਸ਼",
+        "_": "ਅੰਡਰਸਕੋਰ",
+        ".": "ਡੌਟ",
+        "-": "ਡੈਸ਼",
+        "~": "ਹੋਮ",
+        "=": "ਇਕੁਅਲਸ"
+      }
+    }
+  }
+}

@@ -3,20 +3,35 @@
     "settings": "Indstillinger...",
     "checkUpdates": "Tjek for opdateringer...",
     "copyLastTranscript": "Kopiér seneste transskription",
-    "unloadModel": "Frigør model",
+    "unloadModel": "Frigør transskriptionsmodel",
+    "cleanup": "Efterbehandlingsmodel",
+    "cleanupReady": "klar",
+    "cleanupNotLoaded": "ikke indlæst",
+    "cleanupLoading": "indlæser",
+    "cleanupError": "fejl",
+    "noCleanupModel": "Ingen efterbehandlingsmodel",
+    "unloadPostProcessingModel": "Frigør efterbehandlingsmodel",
     "model": "Model",
+    "transcriptionModel": "Transskriptionsmodel",
     "quit": "Afslut",
     "cancel": "Annuller",
     "secureInputWarning": "⚠ Genveje blokeret af Secure Input",
     "language": "Sprog",
     "autoLanguage": "Automatisk",
-    "otherLanguages": "Andre sprog"
+    "otherLanguages": "Andre sprog",
+    "ttsModel": "Tekst-til-tale-model",
+    "ttsUnload": "Frigør tekst-til-tale-model",
+    "ttsStarting": "Starter",
+    "ttsReady": "Indlæst",
+    "ttsStopping": "Stopper",
+    "ttsFailed": "Mislykkedes",
+    "ttsUnloaded": "Frigjort"
   },
   "sidebar": {
     "general": "Generelt",
-    "models": "Modeller",
+    "models": "Transskriptionsmodeller",
     "advanced": "Avanceret",
-    "postProcessing": "Efterbehandling",
+    "postProcessing": "Efterbehandlingsmodeller",
     "history": "Historik",
     "debug": "Fejlfinding",
     "about": "Om"
@@ -144,6 +159,10 @@
       },
       "model": "Model",
       "showAll": "Vis alle {{count}} modeller",
+      "noPick": "Ingen anbefalet model dækker {{languages}}.",
+      "noPickNext": "Vis alle modeller, eller gå tilbage og skift dine sprog.",
+      "showAllButton": "Vis alle modeller",
+      "pickOne": "Vælg en model",
       "download": "Download {{size}}",
       "downloadInstead": "Download {{size}} i stedet",
       "pauses": "{{name}} holder pause ved {{percent}} %",
@@ -306,6 +325,8 @@
     "alreadyAdded_other": "{{languages}} er allerede tilføjet."
   },
   "modelSelector": {
+    "status": "Modelstatus: {{modelName}}",
+    "size": "{{size}} MiB",
     "custom": "Brugerdefineret",
     "streaming": "Streaming",
     "active": "Aktiv",
@@ -336,10 +357,14 @@
         "none": "Ingen genveje konfigureret",
         "notFound": "Genvej ikke fundet",
         "pressKeys": "Tryk på ønskede taster...",
+        "unassigned": "Ikke tildelt",
         "bindings": {
           "transcribe": {
             "name": "Transskriptionsgenvej",
             "description": "Tastaturgenvejen til at optage og transskribere din stemme."
+          },
+          "transcribe_raw": {
+            "name": "Genvej til rå transskription"
           },
           "cancel": {
             "name": "Annulleringsgenvej",
@@ -348,6 +373,10 @@
           "transcribe_with_post_process": {
             "name": "Genvej til efterbehandling",
             "description": "Valgfrit: En dedikeret genvej, der altid anvender AI-efterbehandling på din transskription."
+          },
+          "read_aloud": {
+            "name": "Genvej til oplæsning",
+            "description": "Åbner vinduet og læser kopieret tekst højt."
           }
         },
         "errors": {
@@ -517,8 +546,8 @@
           }
         },
         "position": {
-          "title": "Overlay-placering",
-          "description": "Hvor overlayet vises på skærmen under optagelse og transskription.",
+          "title": "Placering af flydende vindue",
+          "description": "»Top« holder bunden af skærmen fri, hvilket er nyttigt, når du dikterer i en terminal.",
           "options": {
             "bottom": "Bund",
             "top": "Top"
@@ -628,8 +657,8 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "Genvejstast"
+      "provider": {
+        "title": "Udbyder"
       },
       "api": {
         "title": "API",
@@ -688,10 +717,76 @@
         "cancel": "Annuller",
         "selectToEdit": "Vælg en prompt ovenfor for at se og redigere dens detaljer.",
         "createFirst": "Klik på 'Opret ny prompt' ovenfor for at oprette din første efterbehandlingsprompt."
+      },
+      "localLlm": {
+        "noCleanupModel": "Ingen efterbehandlingsmodel",
+        "s1Description": "Bruger indstillinger for stil, struktur og kontekst.",
+        "plainDescription": "Bruger din valgte Handy-prompt.",
+        "groupTitle": "Lokal model",
+        "size": "{{size}} MiB",
+        "downloaded": "Downloadet",
+        "use": "Brug",
+        "download": "Download",
+        "downloading": "Downloader {{percent}}%",
+        "delete": "Slet",
+        "deleteConfirm": "Slet {{name}}? Det frigør {{size}}.",
+        "deleteConfirmAction": "Slet model",
+        "status": {
+          "title": "Status",
+          "description": "Modellen indlæses, når en diktering med efterbehandling starter, og frigøres efter tidsgrænsen for modelfrigørelse.",
+          "notLoaded": "Ikke indlæst",
+          "loading": "Indlæser",
+          "ready": "Klar",
+          "error": "Fejl: {{reason}}"
+        },
+        "styling": {
+          "title": "Stil",
+          "description": "Hvor formel den efterbehandlede tekst lyder.",
+          "options": {
+            "casual": "Afslappet",
+            "semi_casual": "Halvafslappet",
+            "semi_formal": "Halvformel",
+            "formal": "Formel"
+          }
+        },
+        "structure": {
+          "title": "Struktur",
+          "description": "Løbende afsnit eller Markdown-lister.",
+          "options": {
+            "prose": "Løbende tekst",
+            "lists": "Lister"
+          }
+        },
+        "context": {
+          "title": "Kontekst",
+          "description": "Almindelig tekst eller et e-mail-layout.",
+          "options": {
+            "general": "Almindelig",
+            "email": "E-mail"
+          }
+        },
+        "licenseNotes": {
+          "s1Name": "Apache-2.0 med ét ekstra vilkår: modellen skal altid kaldes \"S1-mini\" fra \"Superwhisper\", med præcis den brug af store og små bogstaver."
+        },
+        "promptRequired": "Vælg en ikke-tom Handy-prompt i gruppen Prompts. Indtil da springes efterbehandling over, og den rå transskription bruges.",
+        "promptHidden": "Denne model bruger sin egen faste prompt og indstillingerne Stil, Struktur og Kontekst ovenfor, så promptredigeringen er skjult."
       }
     },
     "history": {
       "title": "Historik",
+      "cleaned": "Efterbehandlet",
+      "cleanedWith": "Efterbehandlet med {{model}}",
+      "raw": "Rå",
+      "copyRaw": "Kopiér rå tekst",
+      "copyPostProcessed": "Kopiér efterbehandlet tekst",
+      "compare": {
+        "title": "Sammenligningsvisning",
+        "diff": "Forskelle",
+        "side_by_side": "Side om side",
+        "stacked": "Stablet"
+      },
+      "clearHistory": "Ryd historik",
+      "clearConfirmation": "Fjern {{count}} historikposter uden stjerne og {{recordings}} optagelser? Poster med stjerne og deres optagelser bevares.",
       "openFolder": "Åbn optagelsesmappe",
       "loading": "Indlæser historik...",
       "empty": "Ingen transskriptioner endnu. Start optagelse for at opbygge din historik!",
@@ -701,6 +796,8 @@
       "unsave": "Fjern fra gemte",
       "delete": "Slet post",
       "deleteError": "Kunne ikke slette posten. Prøv igen.",
+      "deleteConfirm": "Slet denne post og dens optagelse?",
+      "deleteConfirmAction": "Slet post",
       "retranscribe": "Transskribér igen",
       "cancelTranscription": "Annuller transskription",
       "transcribing": "Transskriberer...",
@@ -716,7 +813,14 @@
       "showMore": "Vis mere",
       "showLess": "Vis mindre",
       "dropTitle": "Slip for at transskribere",
-      "dropDescription": "Den vises i historikken."
+      "dropDescription": "Den vises i historikken.",
+      "retentionConfirm": {
+        "preserveLimit": "Slet poster uden stjerne ud over de seneste {{count}} og deres optagelser? Poster med stjerne og transskriberede filer beholdes.",
+        "days3": "Slet poster uden stjerne, der er ældre end 3 dage, og deres optagelser? Poster med stjerne og transskriberede filer beholdes.",
+        "weeks2": "Slet poster uden stjerne, der er ældre end 2 uger, og deres optagelser? Poster med stjerne og transskriberede filer beholdes.",
+        "months3": "Slet poster uden stjerne, der er ældre end 3 måneder, og deres optagelser? Poster med stjerne og transskriberede filer beholdes.",
+        "action": "Slet poster"
+      }
     },
     "debug": {
       "title": "Fejlfinding",
@@ -927,9 +1031,15 @@
     "open": "Åbn",
     "copy": "Kopiér",
     "clear": "Ryd",
-    "noOptionsFound": "Ingen muligheder fundet"
+    "noOptionsFound": "Ingen muligheder fundet",
+    "cancel": "Annuller"
   },
   "errors": {
+    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
+    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
+    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudClipboardUnreadableTitle": "Udklipsholder kan ikke læses",
+    "readAloudClipboardUnreadable": "Teksten i udklipsholderen kunne ikke læses.",
     "loadDirectory": "Fejl ved indlæsning af mappe: {{error}}",
     "micPermissionDeniedTitle": "Mikrofonadgang nægtet",
     "micPermissionDenied": {
@@ -957,7 +1067,9 @@
     "filePostProcessFailedTitle": "Transskriberet uden efterbehandling",
     "filePostProcessFailed": "Efterbehandlingen blev ikke færdig, så transskriptionen blev gemt, som den er.",
     "fileTranscriptionFailedTitle": "Transskription af fil mislykkedes",
-    "transcriptionFailedTitle": "Transskription mislykkedes"
+    "transcriptionFailedTitle": "Transskription mislykkedes",
+    "vocabularyInvalidTitle": "Ordbogsfilen har en fejl",
+    "vocabularyInvalid": "Oplæsningen brugte den indbyggede ordbog, fordi din ordbogsfil ikke kunne bruges. Ret filen, der er nævnt nedenfor, for at bruge dine egne poster."
   },
   "notices": {
     "errorOne": "{{n}} fejl",
@@ -980,9 +1092,10 @@
     }
   },
   "overlay": {
-    "transcribing": "Transskriberer...",
-    "processing": "Behandler...",
-    "loadingModel": "Indlæser model..."
+    "transcribing": "Transskriberer",
+    "processing": "Rydder op",
+    "loadingModel": "Indlæser model",
+    "cancel": "Annuller diktering"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokerer muligvis 1 genvej",
@@ -994,5 +1107,345 @@
     "learnMore": "Sådan løser du det",
     "recorderBlocked": "Genveje kan ikke optages lige nu — macOS Secure Input blokerer tastehændelser. Løs advarslen om Secure Input først.",
     "dismiss": "Afvis"
+  },
+  "tts": {
+    "ratings": {
+      "quality": "Kvalitet",
+      "speed": "Hastighed",
+      "recommended": "Anbefalet",
+      "tooltip": "Første lyd efter {{firstAudio}} s, {{faster}}x hurtigere end realtid, indlæses på {{load}} s"
+    },
+    "devices": {
+      "auto": "Auto",
+      "cpu": "CPU",
+      "gpu": "GPU",
+      "npu": "NPU"
+    },
+    "errors": {
+      "notDownloaded": "Download denne model, før der læses op.",
+      "audio": "Udgangsenheden kunne ikke åbnes.",
+      "text": "Denne tekst kunne ikke forberedes.",
+      "clock": "Timingen af afspilningen mislykkedes.",
+      "worker": "Arbejdsprocessen til tekst-til-tale stoppede.",
+      "unavailable": "Tekst-til-tale er ikke tilgængelig.",
+      "notReady": "Tekst-til-tale starter stadig.",
+      "generic": "Tekst-til-tale mislykkedes.",
+      "memory": "Mindst 1 GiB ledig hukommelse er påkrævet.",
+      "gatedToken": "Pocket-stemmer kræver et Hugging Face-token og accepterede stemmevilkår.",
+      "model": "Vælg en tilgængelig tekst-til-tale-model.",
+      "device": "Denne enhed er ikke tilgængelig.",
+      "npuDriverTooOld": "NPU-driveren er for gammel. Opdater den, eller vælg en anden enhed.",
+      "selection": "Valget kunne ikke anvendes.",
+      "busy": "En tekst-til-tale-handling kører allerede.",
+      "cancelled": "Oplæsningen blev annulleret.",
+      "clipboard": "Teksten på udklipsholderen kunne ikke læses.",
+      "deviceNotSupported": "Denne model understøtter ikke den valgte enhed.",
+      "deviceUnavailable": "Den valgte enhed er ikke tilgængelig.",
+      "download": "Modeldownloadet mislykkedes.",
+      "driverDiscovery": "NPU-driveren kunne ikke registreres.",
+      "failed": "Arbejdsprocessen fejlede tre gange. Vælg en model for at prøve igen.",
+      "integrity": "En modelfil bestod ikke integritetskontrollen.",
+      "invalidControls": "Vælg en hastighed fra 0.5x til 2.0x og en tonehøjde fra -6 til +6 halvtoner.",
+      "invalidRatings": "Modelvurderingerne mangler eller er ugyldige.",
+      "invalidVoice": "Vælg en stemme til den valgte model.",
+      "outputUnavailable": "Udgangsenheden er ikke tilgængelig.",
+      "path": "Lagermappen til tekst-til-tale er ikke tilgængelig.",
+      "prepareFailed": "Den valgte enhed kunne ikke forberede denne model.",
+      "protocol": "Arbejdsprocessen til tekst-til-tale returnerede et ugyldigt svar.",
+      "registry": "Registret over tekst-til-tale-modeller er ugyldigt.",
+      "settings": "Indstillingerne for tekst-til-tale kunne ikke gemmes.",
+      "start": "Arbejdsprocessen til tekst-til-tale kunne ikke starte.",
+      "starting": "Arbejdsprocessen til tekst-til-tale starter.",
+      "tokenRejected": "Hugging Face-tokenet blev afvist. Kontrollér adgangen til Pocket-stemmevilkårene.",
+      "tokenRequired": "Angiv et Hugging Face-token, og accepter Pocket-stemmevilkårene, før du downloader stemmer.",
+      "unknownModel": "Den valgte tekst-til-tale-model er ukendt.",
+      "window": "Oplæsningsvinduet kunne ikke åbnes.",
+      "accessDenied": "Adgang til modelfilerne blev nægtet.",
+      "localIo": "Modelfilerne kunne ikke læses eller skrives.",
+      "downloading": "Denne model downloades allerede."
+    },
+    "runOn": "Kør på",
+    "preparing": "Forbereder til {{device}}: {{graph}}",
+    "buffering": "Buffer",
+    "title": "Oplæsning",
+    "textLabel": "Tekst, der skal læses op",
+    "placeholder": "Indsæt tekst, der skal læses op",
+    "play": "Afspil",
+    "pause": "Pause",
+    "stop": "Stop",
+    "close": "Luk",
+    "readClipboard": "Læs udklipsholder",
+    "editText": "Rediger tekst",
+    "progress": "Fremdrift",
+    "time": "{{elapsed}} s gået, {{remaining}} s tilbage",
+    "openModels": "Tekst-til-tale-modeller",
+    "outputFallback": "Bruger standardudgangsenheden",
+    "states": {
+      "waiting": "Venter",
+      "starting": "Starter",
+      "buffering": "Buffer",
+      "playing": "Afspiller",
+      "paused": "På pause",
+      "finished": "Færdig",
+      "error": "Fejl"
+    },
+    "modelsTitle": "Tekst-til-tale-modeller",
+    "modelsSubtitle": "Vælg en stemmemodel. Hastighedstallene er målt på udviklerens computer; dine kan afvige.",
+    "downloaded": "Downloadet",
+    "availableToDownload": "Tilgængelig til download",
+    "recommended": "Anbefalet",
+    "downloading": "Downloader",
+    "needsToken": "Kræver et Hugging Face-token",
+    "tokenSet": "Token angivet",
+    "active": "Aktiv",
+    "use": "Brug",
+    "download": "Download",
+    "delete": "Slet",
+    "deleteConfirm": "Slet {{name}}? Det frigør {{size}}. Dit ordforråd og din historik bevares.",
+    "deleteConfirmSelected": "Oplæsning virker ikke, før du vælger en anden model.",
+    "deleteConfirmAction": "Slet model",
+    "cancel": "Annuller",
+    "token": "Hugging Face-token",
+    "tokenHelp": "Kun nødvendigt til låste Pocket-stemmer efter accept af stemmevilkårene på Hugging Face. Tokenet bliver i hukommelsen og ryddes, når Handy genstartes.",
+    "clearToken": "Ryd token",
+    "showToken": "Vis token",
+    "hideToken": "Skjul token",
+    "saveToken": "Angiv token",
+    "model": "Model",
+    "voice": "Stemme",
+    "preview": "Forhåndshør stemmen",
+    "speed": "Hastighed: {{value}}x",
+    "pitch": "Tonehøjde: {{value}} halvtoner",
+    "output": "Udgangsenhed",
+    "sameAsHandy": "Samme som Handy",
+    "readCode": "Læs kodeblokke op",
+    "technicalReading": "Teknisk oplæsning",
+    "fullPaths": "Læs hele stier",
+    "fullLinks": "Læs hele links",
+    "pocketAttribution": "Pocket TTS-stemmer er licenseret under CC-BY-4.0. Følg hver stemmes vilkår for kreditering og samtykke på modelkortet.",
+    "supertonicRestrictions": "Supertonic 3 bruger OpenRAIL-M. Gennemgå dens brugsbegrænsninger på modelkortet.",
+    "kokoroAttribution": "Kokoro-modellens vægte bruger Apache-2.0-licensen.",
+    "paradeeAttribution": "Paradee-8M v1.2 af Sahil Mahendrakar, destilleret fra Kokoro-82M (hexgrad). Apache-2.0-licens.",
+    "phononAttribution": "Phonon 31m English af Gradium (Apache-2.0), bygget på Pocket TTS og Mimi-codec'en af Kyutai (CC-BY-4.0). Stemmer fra gradium/phonon-voices (Apache-2.0).",
+    "indicTinyEnglishAttribution": "Indic Tiny TTS (English) af Sulabh Katiyar, CC-BY-4.0. Stemmer trænet på LIMMITS 2024 (SYSPIN, Indian Institute of Science, Bangalore, SPIRE Lab), CC-BY-4.0. Talernes samtykke til udgivelse er ikke dokumenteret af kilden. Vocoder: Vocos af Charactr Inc., MIT.",
+    "indicTinyHindiAttribution": "Indic Tiny TTS (Hindi) af Sulabh Katiyar, CC-BY-4.0, trænet på datasættet AI4Bharat Rasa (CC-BY-4.0; Varadhan, Sankar, Raju og Khapra, INTERSPEECH 2024). Vocoder: Vocos af Charactr Inc., MIT.",
+    "indicTinyPunjabiAttribution": "Indic Tiny TTS (Punjabi) af Sulabh Katiyar, CC-BY-4.0, trænet på datasættet AI4Bharat Rasa (CC-BY-4.0; Varadhan, Sankar, Raju og Khapra, INTERSPEECH 2024). Vocoder: Vocos af Charactr Inc., MIT.",
+    "status": {
+      "failed": "Mislykkedes",
+      "ready": "Klar",
+      "starting": "Starter",
+      "stopping": "Stopper",
+      "unloaded": "Frigjort"
+    },
+    "previewSentence": "Reading clearly, one phrase at a time.",
+    "description": {
+      "pocket-en": "Udtryksfulde engelske stemmer med den højeste lyttescore.",
+      "supertonic-3": "Hurtig engelsk syntese med kørsel på CPU, GPU og NPU.",
+      "kokoro-82m-int8": "Kompakte engelske stemmer fra en INT8-model.",
+      "paradee-8m-int8": "Meget små, hurtige engelske stemmer fra en model destilleret fra Kokoro.",
+      "phonon-31m-en": "Små, naturlige engelske stemmer bygget på Pocket TTS, med 26 stemmer.",
+      "indic-tiny-en": "Små indisk-engelske stemmer, kvindelig og mandlig.",
+      "indic-tiny-hi": "Små hindi-stemmer, kvindelig og mandlig. Engelske ord staves bogstav for bogstav.",
+      "indic-tiny-pa": "Små punjabi-stemmer (gurmukhi), kvindelig og mandlig. Engelske ord staves bogstav for bogstav."
+    },
+    "voiceCount": "{{count}} stemmer",
+    "downloadProgress": "Fremdrift for modeldownload",
+    "settingsTitle": "Tekst-til-tale",
+    "speedLabel": "Hastighed",
+    "pitchLabel": "Tonehøjde",
+    "help": {
+      "model": "Vælg en downloadet tekst-til-tale-model.",
+      "voice": "Vælg en stemme til denne model, og forhåndshør den.",
+      "speed": "Juster, hvor hurtigt teksten læses op.",
+      "pitch": "Juster stemmens tonehøjde i halvtoner.",
+      "output": "Vælg, hvor oplæsningslyden afspilles.",
+      "readCode": "Medtag indhegnede kodeblokke ved oplæsning.",
+      "technicalReading": "Udtaler stier, filnavne, flag og kodenavne i fuld længde ved hjælp af din ordbogsfil.",
+      "fullPaths": "Læser hver mappe i en sti. Slået fra læses kun filnavnet.",
+      "fullLinks": "Læser hele webadressen. Slået fra siges kun webstedets navn."
+    },
+    "tabs": {
+      "settings": "Indstillinger",
+      "history": "Historik",
+      "vocabulary": "Ordforråd"
+    },
+    "history": {
+      "title": "Indstillinger for historik",
+      "reading": "Skrevne ord med det, der blev sagt",
+      "hint": "Træk over ordene for at vælge et stykke og rette, hvordan det blev læst.",
+      "empty": "Der er endnu ikke læst noget højt. Oplæsninger, du afspiller, vises her.",
+      "limit": {
+        "title": "Grænse for historik",
+        "description": "Flest oplæsninger, der gemmes i historikken",
+        "entries": "oplæsninger"
+      },
+      "retention": {
+        "title": "Automatisk sletning",
+        "description": "Slet også ældre oplæsninger automatisk",
+        "keepNothing": "Gem aldrig",
+        "keepLimit": "Behold de seneste {{count}}",
+        "days3": "Efter 3 dage",
+        "weeks2": "Efter 2 uger",
+        "months3": "Efter 3 måneder"
+      },
+      "clear": {
+        "title": "Ryd historik",
+        "description": "Fjerner alle gemte oplæsninger. Din ordliste ændres ikke.",
+        "confirmation": "Fjern alle {{count}} gemte oplæsninger? Din ordliste ændres ikke."
+      },
+      "retentionConfirm": {
+        "message_one": "Slet {{count}} gemt oplæsning nu? Din ordliste ændres ikke.",
+        "message": "Slet {{count}} gemte oplæsninger nu? Din ordliste ændres ikke.",
+        "action": "Slet oplæsninger"
+      }
+    },
+    "vocabulary": {
+      "columns": {
+        "written": "Skrevet",
+        "spoken": "Udtalt",
+        "kind": "Type",
+        "voices": "Stemmer",
+        "match": "Match",
+        "enabled": "Til",
+        "actions": "Handlinger"
+      },
+      "kinds": {
+        "symbol": "Symbol",
+        "extension": "Filtypenavn",
+        "term": "Term",
+        "acronym": "Akronym"
+      },
+      "voices": {
+        "all": "Alle stemmer",
+        "except": "undtagen {{names}}",
+        "add": "+ stemme"
+      },
+      "origins": {
+        "builtin": "Indbygget",
+        "owner": "Din"
+      },
+      "skipped": "(springes over)",
+      "buttons": {
+        "add": "Tilføj post",
+        "edit": "Rediger",
+        "listen": "Lyt",
+        "delete": "Slet",
+        "reset": "Nulstil til standard",
+        "save": "Gem",
+        "cancel": "Annuller"
+      },
+      "match": {
+        "whole": "Helt ord",
+        "anywhere": "Hvor som helst i et ord",
+        "prefix": "Begyndelsen af et ord",
+        "suffix": "Slutningen af et ord",
+        "regex": "Mønster",
+        "caseSensitive": "Forskel på store og små bogstaver",
+        "extension": "Slutningen af et filnavn",
+        "symbol": "Hvor som helst",
+        "acronym": "Helt ord eller navnedel"
+      },
+      "filter": "Søg i skrevet eller talt",
+      "toggle": "Brug {{written}}",
+      "editTitle": "Rediger post",
+      "fields": {
+        "skip": "Spring over",
+        "appliesTo": "Gælder for"
+      },
+      "empty": "Ingen poster matcher dit filter.",
+      "deleteConfirmation": "Slet {{written}} fra dit ordforråd? Det kan ikke fortrydes.",
+      "resetConfirm": "Nulstil {{written}} til den indbyggede udtale? Din post slettes.",
+      "errors": {
+        "changed": "Ordforrådsfilen er ændret på disken. Tabellen er indlæst igen; foretag din ændring igen.",
+        "fileInvalid": "Din ordforrådsfil har en fejl og kan ikke redigeres her: {{message}}",
+        "invalidEdit": "Posten kunne ikke gemmes: {{message}}",
+        "tooLarge": "Ordforrådsfilen ville blive større end 1 MiB, så intet blev gemt.",
+        "io": "Ordforrådsfilen kunne ikke skrives: {{message}}",
+        "voicesChanged": "Ordforrådet ændrede sig, mens ændringen ventede, så stemmeændringen blev ikke anvendt. Vælg stemmerne igen."
+      },
+      "problems": {
+        "shadowed": "Gælder aldrig: en post med højere prioritet vinder altid",
+        "unreachable": "Gælder aldrig: {{reason}}",
+        "disabled": "Slået fra"
+      },
+      "unreachable": {
+        "containsSpace": "en term matches ét ord ad gangen, så dens tekst kan ikke indeholde mellemrum",
+        "endsWithPunctuation": "tegnsætning i slutningen af et ord skilles fra, før termer matches",
+        "notOneCharacter": "et symbol er præcis ét tegn",
+        "extensionNotAlphanumeric": "et filtypenavn indeholder kun bogstaver og tal",
+        "neverMatches": "den ændrer ikke, hvordan eksemplet læses"
+      },
+      "derive": {
+        "unchanged": "De talte ord er uændrede, så der er intet at gemme.",
+        "severalWords": "Ændringen berører mere end ét skrevet ord. Ret ét ord ad gangen.",
+        "notExplained": "Ingen enkelt regel får teksten til at lyde sådan.",
+        "invalid": "Kan ikke gemmes: {{detail}}"
+      },
+      "check": {
+        "title": "Tjek på tværs af stemmer",
+        "playAll": "Afspil alle",
+        "playing": "Afspiller {{model}}",
+        "checking": "Tjekker hver stemme...",
+        "heardRight": "hørt rigtigt",
+        "missed": "misforstået: {{heard}}",
+        "failed": "kunne ikke tjekke: {{error}}",
+        "row": "{{model}}: {{outcome}}",
+        "advisory": "Nogle stemmer læste ikke dette rigtigt. Du kan stadig gemme det.",
+        "saveAllAnyway": "Gem for alle stemmer alligevel",
+        "savePassedOnly": "Gem kun for stemmer, der bestod",
+        "pickOne": "Vælg én stemme",
+        "dictating": "Diktering kører. Tjek igen, når den er færdig.",
+        "transcribeFailed": "Tale-til-tekst kunne ikke transskribere stemmen."
+      },
+      "filters": {
+        "voice": "Stemme",
+        "kind": "Type",
+        "source": "Kilde",
+        "all": "Alle",
+        "changed": "Ændret af dig",
+        "onlyProblems": "Kun problemer"
+      },
+      "defaultLabel": "standard:",
+      "defaultLabelFor": "standard for {{voices}}:"
+    },
+    "correction": {
+      "add": "Tilføj rettelse",
+      "start": "Tilføj en rettelse",
+      "writtenText": "Skrevet tekst",
+      "next": "Næste",
+      "title": "Ret en oplæsning",
+      "selected": "Valgt",
+      "spokenAs": "Udtales som",
+      "shouldSay": "Skal sige",
+      "savesAs": "Gemmes som",
+      "deriving": "Finder reglen...",
+      "exactOnly": "Kun præcis denne tekst",
+      "chooseScope": "Vælg hvor den gælder",
+      "scopeRequired": "Vælg Alle stemmer eller én stemme, før du gemmer.",
+      "acronymStyle": "Akronymstil pr. stemme",
+      "style": {
+        "spaced": "Adskilte bogstaver (C L I)",
+        "capitals": "Versaler (CLI)",
+        "inherit": "Samme som alle stemmer"
+      },
+      "reach": {
+        "extension": "gælder hver {{extension}}-fil",
+        "acronym": "gælder akronymet {{acronym}} overalt",
+        "term": "gælder {{term}} overalt",
+        "symbol": "gælder {{symbol}} i hvert teknisk ord",
+        "exact": "kun {{text}}"
+      },
+      "savesAsFormat": "{{written}} -> \"{{spoken}}\" · {{reach}}",
+      "microphone": {
+        "idle": "Sig det i stedet for at skrive",
+        "recording": "Stop og udfyld det, du sagde",
+        "transcribing": "Transskriberer det, du sagde...",
+        "busy": "En diktering, en optagelse eller en filtransskribering kører. Prøv mikrofonen igen, når den er færdig.",
+        "stopped": "Mikrofonen stoppede, før dine ord blev hørt, så intet blev udfyldt.",
+        "reading": "Læs højt er åben. Luk den, og brug derefter mikrofonen.",
+        "failed": "Mikrofonen kunne ikke starte.",
+        "transcribeFailed": "Tale til tekst kunne ikke transskribere det, du sagde."
+      }
+    }
   }
 }

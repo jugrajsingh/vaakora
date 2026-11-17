@@ -66,23 +66,21 @@ export const ShowOverlay: React.FC<ShowOverlayProps> = React.memo(
           />
         </SettingContainer>
 
-        {selectedStyle !== "none" && (
-          <SettingContainer
-            title={t("settings.advanced.overlay.position.title")}
-            description={t("settings.advanced.overlay.position.description")}
-            descriptionMode={descriptionMode}
-            grouped={grouped}
-          >
-            <Dropdown
-              options={positionOptions}
-              selectedValue={selectedPosition}
-              onSelect={(value) =>
-                updateSetting("overlay_position", value as OverlayPosition)
-              }
-              disabled={isUpdating("overlay_position")}
-            />
-          </SettingContainer>
-        )}
+        <SettingContainer
+          title={t("settings.advanced.overlay.position.title")}
+          description={t("settings.advanced.overlay.position.description")}
+          descriptionMode={descriptionMode}
+          grouped={grouped}
+        >
+          <Dropdown
+            options={positionOptions}
+            selectedValue={selectedPosition}
+            onSelect={(value) =>
+              updateSetting("overlay_position", value as OverlayPosition)
+            }
+            disabled={isUpdating("overlay_position")}
+          />
+        </SettingContainer>
       </>
     );
   },

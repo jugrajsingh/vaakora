@@ -6,13 +6,19 @@ import type {
   AudioDevice,
   PostProcessApiFormat,
   ChineseScript,
+  HistoryCompareView,
+  LocalLlmContext,
+  LocalLlmStructure,
+  LocalLlmStyling,
   TranscribeAcceleratorSetting,
   ShortcutActivation,
   VadBackend,
   LanguageDetectionMode,
+  ReadHistoryRetention,
 } from "@/bindings";
 import { commands } from "@/bindings";
 import { notify } from "@/stores/noticeStore";
+import i18n from "@/i18n";
 
 interface SettingsStore {
   settings: Settings | null;
@@ -36,10 +42,13 @@ interface SettingsStore {
   ) => Promise<void>;
   resetSetting: (key: keyof Settings) => Promise<void>;
   refreshSettings: () => Promise<void>;
+  refreshSettingsChecked: () => Promise<void>;
+  changeHistoryCompareView: (view: HistoryCompareView) => Promise<void>;
   refreshAudioDevices: () => Promise<void>;
   refreshOutputDevices: () => Promise<void>;
   updateBinding: (id: string, binding: string) => Promise<void>;
   resetBinding: (id: string) => Promise<void>;
+  clearBinding: (id: string) => Promise<void>;
   getSetting: <K extends keyof Settings>(key: K) => Settings[K] | undefined;
   isUpdatingKey: (key: string) => boolean;
   playTestSound: (soundType: "start" | "stop") => Promise<void>;
@@ -162,8 +171,27 @@ const settingUpdaters: {
   auto_submit_key: (value) =>
     commands.changeAutoSubmitKeySetting(value as string),
   history_limit: (value) => commands.updateHistoryLimit(value as number),
-  post_process_enabled: (value) =>
-    commands.changePostProcessEnabledSetting(value as boolean),
+  tts_history_limit: async (value) => {
+    const result = await commands.setTtsHistoryLimit(value as number);
+    if (result.status === "error") throw new Error(result.error);
+  },
+  tts_history_retention: async (value) => {
+    const result = await commands.setTtsHistoryRetention(
+      value as ReadHistoryRetention,
+    );
+    if (result.status === "error") throw new Error(result.error);
+  },
+  history_compare_view: (value) =>
+    useSettingsStore
+      .getState()
+      .changeHistoryCompareView(value as HistoryCompareView),
+  post_process_enabled: async (value) => {
+    const result = await commands.changePostProcessEnabledSetting(
+      value as boolean,
+    );
+    if (result.status === "error") throw new Error(result.error);
+    await useSettingsStore.getState().refreshSettings();
+  },
   post_process_selected_prompt_id: (value) =>
     commands.setPostProcessSelectedPrompt(value as string),
   mute_while_recording: (value) =>
@@ -217,6 +245,12 @@ const settingUpdaters: {
     commands.changeLanguageDetectionSetting(value as LanguageDetectionMode),
   language_detection_window_secs: (value) =>
     commands.changeLanguageDetectionWindowSetting(value as number),
+  local_llm_styling: (value) =>
+    commands.changeLocalLlmStylingSetting(value as LocalLlmStyling),
+  local_llm_structure: (value) =>
+    commands.changeLocalLlmStructureSetting(value as LocalLlmStructure),
+  local_llm_context: (value) =>
+    commands.changeLocalLlmContextSetting(value as LocalLlmContext),
 };
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -250,25 +284,36 @@ export const useSettingsStore = create<SettingsStore>()(
     // Load settings from store
     refreshSettings: async () => {
       try {
-        const result = await commands.getAppSettings();
-        if (result.status === "ok") {
-          const settings = result.data;
-          const normalizedSettings: Settings = {
-            ...settings,
-            always_on_microphone: settings.always_on_microphone ?? false,
-            selected_microphone: settings.selected_microphone ?? "Default",
-            clamshell_microphone: settings.clamshell_microphone ?? "Default",
-            selected_output_device:
-              settings.selected_output_device ?? "Default",
-          };
-          set({ settings: normalizedSettings, isLoading: false });
-        } else {
-          console.error("Failed to load settings:", result.error);
-          set({ isLoading: false });
-        }
+        await get().refreshSettingsChecked();
       } catch (error) {
         console.error("Failed to load settings:", error);
         set({ isLoading: false });
+      }
+    },
+
+    refreshSettingsChecked: async () => {
+      const result = await commands.getAppSettings();
+      if (result.status === "error") throw new Error(result.error);
+      const settings = result.data;
+      const normalizedSettings: Settings = {
+        ...settings,
+        always_on_microphone: settings.always_on_microphone ?? false,
+        selected_microphone: settings.selected_microphone ?? "Default",
+        clamshell_microphone: settings.clamshell_microphone ?? "Default",
+        selected_output_device: settings.selected_output_device ?? "Default",
+      };
+      set({ settings: normalizedSettings, isLoading: false });
+    },
+
+    changeHistoryCompareView: async (view) => {
+      const { setUpdating, refreshSettingsChecked } = get();
+      setUpdating("history_compare_view", true);
+      try {
+        const result = await commands.changeHistoryCompareViewSetting(view);
+        if (result.status === "error") throw new Error(result.error);
+        await refreshSettingsChecked();
+      } finally {
+        setUpdating("history_compare_view", false);
       }
     },
 
@@ -356,6 +401,13 @@ export const useSettingsStore = create<SettingsStore>()(
         }
       } catch (error) {
         console.error(`Failed to update setting ${String(key)}:`, error);
+        if (key === "post_process_enabled") {
+          notify({
+            title: i18n.t("settings.general.shortcut.errors.set", {
+              error: String(error),
+            }),
+          });
+        }
         if (settings) {
           set({ settings: { ...settings, [key]: originalValue } });
         }
@@ -415,7 +467,7 @@ export const useSettingsStore = create<SettingsStore>()(
         console.error(`Failed to update binding ${id}:`, error);
 
         // Rollback on error
-        if (originalBinding && get().settings) {
+        if (originalBinding !== undefined && get().settings) {
           set((state) => ({
             settings: state.settings
               ? {
@@ -447,12 +499,33 @@ export const useSettingsStore = create<SettingsStore>()(
       setUpdating(updateKey, true);
 
       try {
-        await commands.resetBinding(id);
+        const result = await commands.resetBinding(id);
+        if (result.status === "error") throw new Error(result.error);
+        if (!result.data.success) {
+          throw new Error(result.data.error ?? "Failed to reset binding");
+        }
         await refreshSettings();
-      } catch (error) {
-        console.error(`Failed to reset binding ${id}:`, error);
+      } catch (error: unknown) {
+        notify({
+          title: i18n.t("settings.general.shortcut.errors.set", {
+            error: String(error),
+          }),
+        });
       } finally {
         setUpdating(updateKey, false);
+      }
+    },
+
+    clearBinding: async (id) => {
+      const { setUpdating, refreshSettings } = get();
+      const key = `binding_${id}`;
+      setUpdating(key, true);
+      try {
+        const result = await commands.clearBinding(id);
+        if (result.status === "error") throw new Error(result.error);
+        await refreshSettings();
+      } finally {
+        setUpdating(key, false);
       }
     },
 

@@ -15,6 +15,7 @@ mod input;
 mod language_detection;
 mod languages;
 mod llm_client;
+mod local_llm;
 mod managers;
 mod memory;
 mod notices;
@@ -23,6 +24,7 @@ mod paste_tx;
 pub mod portable;
 #[cfg(target_os = "linux")]
 mod primary_selection;
+pub mod process_supervisor;
 mod secure_input;
 mod settings;
 mod shortcut;
@@ -32,6 +34,7 @@ mod transcription_coordinator;
 mod transcription_hook;
 mod tray;
 mod tray_i18n;
+pub mod tts;
 mod utils;
 pub mod webkit_renderer;
 
@@ -219,14 +222,17 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     );
     let history_manager =
         Arc::new(HistoryManager::new(app_handle).expect("Failed to initialize history manager"));
+    let local_llm_manager = local_llm::create_manager(app_handle);
 
     // Add managers to Tauri's managed state
     app_handle.manage(recording_manager.clone());
     app_handle.manage(model_manager.clone());
     app_handle.manage(transcription_manager.clone());
     app_handle.manage(history_manager.clone());
+    app_handle.manage(local_llm_manager);
     app_handle.manage(tray::TrayState::new());
     app_handle.manage(TranscriptionJobManager::new(app_handle));
+    app_handle.manage(tts::service::TtsService::initialize(app_handle));
 
     // Note: Shortcuts are NOT initialized here.
     // The frontend is responsible for calling the `initialize_shortcuts` command
@@ -327,6 +333,64 @@ fn initialize_core_logic(app_handle: &AppHandle) {
                 transcription_manager.request_unload();
                 log::info!("Model unloaded via tray.");
             }
+            "unload_post_processing_model" => {
+                if let Some(manager) = app.try_state::<Arc<local_llm::LocalLlmManager>>() {
+                    let manager = Arc::clone(manager.inner());
+                    tray::unload_cleanup_on_worker(move || manager.unload());
+                }
+            }
+            "unload_tts_model" => {
+                if let Some(service) = app.try_state::<Arc<tts::service::TtsService>>() {
+                    let service = service.inner().clone();
+                    handy_tts_core::tray::select_tts_on_worker(move || {
+                        if let Ok(ready) = service.ready() {
+                            let _ = ready.session.stop_and_wait();
+                            ready.manager.unload();
+                        }
+                    });
+                }
+            }
+            id if id.starts_with("tts_model:") => {
+                let Some(model_id) = id.strip_prefix("tts_model:") else {
+                    return;
+                };
+                let model_id = model_id.to_owned();
+                let app = app.clone();
+                handy_tts_core::tray::select_tts_on_worker(move || {
+                    let Some(service) = app.try_state::<Arc<tts::service::TtsService>>() else {
+                        return;
+                    };
+                    let menu = service.tray_snapshot();
+                    let downloaded = menu
+                        .choices
+                        .iter()
+                        .filter_map(|choice| {
+                            choice
+                                .id
+                                .strip_prefix("tts_model:")
+                                .map(|id| (id.to_owned(), choice.label.clone()))
+                        })
+                        .collect::<Vec<_>>();
+                    let result =
+                        handy_tts_core::tray::select_tts_with(&model_id, &downloaded, |model_id| {
+                            let entry = handy_tts_core::catalog::entry(&model_id)
+                                .map_err(|e| e.to_string())?;
+                            let settings = settings::get_settings(&app);
+                            let mut chosen = tts::service::selection(&settings);
+                            chosen.model_id = model_id;
+                            chosen.voice = settings
+                                .tts_voice
+                                .get(entry.id)
+                                .cloned()
+                                .unwrap_or_else(|| entry.default_voice.into());
+                            tts::commands::set_selection(&app, &service, chosen)
+                        });
+                    if let Err(error) = result {
+                        log::error!("Read-aloud tray selection failed: {error}");
+                    }
+                    tray::reconcile_model_checkmarks(&app);
+                });
+            }
             "cancel" => {
                 use crate::utils::cancel_current_operation;
 
@@ -336,23 +400,84 @@ fn initialize_core_logic(app_handle: &AppHandle) {
             "quit" => {
                 app.exit(0);
             }
-            id if id.starts_with("model_select:") => {
-                let model_id = id.strip_prefix("model_select:").unwrap().to_string();
-                let current_model = settings::get_settings(app).selected_model;
-                if model_id == current_model {
+            id if id.starts_with("cleanup_model_select:") => {
+                let Some(model_id) = id.strip_prefix("cleanup_model_select:") else {
                     return;
-                }
-                let app_clone = app.clone();
+                };
+                let model_id = model_id.to_string();
+                let app = app.clone();
+                tray::select_cleanup_on_worker(move || {
+                    tray::activate_model_check_with(
+                        || {
+                            let saved = settings::get_settings(&app);
+                            let Some(manager) = app.try_state::<Arc<local_llm::LocalLlmManager>>()
+                            else {
+                                return Ok(());
+                            };
+                            let downloaded = manager
+                                .models_root()
+                                .map(|root| {
+                                    local_llm::registry::MODELS
+                                        .iter()
+                                        .filter(|entry| {
+                                            local_llm::download::is_downloaded(root, entry)
+                                        })
+                                        .map(|entry| {
+                                            (entry.id.to_string(), entry.display_name.to_string())
+                                        })
+                                        .collect::<Vec<_>>()
+                                })
+                                .unwrap_or_default();
+                            let result = tray::select_cleanup_with(
+                                saved.post_process_enabled,
+                                &saved.post_process_provider_id,
+                                &model_id,
+                                &downloaded,
+                                |id| {
+                                    tauri::async_runtime::block_on(
+                                        local_llm::commands::set_local_llm_model(
+                                            app.clone(),
+                                            manager,
+                                            Some(id),
+                                        ),
+                                    )
+                                },
+                            )
+                            .map(|_| ());
+                            if let Err(error) = &result {
+                                log::error!("Post-processing tray selection failed: {error}");
+                            }
+                            result
+                        },
+                        || tray::reconcile_model_checkmarks(&app),
+                    )
+                });
+            }
+
+            id if id.starts_with("model_select:") => {
+                let Some(model_id) = id.strip_prefix("model_select:") else {
+                    return;
+                };
+                let model_id = model_id.to_string();
+                let app = app.clone();
                 std::thread::spawn(move || {
-                    match commands::models::switch_active_model(&app_clone, &model_id) {
-                        Ok(()) => {
-                            log::info!("Model switched to {} via tray.", model_id);
-                        }
-                        Err(e) => {
-                            log::error!("Failed to switch model via tray: {}", e);
-                        }
-                    }
-                    tray::update_tray_menu(&app_clone);
+                    tray::activate_model_check_with(
+                        || {
+                            let current_model = settings::get_settings(&app).selected_model;
+                            if model_id == current_model {
+                                return Ok(());
+                            }
+                            let result = commands::models::switch_active_model(&app, &model_id);
+                            match &result {
+                                Ok(()) => log::info!("Model switched to {} via tray.", model_id),
+                                Err(error) => {
+                                    log::error!("Failed to switch model via tray: {error}")
+                                }
+                            }
+                            result
+                        },
+                        || tray::reconcile_model_checkmarks(&app),
+                    )
                 });
             }
             id if id.starts_with("language_select:") => {
@@ -394,6 +519,11 @@ fn initialize_core_logic(app_handle: &AppHandle) {
             tray::update_tray_menu(&app_handle_for_listener);
         });
     }
+
+    let cleanup_app = app_handle.clone();
+    app_handle.listen(local_llm::STATE_EVENT, move |_| {
+        tray::update_tray_menu(&cleanup_app);
+    });
 
     // Apply the autostart preference (SMAppService login item on macOS 13+,
     // tauri-plugin-autostart elsewhere)
@@ -442,21 +572,6 @@ where
             eprintln!("error: headless transcription panicked: {message}");
             1
         }
-    }
-}
-
-#[cfg(test)]
-mod headless_guard_tests {
-    use super::run_headless_guarded;
-
-    #[test]
-    fn preserves_normal_exit_codes() {
-        assert_eq!(run_headless_guarded(|| 2), 2);
-    }
-
-    #[test]
-    fn converts_worker_panics_to_runtime_failures() {
-        assert_eq!(run_headless_guarded(|| panic!("simulated failure")), 1);
     }
 }
 
@@ -688,7 +803,43 @@ pub fn run(cli_args: CliArgs) {
 
     let specta_builder = Builder::<tauri::Wry>::new()
         .commands(collect_commands![
+            tts::commands::get_tts_models,
+            tts::commands::get_tts_status,
+            tts::commands::get_tts_devices,
+            tts::commands::get_read_aloud_state,
+            tts::commands::read_aloud_replace_text,
+            tts::commands::read_aloud_play,
+            tts::commands::read_aloud_pause,
+            tts::commands::read_aloud_stop,
+            tts::commands::read_aloud_read_clipboard,
+            tts::commands::read_aloud_close,
+            tts::commands::set_tts_selection,
+            tts::commands::set_tts_model,
+            tts::commands::set_tts_run_on,
+            tts::commands::unload_tts_model,
+            tts::commands::download_tts_model,
+            tts::commands::cancel_tts_download,
+            tts::commands::delete_tts_model,
+            tts::commands::set_tts_hf_token,
+            tts::commands::preview_tts_voice,
+            tts::vocabulary_commands::get_tts_vocabulary,
+            tts::vocabulary_commands::save_tts_vocabulary,
+            tts::vocabulary_commands::listen_tts_vocabulary,
+            tts::vocabulary_commands::speak_tts_text,
+            tts::vocabulary_commands::derive_tts_rule,
+            tts::vocabulary_commands::spoken_tts_rule,
+            tts::vocabulary_commands::save_tts_rules,
+            tts::vocabulary_commands::play_tts_voices,
+            tts::vocabulary_commands::check_tts_voices,
+            tts::vocabulary_commands::start_tts_capture,
+            tts::vocabulary_commands::stop_tts_capture,
+            tts::vocabulary_commands::cancel_tts_capture,
+            tts::history_commands::get_tts_history,
+            tts::history_commands::clear_tts_history,
+            tts::history_commands::set_tts_history_limit,
+            tts::history_commands::set_tts_history_retention,
             shortcut::change_binding,
+            shortcut::clear_binding,
             shortcut::reset_binding,
             shortcut::change_shortcut_activation_setting,
             shortcut::change_hold_threshold_ms_setting,
@@ -810,9 +961,12 @@ pub fn run(cli_args: CliArgs) {
             commands::transcription::get_language_status,
             commands::transcription::unload_model_manually,
             commands::history::get_history_entries,
+            commands::history::change_history_compare_view_setting,
             commands::history::toggle_history_entry_saved,
             commands::history::get_audio_file_path,
             commands::history::delete_history_entry,
+            commands::history::get_history_clear_summary,
+            commands::history::clear_history,
             commands::history::retry_history_entry_transcription,
             commands::history::cancel_history_entry_transcription,
             commands::history::transcribe_file,
@@ -822,6 +976,14 @@ pub fn run(cli_args: CliArgs) {
             notices::get_active_notices,
             notices::dismiss_notice,
             notices::dismiss_overlay_notice,
+            local_llm::commands::get_local_llm_models,
+            local_llm::commands::download_local_llm_model,
+            local_llm::commands::delete_local_llm_model,
+            local_llm::commands::get_local_llm_status,
+            local_llm::commands::set_local_llm_model,
+            local_llm::commands::change_local_llm_styling_setting,
+            local_llm::commands::change_local_llm_structure_setting,
+            local_llm::commands::change_local_llm_context_setting,
         ])
         .events(collect_events![
             managers::history::HistoryUpdatePayload,
@@ -831,6 +993,7 @@ pub fn run(cli_args: CliArgs) {
             transcription_coordinator::RecordingStateEvent,
             actions::TranscriptionCompleteEvent,
             notices::NoticesChanged,
+            tts::vocabulary_commands::TtsVoicePlaying,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
@@ -1211,10 +1374,30 @@ pub fn run(cli_args: CliArgs) {
             }
             show_main_window(app);
         }
-        // No transcription teardown on exit: transcribe.cpp runs only in the
-        // worker process, which exits by itself as soon as this process's end
-        // of its stdin closes, even if it is hung. Waiting on an unload here
-        // could block quitting behind a hung model load.
+        tauri::RunEvent::Exit => {
+            if let Some(service) = app.try_state::<Arc<tts::service::TtsService>>() {
+                let service = service.inner().clone();
+                std::thread::spawn(move || service.shutdown());
+            }
+            if let Some(llm) = app.try_state::<Arc<local_llm::LocalLlmManager>>() {
+                llm.shutdown();
+            }
+        }
         _ => {}
     });
+}
+
+#[cfg(test)]
+mod headless_guard_tests {
+    use super::run_headless_guarded;
+
+    #[test]
+    fn preserves_normal_exit_codes() {
+        assert_eq!(run_headless_guarded(|| 2), 2);
+    }
+
+    #[test]
+    fn converts_worker_panics_to_runtime_failures() {
+        assert_eq!(run_headless_guarded(|| panic!("simulated failure")), 1);
+    }
 }

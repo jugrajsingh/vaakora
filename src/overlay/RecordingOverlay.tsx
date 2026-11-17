@@ -15,6 +15,7 @@ import i18n, { syncLanguageFromSettings } from "@/i18n";
 import { noticeDisplay } from "@/lib/notices";
 import type { ModelStateEvent } from "@/lib/types/events";
 import { getLanguageDirection } from "@/lib/utils/rtl";
+import { subscribeAsync } from "@/lib/utils/subscribeAsync";
 
 type OverlayState =
   | "recording"
@@ -217,7 +218,7 @@ const RecordingOverlay: React.FC = () => {
       };
     };
 
-    setupEventListeners();
+    return subscribeAsync(setupEventListeners);
   }, []);
 
   // Elapsed capture timer starts only once microphone samples are flowing.
@@ -296,7 +297,8 @@ const RecordingOverlay: React.FC = () => {
   const cancelBtn = (
     <button
       className="sx"
-      aria-label="cancel"
+      aria-label={t("overlay.cancel")}
+      title={t("overlay.cancel")}
       onClick={() => commands.cancelOperation()}
     >
       <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -389,28 +391,32 @@ const RecordingOverlay: React.FC = () => {
         >
           <div className="stext">
             <div className="stext-clip">
-              <div
-                className={`stext-cap ${overflowing ? "overflowing" : ""}`}
-                ref={capRef}
-                onScroll={handleStreamScroll}
-              >
-                <p>
-                  {loadingNotice && (
-                    <span className="sloading">
-                      {t("overlay.loadingModel")}
+              <div className={`stext-cap ${overflowing ? "overflowing" : ""}`}>
+                <div
+                  className="stext-scroll"
+                  ref={capRef}
+                  onScroll={handleStreamScroll}
+                >
+                  <p>
+                    {loadingNotice && (
+                      <span className="sloading">
+                        {t("overlay.loadingModel")}
+                      </span>
+                    )}
+                    {noticeText && (
+                      <span className="ndetail">{noticeText}</span>
+                    )}
+                    <span className="committed">
+                      {streamText.committed ? streamText.committed + " " : ""}
                     </span>
-                  )}
-                  {noticeText && <span className="ndetail">{noticeText}</span>}
-                  <span className="committed">
-                    {streamText.committed ? streamText.committed + " " : ""}
-                  </span>
-                  <span className="tentative">{streamText.tentative}</span>
-                  {/* Drop the blinking caret once finalizing — it's no longer
+                    <span className="tentative">{streamText.tentative}</span>
+                    {/* Drop the blinking caret once finalizing — it's no longer
                       capturing, and a static spinner conveys the work. */}
-                  {!working && !loadingNotice && !liveNotice && (
-                    <span className="scaret" />
-                  )}
-                </p>
+                    {!working && !loadingNotice && !liveNotice && (
+                      <span className="scaret" />
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

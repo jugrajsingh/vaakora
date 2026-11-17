@@ -2,65 +2,61 @@ import React, {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
+import { ask } from "@tauri-apps/plugin-dialog";
 import { readFile } from "@tauri-apps/plugin-fs";
-import {
-  Check,
-  Copy,
-  FileAudio,
-  FilePlus,
-  FolderOpen,
-  RotateCcw,
-  Star,
-  Trash2,
-  X,
-} from "lucide-react";
+import { FileAudio, FilePlus, FolderOpen } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { notify } from "@/stores/noticeStore";
 import {
   commands,
   events,
+  type HistoryCompareView,
   type HistoryEntry,
-  type HistoryUpdatePayload,
 } from "@/bindings";
 import { useOsType } from "@/hooks/useOsType";
 import {
   useTranscriptionJobsStore,
   type ActiveJobStatus,
 } from "@/stores/transcriptionJobsStore";
+import { useSettings } from "@/hooks/useSettings";
+import { useSettingsStore } from "@/stores/settingsStore";
+import {
+  cleanedText,
+  copyHistoryRaw,
+  historyCopyText,
+  historyModelName,
+} from "@/lib/utils/historyPresentation";
 import { formatDateTime } from "@/utils/dateFormat";
 import { AudioPlayer, AudioPlayerGroup } from "../../ui/AudioPlayer";
 import { Button } from "../../ui/Button";
+import { Dropdown } from "../../ui/Dropdown";
 import { copyToClipboard } from "./clipboard";
 import {
   pickAndTranscribeFiles,
   useFileReadsStore,
   type FileRead,
 } from "./transcribeFiles";
-
-const IconButton: React.FC<{
-  onClick: () => void;
-  title: string;
-  disabled?: boolean;
-  active?: boolean;
-  children: React.ReactNode;
-}> = ({ onClick, title, disabled, active, children }) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    className={`p-1.5 rounded-md flex items-center justify-center transition-colors cursor-pointer disabled:cursor-not-allowed disabled:text-text/20 ${
-      active
-        ? "text-logo-primary hover:text-logo-primary"
-        : "text-ink-3 hover:text-logo-primary"
-    }`}
-    title={title}
-  >
-    {children}
-  </button>
-);
+import { HistoryCompare } from "./HistoryCompare";
+import { HistoryActions, type HistoryActionsProps } from "./HistoryActions";
+import {
+  createPendingConfirm,
+  InlineConfirm,
+  useFocusReturn,
+} from "@/components/shared/InlineConfirm";
+import { useLocalLlmModels } from "../post-processing/LocalLlmSettings";
+import {
+  PageGeneration,
+  createHistoryActions,
+  createHistoryPageLoader,
+  reloadHistoryOnUpdate,
+  createHistoryScrollAnchor,
+  createHistoryEntryActions,
+} from "./pageGeneration";
 
 const PAGE_SIZE = 30;
 
@@ -129,6 +125,16 @@ export const HistorySettings: React.FC = () => {
   const osType = useOsType();
   const jobs = useTranscriptionJobsStore((state) => state.jobs);
   const reads = useFileReadsStore((state) => state.reads);
+  const { models: localModels } = useLocalLlmModels();
+  const { getSetting } = useSettings();
+  const changeCompareView = useSettingsStore(
+    (state) => state.changeHistoryCompareView,
+  );
+  const view = getSetting("history_compare_view") ?? "diff";
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
+  const [changingView, setChangingView] = useState(false);
+  const generation = useRef(new PageGeneration());
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -136,42 +142,98 @@ export const HistorySettings: React.FC = () => {
   const entriesRef = useRef<HistoryEntry[]>([]);
   const loadingRef = useRef(false);
 
+  const rootRef = useRef<HTMLDivElement>(null);
+  const scrollAnchor = useMemo(
+    () =>
+      createHistoryScrollAnchor({
+        getViewport: () => {
+          const scroller = rootRef.current?.closest<HTMLElement>(
+            "[data-settings-scroll]",
+          );
+          if (!scroller) return null;
+          return {
+            top: scroller.getBoundingClientRect().top,
+            scrollTop: scroller.scrollTop,
+            rows: Array.from(
+              rootRef.current?.querySelectorAll<HTMLElement>(
+                "[data-history-entry-id]",
+              ) ?? [],
+            ).map((element) => {
+              const rect = element.getBoundingClientRect();
+              return {
+                id: element.dataset.historyEntryId ?? "",
+                top: rect.top,
+                bottom: rect.bottom,
+              };
+            }),
+          };
+        },
+        setScrollTop: (scrollTop) => {
+          const scroller = rootRef.current?.closest<HTMLElement>(
+            "[data-settings-scroll]",
+          );
+          if (scroller) scroller.scrollTop = scrollTop;
+        },
+      }),
+    [],
+  );
+  useLayoutEffect(() => {
+    scrollAnchor.restore();
+  }, [entries, scrollAnchor]);
+
   // Keep ref in sync for use in IntersectionObserver callback
-  useEffect(() => {
+  useLayoutEffect(() => {
     entriesRef.current = entries;
   }, [entries]);
 
-  const loadPage = useCallback(async (cursor?: number) => {
-    const isFirstPage = cursor === undefined;
-    if (!isFirstPage && loadingRef.current) return;
-    loadingRef.current = true;
+  const {
+    loadPage,
+    loadPageChecked,
+    applyHistoryUpdate,
+    setSaved,
+    removeEntry,
+  } = useMemo(
+    () =>
+      createHistoryPageLoader({
+        generation: generation.current,
+        loadingRef,
+        getEntries: () => entriesRef.current,
+        fetchPage: commands.getHistoryEntries,
+        setEntries,
+        setLoading,
+        setHasMore,
+        setError: setActionError,
+        beforeCommit: scrollAnchor.capture,
+      }),
+    [scrollAnchor],
+  );
 
-    if (isFirstPage) setLoading(true);
-
-    try {
-      const result = await commands.getHistoryEntries(
-        cursor ?? null,
-        PAGE_SIZE,
-      );
-      if (result.status === "ok") {
-        const { entries: newEntries, has_more } = result.data;
-        setEntries((prev) => {
-          if (isFirstPage) return newEntries;
-          const existingIds = new Set(prev.map((entry) => entry.id));
-          return [
-            ...prev,
-            ...newEntries.filter((entry) => !existingIds.has(entry.id)),
-          ];
-        });
-        setHasMore(has_more);
-      }
-    } catch (error) {
-      console.error("Failed to load history entries:", error);
-    } finally {
-      setLoading(false);
-      loadingRef.current = false;
-    }
-  }, []);
+  const { clearHistory, changeView } = useMemo(
+    () =>
+      createHistoryActions({
+        getSummary: commands.getHistoryClearSummary,
+        clear: commands.clearHistory,
+        reload: loadPageChecked,
+        changeCompareView,
+        confirm: (summary) =>
+          ask(
+            t("settings.history.clearConfirmation", {
+              count: summary.entries,
+              recordings: summary.recordings,
+            }),
+            {
+              title: t("settings.history.clearHistory"),
+              kind: "warning",
+              okLabel: t("settings.history.clearHistory"),
+              cancelLabel: t("settings.models.cancel"),
+            },
+          ),
+        setClearing,
+        setChangingView,
+        setError: setActionError,
+      }),
+    [changeCompareView, loadPageChecked, t],
+  );
 
   // Initial load
   useEffect(() => {
@@ -205,47 +267,30 @@ export const HistorySettings: React.FC = () => {
   // Listen for new entries added from the transcription pipeline
   useEffect(() => {
     const unlisten = events.historyUpdatePayload.listen((event) => {
-      const payload: HistoryUpdatePayload = event.payload;
-      if (payload.action === "added") {
-        setEntries((prev) => [
-          payload.entry,
-          ...prev.filter((entry) => entry.id !== payload.entry.id),
-        ]);
-      } else if (payload.action === "updated") {
-        setEntries((prev) =>
-          prev.map((e) => (e.id === payload.entry.id ? payload.entry : e)),
-        );
-      }
-      // "deleted" and "toggled" are handled by optimistic updates only,
-      // so we intentionally ignore them here to avoid double-mutation.
+      const payload = event.payload;
+      if (payload.action === "cleared") scrollAnchor.clear();
+      if (payload.action === "deleted") applyHistoryUpdate(payload);
+      reloadHistoryOnUpdate(payload, loadPage, applyHistoryUpdate);
     });
 
     return () => {
       unlisten.then((fn) => fn());
     };
-  }, []);
+  }, [loadPage, applyHistoryUpdate, scrollAnchor]);
 
-  const toggleSaved = async (id: number) => {
-    // Optimistic update
-    setEntries((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, saved: !e.saved } : e)),
-    );
-    try {
-      const result = await commands.toggleHistoryEntrySaved(id);
-      if (result.status !== "ok") {
-        // Revert on failure
-        setEntries((prev) =>
-          prev.map((e) => (e.id === id ? { ...e, saved: !e.saved } : e)),
-        );
-      }
-    } catch (error) {
-      console.error("Failed to toggle saved status:", error);
-      // Revert on failure
-      setEntries((prev) =>
-        prev.map((e) => (e.id === id ? { ...e, saved: !e.saved } : e)),
-      );
-    }
-  };
+  const entryActions = useMemo(
+    () =>
+      createHistoryEntryActions({
+        getEntry: (id) => entriesRef.current.find((entry) => entry.id === id),
+        setSaved,
+        removeEntry,
+        toggleSaved: commands.toggleHistoryEntrySaved,
+        deleteEntry: commands.deleteHistoryEntry,
+        reload: loadPage,
+        setError: setActionError,
+      }),
+    [setSaved, removeEntry, loadPage],
+  );
 
   const getAudioUrl = useCallback(
     async (fileName: string) => {
@@ -267,21 +312,6 @@ export const HistorySettings: React.FC = () => {
     },
     [osType],
   );
-
-  const deleteAudioEntry = async (id: number) => {
-    // Optimistically remove
-    setEntries((prev) => prev.filter((e) => e.id !== id));
-    try {
-      const result = await commands.deleteHistoryEntry(id);
-      if (result.status !== "ok") {
-        throw new Error(String(result.error));
-      }
-    } catch (error) {
-      console.error("Failed to delete entry:", error);
-      loadPage();
-      throw error;
-    }
-  };
 
   const transcribeFile = async () => {
     try {
@@ -330,12 +360,17 @@ export const HistorySettings: React.FC = () => {
                 key={entry.id}
                 entry={entry}
                 job={jobs[entry.id]}
-                onToggleSaved={() => toggleSaved(entry.id)}
-                onCopyText={() => copyToClipboard(entry.transcription_text)}
+                view={view}
+                modelName={historyModelName(entry, localModels)}
+                onToggleSaved={() => void entryActions.toggleSaved(entry.id)}
+                onCopyText={() => copyToClipboard(historyCopyText(entry))}
+                onCopyRaw={() => copyToClipboard(entry.transcription_text)}
                 getAudioUrl={getAudioUrl}
-                deleteAudio={deleteAudioEntry}
+                deleteAudio={entryActions.deleteEntry}
                 retryTranscription={commands.retryHistoryEntryTranscription}
                 cancelTranscription={commands.cancelHistoryEntryTranscription}
+                captureAnchor={scrollAnchor.capture}
+                restoreAnchor={scrollAnchor.restore}
               />
             ))}
           </div>
@@ -347,15 +382,40 @@ export const HistorySettings: React.FC = () => {
   }
 
   return (
-    <div className="max-w-3xl w-full mx-auto space-y-6">
+    <div ref={rootRef} className="max-w-3xl w-full mx-auto space-y-6">
       <div className="space-y-2">
-        <div className="px-4 flex items-center justify-between">
+        <div className="px-4 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wide">
               {t("settings.history.title")}
             </h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-ink-3">
+                {t("settings.history.compare.title")}
+              </span>
+              <Dropdown
+                options={(
+                  ["diff", "side_by_side", "stacked"] as HistoryCompareView[]
+                ).map((value) => ({
+                  value,
+                  label: t(`settings.history.compare.${value}`),
+                }))}
+                selectedValue={view}
+                onSelect={(next) => void changeView(next)}
+                disabled={changingView}
+                placeholder={t("settings.history.compare.title")}
+              />
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={clearing}
+              onClick={() => void clearHistory()}
+            >
+              {t("settings.history.clearHistory")}
+            </Button>
             <HeaderButton
               onClick={transcribeFile}
               label={t("settings.history.transcribeFile")}
@@ -368,6 +428,11 @@ export const HistorySettings: React.FC = () => {
             />
           </div>
         </div>
+        {actionError && (
+          <p role="alert" className="px-4 text-sm text-red-500">
+            {actionError}
+          </p>
+        )}
         <div className="bg-background border border-line rounded-lg overflow-visible">
           {content}
         </div>
@@ -376,26 +441,76 @@ export const HistorySettings: React.FC = () => {
   );
 };
 
+/** The entry's buttons, or the question its Delete asks. */
+export function EntryActionsOrConfirm({
+  asking,
+  onConfirmDelete,
+  onCancelDelete,
+  ...actions
+}: HistoryActionsProps & {
+  asking: boolean;
+  onConfirmDelete: () => void;
+  onCancelDelete: () => void;
+}): React.JSX.Element {
+  const { t } = useTranslation();
+  return asking ? (
+    <InlineConfirm
+      message={t("settings.history.deleteConfirm")}
+      action={t("settings.history.deleteConfirmAction")}
+      onCancel={onCancelDelete}
+      onConfirm={onConfirmDelete}
+    />
+  ) : (
+    <HistoryActions {...actions} />
+  );
+}
+
+/** The entry's Delete only asks; `onConfirmDelete` removes the entry once. */
+export function entryDeleteControls(deps: {
+  show: (asking: boolean) => void;
+  remove: () => Promise<void> | void;
+}) {
+  const pending = createPendingConfirm<true>({
+    show: (asked) => deps.show(asked !== null),
+    apply: () => deps.remove(),
+  });
+  return {
+    onDelete: () => pending.ask(true),
+    onConfirmDelete: () => void pending.confirm(),
+    onCancelDelete: pending.cancel,
+  };
+}
+
 interface HistoryEntryProps {
   entry: HistoryEntry;
   job?: ActiveJobStatus;
+  view: HistoryCompareView;
+  modelName: string | null;
   onToggleSaved: () => void;
   onCopyText: () => Promise<boolean>;
+  onCopyRaw: () => Promise<boolean>;
   getAudioUrl: (fileName: string) => Promise<string | null>;
   deleteAudio: (id: number) => Promise<void>;
   retryTranscription: (id: number) => Promise<void>;
   cancelTranscription: (id: number) => Promise<void>;
+  captureAnchor: () => void;
+  restoreAnchor: () => void;
 }
 
 const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   entry,
   job,
+  view,
+  modelName,
   onToggleSaved,
   onCopyText,
+  onCopyRaw,
   getAudioUrl,
   deleteAudio,
   retryTranscription,
   cancelTranscription,
+  captureAnchor,
+  restoreAnchor,
 }) => {
   const { t, i18n } = useTranslation();
   const [showCopied, setShowCopied] = useState(false);
@@ -407,10 +522,13 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
 
   // Queued or being transcribed in the background.
   const retrying = job !== undefined;
+  useLayoutEffect(() => {
+    restoreAnchor();
+  }, [retrying, restoreAnchor]);
   useEffect(() => {
     if (!retrying) setCancelling(false);
   }, [retrying]);
-  const hasTranscription = entry.transcription_text.trim().length > 0;
+  const hasTranscription = historyCopyText(entry).trim().length > 0;
   const folded = hasTranscription && !retrying && !expanded;
 
   // Offer "Show more" only when the folded text is actually cut off.
@@ -452,6 +570,30 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
       notify({ title: t("settings.history.deleteError") });
     }
   };
+  const [asking, setAsking] = useState(false);
+  const latestDelete = useRef(handleDeleteEntry);
+  latestDelete.current = handleDeleteEntry;
+  const deleteControls = useMemo(
+    () =>
+      entryDeleteControls({
+        show: setAsking,
+        remove: () => latestDelete.current(),
+      }),
+    [],
+  );
+  const rowRef = useFocusReturn<HTMLDivElement>(
+    asking ? String(entry.id) : null,
+  );
+
+  const handleRetranscribe = async () => {
+    captureAnchor();
+    try {
+      await retryTranscription(entry.id);
+    } catch (error) {
+      console.error("Failed to re-transcribe:", error);
+      notify({ title: t("settings.history.retranscribeError") });
+    }
+  };
 
   const formattedDate = formatDateTime(String(entry.timestamp), i18n.language);
 
@@ -465,7 +607,12 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   }
 
   return (
-    <div className="px-4 py-2 pb-5 flex flex-col gap-3">
+    <div
+      ref={rowRef}
+      data-history-entry-id={entry.id}
+      data-confirm-row={entry.id}
+      className="px-4 py-2 pb-5 flex flex-col gap-3"
+    >
       <div className="flex justify-between items-center gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <p className="text-sm font-medium shrink-0">{formattedDate}</p>
@@ -479,106 +626,80 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             </span>
           )}
         </div>
-        <div className="flex items-center shrink-0">
-          <IconButton
-            onClick={handleCopyText}
-            disabled={!hasTranscription || retrying}
-            title={t("settings.history.copyToClipboard")}
-          >
-            {showCopied ? (
-              <Check width={16} height={16} />
-            ) : (
-              <Copy width={16} height={16} />
-            )}
-          </IconButton>
-          <IconButton
-            onClick={onToggleSaved}
-            active={entry.saved}
-            title={
-              entry.saved
-                ? t("settings.history.unsave")
-                : t("settings.history.save")
-            }
-          >
-            <Star
-              width={16}
-              height={16}
-              fill={entry.saved ? "currentColor" : "none"}
-            />
-          </IconButton>
-          {retrying ? (
-            <IconButton
-              onClick={() => {
-                setCancelling(true);
-                void cancelTranscription(entry.id);
-              }}
-              disabled={cancelling}
-              title={t("settings.history.cancelTranscription")}
-            >
-              <X width={16} height={16} />
-            </IconButton>
-          ) : (
-            <IconButton
-              onClick={() => retryTranscription(entry.id)}
-              title={t("settings.history.retranscribe")}
-            >
-              <RotateCcw width={16} height={16} />
-            </IconButton>
-          )}
-          <IconButton
-            onClick={handleDeleteEntry}
-            title={t("settings.history.delete")}
-          >
-            <Trash2 width={16} height={16} />
-          </IconButton>
-        </div>
+        <EntryActionsOrConfirm
+          asking={asking}
+          processed={cleanedText(entry) !== null}
+          rawAvailable={entry.transcription_text.trim().length > 0}
+          hasText={hasTranscription}
+          saved={entry.saved}
+          retrying={retrying}
+          copied={showCopied}
+          onCopy={() => void handleCopyText()}
+          onCopyRaw={() =>
+            void copyHistoryRaw(onCopyRaw, () =>
+              notify({ title: t("settings.history.copyError") }),
+            )
+          }
+          onToggleSaved={onToggleSaved}
+          onRetranscribe={() => void handleRetranscribe()}
+          onCancel={() => {
+            setCancelling(true);
+            void cancelTranscription(entry.id);
+          }}
+          cancelling={cancelling}
+          {...deleteControls}
+        />
       </div>
 
-      <div className="flex flex-col items-start gap-1 pb-2">
-        <p
-          ref={textRef}
-          className={`italic text-sm w-full ${
-            retrying
-              ? ""
-              : hasTranscription
-                ? "text-text select-text cursor-text whitespace-pre-wrap break-words"
-                : "text-ink-3"
-          }`}
-          style={
-            retrying
-              ? TRANSCRIBE_PULSE
-              : folded
-                ? {
-                    display: "-webkit-box",
-                    WebkitLineClamp: FOLDED_LINES,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }
-                : undefined
-          }
-        >
-          {retrying && <TranscribePulseKeyframes />}
-          {retrying
-            ? progressText
-            : hasTranscription
-              ? entry.transcription_text
-              : entry.source_name
-                ? // Cancelled, interrupted by a quit, or failed.
-                  t("settings.history.notTranscribed")
-                : t("settings.history.transcriptionFailed")}
-        </p>
-        {hasTranscription && !retrying && (expanded || overflows) && (
-          <button
-            type="button"
-            onClick={() => setExpanded(!expanded)}
-            className="text-xs font-medium text-ink-3 hover:text-logo-primary cursor-pointer"
+      {!retrying && cleanedText(entry) !== null ? (
+        <HistoryCompare entry={entry} view={view} modelName={modelName} />
+      ) : (
+        <div className="flex flex-col items-start gap-1 pb-2">
+          <p
+            ref={textRef}
+            className={`italic text-sm w-full ${
+              retrying
+                ? ""
+                : hasTranscription
+                  ? "text-text select-text cursor-text whitespace-pre-wrap break-words"
+                  : "text-ink-3"
+            }`}
+            style={
+              retrying
+                ? TRANSCRIBE_PULSE
+                : folded
+                  ? {
+                      display: "-webkit-box",
+                      WebkitLineClamp: FOLDED_LINES,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }
+                  : undefined
+            }
           >
-            {expanded
-              ? t("settings.history.showLess")
-              : t("settings.history.showMore")}
-          </button>
-        )}
-      </div>
+            {retrying && <TranscribePulseKeyframes />}
+            {retrying
+              ? progressText
+              : hasTranscription
+                ? entry.transcription_text
+                : entry.source_name
+                  ? // Cancelled, interrupted by a quit, or failed.
+                    t("settings.history.notTranscribed")
+                  : t("settings.history.transcriptionFailed")}
+          </p>
+          {hasTranscription && !retrying && (expanded || overflows) && (
+            <button
+              type="button"
+              onClick={() => setExpanded(!expanded)}
+              className="text-xs font-medium text-ink-3 hover:text-logo-primary cursor-pointer"
+            >
+              {expanded
+                ? t("settings.history.showLess")
+                : t("settings.history.showMore")}
+            </button>
+          )}
+        </div>
+      )}
 
       <AudioPlayer onLoadRequest={handleLoadAudio} className="w-full" />
     </div>

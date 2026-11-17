@@ -1,0 +1,5836 @@
+{
+ "language": "en",
+ "repo": "sulabhkatiyar/indic-tiny-tts-english",
+ "revision": "eea5d4a578c0f18173825a037487cf9c47ed4247",
+ "package_build_code_sha": "gf8f38ffb",
+ "normalization_version": "4",
+ "vocab_hash": "c9b582c535aa7921",
+ "vocab_mode": "chr",
+ "add_blank": true,
+ "en_mode": "chr",
+ "config_sha256": "473692ba1fdecbc7353957a5558199f741b69724f04e4ee2c550d5d6e1625ec5",
+ "package_files_hash_checked": 9,
+ "symbols": [
+  "<blank>",
+  "<unk>",
+  "c: ",
+  "c:!",
+  "c:\"",
+  "c:'",
+  "c:(",
+  "c:)",
+  "c:,",
+  "c:-",
+  "c:.",
+  "c::",
+  "c:;",
+  "c:?",
+  "c:A",
+  "c:B",
+  "c:C",
+  "c:D",
+  "c:E",
+  "c:F",
+  "c:G",
+  "c:H",
+  "c:I",
+  "c:J",
+  "c:K",
+  "c:L",
+  "c:M",
+  "c:N",
+  "c:O",
+  "c:P",
+  "c:Q",
+  "c:R",
+  "c:S",
+  "c:T",
+  "c:U",
+  "c:V",
+  "c:W",
+  "c:X",
+  "c:Y",
+  "c:Z",
+  "c:a",
+  "c:b",
+  "c:c",
+  "c:d",
+  "c:e",
+  "c:f",
+  "c:g",
+  "c:h",
+  "c:i",
+  "c:j",
+  "c:k",
+  "c:l",
+  "c:m",
+  "c:n",
+  "c:o",
+  "c:p",
+  "c:q",
+  "c:r",
+  "c:s",
+  "c:t",
+  "c:u",
+  "c:v",
+  "c:w",
+  "c:x",
+  "c:y",
+  "c:z",
+  "c:\u00e0",
+  "c:\u00e2",
+  "c:\u00e8",
+  "c:\u00e9",
+  "c:\u00ef",
+  "c:\u00f4",
+  "c:\u2013",
+  "c:\u2014",
+  "c:\u2018",
+  "c:\u2019",
+  "c:\u201c",
+  "c:\u201d",
+  "c:\ufe0f"
+ ],
+ "rows": [
+  {
+   "input": "Dr. Smith is here.",
+   "tag": "abbr-dr",
+   "pre_pass": "Doctor Smith is here.",
+   "single_pass": "Doctor Smith is here.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Dr Smith is here.",
+   "tag": "abbr-dr",
+   "pre_pass": "Doctor Smith is here.",
+   "single_pass": "Doctor Smith is here.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "dr. smith",
+   "tag": "abbr-dr",
+   "pre_pass": "Doctor smith",
+   "single_pass": "Doctor smith",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "DR. SMITH",
+   "tag": "abbr-dr",
+   "pre_pass": "Doctor S M I T H",
+   "single_pass": "Doctor S M I T H",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "I saw Dr. Rao. He left.",
+   "tag": "abbr-dr",
+   "pre_pass": "I saw Doctor Rao. He left.",
+   "single_pass": "I saw Doctor Rao. He left.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Dr.Rao",
+   "tag": "abbr-dr",
+   "pre_pass": "DoctorRao",
+   "single_pass": "DoctorRao",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Drs. Rao and Jain",
+   "tag": "abbr-dr",
+   "pre_pass": "Drs. Rao and Jain",
+   "single_pass": "Drs. Rao and Jain",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "the Dr. said",
+   "tag": "abbr-dr",
+   "pre_pass": "the Doctor said",
+   "single_pass": "the Doctor said",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Dr. A. P. J. Abdul Kalam",
+   "tag": "abbr-dr",
+   "pre_pass": "Doctor A P J Abdul Kalam",
+   "single_pass": "Doctor A P J Abdul Kalam",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a Dr. b",
+   "tag": "abbr-dr",
+   "pre_pass": "a Doctor b",
+   "single_pass": "a Doctor b",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Dr Prof Smith",
+   "tag": "abbr-dr",
+   "pre_pass": "Doctor Professor Smith",
+   "single_pass": "Doctor Professor Smith",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 Dr. Rao",
+   "tag": "abbr-dr",
+   "pre_pass": "5 Dr. Rao",
+   "single_pass": "5 Dr. Rao",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "x.Dr. Rao",
+   "tag": "abbr-dr",
+   "pre_pass": "x.Dr. Rao",
+   "single_pass": "x.Dr. Rao",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Dr. (Mrs.) Rao",
+   "tag": "abbr-dr",
+   "pre_pass": "Doctor (Missus) Rao",
+   "single_pass": "Doctor (Missus) Rao",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "My doctor. Dr. Rao will see you.",
+   "tag": "abbr-dr",
+   "pre_pass": "My doctor. Doctor Rao will see you.",
+   "single_pass": "My doctor. Doctor Rao will see you.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Mr. Sharma and Mrs. Sharma",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Mister Sharma and Missus Sharma",
+   "single_pass": "Mister Sharma and Missus Sharma",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Mr Sharma",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Mr Sharma",
+   "single_pass": "Mr Sharma",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "mr. sharma",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Mister sharma",
+   "single_pass": "Mister sharma",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MR. SHARMA",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Mister S H A R M A",
+   "single_pass": "Mister S H A R M A",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Mrs. Gupta",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Missus Gupta",
+   "single_pass": "Missus Gupta",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Mrs Gupta",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Mrs Gupta",
+   "single_pass": "Mrs Gupta",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Ms. Gupta is here.",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Miss Gupta is here.",
+   "single_pass": "Miss Gupta is here.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Ms Gupta",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Ms Gupta",
+   "single_pass": "Ms Gupta",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "A Ms. Gupta",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "A Ms. Gupta",
+   "single_pass": "A Ms. Gupta",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "C Ms. met",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "C Ms. met",
+   "single_pass": "C Ms. met",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "CMs. met",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "C Ms. met",
+   "single_pass": "C Ms. met",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MS. Dhoni scored",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "M S. Dhoni scored",
+   "single_pass": "M S. Dhoni scored",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MS Dhoni scored",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "M S Dhoni scored",
+   "single_pass": "M S Dhoni scored",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Ms. Anita and Mr. Raj",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Miss Anita and Mister Raj",
+   "single_pass": "Miss Anita and Mister Raj",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Mr.Sharma",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "MisterSharma",
+   "single_pass": "MisterSharma",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Mr. and Mrs. Sharma",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Mister and Missus Sharma",
+   "single_pass": "Mister and Missus Sharma",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "the CMs. of states",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "the C Ms. of states",
+   "single_pass": "the C Ms. of states",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "B Ms. Rao",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "B Ms. Rao",
+   "single_pass": "B Ms. Rao",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Ms.",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Miss",
+   "single_pass": "Miss",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Mr.",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Mister",
+   "single_pass": "Mister",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Mrs.",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Missus",
+   "single_pass": "Missus",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Prof. Rao teaches.",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Professor Rao teaches.",
+   "single_pass": "Professor Rao teaches.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Prof Rao teaches.",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Professor Rao teaches.",
+   "single_pass": "Professor Rao teaches.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Prof. A. K. Sen",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Professor A K Sen",
+   "single_pass": "Professor A K Sen",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "prof. sen",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Professor sen",
+   "single_pass": "Professor sen",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Smt. Devi",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Shrimati Devi",
+   "single_pass": "Shrimati Devi",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Smt Devi",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Shrimati Devi",
+   "single_pass": "Shrimati Devi",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Sri Ram",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Sri Ram",
+   "single_pass": "Sri Ram",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Sri. Ram",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Shri Ram",
+   "single_pass": "Shri Ram",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Shri Ram",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Shri Ram",
+   "single_pass": "Shri Ram",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Shri. Ram",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Shri Ram",
+   "single_pass": "Shri Ram",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Sri.",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Shri",
+   "single_pass": "Shri",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Smt Gupta and Shri Rao",
+   "tag": "abbr-mr-mrs-ms",
+   "pre_pass": "Shrimati Gupta and Shri Rao",
+   "single_pass": "Shrimati Gupta and Shri Rao",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Lt. Sharma",
+   "tag": "abbr-titles",
+   "pre_pass": "Lieutenant Sharma",
+   "single_pass": "Lieutenant Sharma",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Lt. Gen. Rao",
+   "tag": "abbr-titles",
+   "pre_pass": "Lieutenant General Rao",
+   "single_pass": "Lieutenant General Rao",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Col. Singh",
+   "tag": "abbr-titles",
+   "pre_pass": "Colonel Singh",
+   "single_pass": "Colonel Singh",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Capt. Kohli",
+   "tag": "abbr-titles",
+   "pre_pass": "Captain Kohli",
+   "single_pass": "Captain Kohli",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Gen. Rawat",
+   "tag": "abbr-titles",
+   "pre_pass": "General Rawat",
+   "single_pass": "General Rawat",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Maj. Gen. Khan",
+   "tag": "abbr-titles",
+   "pre_pass": "Major General Khan",
+   "single_pass": "Major General Khan",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Brig. Das",
+   "tag": "abbr-titles",
+   "pre_pass": "Brigadier Das",
+   "single_pass": "Brigadier Das",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Mt. Everest",
+   "tag": "abbr-titles",
+   "pre_pass": "Mount Everest",
+   "single_pass": "Mount Everest",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Jr. NTR",
+   "tag": "abbr-titles",
+   "pre_pass": "Junior N T R",
+   "single_pass": "Junior N T R",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Sr. Advocate Rao",
+   "tag": "abbr-titles",
+   "pre_pass": "Senior Advocate Rao",
+   "single_pass": "Senior Advocate Rao",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Martin Luther King Jr. He spoke.",
+   "tag": "abbr-titles",
+   "pre_pass": "Martin Luther King Junior. He spoke.",
+   "single_pass": "Martin Luther King Junior. He spoke.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Martin Luther King Jr. spoke.",
+   "tag": "abbr-titles",
+   "pre_pass": "Martin Luther King Junior spoke.",
+   "single_pass": "Martin Luther King Junior spoke.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Martin Luther King Jr.",
+   "tag": "abbr-titles",
+   "pre_pass": "Martin Luther King Junior.",
+   "single_pass": "Martin Luther King Junior.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Robert Downey Jr",
+   "tag": "abbr-titles",
+   "pre_pass": "Robert Downey Jr",
+   "single_pass": "Robert Downey Jr",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Sr. Manager",
+   "tag": "abbr-titles",
+   "pre_pass": "Senior Manager",
+   "single_pass": "Senior Manager",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Tata Pvt. Ltd.",
+   "tag": "abbr-titles",
+   "pre_pass": "Tata Private Limited.",
+   "single_pass": "Tata Private Limited.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Tata Pvt Ltd",
+   "tag": "abbr-titles",
+   "pre_pass": "Tata Private Limited",
+   "single_pass": "Tata Private Limited",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Tata Pvt. Ltd. is big.",
+   "tag": "abbr-titles",
+   "pre_pass": "Tata Private Limited is big.",
+   "single_pass": "Tata Private Limited is big.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Tata Pvt.Ltd.",
+   "tag": "abbr-titles",
+   "pre_pass": "Tata Private Limited.",
+   "single_pass": "Tata Private Ltd.",
+   "needs_more_than_one_pass": true
+  },
+  {
+   "input": "ABC Pvt. Ltd. They left.",
+   "tag": "abbr-titles",
+   "pre_pass": "A B C Private Limited. They left.",
+   "single_pass": "A B C Private Limited. They left.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Covid-19 Pvt Ltd",
+   "tag": "abbr-titles",
+   "pre_pass": "Covid-19 Private Limited",
+   "single_pass": "Covid-19 Private Limited",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Infosys Ltd.",
+   "tag": "abbr-titles",
+   "pre_pass": "Infosys Limited.",
+   "single_pass": "Infosys Limited.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Infosys Ltd. announced",
+   "tag": "abbr-titles",
+   "pre_pass": "Infosys Limited announced",
+   "single_pass": "Infosys Limited announced",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Infosys Ltd announced",
+   "tag": "abbr-titles",
+   "pre_pass": "Infosys Limited announced",
+   "single_pass": "Infosys Limited announced",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Ltd.",
+   "tag": "abbr-titles",
+   "pre_pass": "Limited.",
+   "single_pass": "Limited.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Pvt.",
+   "tag": "abbr-titles",
+   "pre_pass": "Private",
+   "single_pass": "Private",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Lt.Col. Rao",
+   "tag": "abbr-titles",
+   "pre_pass": "Lt.Col. Rao",
+   "single_pass": "Lt.Col. Rao",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "lt. rao",
+   "tag": "abbr-titles",
+   "pre_pass": "lt. rao",
+   "single_pass": "lt. rao",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "LT. RAO",
+   "tag": "abbr-titles",
+   "pre_pass": "L T R A O",
+   "single_pass": "L T. R A O",
+   "needs_more_than_one_pass": true
+  },
+  {
+   "input": "Col.",
+   "tag": "abbr-titles",
+   "pre_pass": "Colonel",
+   "single_pass": "Colonel",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Capt",
+   "tag": "abbr-titles",
+   "pre_pass": "Capt",
+   "single_pass": "Capt",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Maj",
+   "tag": "abbr-titles",
+   "pre_pass": "Maj",
+   "single_pass": "Maj",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Gen",
+   "tag": "abbr-titles",
+   "pre_pass": "Gen",
+   "single_pass": "Gen",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Sr. No. 5",
+   "tag": "abbr-serial-no",
+   "pre_pass": "Serial number 5",
+   "single_pass": "Serial number 5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Sr No 5",
+   "tag": "abbr-serial-no",
+   "pre_pass": "Serial number 5",
+   "single_pass": "Serial number 5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "sr.no.5",
+   "tag": "abbr-serial-no",
+   "pre_pass": "Serial number 5",
+   "single_pass": "Serial number 5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Sr.No.5",
+   "tag": "abbr-serial-no",
+   "pre_pass": "Serial number 5",
+   "single_pass": "Serial number 5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "SR. NO. 5",
+   "tag": "abbr-serial-no",
+   "pre_pass": "Serial number 5",
+   "single_pass": "Serial number 5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Sr. No. 12 is done.",
+   "tag": "abbr-serial-no",
+   "pre_pass": "Serial number 12 is done.",
+   "single_pass": "Serial number 12 is done.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "The Sr. No. 7",
+   "tag": "abbr-serial-no",
+   "pre_pass": "The serial number 7",
+   "single_pass": "The serial number 7",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "No. 5",
+   "tag": "abbr-serial-no",
+   "pre_pass": "Number 5",
+   "single_pass": "Number 5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "no. 5",
+   "tag": "abbr-serial-no",
+   "pre_pass": "Number 5",
+   "single_pass": "Number 5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "No 5",
+   "tag": "abbr-serial-no",
+   "pre_pass": "No 5",
+   "single_pass": "No 5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "No.5",
+   "tag": "abbr-serial-no",
+   "pre_pass": "Number 5",
+   "single_pass": "Number 5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "NO. 5",
+   "tag": "abbr-serial-no",
+   "pre_pass": "Number 5",
+   "single_pass": "Number 5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Room No. 12",
+   "tag": "abbr-serial-no",
+   "pre_pass": "Room number 12",
+   "single_pass": "Room number 12",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "House No.7",
+   "tag": "abbr-serial-no",
+   "pre_pass": "House number 7",
+   "single_pass": "House number 7",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Flight No. 302",
+   "tag": "abbr-serial-no",
+   "pre_pass": "Flight number 302",
+   "single_pass": "Flight number 302",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "No. five",
+   "tag": "abbr-serial-no",
+   "pre_pass": "No. five",
+   "single_pass": "No. five",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "No. 5. It is done.",
+   "tag": "abbr-serial-no",
+   "pre_pass": "Number 5. It is done.",
+   "single_pass": "Number 5. It is done.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Is No. 5 ready?",
+   "tag": "abbr-serial-no",
+   "pre_pass": "Is number 5 ready?",
+   "single_pass": "Is number 5 ready?",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "No.",
+   "tag": "abbr-serial-no",
+   "pre_pass": "No.",
+   "single_pass": "No.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Govt. of India",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "Government of India",
+   "single_pass": "Government of India",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Govt of India",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "Government of India",
+   "single_pass": "Government of India",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "govt. schools",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "Government schools",
+   "single_pass": "Government schools",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "GOVT. JOBS",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "Government. J O B S",
+   "single_pass": "Government. J O B S",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "the Govt.",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "the Government.",
+   "single_pass": "the Government.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "the Govt. They said.",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "the Government. They said.",
+   "single_pass": "the Government. They said.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Govt. Rao",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "Government. Rao",
+   "single_pass": "Government. Rao",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "etc.",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "et cetera.",
+   "single_pass": "et cetera.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "apples, oranges etc.",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "apples, oranges et cetera.",
+   "single_pass": "apples, oranges et cetera.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "apples, oranges etc. and more",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "apples, oranges et cetera and more",
+   "single_pass": "apples, oranges et cetera and more",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "apples etc",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "apples et cetera",
+   "single_pass": "apples et cetera",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "ETC.",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "et cetera.",
+   "single_pass": "et cetera.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "etc. Then",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "et cetera. Then",
+   "single_pass": "et cetera. Then",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "etc.) and",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "et cetera) and",
+   "single_pass": "et cetera) and",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "India vs. Pakistan",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "India versus Pakistan",
+   "single_pass": "India versus Pakistan",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "India vs Pakistan",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "India versus Pakistan",
+   "single_pass": "India versus Pakistan",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "India v/s Pakistan",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "India versus Pakistan",
+   "single_pass": "India versus Pakistan",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "India V/S Pakistan",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "India versus Pakistan",
+   "single_pass": "India versus Pakistan",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "VS. Rao",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "versus Rao",
+   "single_pass": "versus Rao",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "V S Achuthanandan",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "V S Achuthanandan",
+   "single_pass": "V S Achuthanandan",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "VS Achuthanandan",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "V S Achuthanandan",
+   "single_pass": "V S Achuthanandan",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Ram vs. Shyam. Who won?",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "Ram versus Shyam. Who won?",
+   "single_pass": "Ram versus Shyam. Who won?",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 vs. 6",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "5 vs. 6",
+   "single_pass": "5 vs. 6",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "vsa",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "vsa",
+   "single_pass": "vsa",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "vs.a",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "versus.a",
+   "single_pass": "versus.a",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Aevs. B",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "Aevs. B",
+   "single_pass": "Aevs. B",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "B v/s. C",
+   "tag": "abbr-govt-etc-vs",
+   "pre_pass": "B versus. C",
+   "single_pass": "B versus. C",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "e.g. apples",
+   "tag": "abbr-eg-ie",
+   "pre_pass": "for example apples",
+   "single_pass": "for example apples",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "E.g. apples",
+   "tag": "abbr-eg-ie",
+   "pre_pass": "for example apples",
+   "single_pass": "for example apples",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "i.e. apples",
+   "tag": "abbr-eg-ie",
+   "pre_pass": "that is apples",
+   "single_pass": "that is apples",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "I.E. apples",
+   "tag": "abbr-eg-ie",
+   "pre_pass": "that is apples",
+   "single_pass": "that is apples",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "(e.g. this)",
+   "tag": "abbr-eg-ie",
+   "pre_pass": "(for example this)",
+   "single_pass": "(for example this)",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "fruit, e.g. apples, i.e. sweet",
+   "tag": "abbr-eg-ie",
+   "pre_pass": "fruit, for example apples, that is sweet",
+   "single_pass": "fruit, for example apples, that is sweet",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "e.g.apples",
+   "tag": "abbr-eg-ie",
+   "pre_pass": "e.g.apples",
+   "single_pass": "e.g.apples",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "ae.g. b",
+   "tag": "abbr-eg-ie",
+   "pre_pass": "ae.g. b",
+   "single_pass": "ae.g. b",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "e.g",
+   "tag": "abbr-eg-ie",
+   "pre_pass": "e.g",
+   "single_pass": "e.g",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "i.e.",
+   "tag": "abbr-eg-ie",
+   "pre_pass": "that is",
+   "single_pass": "that is",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "that is, i.e. this",
+   "tag": "abbr-eg-ie",
+   "pre_pass": "that is, that is this",
+   "single_pass": "that is, that is this",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "St. Xavier's College",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Saint Xavier's College",
+   "single_pass": "Saint Xavier's College",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "St Xavier's College",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Saint Xavier's College",
+   "single_pass": "Saint Xavier's College",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "St. Mary",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Saint Mary",
+   "single_pass": "Saint Mary",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "st. mary",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Saint mary",
+   "single_pass": "Saint mary",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "ST. MARY",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Saint M A R why",
+   "single_pass": "Saint M A R why",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Park St.",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Park Street.",
+   "single_pass": "Park Street.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Park St. Kolkata",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Park Saint Kolkata",
+   "single_pass": "Park Saint Kolkata",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MG Road St., Pune",
+   "tag": "abbr-saint-street",
+   "pre_pass": "M G Road Street, Pune",
+   "single_pass": "M G Road Street, Pune",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Mount St. Mary's",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Mount Saint Mary's",
+   "single_pass": "Mount Saint Mary's",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Park St. He left.",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Park Saint He left.",
+   "single_pass": "Park Saint He left.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 St.",
+   "tag": "abbr-saint-street",
+   "pre_pass": "5 St.",
+   "single_pass": "5 St.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "St.",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Saint",
+   "single_pass": "Saint",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "St",
+   "tag": "abbr-saint-street",
+   "pre_pass": "St",
+   "single_pass": "St",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "We went to St Joseph's.",
+   "tag": "abbr-saint-street",
+   "pre_pass": "We went to Saint Joseph's.",
+   "single_pass": "We went to Saint Joseph's.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "the St Joseph",
+   "tag": "abbr-saint-street",
+   "pre_pass": "the Saint Joseph",
+   "single_pass": "the Saint Joseph",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Main St. and 5th St. meet",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Main Street and 5th Street meet",
+   "single_pass": "Main Street and 5th Street meet",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Main St.. next",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Main Street. next",
+   "single_pass": "Main Street. next",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "St. Paul St. Louis",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Saint Paul Saint Louis",
+   "single_pass": "Saint Paul Saint Louis",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rose St Xavier",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Rose Saint Xavier",
+   "single_pass": "Rose Saint Xavier",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "He said St. Peter",
+   "tag": "abbr-saint-street",
+   "pre_pass": "He said Saint Peter",
+   "single_pass": "He said Saint Peter",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Elm St",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Elm St",
+   "single_pass": "Elm St",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Elm St. and Oak St.",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Elm Street and Oak Street.",
+   "single_pass": "Elm Street and Oak Street.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Is St. Mark's open?",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Is Saint Mark's open?",
+   "single_pass": "Is Saint Mark's open?",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Stone St",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Stone St",
+   "single_pass": "Stone St",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Street",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Street",
+   "single_pass": "Street",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Stop.",
+   "tag": "abbr-saint-street",
+   "pre_pass": "Stop.",
+   "single_pass": "Stop.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. 500",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 500",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs.500",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs500",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "rs 500",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "RS. 500",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "INR 500",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "inr 500",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "\u20b9500",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "\u20b9 500",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "\u20b91",
+   "tag": "currency-rupee",
+   "pre_pass": "1 rupee",
+   "single_pass": "1 rupee",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 1",
+   "tag": "currency-rupee",
+   "pre_pass": "1 rupee",
+   "single_pass": "1 rupee",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. 1.00",
+   "tag": "currency-rupee",
+   "pre_pass": "1 rupee",
+   "single_pass": "1 rupee",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. 1.50",
+   "tag": "currency-rupee",
+   "pre_pass": "1 rupee 50 paise",
+   "single_pass": "1 rupee 50 paise",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 0.50",
+   "tag": "currency-rupee",
+   "pre_pass": "50 paise",
+   "single_pass": "50 paise",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. 0.01",
+   "tag": "currency-rupee",
+   "pre_pass": "1 paise",
+   "single_pass": "1 paise",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 100.00",
+   "tag": "currency-rupee",
+   "pre_pass": "100 rupees",
+   "single_pass": "100 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 2.5",
+   "tag": "currency-rupee",
+   "pre_pass": "2.5 rupees",
+   "single_pass": "2.5 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 2.505",
+   "tag": "currency-rupee",
+   "pre_pass": "2.505 rupees",
+   "single_pass": "2.505 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 1,000",
+   "tag": "currency-rupee",
+   "pre_pass": "1,000 rupees",
+   "single_pass": "1,000 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 1,000.50",
+   "tag": "currency-rupee",
+   "pre_pass": "1,000 rupees 50 paise",
+   "single_pass": "1,000 rupees 50 paise",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. 1,50,000",
+   "tag": "currency-rupee",
+   "pre_pass": "1 lakh 50 thousand rupees",
+   "single_pass": "1 lakh 50 thousand rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. 1,50,000.75",
+   "tag": "currency-rupee",
+   "pre_pass": "1 lakh 50 thousand rupees 75 paise",
+   "single_pass": "1 lakh 50 thousand rupees 75 paise",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 5/-",
+   "tag": "currency-rupee",
+   "pre_pass": "5 rupees",
+   "single_pass": "5 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. 500/-",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 500 /-",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. 5 lakh",
+   "tag": "currency-rupee",
+   "pre_pass": "5 lakh rupees",
+   "single_pass": "5 lakh rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 5 lakhs",
+   "tag": "currency-rupee",
+   "pre_pass": "5 lakh rupees",
+   "single_pass": "5 lakh rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 5 lac",
+   "tag": "currency-rupee",
+   "pre_pass": "5 lakh rupees",
+   "single_pass": "5 lakh rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 5 lacs",
+   "tag": "currency-rupee",
+   "pre_pass": "5 lakh rupees",
+   "single_pass": "5 lakh rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 2 crore",
+   "tag": "currency-rupee",
+   "pre_pass": "2 crore rupees",
+   "single_pass": "2 crore rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 2 crores",
+   "tag": "currency-rupee",
+   "pre_pass": "2 crore rupees",
+   "single_pass": "2 crore rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 2 cr",
+   "tag": "currency-rupee",
+   "pre_pass": "2 crore rupees",
+   "single_pass": "2 crore rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 2 cr.",
+   "tag": "currency-rupee",
+   "pre_pass": "2 crore rupees.",
+   "single_pass": "2 crore rupees.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 2 cr. They",
+   "tag": "currency-rupee",
+   "pre_pass": "2 crore rupees. They",
+   "single_pass": "2 crore rupees. They",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 2 crs",
+   "tag": "currency-rupee",
+   "pre_pass": "2 crore rupees",
+   "single_pass": "2 crore rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 3 lakh crore",
+   "tag": "currency-rupee",
+   "pre_pass": "3 lakh crore rupees",
+   "single_pass": "3 lakh crore rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 3 thousand crore",
+   "tag": "currency-rupee",
+   "pre_pass": "3 thousand crore rupees",
+   "single_pass": "3 thousand crore rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 5 thousand",
+   "tag": "currency-rupee",
+   "pre_pass": "5 thousand rupees",
+   "single_pass": "5 thousand rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 5 million",
+   "tag": "currency-rupee",
+   "pre_pass": "5 million rupees",
+   "single_pass": "5 million rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 5 billion",
+   "tag": "currency-rupee",
+   "pre_pass": "5 billion rupees",
+   "single_pass": "5 billion rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 5 lakh.",
+   "tag": "currency-rupee",
+   "pre_pass": "5 lakh rupees.",
+   "single_pass": "5 lakh rupees.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 5 lakh. Next",
+   "tag": "currency-rupee",
+   "pre_pass": "5 lakh rupees. Next",
+   "single_pass": "5 lakh rupees. Next",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. 10 crore.",
+   "tag": "currency-rupee",
+   "pre_pass": "10 crore rupees.",
+   "single_pass": "10 crore rupees.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. 5-10 lakh",
+   "tag": "currency-rupee",
+   "pre_pass": "5 to 10 lakh rupees",
+   "single_pass": "5 to 10 lakh rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. 500 to 800",
+   "tag": "currency-rupee",
+   "pre_pass": "500 to 800 rupees",
+   "single_pass": "500 to 800 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 5-10",
+   "tag": "currency-rupee",
+   "pre_pass": "5 to 10 rupees",
+   "single_pass": "5 to 10 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. 5 \u2013 10 lakh",
+   "tag": "currency-rupee",
+   "pre_pass": "5 to 10 lakh rupees",
+   "single_pass": "5 to 10 lakh rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "\u20b95-10",
+   "tag": "currency-rupee",
+   "pre_pass": "5 to 10 rupees",
+   "single_pass": "5 to 10 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 5 to 10 cr",
+   "tag": "currency-rupee",
+   "pre_pass": "5 to 10 crore rupees",
+   "single_pass": "5 to 10 crore rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 5 to 10 cr. Then",
+   "tag": "currency-rupee",
+   "pre_pass": "5 to 10 crore rupees. Then",
+   "single_pass": "5 to 10 crore rupees. Then",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "500 INR",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "500 inr",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "500INR",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupees",
+   "single_pass": "500 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "50 USD",
+   "tag": "currency-rupee",
+   "pre_pass": "50 dollars",
+   "single_pass": "50 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "50 usd",
+   "tag": "currency-rupee",
+   "pre_pass": "50 dollars",
+   "single_pass": "50 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "50USD",
+   "tag": "currency-rupee",
+   "pre_pass": "50 dollars",
+   "single_pass": "50 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5,000 INR",
+   "tag": "currency-rupee",
+   "pre_pass": "5,000 rupees",
+   "single_pass": "5,000 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2.50 INR",
+   "tag": "currency-rupee",
+   "pre_pass": "2 rupees 50 paise",
+   "single_pass": "2 rupees 50 paise",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs.",
+   "tag": "currency-rupee",
+   "pre_pass": "Rs.",
+   "single_pass": "Rs.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs",
+   "tag": "currency-rupee",
+   "pre_pass": "Rs",
+   "single_pass": "Rs",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "INR",
+   "tag": "currency-rupee",
+   "pre_pass": "I N R",
+   "single_pass": "I N R",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. abc",
+   "tag": "currency-rupee",
+   "pre_pass": "Rs. abc",
+   "single_pass": "Rs. abc",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs500abc",
+   "tag": "currency-rupee",
+   "pre_pass": "500 rupeesabc",
+   "single_pass": "500 rupeesabc",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "ARs 500",
+   "tag": "currency-rupee",
+   "pre_pass": "A 500 rupees",
+   "single_pass": "A Rs 500",
+   "needs_more_than_one_pass": true
+  },
+  {
+   "input": "Rs. 5,",
+   "tag": "currency-rupee",
+   "pre_pass": "5 rupees,",
+   "single_pass": "5 rupees,",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. 5.",
+   "tag": "currency-rupee",
+   "pre_pass": "5 rupees.",
+   "single_pass": "5 rupees.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs. .5",
+   "tag": "currency-rupee",
+   "pre_pass": "Rs. .5",
+   "single_pass": "Rs. .5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Rs 1,2,3",
+   "tag": "currency-rupee",
+   "pre_pass": "1,2,3 rupees",
+   "single_pass": "1,2,3 rupees",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$5",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars",
+   "single_pass": "5 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$ 5",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars",
+   "single_pass": "5 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$5.00",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars",
+   "single_pass": "5 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$5.50",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars 50 cents",
+   "single_pass": "5 dollars 50 cents",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$0.50",
+   "tag": "currency-dollar",
+   "pre_pass": "50 cents",
+   "single_pass": "50 cents",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$0.01",
+   "tag": "currency-dollar",
+   "pre_pass": "1 cent",
+   "single_pass": "1 cent",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$1",
+   "tag": "currency-dollar",
+   "pre_pass": "1 dollar",
+   "single_pass": "1 dollar",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$1.01",
+   "tag": "currency-dollar",
+   "pre_pass": "1 dollar 1 cent",
+   "single_pass": "1 dollar 1 cent",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$1,000",
+   "tag": "currency-dollar",
+   "pre_pass": "1,000 dollars",
+   "single_pass": "1,000 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$1,000.99",
+   "tag": "currency-dollar",
+   "pre_pass": "1,000 dollars 99 cents",
+   "single_pass": "1,000 dollars 99 cents",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$5 million",
+   "tag": "currency-dollar",
+   "pre_pass": "5 million dollars",
+   "single_pass": "5 million dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$5 billion",
+   "tag": "currency-dollar",
+   "pre_pass": "5 billion dollars",
+   "single_pass": "5 billion dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$5-10",
+   "tag": "currency-dollar",
+   "pre_pass": "5 to 10 dollars",
+   "single_pass": "5 to 10 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$5 to 10",
+   "tag": "currency-dollar",
+   "pre_pass": "5 to 10 dollars",
+   "single_pass": "5 to 10 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$5-$10",
+   "tag": "currency-dollar",
+   "pre_pass": "5 to 10 dollars",
+   "single_pass": "5 to 10 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "US$5",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars",
+   "single_pass": "5 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "US$ 5",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars",
+   "single_pass": "5 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "US$5.25",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars 25 cents",
+   "single_pass": "5 dollars 25 cents",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "US$1",
+   "tag": "currency-dollar",
+   "pre_pass": "1 dollar",
+   "single_pass": "1 dollar",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "USD 5",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars",
+   "single_pass": "5 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "USD5",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars",
+   "single_pass": "5 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "USD 5.25",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars 25 cents",
+   "single_pass": "5 dollars 25 cents",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "USD 5 million",
+   "tag": "currency-dollar",
+   "pre_pass": "5 million dollars",
+   "single_pass": "5 million dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "usd 5",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars",
+   "single_pass": "5 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 USD",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars",
+   "single_pass": "5 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$",
+   "tag": "currency-dollar",
+   "pre_pass": "$",
+   "single_pass": "$",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "US$",
+   "tag": "currency-dollar",
+   "pre_pass": "you S$",
+   "single_pass": "you S$",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$abc",
+   "tag": "currency-dollar",
+   "pre_pass": "$abc",
+   "single_pass": "$abc",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$5abc",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollarsabc",
+   "single_pass": "5 dollarsabc",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a$5",
+   "tag": "currency-dollar",
+   "pre_pass": "a5 dollars",
+   "single_pass": "a5 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$5.",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars.",
+   "single_pass": "5 dollars.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$5. Next",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars. Next",
+   "single_pass": "5 dollars. Next",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "$5, $6 and $7",
+   "tag": "currency-dollar",
+   "pre_pass": "5 dollars, 6 dollars and 7 dollars",
+   "single_pass": "5 dollars, 6 dollars and 7 dollars",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Costs $20 or Rs. 1,500.",
+   "tag": "currency-dollar",
+   "pre_pass": "Costs 20 dollars or 1,500 rupees.",
+   "single_pass": "Costs 20 dollars or 1,500 rupees.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,50,000",
+   "tag": "indian-grouping",
+   "pre_pass": "1 lakh 50 thousand",
+   "single_pass": "1 lakh 50 thousand",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2,50,00,000",
+   "tag": "indian-grouping",
+   "pre_pass": "2 crore 50 lakh",
+   "single_pass": "2 crore 50 lakh",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12,34,567",
+   "tag": "indian-grouping",
+   "pre_pass": "12 lakh 34 thousand 567",
+   "single_pass": "12 lakh 34 thousand 567",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,00,00,000",
+   "tag": "indian-grouping",
+   "pre_pass": "1 crore",
+   "single_pass": "1 crore",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "10,00,000",
+   "tag": "indian-grouping",
+   "pre_pass": "10 lakh",
+   "single_pass": "10 lakh",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,00,000",
+   "tag": "indian-grouping",
+   "pre_pass": "1 lakh",
+   "single_pass": "1 lakh",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "99,99,999",
+   "tag": "indian-grouping",
+   "pre_pass": "99 lakh 99 thousand 999",
+   "single_pass": "99 lakh 99 thousand 999",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,00,00,00,000",
+   "tag": "indian-grouping",
+   "pre_pass": "100 crore",
+   "single_pass": "100 crore",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,23,45,67,890",
+   "tag": "indian-grouping",
+   "pre_pass": "123 crore 45 lakh 67 thousand 890",
+   "single_pass": "123 crore 45 lakh 67 thousand 890",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,50,000.75",
+   "tag": "indian-grouping",
+   "pre_pass": "1 lakh 50 thousand point 7 5",
+   "single_pass": "1 lakh 50 thousand point 7 5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,50,000.5",
+   "tag": "indian-grouping",
+   "pre_pass": "1 lakh 50 thousand point 5",
+   "single_pass": "1 lakh 50 thousand point 5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,234",
+   "tag": "indian-grouping",
+   "pre_pass": "1,234",
+   "single_pass": "1,234",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,234,567",
+   "tag": "indian-grouping",
+   "pre_pass": "1,234,567",
+   "single_pass": "1,234,567",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12,345",
+   "tag": "indian-grouping",
+   "pre_pass": "12,345",
+   "single_pass": "12,345",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,23,456 people",
+   "tag": "indian-grouping",
+   "pre_pass": "1 lakh 23 thousand 456 people",
+   "single_pass": "1 lakh 23 thousand 456 people",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "(1,50,000)",
+   "tag": "indian-grouping",
+   "pre_pass": "(1 lakh 50 thousand)",
+   "single_pass": "(1 lakh 50 thousand)",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "x1,50,000",
+   "tag": "indian-grouping",
+   "pre_pass": "x1 lakh 50 thousand",
+   "single_pass": "x1 lakh 50 thousand",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,50,000x",
+   "tag": "indian-grouping",
+   "pre_pass": "1 lakh 50 thousandx",
+   "single_pass": "1 lakh 50 thousandx",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,50,0000",
+   "tag": "indian-grouping",
+   "pre_pass": "1,50,0000",
+   "single_pass": "1,50,0000",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,5,000",
+   "tag": "indian-grouping",
+   "pre_pass": "1,5,000",
+   "single_pass": "1,5,000",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,50,00",
+   "tag": "indian-grouping",
+   "pre_pass": "1,50,00",
+   "single_pass": "1,50,00",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a 1,50,000. Next",
+   "tag": "indian-grouping",
+   "pre_pass": "a 1 lakh 50 thousand. Next",
+   "single_pass": "a 1 lakh 50 thousand. Next",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,50,000, 2,50,000",
+   "tag": "indian-grouping",
+   "pre_pass": "1 lakh 50 thousand, 2 lakh 50 thousand",
+   "single_pass": "1 lakh 50 thousand, 2 lakh 50 thousand",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1.50,000",
+   "tag": "indian-grouping",
+   "pre_pass": "1.50,000",
+   "single_pass": "1.50,000",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,50,000,00",
+   "tag": "indian-grouping",
+   "pre_pass": "1,50,000,00",
+   "single_pass": "1,50,000,00",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "0,50,000",
+   "tag": "indian-grouping",
+   "pre_pass": "50 thousand",
+   "single_pass": "50 thousand",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 km",
+   "tag": "units",
+   "pre_pass": "5 kilometres",
+   "single_pass": "5 kilometres",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5km",
+   "tag": "units",
+   "pre_pass": "5 kilometres",
+   "single_pass": "5 kilometres",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 Km",
+   "tag": "units",
+   "pre_pass": "5 kilometres",
+   "single_pass": "5 kilometres",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 KM",
+   "tag": "units",
+   "pre_pass": "5 K M",
+   "single_pass": "5 K M",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 kms",
+   "tag": "units",
+   "pre_pass": "5 kilometres",
+   "single_pass": "5 kilometres",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 kmph",
+   "tag": "units",
+   "pre_pass": "5 kilometres per hour",
+   "single_pass": "5 kilometres per hour",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 km/h",
+   "tag": "units",
+   "pre_pass": "5 kilometres per hour",
+   "single_pass": "5 kilometres per hour",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 kg",
+   "tag": "units",
+   "pre_pass": "5 kilograms",
+   "single_pass": "5 kilograms",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5kg",
+   "tag": "units",
+   "pre_pass": "5 kilograms",
+   "single_pass": "5 kilograms",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1 kg",
+   "tag": "units",
+   "pre_pass": "1 kilogram",
+   "single_pass": "1 kilogram",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1.5 kg",
+   "tag": "units",
+   "pre_pass": "1.5 kilograms",
+   "single_pass": "1.5 kilograms",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1 Kg",
+   "tag": "units",
+   "pre_pass": "1 kilogram",
+   "single_pass": "1 kilogram",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 Kgs",
+   "tag": "units",
+   "pre_pass": "5 kilograms",
+   "single_pass": "5 kilograms",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 cm",
+   "tag": "units",
+   "pre_pass": "5 centimetres",
+   "single_pass": "5 centimetres",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 mm",
+   "tag": "units",
+   "pre_pass": "5 millimetres",
+   "single_pass": "5 millimetres",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 ft",
+   "tag": "units",
+   "pre_pass": "5 feet",
+   "single_pass": "5 feet",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1 ft",
+   "tag": "units",
+   "pre_pass": "1 foot",
+   "single_pass": "1 foot",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 ml",
+   "tag": "units",
+   "pre_pass": "5 millilitres",
+   "single_pass": "5 millilitres",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 mg",
+   "tag": "units",
+   "pre_pass": "5 milligrams",
+   "single_pass": "5 milligrams",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 gm",
+   "tag": "units",
+   "pre_pass": "5 grams",
+   "single_pass": "5 grams",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 gms",
+   "tag": "units",
+   "pre_pass": "5 grams",
+   "single_pass": "5 grams",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 g",
+   "tag": "units",
+   "pre_pass": "5 grams",
+   "single_pass": "5 grams",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5g",
+   "tag": "units",
+   "pre_pass": "5g",
+   "single_pass": "5g",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5G",
+   "tag": "units",
+   "pre_pass": "5G",
+   "single_pass": "5G",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1 g",
+   "tag": "units",
+   "pre_pass": "1 gram",
+   "single_pass": "1 gram",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,500 km",
+   "tag": "units",
+   "pre_pass": "1,500 kilometres",
+   "single_pass": "1,500 kilometres",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,50,000 km",
+   "tag": "units",
+   "pre_pass": "1 lakh 50 thousand kilometres",
+   "single_pass": "1 lakh 50 thousand kilometres",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2024 CM Yogi",
+   "tag": "units",
+   "pre_pass": "2024 C M Yogi",
+   "single_pass": "2024 C M Yogi",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 CM",
+   "tag": "units",
+   "pre_pass": "5 C M",
+   "single_pass": "5 C M",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 MM",
+   "tag": "units",
+   "pre_pass": "5 M M",
+   "single_pass": "5 M M",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 FT",
+   "tag": "units",
+   "pre_pass": "5 F T",
+   "single_pass": "5 F T",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Mr. 5 km",
+   "tag": "units",
+   "pre_pass": "Mister 5 kilometres",
+   "single_pass": "Mister 5 kilometres",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 kmx",
+   "tag": "units",
+   "pre_pass": "5 kmx",
+   "single_pass": "5 kmx",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "x5 km",
+   "tag": "units",
+   "pre_pass": "x5 km",
+   "single_pass": "x5 km",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 km. Next",
+   "tag": "units",
+   "pre_pass": "5 kilometres. Next",
+   "single_pass": "5 kilometres. Next",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5.5 km",
+   "tag": "units",
+   "pre_pass": "5.5 kilometres",
+   "single_pass": "5.5 kilometres",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 m",
+   "tag": "units",
+   "pre_pass": "5 m",
+   "single_pass": "5 m",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 l",
+   "tag": "units",
+   "pre_pass": "5 l",
+   "single_pass": "5 l",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 in",
+   "tag": "units",
+   "pre_pass": "5 in",
+   "single_pass": "5 in",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12/05/2024",
+   "tag": "dates",
+   "pre_pass": "12th May 2024",
+   "single_pass": "12th May 2024",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12-05-2024",
+   "tag": "dates",
+   "pre_pass": "12th May 2024",
+   "single_pass": "12th May 2024",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12.05.2024",
+   "tag": "dates",
+   "pre_pass": "12th May 2024",
+   "single_pass": "12th May 2024",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2024-05-12",
+   "tag": "dates",
+   "pre_pass": "12th May 2024",
+   "single_pass": "12th May 2024",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1/1/2000",
+   "tag": "dates",
+   "pre_pass": "1st January 2000",
+   "single_pass": "1st January 2000",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "01/01/2000",
+   "tag": "dates",
+   "pre_pass": "1st January 2000",
+   "single_pass": "1st January 2000",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "31/12/1999",
+   "tag": "dates",
+   "pre_pass": "31st December 1999",
+   "single_pass": "31st December 1999",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "29/02/2024",
+   "tag": "dates",
+   "pre_pass": "29th February 2024",
+   "single_pass": "29th February 2024",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "29/02/2023",
+   "tag": "dates",
+   "pre_pass": "29/02/2023",
+   "single_pass": "29/02/2023",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "31/04/2024",
+   "tag": "dates",
+   "pre_pass": "31/04/2024",
+   "single_pass": "31/04/2024",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "00/01/2024",
+   "tag": "dates",
+   "pre_pass": "00/01/2024",
+   "single_pass": "00/01/2024",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "13/13/2024",
+   "tag": "dates",
+   "pre_pass": "13/13/2024",
+   "single_pass": "13/13/2024",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12/05/24",
+   "tag": "dates",
+   "pre_pass": "12/05/24",
+   "single_pass": "12/05/24",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12/05/0999",
+   "tag": "dates",
+   "pre_pass": "12/05/0999",
+   "single_pass": "12/05/0999",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12/05/3000",
+   "tag": "dates",
+   "pre_pass": "12/05/3000",
+   "single_pass": "12/05/3000",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2024-5-2",
+   "tag": "dates",
+   "pre_pass": "2nd May 2024",
+   "single_pass": "2nd May 2024",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2024-13-01",
+   "tag": "dates",
+   "pre_pass": "2024-13-01",
+   "single_pass": "2024-13-01",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2024-02-30",
+   "tag": "dates",
+   "pre_pass": "2024-02-30",
+   "single_pass": "2024-02-30",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "On 12/05/2024 we met.",
+   "tag": "dates",
+   "pre_pass": "On 12th May 2024 we met.",
+   "single_pass": "On 12th May 2024 we met.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "(12/05/2024)",
+   "tag": "dates",
+   "pre_pass": "(12th May 2024)",
+   "single_pass": "(12th May 2024)",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a12/05/2024",
+   "tag": "dates",
+   "pre_pass": "a12th May 2024",
+   "single_pass": "a12th May 2024",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12/05/2024/1",
+   "tag": "dates",
+   "pre_pass": "12/05/2024/1",
+   "single_pass": "12/05/2024/1",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12/05-2024",
+   "tag": "dates",
+   "pre_pass": "12/05-2024",
+   "single_pass": "12/05-2024",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1.2.2024",
+   "tag": "dates",
+   "pre_pass": "1st February 2024",
+   "single_pass": "1st February 2024",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1.2.3",
+   "tag": "dates",
+   "pre_pass": "1.2.3",
+   "single_pass": "1.2.3",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1/2",
+   "tag": "dates",
+   "pre_pass": "1/2",
+   "single_pass": "1/2",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "11/11/2011",
+   "tag": "dates",
+   "pre_pass": "11th November 2011",
+   "single_pass": "11th November 2011",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "22/02/2022",
+   "tag": "dates",
+   "pre_pass": "22nd February 2022",
+   "single_pass": "22nd February 2022",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "23/03/2023",
+   "tag": "dates",
+   "pre_pass": "23rd March 2023",
+   "single_pass": "23rd March 2023",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "03/03/1903",
+   "tag": "dates",
+   "pre_pass": "3rd March 1903",
+   "single_pass": "3rd March 1903",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "21/10/2021",
+   "tag": "dates",
+   "pre_pass": "21st October 2021",
+   "single_pass": "21st October 2021",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2/8/2020",
+   "tag": "dates",
+   "pre_pass": "2nd August 2020",
+   "single_pass": "2nd August 2020",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5/6/1990 and 7/8/1991",
+   "tag": "dates",
+   "pre_pass": "5th June 1990 and 7th August 1991",
+   "single_pass": "5th June 1990 and 7th August 1991",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "-12/05/2024",
+   "tag": "dates",
+   "pre_pass": "-12/05/2024",
+   "single_pass": "-12/05/2024",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12/05/2024.",
+   "tag": "dates",
+   "pre_pass": "12th May 2024.",
+   "single_pass": "12th May 2024.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12.05.2024, 13.05.2024",
+   "tag": "dates",
+   "pre_pass": "12th May 2024, 13th May 2024",
+   "single_pass": "12th May 2024, 13th May 2024",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1980s",
+   "tag": "decades",
+   "pre_pass": "19 eighties",
+   "single_pass": "19 eighties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1980's",
+   "tag": "decades",
+   "pre_pass": "19 eighties",
+   "single_pass": "19 eighties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "the 1990s",
+   "tag": "decades",
+   "pre_pass": "the 19 nineties",
+   "single_pass": "the 19 nineties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "the '80s",
+   "tag": "decades",
+   "pre_pass": "the eighties",
+   "single_pass": "the eighties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "the \u201880s",
+   "tag": "decades",
+   "pre_pass": "the eighties",
+   "single_pass": "the eighties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "the \u201980s",
+   "tag": "decades",
+   "pre_pass": "the eighties",
+   "single_pass": "the eighties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "80s",
+   "tag": "decades",
+   "pre_pass": "eighties",
+   "single_pass": "eighties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "the 80s",
+   "tag": "decades",
+   "pre_pass": "the eighties",
+   "single_pass": "the eighties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "'90s",
+   "tag": "decades",
+   "pre_pass": "nineties",
+   "single_pass": "nineties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1900s",
+   "tag": "decades",
+   "pre_pass": "19 hundreds",
+   "single_pass": "19 hundreds",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2000s",
+   "tag": "decades",
+   "pre_pass": "2 thousands",
+   "single_pass": "2 thousands",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2010s",
+   "tag": "decades",
+   "pre_pass": "20 tens",
+   "single_pass": "20 tens",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2020s",
+   "tag": "decades",
+   "pre_pass": "20 twenties",
+   "single_pass": "20 twenties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1000s",
+   "tag": "decades",
+   "pre_pass": "thousands",
+   "single_pass": "thousands",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1010s",
+   "tag": "decades",
+   "pre_pass": "10 tens",
+   "single_pass": "10 tens",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1910s",
+   "tag": "decades",
+   "pre_pass": "19 tens",
+   "single_pass": "19 tens",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1920s",
+   "tag": "decades",
+   "pre_pass": "19 twenties",
+   "single_pass": "19 twenties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1930s",
+   "tag": "decades",
+   "pre_pass": "19 thirties",
+   "single_pass": "19 thirties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1940s",
+   "tag": "decades",
+   "pre_pass": "19 forties",
+   "single_pass": "19 forties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1950s",
+   "tag": "decades",
+   "pre_pass": "19 fifties",
+   "single_pass": "19 fifties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1960s",
+   "tag": "decades",
+   "pre_pass": "19 sixties",
+   "single_pass": "19 sixties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1970s",
+   "tag": "decades",
+   "pre_pass": "19 seventies",
+   "single_pass": "19 seventies",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "T20s",
+   "tag": "decades",
+   "pre_pass": "T20s",
+   "single_pass": "T20s",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "T20",
+   "tag": "decades",
+   "pre_pass": "T20",
+   "single_pass": "T20",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "A20s",
+   "tag": "decades",
+   "pre_pass": "A20s",
+   "single_pass": "A20s",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5000s",
+   "tag": "decades",
+   "pre_pass": "5000s",
+   "single_pass": "5000s",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2090s",
+   "tag": "decades",
+   "pre_pass": "20 nineties",
+   "single_pass": "20 nineties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1080s.",
+   "tag": "decades",
+   "pre_pass": "10 eighties.",
+   "single_pass": "10 eighties.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "20s",
+   "tag": "decades",
+   "pre_pass": "twenties",
+   "single_pass": "twenties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "30s",
+   "tag": "decades",
+   "pre_pass": "thirties",
+   "single_pass": "thirties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "10s",
+   "tag": "decades",
+   "pre_pass": "10s",
+   "single_pass": "10s",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "90s",
+   "tag": "decades",
+   "pre_pass": "nineties",
+   "single_pass": "nineties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "x1980s",
+   "tag": "decades",
+   "pre_pass": "x1980s",
+   "single_pass": "x1980s",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1980sx",
+   "tag": "decades",
+   "pre_pass": "1980sx",
+   "single_pass": "1980sx",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "in the 1980s and 1990s",
+   "tag": "decades",
+   "pre_pass": "in the 19 eighties and 19 nineties",
+   "single_pass": "in the 19 eighties and 19 nineties",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "'80s music",
+   "tag": "decades",
+   "pre_pass": "eighties music",
+   "single_pass": "eighties music",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1,980s",
+   "tag": "decades",
+   "pre_pass": "1,980s",
+   "single_pass": "1,980s",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1.980s",
+   "tag": "decades",
+   "pre_pass": "1.980s",
+   "single_pass": "1.980s",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3:45",
+   "tag": "times",
+   "pre_pass": "3 45",
+   "single_pass": "3 45",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "03:45",
+   "tag": "times",
+   "pre_pass": "3 45",
+   "single_pass": "3 45",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3:05",
+   "tag": "times",
+   "pre_pass": "3 oh 5",
+   "single_pass": "3 oh 5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3:00",
+   "tag": "times",
+   "pre_pass": "3 o'clock",
+   "single_pass": "3 o'clock",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3:45 pm",
+   "tag": "times",
+   "pre_pass": "3 45 pee em",
+   "single_pass": "3 45 pee em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3:45 PM",
+   "tag": "times",
+   "pre_pass": "3 45 pee em",
+   "single_pass": "3 45 pee em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3:45pm",
+   "tag": "times",
+   "pre_pass": "3 45 pee em",
+   "single_pass": "3 45 pee em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3:45 p.m.",
+   "tag": "times",
+   "pre_pass": "3 45 pee em.",
+   "single_pass": "3 45 pee em.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3:45 P.M.",
+   "tag": "times",
+   "pre_pass": "3 45 pee em.",
+   "single_pass": "3 45 pee em.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3:45 p.m. today",
+   "tag": "times",
+   "pre_pass": "3 45 pee em today",
+   "single_pass": "3 45 pee em today",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "I leave at 3:45 p.m.",
+   "tag": "times",
+   "pre_pass": "I leave at 3 45 pee em.",
+   "single_pass": "I leave at 3 45 pee em.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3.45 pm",
+   "tag": "times",
+   "pre_pass": "3 45 pee em",
+   "single_pass": "3 45 pee em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3.45 PM",
+   "tag": "times",
+   "pre_pass": "3 45 pee em",
+   "single_pass": "3 45 pee em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3.45pm",
+   "tag": "times",
+   "pre_pass": "3 45 pee em",
+   "single_pass": "3 45 pee em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3.45 p.m.",
+   "tag": "times",
+   "pre_pass": "3 45 pee em.",
+   "single_pass": "3 45 pee em.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "7 PM",
+   "tag": "times",
+   "pre_pass": "7 pee em",
+   "single_pass": "7 pee em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "7 pm",
+   "tag": "times",
+   "pre_pass": "7 pee em",
+   "single_pass": "7 pee em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "7pm",
+   "tag": "times",
+   "pre_pass": "7 pee em",
+   "single_pass": "7 pee em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "7 p.m.",
+   "tag": "times",
+   "pre_pass": "7 pee em.",
+   "single_pass": "7 pee em.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "7 am",
+   "tag": "times",
+   "pre_pass": "7 ay em",
+   "single_pass": "7 ay em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "7 a.m.",
+   "tag": "times",
+   "pre_pass": "7 ay em.",
+   "single_pass": "7 ay em.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "7 a.m. They",
+   "tag": "times",
+   "pre_pass": "7 ay em. They",
+   "single_pass": "7 ay em. They",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12 am",
+   "tag": "times",
+   "pre_pass": "12 ay em",
+   "single_pass": "12 ay em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12 pm",
+   "tag": "times",
+   "pre_pass": "12 pee em",
+   "single_pass": "12 pee em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12:00 am",
+   "tag": "times",
+   "pre_pass": "12 ay em",
+   "single_pass": "12 ay em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12:00 pm",
+   "tag": "times",
+   "pre_pass": "12 pee em",
+   "single_pass": "12 pee em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12:30 am",
+   "tag": "times",
+   "pre_pass": "12 30 ay em",
+   "single_pass": "12 30 ay em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "00:00",
+   "tag": "times",
+   "pre_pass": "midnight",
+   "single_pass": "midnight",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "00:30",
+   "tag": "times",
+   "pre_pass": "12 30 ay em",
+   "single_pass": "12 30 ay em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "24:00",
+   "tag": "times",
+   "pre_pass": "midnight",
+   "single_pass": "midnight",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "24:01",
+   "tag": "times",
+   "pre_pass": "24:01",
+   "single_pass": "24:01",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "23:59",
+   "tag": "times",
+   "pre_pass": "23 59",
+   "single_pass": "23 59",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "10:30",
+   "tag": "times",
+   "pre_pass": "10 30",
+   "single_pass": "10 30",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "10:05 am",
+   "tag": "times",
+   "pre_pass": "10 oh 5 ay em",
+   "single_pass": "10 oh 5 ay em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "10:00 am",
+   "tag": "times",
+   "pre_pass": "10 ay em",
+   "single_pass": "10 ay em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "9:09",
+   "tag": "times",
+   "pre_pass": "9 oh 9",
+   "single_pass": "9 oh 9",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1:2",
+   "tag": "times",
+   "pre_pass": "1:2",
+   "single_pass": "1:2",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "13:00 pm",
+   "tag": "times",
+   "pre_pass": "13:00 pm",
+   "single_pass": "13:00 pm",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "0 am",
+   "tag": "times",
+   "pre_pass": "0 am",
+   "single_pass": "0 am",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "13 pm",
+   "tag": "times",
+   "pre_pass": "13 pm",
+   "single_pass": "13 pm",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "25:00",
+   "tag": "times",
+   "pre_pass": "25:00",
+   "single_pass": "25:00",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "10:60",
+   "tag": "times",
+   "pre_pass": "10:60",
+   "single_pass": "10:60",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "10:30:15",
+   "tag": "times",
+   "pre_pass": "10:30:15",
+   "single_pass": "10:30:15",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1:30:15 pm",
+   "tag": "times",
+   "pre_pass": "1:30:15 pm",
+   "single_pass": "1:30:15 pm",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "10 o'clock",
+   "tag": "times",
+   "pre_pass": "10 o'clock",
+   "single_pass": "10 o'clock",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "at 5 pm.",
+   "tag": "times",
+   "pre_pass": "at 5 pee em.",
+   "single_pass": "at 5 pee em.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "at 5 p.m. sharp",
+   "tag": "times",
+   "pre_pass": "at 5 pee em sharp",
+   "single_pass": "at 5 pee em sharp",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "between 9-5 pm",
+   "tag": "times",
+   "pre_pass": "between 9-5 pee em",
+   "single_pass": "between 9-5 pee em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a.m.",
+   "tag": "times",
+   "pre_pass": "a.m.",
+   "single_pass": "a.m.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "p.m.",
+   "tag": "times",
+   "pre_pass": "p.m.",
+   "single_pass": "p.m.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 A.M.",
+   "tag": "times",
+   "pre_pass": "5 ay em.",
+   "single_pass": "5 ay em.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 AM",
+   "tag": "times",
+   "pre_pass": "5 ay em",
+   "single_pass": "5 ay em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 Am",
+   "tag": "times",
+   "pre_pass": "5 ay em",
+   "single_pass": "5 ay em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 a m",
+   "tag": "times",
+   "pre_pass": "5 ay em",
+   "single_pass": "5 ay em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5.30 a.m.",
+   "tag": "times",
+   "pre_pass": "5 30 ay em.",
+   "single_pass": "5 30 ay em.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5.30 a.m. and 6.30 p.m.",
+   "tag": "times",
+   "pre_pass": "5 30 ay em and 6 30 pee em.",
+   "single_pass": "5 30 ay em and 6 30 pee em.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "99:99",
+   "tag": "times",
+   "pre_pass": "99:99",
+   "single_pass": "99:99",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1.5 pm",
+   "tag": "times",
+   "pre_pass": "1.5 pm",
+   "single_pass": "1.5 pm",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "0.30 pm",
+   "tag": "times",
+   "pre_pass": "0.30 pm",
+   "single_pass": "0.30 pm",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12.00 am",
+   "tag": "times",
+   "pre_pass": "12 ay em",
+   "single_pass": "12 ay em",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "PhD",
+   "tag": "degrees",
+   "pre_pass": "P H D",
+   "single_pass": "P H D",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Ph.D.",
+   "tag": "degrees",
+   "pre_pass": "P H D.",
+   "single_pass": "P H D.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Ph.D",
+   "tag": "degrees",
+   "pre_pass": "P H D",
+   "single_pass": "P H D",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MSc",
+   "tag": "degrees",
+   "pre_pass": "M S C",
+   "single_pass": "M S C",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "BSc",
+   "tag": "degrees",
+   "pre_pass": "B S C",
+   "single_pass": "B S C",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "B.Tech",
+   "tag": "degrees",
+   "pre_pass": "B Tech",
+   "single_pass": "B Tech",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "B.Tech.",
+   "tag": "degrees",
+   "pre_pass": "B Tech.",
+   "single_pass": "B Tech.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "BTech",
+   "tag": "degrees",
+   "pre_pass": "B Tech",
+   "single_pass": "B Tech",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "M.Tech",
+   "tag": "degrees",
+   "pre_pass": "M Tech",
+   "single_pass": "M Tech",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MTech",
+   "tag": "degrees",
+   "pre_pass": "M Tech",
+   "single_pass": "M Tech",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "B.Com",
+   "tag": "degrees",
+   "pre_pass": "B Com",
+   "single_pass": "B Com",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "BCom",
+   "tag": "degrees",
+   "pre_pass": "B Com",
+   "single_pass": "B Com",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "M.Com",
+   "tag": "degrees",
+   "pre_pass": "M Com",
+   "single_pass": "M Com",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MPhil",
+   "tag": "degrees",
+   "pre_pass": "M Phil",
+   "single_pass": "M Phil",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "M.Phil",
+   "tag": "degrees",
+   "pre_pass": "M Phil",
+   "single_pass": "M Phil",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "M.Phil.",
+   "tag": "degrees",
+   "pre_pass": "M Phil.",
+   "single_pass": "M Phil.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "She has a PhD. Next",
+   "tag": "degrees",
+   "pre_pass": "She has a P H D. Next",
+   "single_pass": "She has a P H D. Next",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "He has a Ph.D. in physics.",
+   "tag": "degrees",
+   "pre_pass": "He has a P H D in physics.",
+   "single_pass": "He has a P H D in physics.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "B.Tech. degree",
+   "tag": "degrees",
+   "pre_pass": "B Tech degree",
+   "single_pass": "B Tech degree",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "xPhD",
+   "tag": "degrees",
+   "pre_pass": "xPhD",
+   "single_pass": "xPhD",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "PhDs",
+   "tag": "degrees",
+   "pre_pass": "PhDs",
+   "single_pass": "PhDs",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Ph.D.s",
+   "tag": "degrees",
+   "pre_pass": "P H D.s",
+   "single_pass": "P H D.s",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "B.E.",
+   "tag": "degrees",
+   "pre_pass": "B E.",
+   "single_pass": "B E.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "M.B.A.",
+   "tag": "degrees",
+   "pre_pass": "M B A.",
+   "single_pass": "M B A.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MBA",
+   "tag": "degrees",
+   "pre_pass": "M B A",
+   "single_pass": "M B A",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "M.Sc.",
+   "tag": "degrees",
+   "pre_pass": "M S C.",
+   "single_pass": "M S C.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "B.Sc.",
+   "tag": "degrees",
+   "pre_pass": "B S C.",
+   "single_pass": "B S C.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Ph.D., M.Sc.",
+   "tag": "degrees",
+   "pre_pass": "P H D, M S C.",
+   "single_pass": "P H D, M S C.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "https://github.com/x/y",
+   "tag": "urls-and-emails",
+   "pre_pass": "github dot com slash x slash y",
+   "single_pass": "github dot com slash x slash y",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "http://example.com",
+   "tag": "urls-and-emails",
+   "pre_pass": "example dot com",
+   "single_pass": "example dot com",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "HTTPS://EXAMPLE.COM/Path",
+   "tag": "urls-and-emails",
+   "pre_pass": "example dot com slash Path",
+   "single_pass": "example dot com slash Path",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "www.example.com",
+   "tag": "urls-and-emails",
+   "pre_pass": "doubleyou doubleyou doubleyou dot example dot com",
+   "single_pass": "doubleyou doubleyou doubleyou dot example dot com",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "WWW.EXAMPLE.COM/News",
+   "tag": "urls-and-emails",
+   "pre_pass": "doubleyou doubleyou doubleyou dot example dot com slash News",
+   "single_pass": "doubleyou doubleyou doubleyou dot example dot com slash News",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "WWW.ISRO.GOV.IN",
+   "tag": "urls-and-emails",
+   "pre_pass": "doubleyou doubleyou doubleyou dot isro dot gov dot in",
+   "single_pass": "doubleyou doubleyou doubleyou dot isro dot gov dot in",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "example.com",
+   "tag": "urls-and-emails",
+   "pre_pass": "example dot com",
+   "single_pass": "example dot com",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Delhi.In",
+   "tag": "urls-and-emails",
+   "pre_pass": "Delhi.In",
+   "single_pass": "Delhi.In",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "delhi.in",
+   "tag": "urls-and-emails",
+   "pre_pass": "delhi dot in",
+   "single_pass": "delhi dot in",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "delhi.co.in",
+   "tag": "urls-and-emails",
+   "pre_pass": "delhi dot co dot in",
+   "single_pass": "delhi dot co dot in",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "visit example.org/about now.",
+   "tag": "urls-and-emails",
+   "pre_pass": "visit example dot org slash about now.",
+   "single_pass": "visit example dot org slash about now.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "visit example.org/about.",
+   "tag": "urls-and-emails",
+   "pre_pass": "visit example dot org slash about.",
+   "single_pass": "visit example dot org slash about.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "(example.com)",
+   "tag": "urls-and-emails",
+   "pre_pass": "(example dot com)",
+   "single_pass": "(example dot com)",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "see www.a.b.c.com/x?y=1&z=2",
+   "tag": "urls-and-emails",
+   "pre_pass": "see doubleyou doubleyou doubleyou dot a dot b dot c dot com slash x y 1 z 2",
+   "single_pass": "see doubleyou doubleyou doubleyou dot a dot b dot c dot com slash x y 1 z 2",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a.io",
+   "tag": "urls-and-emails",
+   "pre_pass": "a dot io",
+   "single_pass": "a dot io",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "x.ai/y",
+   "tag": "urls-and-emails",
+   "pre_pass": "x dot ai slash y",
+   "single_pass": "x dot ai slash y",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "file.txt",
+   "tag": "urls-and-emails",
+   "pre_pass": "file.txt",
+   "single_pass": "file.txt",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "file.rs",
+   "tag": "urls-and-emails",
+   "pre_pass": "file.rs",
+   "single_pass": "file.rs",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "main.py",
+   "tag": "urls-and-emails",
+   "pre_pass": "main.py",
+   "single_pass": "main.py",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "github.com/x/y",
+   "tag": "urls-and-emails",
+   "pre_pass": "github dot com slash x slash y",
+   "single_pass": "github dot com slash x slash y",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "https://github.com/cjpais/Handy",
+   "tag": "urls-and-emails",
+   "pre_pass": "github dot com slash cjpais slash Handy",
+   "single_pass": "github dot com slash cjpais slash Handy",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "email me@example.com",
+   "tag": "urls-and-emails",
+   "pre_pass": "email me at example dot com",
+   "single_pass": "email me at example dot com",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Email ME@EXAMPLE.COM",
+   "tag": "urls-and-emails",
+   "pre_pass": "Email me at example dot com",
+   "single_pass": "Email me at example dot com",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "first.last@sub.example.co.in",
+   "tag": "urls-and-emails",
+   "pre_pass": "first dot last at sub dot example dot co dot in",
+   "single_pass": "first dot last at sub dot example dot co dot in",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a_b@c-d.org",
+   "tag": "urls-and-emails",
+   "pre_pass": "a underscore b at c dash d dot org",
+   "single_pass": "a underscore b at c dash d dot org",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "me@example.com.",
+   "tag": "urls-and-emails",
+   "pre_pass": "me at example dot com.",
+   "single_pass": "me at example dot com.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "me@example.com, you@example.org",
+   "tag": "urls-and-emails",
+   "pre_pass": "me at example dot com, you at example dot org",
+   "single_pass": "me at example dot com, you at example dot org",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "@",
+   "tag": "urls-and-emails",
+   "pre_pass": "at",
+   "single_pass": "at",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a @ b",
+   "tag": "urls-and-emails",
+   "pre_pass": "a at b",
+   "single_pass": "a at b",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "@pib_india",
+   "tag": "urls-and-emails",
+   "pre_pass": "at pib underscore india",
+   "single_pass": "at pib underscore india",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "@PIB_India is here",
+   "tag": "urls-and-emails",
+   "pre_pass": "at P I B underscore India is here",
+   "single_pass": "at P I B underscore India is here",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Follow @handle and @other_handle.",
+   "tag": "urls-and-emails",
+   "pre_pass": "Follow at handle and at other underscore handle.",
+   "single_pass": "Follow at handle and at other underscore handle.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "x@y",
+   "tag": "urls-and-emails",
+   "pre_pass": "x at y",
+   "single_pass": "x at y",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "user+tag@example.com",
+   "tag": "urls-and-emails",
+   "pre_pass": "user tag at example dot com",
+   "single_pass": "user tag at example dot com",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "https://x.com/a_b-c/d.e",
+   "tag": "urls-and-emails",
+   "pre_pass": "x dot com slash a underscore b dash c slash d dot e",
+   "single_pass": "x dot com slash a underscore b dash c slash d dot e",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "http://localhost:8080/path",
+   "tag": "urls-and-emails",
+   "pre_pass": "localhost 8080 slash path",
+   "single_pass": "localhost 8080 slash path",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "https://example.com/a?b=c&d=e#f",
+   "tag": "urls-and-emails",
+   "pre_pass": "example dot com slash a b c d e f",
+   "single_pass": "example dot com slash a b c d e f",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "https://example.com/.",
+   "tag": "urls-and-emails",
+   "pre_pass": "example dot com slash.",
+   "single_pass": "example dot com slash.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "https://example.com/)",
+   "tag": "urls-and-emails",
+   "pre_pass": "example dot com slash)",
+   "single_pass": "example dot com slash)",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "See (https://example.com/x).",
+   "tag": "urls-and-emails",
+   "pre_pass": "See (example dot com slash x).",
+   "single_pass": "See (example dot com slash x).",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "visit www.",
+   "tag": "urls-and-emails",
+   "pre_pass": "visit www.",
+   "single_pass": "visit www.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "www",
+   "tag": "urls-and-emails",
+   "pre_pass": "www",
+   "single_pass": "www",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "http://",
+   "tag": "urls-and-emails",
+   "pre_pass": "http://",
+   "single_pass": "http://",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "ftp://x.com",
+   "tag": "urls-and-emails",
+   "pre_pass": "ftp://x dot com",
+   "single_pass": "ftp://x dot com",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3.5.com",
+   "tag": "urls-and-emails",
+   "pre_pass": "3 dot 5 dot com",
+   "single_pass": "3 dot 5 dot com",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "e.g.com",
+   "tag": "urls-and-emails",
+   "pre_pass": "e dot g dot com",
+   "single_pass": "e dot g dot com",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "README.md",
+   "tag": "urls-and-emails",
+   "pre_pass": "R E A D M E.md",
+   "single_pass": "R E A D M E.md",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "src/tts/manager.rs",
+   "tag": "urls-and-emails",
+   "pre_pass": "src/tts/manager.rs",
+   "single_pass": "src/tts/manager.rs",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "src/tts/manager.rs:684",
+   "tag": "urls-and-emails",
+   "pre_pass": "src/tts/manager.rs:684",
+   "single_pass": "src/tts/manager.rs:684",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "~/.config/handy/settings.json",
+   "tag": "urls-and-emails",
+   "pre_pass": "~/.config/handy/settings.json",
+   "single_pass": "~/.config/handy/settings.json",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "deploy/app.yaml",
+   "tag": "urls-and-emails",
+   "pre_pass": "deploy/app.yaml",
+   "single_pass": "deploy/app.yaml",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "build/dist/old.rpm",
+   "tag": "urls-and-emails",
+   "pre_pass": "build/dist/old.rpm",
+   "single_pass": "build/dist/old.rpm",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MAIL INFO@PIB.GOV.IN NOW",
+   "tag": "urls-and-emails",
+   "pre_pass": "mail info at pib dot gov dot in now",
+   "single_pass": "mail info at pib dot gov dot in now",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Visit WWW.NASA.GOV today",
+   "tag": "urls-and-emails",
+   "pre_pass": "Visit doubleyou doubleyou doubleyou dot nasa dot gov today",
+   "single_pass": "Visit doubleyou doubleyou doubleyou dot nasa dot gov today",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a.in b.com c.org d.net",
+   "tag": "urls-and-emails",
+   "pre_pass": "a dot in b dot com c dot org d dot net",
+   "single_pass": "a dot in b dot com c dot org d dot net",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "this.is.not.a.url",
+   "tag": "urls-and-emails",
+   "pre_pass": "this.is.not.a.url",
+   "single_pass": "this.is.not.a.url",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "node.js and vue.js",
+   "tag": "urls-and-emails",
+   "pre_pass": "node.js and vue.js",
+   "single_pass": "node.js and vue.js",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "sample.INFO",
+   "tag": "urls-and-emails",
+   "pre_pass": "sample.I N F O",
+   "single_pass": "sample.I N F O",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "X.Com",
+   "tag": "urls-and-emails",
+   "pre_pass": "X.Com",
+   "single_pass": "X.Com",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "x.COM",
+   "tag": "urls-and-emails",
+   "pre_pass": "x.C O M",
+   "single_pass": "x.C O M",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "NASA launched it.",
+   "tag": "acronyms-word",
+   "pre_pass": "NASA launched it.",
+   "single_pass": "NASA launched it.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "ISRO and NASA",
+   "tag": "acronyms-word",
+   "pre_pass": "ISRO and NASA",
+   "single_pass": "ISRO and NASA",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "UNESCO site",
+   "tag": "acronyms-word",
+   "pre_pass": "UNESCO site",
+   "single_pass": "UNESCO site",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "UNICEF funds",
+   "tag": "acronyms-word",
+   "pre_pass": "UNICEF funds",
+   "single_pass": "UNICEF funds",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MGNREGA scheme",
+   "tag": "acronyms-word",
+   "pre_pass": "M G N R E G A scheme",
+   "single_pass": "M G N R E G A scheme",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "NATO and ASEAN",
+   "tag": "acronyms-word",
+   "pre_pass": "NATO and ASEAN",
+   "single_pass": "NATO and ASEAN",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "AIDS awareness",
+   "tag": "acronyms-word",
+   "pre_pass": "AIDS awareness",
+   "single_pass": "AIDS awareness",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "SEBI order",
+   "tag": "acronyms-word",
+   "pre_pass": "SEBI order",
+   "single_pass": "SEBI order",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "OK then",
+   "tag": "acronyms-word",
+   "pre_pass": "OK then",
+   "single_pass": "OK then",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "PIN and SIM",
+   "tag": "acronyms-word",
+   "pre_pass": "PIN and SIM",
+   "single_pass": "PIN and SIM",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "COVID rules",
+   "tag": "acronyms-word",
+   "pre_pass": "COVID rules",
+   "single_pass": "COVID rules",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "AIIMS Delhi",
+   "tag": "acronyms-word",
+   "pre_pass": "AIIMS Delhi",
+   "single_pass": "AIIMS Delhi",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "IKEA store",
+   "tag": "acronyms-word",
+   "pre_pass": "IKEA store",
+   "single_pass": "IKEA store",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "FIFA cup",
+   "tag": "acronyms-word",
+   "pre_pass": "FIFA cup",
+   "single_pass": "FIFA cup",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "NASAs plan",
+   "tag": "acronyms-word",
+   "pre_pass": "NASAs plan",
+   "single_pass": "NASAs plan",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "NASA's plan",
+   "tag": "acronyms-word",
+   "pre_pass": "NASA's plan",
+   "single_pass": "NASA's plan",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "NASA\u2019s plan",
+   "tag": "acronyms-word",
+   "pre_pass": "NASA\u2019s plan",
+   "single_pass": "NASA\u2019s plan",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "GAIL and SAIL",
+   "tag": "acronyms-word",
+   "pre_pass": "GAIL and SAIL",
+   "single_pass": "GAIL and SAIL",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "BJP won.",
+   "tag": "acronyms-spelled",
+   "pre_pass": "B J P won.",
+   "single_pass": "B J P won.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "BJP's win",
+   "tag": "acronyms-spelled",
+   "pre_pass": "B J P's win",
+   "single_pass": "B J P's win",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "BJPs win",
+   "tag": "acronyms-spelled",
+   "pre_pass": "B J Ps win",
+   "single_pass": "B J Ps win",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "the BJP\u2019s win",
+   "tag": "acronyms-spelled",
+   "pre_pass": "the B J P\u2019s win",
+   "single_pass": "the B J P\u2019s win",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "HDFC Bank",
+   "tag": "acronyms-spelled",
+   "pre_pass": "aitch dee eff see Bank",
+   "single_pass": "aitch dee eff see Bank",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "ICICI and SBI",
+   "tag": "acronyms-spelled",
+   "pre_pass": "I C I C I and S B I",
+   "single_pass": "I C I C I and S B I",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "UPSC exam",
+   "tag": "acronyms-spelled",
+   "pre_pass": "you P S C exam",
+   "single_pass": "you P S C exam",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "GPU",
+   "tag": "acronyms-spelled",
+   "pre_pass": "G P you",
+   "single_pass": "G P you",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "CPU and GPU",
+   "tag": "acronyms-spelled",
+   "pre_pass": "C P you and G P you",
+   "single_pass": "C P you and G P you",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "USA",
+   "tag": "acronyms-spelled",
+   "pre_pass": "you S A",
+   "single_pass": "you S A",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "U.S.A.",
+   "tag": "acronyms-spelled",
+   "pre_pass": "you S A.",
+   "single_pass": "you S A.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "U.S.A. is big.",
+   "tag": "acronyms-spelled",
+   "pre_pass": "you S A is big.",
+   "single_pass": "you S A is big.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "U.S.A. Next",
+   "tag": "acronyms-spelled",
+   "pre_pass": "you S A Next",
+   "single_pass": "you S A Next",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "U.S.",
+   "tag": "acronyms-spelled",
+   "pre_pass": "you S.",
+   "single_pass": "you S.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "U. S. A.",
+   "tag": "acronyms-spelled",
+   "pre_pass": "you S A.",
+   "single_pass": "you S A.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "e.U.",
+   "tag": "acronyms-spelled",
+   "pre_pass": "e.U.",
+   "single_pass": "e.U.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "A.B.C.D.",
+   "tag": "acronyms-spelled",
+   "pre_pass": "A B C D.",
+   "single_pass": "A B C D.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "U.K. and U.S.",
+   "tag": "acronyms-spelled",
+   "pre_pass": "you K and you S.",
+   "single_pass": "you K and you S.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MLAs and MPs",
+   "tag": "acronyms-spelled",
+   "pre_pass": "M L As and M Ps",
+   "single_pass": "M L As and M Ps",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MLA",
+   "tag": "acronyms-spelled",
+   "pre_pass": "M L A",
+   "single_pass": "M L A",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "DNA test",
+   "tag": "acronyms-spelled",
+   "pre_pass": "D N A test",
+   "single_pass": "D N A test",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "FBI",
+   "tag": "acronyms-spelled",
+   "pre_pass": "F B I",
+   "single_pass": "F B I",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "CBI and ED",
+   "tag": "acronyms-spelled",
+   "pre_pass": "C B I and E D",
+   "single_pass": "C B I and E D",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "RBI",
+   "tag": "acronyms-spelled",
+   "pre_pass": "R B I",
+   "single_pass": "R B I",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "NDTV",
+   "tag": "acronyms-spelled",
+   "pre_pass": "N D T V",
+   "single_pass": "N D T V",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "BBC",
+   "tag": "acronyms-spelled",
+   "pre_pass": "B B C",
+   "single_pass": "B B C",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "WHO",
+   "tag": "acronyms-spelled",
+   "pre_pass": "doubleyou H O",
+   "single_pass": "doubleyou H O",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "W.H.O.",
+   "tag": "acronyms-spelled",
+   "pre_pass": "doubleyou H O.",
+   "single_pass": "doubleyou H O.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "W H O",
+   "tag": "acronyms-spelled",
+   "pre_pass": "doubleyou H O",
+   "single_pass": "doubleyou H O",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "U S A",
+   "tag": "acronyms-spelled",
+   "pre_pass": "U S A",
+   "single_pass": "U S A",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "B J P",
+   "tag": "acronyms-spelled",
+   "pre_pass": "B J P",
+   "single_pass": "B J P",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "A B",
+   "tag": "acronyms-spelled",
+   "pre_pass": "A B",
+   "single_pass": "A B",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "I A",
+   "tag": "acronyms-spelled",
+   "pre_pass": "I A",
+   "single_pass": "I A",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "A I",
+   "tag": "acronyms-spelled",
+   "pre_pass": "A I",
+   "single_pass": "A I",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "IS THIS A U-TURN?",
+   "tag": "acronyms-spelled",
+   "pre_pass": "is this a u-turn?",
+   "single_pass": "is this a u-turn?",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "the WWW",
+   "tag": "acronyms-spelled",
+   "pre_pass": "the doubleyou doubleyou doubleyou",
+   "single_pass": "the doubleyou doubleyou doubleyou",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "WWW",
+   "tag": "acronyms-spelled",
+   "pre_pass": "doubleyou doubleyou doubleyou",
+   "single_pass": "doubleyou doubleyou doubleyou",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "AB",
+   "tag": "acronyms-spelled",
+   "pre_pass": "A B",
+   "single_pass": "A B",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "ABCDEF",
+   "tag": "acronyms-spelled",
+   "pre_pass": "A B C D E F",
+   "single_pass": "A B C D E F",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "ABCDEFG",
+   "tag": "acronyms-spelled",
+   "pre_pass": "abcdefg",
+   "single_pass": "abcdefg",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "ABCDEFGH",
+   "tag": "acronyms-spelled",
+   "pre_pass": "abcdefgh",
+   "single_pass": "abcdefgh",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "TSSPDCL",
+   "tag": "acronyms-spelled",
+   "pre_pass": "T S S P D C L",
+   "single_pass": "T S S P D C L",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "APSPDCL",
+   "tag": "acronyms-spelled",
+   "pre_pass": "A P S P D C L",
+   "single_pass": "A P S P D C L",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MGNREGS",
+   "tag": "acronyms-spelled",
+   "pre_pass": "M G N R E G S",
+   "single_pass": "M G N R E G S",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5G network",
+   "tag": "acronyms-spelled",
+   "pre_pass": "5G network",
+   "single_pass": "5G network",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "4G",
+   "tag": "acronyms-spelled",
+   "pre_pass": "4G",
+   "single_pass": "4G",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "IT sector",
+   "tag": "acronyms-spelled",
+   "pre_pass": "I T sector",
+   "single_pass": "I T sector",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "US dollar",
+   "tag": "acronyms-spelled",
+   "pre_pass": "you S dollar",
+   "single_pass": "you S dollar",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "AM radio",
+   "tag": "acronyms-spelled",
+   "pre_pass": "A M radio",
+   "single_pass": "A M radio",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "OR gate",
+   "tag": "acronyms-spelled",
+   "pre_pass": "O R gate",
+   "single_pass": "O R gate",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "AS IS",
+   "tag": "acronyms-spelled",
+   "pre_pass": "as is",
+   "single_pass": "as is",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MY CAT",
+   "tag": "acronyms-spelled",
+   "pre_pass": "my cat",
+   "single_pass": "my cat",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "A1",
+   "tag": "acronyms-spelled",
+   "pre_pass": "A1",
+   "single_pass": "A1",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "B2B",
+   "tag": "acronyms-spelled",
+   "pre_pass": "B2B",
+   "single_pass": "B2B",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "COVID19",
+   "tag": "acronyms-spelled",
+   "pre_pass": "COVID19",
+   "single_pass": "COVID19",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "COVID-19",
+   "tag": "acronyms-spelled",
+   "pre_pass": "COVID-19",
+   "single_pass": "COVID-19",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "H1N1",
+   "tag": "acronyms-spelled",
+   "pre_pass": "H1N1",
+   "single_pass": "H1N1",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "iPhone",
+   "tag": "acronyms-spelled",
+   "pre_pass": "iPhone",
+   "single_pass": "iPhone",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "eBay",
+   "tag": "acronyms-spelled",
+   "pre_pass": "eBay",
+   "single_pass": "eBay",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "McDonald",
+   "tag": "acronyms-spelled",
+   "pre_pass": "McDonald",
+   "single_pass": "McDonald",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "USBs",
+   "tag": "acronyms-spelled",
+   "pre_pass": "you S Bs",
+   "single_pass": "you S Bs",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "PCs",
+   "tag": "acronyms-spelled",
+   "pre_pass": "P Cs",
+   "single_pass": "P Cs",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "CDs and DVDs",
+   "tag": "acronyms-spelled",
+   "pre_pass": "C Ds and D V Ds",
+   "single_pass": "C Ds and D V Ds",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2 PCs",
+   "tag": "acronyms-spelled",
+   "pre_pass": "2 P Cs",
+   "single_pass": "2 P Cs",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "PC2",
+   "tag": "acronyms-spelled",
+   "pre_pass": "P C 2",
+   "single_pass": "P C 2",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2PC",
+   "tag": "acronyms-spelled",
+   "pre_pass": "2 P C",
+   "single_pass": "2 P C",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "PC 2",
+   "tag": "acronyms-spelled",
+   "pre_pass": "P C 2",
+   "single_pass": "P C 2",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "I.T.",
+   "tag": "acronyms-spelled",
+   "pre_pass": "I T.",
+   "single_pass": "I T.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "IT.",
+   "tag": "acronyms-spelled",
+   "pre_pass": "I T.",
+   "single_pass": "I T.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "x ABC y",
+   "tag": "acronyms-spelled",
+   "pre_pass": "x A B C y",
+   "single_pass": "x A B C y",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "THE END",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "the end",
+   "single_pass": "the end",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "THANK YOU",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "thank you",
+   "single_pass": "thank you",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "BREAKING NEWS from DELHI",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "breaking news from Delhi",
+   "single_pass": "breaking news from Delhi",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "DELHI is big",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "Delhi is big",
+   "single_pass": "Delhi is big",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "MUMBAI- It rained.",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "Mumbai- It rained.",
+   "single_pass": "Mumbai- It rained.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "INDIA won",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "India won",
+   "single_pass": "India won",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "PUNJAB and BIHAR",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "Punjab and Bihar",
+   "single_pass": "Punjab and Bihar",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "LONDON PARIS",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "london paris",
+   "single_pass": "london paris",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "BREAKING",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "breaking",
+   "single_pass": "breaking",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "AMAZING",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "amazing",
+   "single_pass": "amazing",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "SALE",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "sale",
+   "single_pass": "sale",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "FREE",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "free",
+   "single_pass": "free",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "TODAY",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "today",
+   "single_pass": "today",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "NEW",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "new",
+   "single_pass": "new",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "NEWS",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "news",
+   "single_pass": "news",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "II III IV",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "ii iii iv",
+   "single_pass": "ii iii iv",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "World War II",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "World War II",
+   "single_pass": "World War II",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Henry VIII",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "Henry VIII",
+   "single_pass": "Henry VIII",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Part XIV",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "Part XIV",
+   "single_pass": "Part XIV",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "XV",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "XV",
+   "single_pass": "XV",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "XX",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "XX",
+   "single_pass": "XX",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "VI",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "VI",
+   "single_pass": "VI",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "I and II",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "I and II",
+   "single_pass": "I and II",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Act IX",
+   "tag": "acronyms-caps-lists",
+   "pre_pass": "Act IX",
+   "single_pass": "Act IX",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "BREAKING NEWS: GOVT ANNOUNCES NEW SCHEME",
+   "tag": "shouting",
+   "pre_pass": "breaking news: Government announces new scheme",
+   "single_pass": "breaking news: Government announces new scheme",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "THIS IS A TEST.",
+   "tag": "shouting",
+   "pre_pass": "this is a test.",
+   "single_pass": "this is a test.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "THIS IS A TEST. This is not.",
+   "tag": "shouting",
+   "pre_pass": "this is a test. This is not.",
+   "single_pass": "this is a test. This is not.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "This is fine. THIS IS NOT FINE. This is fine.",
+   "tag": "shouting",
+   "pre_pass": "This is fine. this is not fine. This is fine.",
+   "single_pass": "This is fine. this is not fine. This is fine.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "I AM HERE",
+   "tag": "shouting",
+   "pre_pass": "I am here",
+   "single_pass": "I am here",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "WHAT IS THIS?",
+   "tag": "shouting",
+   "pre_pass": "what is this?",
+   "single_pass": "what is this?",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "STOP! Now.",
+   "tag": "shouting",
+   "pre_pass": "stop! Now.",
+   "single_pass": "stop! Now.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "OK THEN",
+   "tag": "shouting",
+   "pre_pass": "ok then",
+   "single_pass": "ok then",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "A U-TURN",
+   "tag": "shouting",
+   "pre_pass": "A U-T you R N",
+   "single_pass": "A U-T you R N",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "IS B J P HERE?",
+   "tag": "shouting",
+   "pre_pass": "is B J P here?",
+   "single_pass": "is B J P here?",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "WHO IS U S A",
+   "tag": "shouting",
+   "pre_pass": "who is U S A",
+   "single_pass": "who is U S A",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "WHERE ARE THE B J P LEADERS",
+   "tag": "shouting",
+   "pre_pass": "where are the B J P leaders",
+   "single_pass": "where are the B J P leaders",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "I THINK SO",
+   "tag": "shouting",
+   "pre_pass": "I think so",
+   "single_pass": "I think so",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "i think",
+   "tag": "shouting",
+   "pre_pass": "i think",
+   "single_pass": "i think",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "i",
+   "tag": "shouting",
+   "pre_pass": "i",
+   "single_pass": "i",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "I",
+   "tag": "shouting",
+   "pre_pass": "I",
+   "single_pass": "I",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "he said i am",
+   "tag": "shouting",
+   "pre_pass": "he said i am",
+   "single_pass": "he said i am",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "i'm",
+   "tag": "shouting",
+   "pre_pass": "i'm",
+   "single_pass": "i'm",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "I'M HERE NOW",
+   "tag": "shouting",
+   "pre_pass": "I'm here now",
+   "single_pass": "I'm here now",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "READ THE FULL STORY HERE",
+   "tag": "shouting",
+   "pre_pass": "read the full story here",
+   "single_pass": "read the full story here",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "HDFC BANK LOAN",
+   "tag": "shouting",
+   "pre_pass": "hdfc bank loan",
+   "single_pass": "hdfc bank loan",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "RS. 500 ONLY",
+   "tag": "shouting",
+   "pre_pass": "500 rupees only",
+   "single_pass": "500 rupees only",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "DR. RAO IS HERE",
+   "tag": "shouting",
+   "pre_pass": "Doctor rao is here",
+   "single_pass": "Doctor rao is here",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "AT 5 PM TODAY",
+   "tag": "shouting",
+   "pre_pass": "at 5 pee em today",
+   "single_pass": "at 5 pee em today",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "SHOUTING WITH NUMBERS 123 AND MORE",
+   "tag": "shouting",
+   "pre_pass": "shouting with numbers 123 and more",
+   "single_pass": "shouting with numbers 123 and more",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "WATCH LIVE NOW\nTHIS IS A TEST",
+   "tag": "shouting",
+   "pre_pass": "watch live now\nthis is a test",
+   "single_pass": "watch live now\nthis is a test",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "ABC. DEF. GHI.",
+   "tag": "shouting",
+   "pre_pass": "A B C D E F G H I.",
+   "single_pass": "A B C. D E F. G H I.",
+   "needs_more_than_one_pass": true
+  },
+  {
+   "input": "50%",
+   "tag": "percent-and-numbers",
+   "pre_pass": "50%",
+   "single_pass": "50%",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "12.5%",
+   "tag": "percent-and-numbers",
+   "pre_pass": "12.5%",
+   "single_pass": "12.5%",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5 %",
+   "tag": "percent-and-numbers",
+   "pre_pass": "5 %",
+   "single_pass": "5 %",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "100 percent",
+   "tag": "percent-and-numbers",
+   "pre_pass": "100 percent",
+   "single_pass": "100 percent",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3.14",
+   "tag": "percent-and-numbers",
+   "pre_pass": "3.14",
+   "single_pass": "3.14",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1234",
+   "tag": "percent-and-numbers",
+   "pre_pass": "1234",
+   "single_pass": "1234",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "0.5",
+   "tag": "percent-and-numbers",
+   "pre_pass": "0.5",
+   "single_pass": "0.5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": ".5",
+   "tag": "percent-and-numbers",
+   "pre_pass": ".5",
+   "single_pass": ".5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5.",
+   "tag": "percent-and-numbers",
+   "pre_pass": "5.",
+   "single_pass": "5.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "-5",
+   "tag": "percent-and-numbers",
+   "pre_pass": "-5",
+   "single_pass": "-5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "+5",
+   "tag": "percent-and-numbers",
+   "pre_pass": "+5",
+   "single_pass": "+5",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "5-3",
+   "tag": "percent-and-numbers",
+   "pre_pass": "5-3",
+   "single_pass": "5-3",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "10-20",
+   "tag": "percent-and-numbers",
+   "pre_pass": "10-20",
+   "single_pass": "10-20",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "1st 2nd 3rd 4th",
+   "tag": "percent-and-numbers",
+   "pre_pass": "1st 2nd 3rd 4th",
+   "single_pass": "1st 2nd 3rd 4th",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "21st",
+   "tag": "percent-and-numbers",
+   "pre_pass": "21st",
+   "single_pass": "21st",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "22nd",
+   "tag": "percent-and-numbers",
+   "pre_pass": "22nd",
+   "single_pass": "22nd",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "23rd",
+   "tag": "percent-and-numbers",
+   "pre_pass": "23rd",
+   "single_pass": "23rd",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "11th 12th 13th",
+   "tag": "percent-and-numbers",
+   "pre_pass": "11th 12th 13th",
+   "single_pass": "11th 12th 13th",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "100th",
+   "tag": "percent-and-numbers",
+   "pre_pass": "100th",
+   "single_pass": "100th",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "3D",
+   "tag": "percent-and-numbers",
+   "pre_pass": "3D",
+   "single_pass": "3D",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "24x7",
+   "tag": "percent-and-numbers",
+   "pre_pass": "24x7",
+   "single_pass": "24x7",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "x2",
+   "tag": "percent-and-numbers",
+   "pre_pass": "x2",
+   "single_pass": "x2",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "2x",
+   "tag": "percent-and-numbers",
+   "pre_pass": "2x",
+   "single_pass": "2x",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "No.1",
+   "tag": "percent-and-numbers",
+   "pre_pass": "Number 1",
+   "single_pass": "Number 1",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "No. 1 seed",
+   "tag": "percent-and-numbers",
+   "pre_pass": "Number 1 seed",
+   "single_pass": "Number 1 seed",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Covid-19",
+   "tag": "percent-and-numbers",
+   "pre_pass": "Covid-19",
+   "single_pass": "Covid-19",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Dr. Rao paid Rs. 1,50,000 on 12/05/2024 at 3:45 p.m. for the GPU.",
+   "tag": "mixed-sentences",
+   "pre_pass": "Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em for the G P you.",
+   "single_pass": "Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em for the G P you.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Mr. Sharma (Ph.D.) of ISRO visited St. Xavier's on 2024-05-12; the BJP's MLAs met at 7 pm.",
+   "tag": "mixed-sentences",
+   "pre_pass": "Mister Sharma (P H D) of ISRO visited Saint Xavier's on 12th May 2024; the B J P's M L As met at 7 pee em.",
+   "single_pass": "Mister Sharma (P H D) of ISRO visited Saint Xavier's on 12th May 2024; the B J P's M L As met at 7 pee em.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Send $5,000 to ME@EXAMPLE.COM by 5 p.m., i.e. before the 1990s-style deadline.",
+   "tag": "mixed-sentences",
+   "pre_pass": "Send 5,000 dollars to me at example dot com by 5 pee em, that is before the 19 nineties-style deadline.",
+   "single_pass": "Send 5,000 dollars to me at example dot com by 5 pee em, that is before the 19 nineties-style deadline.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "NASA's budget was $25 billion vs. ISRO's Rs. 12,000 crore, etc.",
+   "tag": "mixed-sentences",
+   "pre_pass": "NASA's budget was 25 billion dollars versus ISRO's 12,000 crore rupees, et cetera.",
+   "single_pass": "NASA's budget was 25 billion dollars versus ISRO's 12,000 crore rupees, et cetera.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Visit www.isro.gov.in/launch or email press@isro.gov.in. Thanks!",
+   "tag": "mixed-sentences",
+   "pre_pass": "Visit doubleyou doubleyou doubleyou dot isro dot gov dot in slash launch or email press at isro dot gov dot in. Thanks!",
+   "single_pass": "Visit doubleyou doubleyou doubleyou dot isro dot gov dot in slash launch or email press at isro dot gov dot in. Thanks!",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "The U.S.A. and the U.K. signed it on 4/7/1776 at 10:30 a.m.",
+   "tag": "mixed-sentences",
+   "pre_pass": "The you S A and the you K signed it on 4th July 1776 at 10 30 ay em.",
+   "single_pass": "The you S A and the you K signed it on 4th July 1776 at 10 30 ay em.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "HDFC Bank, ICICI Bank etc. are in the 1,00,000 crore club.",
+   "tag": "mixed-sentences",
+   "pre_pass": "aitch dee eff see Bank, I C I C I Bank et cetera are in the 1 lakh crore club.",
+   "single_pass": "aitch dee eff see Bank, I C I C I Bank et cetera are in the 1 lakh crore club.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Smt. Devi and Sri Ram met Lt. Gen. Rao.",
+   "tag": "mixed-sentences",
+   "pre_pass": "Shrimati Devi and Sri Ram met Lieutenant General Rao.",
+   "single_pass": "Shrimati Devi and Sri Ram met Lieutenant General Rao.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Sr. No. 5, Room No. 12, Park St., Kolkata.",
+   "tag": "mixed-sentences",
+   "pre_pass": "Serial number 5, Room number 12, Park Street, Kolkata.",
+   "single_pass": "Serial number 5, Room number 12, Park Street, Kolkata.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Tata Pvt. Ltd. bought it for Rs. 5 cr. in the '90s.",
+   "tag": "mixed-sentences",
+   "pre_pass": "Tata Private Limited bought it for 5 crore rupees in the nineties.",
+   "single_pass": "Tata Private Limited bought it for 5 crore rupees in the nineties.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Run 5 km in 25 min; eat 100 gm of dal at 7.30 a.m.",
+   "tag": "mixed-sentences",
+   "pre_pass": "Run 5 kilometres in 25 min; eat 100 grams of dal at 7 30 ay em.",
+   "single_pass": "Run 5 kilometres in 25 min; eat 100 grams of dal at 7 30 ay em.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "WHO said the T20s in the 2010s were fine.",
+   "tag": "mixed-sentences",
+   "pre_pass": "doubleyou H O said the T20s in the 20 tens were fine.",
+   "single_pass": "doubleyou H O said the T20s in the 20 tens were fine.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Wait. Dr. Rao will see you. Mr. Rao too.",
+   "tag": "mixed-sentences",
+   "pre_pass": "Wait. Doctor Rao will see you. Mister Rao too.",
+   "single_pass": "Wait. Doctor Rao will see you. Mister Rao too.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "He said: 'Mrs. Gupta, the GPU is here.'",
+   "tag": "mixed-sentences",
+   "pre_pass": "He said: 'Missus Gupta, the G P you is here.'",
+   "single_pass": "He said: 'Missus Gupta, the G P you is here.'",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "\u201cDr. Rao\u201d said \u2018no\u2019.",
+   "tag": "mixed-sentences",
+   "pre_pass": "\u201cDoctor Rao\u201d said \u2018no\u2019.",
+   "single_pass": "\u201cDoctor Rao\u201d said \u2018no\u2019.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "A very long line, Rs. 1,50,000, 12/05/2024, 3:45 pm, www.a.com, NASA, BJP, Dr. Rao, 5 kg, 1980s.",
+   "tag": "mixed-sentences",
+   "pre_pass": "A very long line, 1 lakh 50 thousand rupees, 12th May 2024, 3 45 pee em, doubleyou doubleyou doubleyou dot a dot com, NASA, B J P, Doctor Rao, 5 kilograms, 19 eighties.",
+   "single_pass": "A very long line, 1 lakh 50 thousand rupees, 12th May 2024, 3 45 pee em, doubleyou doubleyou doubleyou dot a dot com, NASA, B J P, Doctor Rao, 5 kilograms, 19 eighties.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Hello world.",
+   "tag": "english-passthrough",
+   "pre_pass": "Hello world.",
+   "single_pass": "Hello world.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "The quick brown fox jumps over the lazy dog.",
+   "tag": "english-passthrough",
+   "pre_pass": "The quick brown fox jumps over the lazy dog.",
+   "single_pass": "The quick brown fox jumps over the lazy dog.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "It's a beautiful day, isn't it?",
+   "tag": "english-passthrough",
+   "pre_pass": "It's a beautiful day, isn't it?",
+   "single_pass": "It's a beautiful day, isn't it?",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Hello, World! How are you?",
+   "tag": "english-passthrough",
+   "pre_pass": "Hello, World! How are you?",
+   "single_pass": "Hello, World! How are you?",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "One. Two. Three.",
+   "tag": "english-passthrough",
+   "pre_pass": "One. Two. Three.",
+   "single_pass": "One. Two. Three.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "A",
+   "tag": "english-passthrough",
+   "pre_pass": "A",
+   "single_pass": "A",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a",
+   "tag": "english-passthrough",
+   "pre_pass": "a",
+   "single_pass": "a",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "z",
+   "tag": "english-passthrough",
+   "pre_pass": "z",
+   "single_pass": "z",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Hello",
+   "tag": "english-passthrough",
+   "pre_pass": "Hello",
+   "single_pass": "Hello",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "hello",
+   "tag": "english-passthrough",
+   "pre_pass": "hello",
+   "single_pass": "hello",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "hello  world",
+   "tag": "english-passthrough",
+   "pre_pass": "hello world",
+   "single_pass": "hello world",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "tabs\tand\nnewlines",
+   "tag": "english-passthrough",
+   "pre_pass": "tabs and\nnewlines",
+   "single_pass": "tabs and\nnewlines",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "caf\u00e9 na\u00efve",
+   "tag": "english-passthrough",
+   "pre_pass": "caf\u00e9 na\u00efve",
+   "single_pass": "caf\u00e9 na\u00efve",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "M\u00fcnchen",
+   "tag": "english-passthrough",
+   "pre_pass": "M\u00fcnchen",
+   "single_pass": "M\u00fcnchen",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "50% off",
+   "tag": "english-passthrough",
+   "pre_pass": "50% off",
+   "single_pass": "50% off",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Q&A",
+   "tag": "english-passthrough",
+   "pre_pass": "Q&A",
+   "single_pass": "Q&A",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "AT&T",
+   "tag": "english-passthrough",
+   "pre_pass": "at&T",
+   "single_pass": "at&T",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "J&K and T&C",
+   "tag": "english-passthrough",
+   "pre_pass": "J&K and T&C",
+   "single_pass": "J&K and T&C",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "R&amp;D",
+   "tag": "english-passthrough",
+   "pre_pass": "R&amp;D",
+   "single_pass": "R&amp;D",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "(parenthetical) remark [bracketed] {braced}",
+   "tag": "english-passthrough",
+   "pre_pass": "(parenthetical) remark [bracketed] {braced}",
+   "single_pass": "(parenthetical) remark [bracketed] {braced}",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a - b \u2013 c \u2014 d",
+   "tag": "english-passthrough",
+   "pre_pass": "a - b \u2013 c \u2014 d",
+   "single_pass": "a - b \u2013 c \u2014 d",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "wait\u2026 what",
+   "tag": "english-passthrough",
+   "pre_pass": "wait\u2026 what",
+   "single_pass": "wait\u2026 what",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "colon: semicolon; comma, period.",
+   "tag": "english-passthrough",
+   "pre_pass": "colon: semicolon; comma, period.",
+   "single_pass": "colon: semicolon; comma, period.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "\u201cSmart\u201d \u2018quotes\u2019",
+   "tag": "english-passthrough",
+   "pre_pass": "\u201cSmart\u201d \u2018quotes\u2019",
+   "single_pass": "\u201cSmart\u201d \u2018quotes\u2019",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "emoji \ud83d\ude00 here",
+   "tag": "english-passthrough",
+   "pre_pass": "emoji \ud83d\ude00 here",
+   "single_pass": "emoji \ud83d\ude00 here",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "\u65e5\u672c\u8a9e text",
+   "tag": "english-passthrough",
+   "pre_pass": "\u65e5\u672c\u8a9e text",
+   "single_pass": "\u65e5\u672c\u8a9e text",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "\u0928\u092e\u0938\u094d\u0924\u0947 world",
+   "tag": "english-passthrough",
+   "pre_pass": "\u0928\u092e\u0938\u094d\u0924\u0947 world",
+   "single_pass": "\u0928\u092e\u0938\u094d\u0924\u0947 world",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "zero 0 one 1 ten 10",
+   "tag": "english-passthrough",
+   "pre_pass": "zero 0 one 1 ten 10",
+   "single_pass": "zero 0 one 1 ten 10",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "",
+   "tag": "english-edge",
+   "pre_pass": "",
+   "single_pass": "",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": " ",
+   "tag": "english-edge",
+   "pre_pass": "",
+   "single_pass": "",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "   ",
+   "tag": "english-edge",
+   "pre_pass": "",
+   "single_pass": "",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "\t\n",
+   "tag": "english-edge",
+   "pre_pass": "",
+   "single_pass": "",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "...",
+   "tag": "english-edge",
+   "pre_pass": "...",
+   "single_pass": "...",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "!?",
+   "tag": "english-edge",
+   "pre_pass": "!?",
+   "single_pass": "!?",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": ",",
+   "tag": "english-edge",
+   "pre_pass": ",",
+   "single_pass": ",",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": ";:",
+   "tag": "english-edge",
+   "pre_pass": ";:",
+   "single_pass": ";:",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "0",
+   "tag": "english-edge",
+   "pre_pass": "0",
+   "single_pass": "0",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "#",
+   "tag": "english-edge",
+   "pre_pass": "#",
+   "single_pass": "#",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": ".",
+   "tag": "english-edge",
+   "pre_pass": ".",
+   "single_pass": ".",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": " . ",
+   "tag": "english-edge",
+   "pre_pass": ".",
+   "single_pass": ".",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a.",
+   "tag": "english-edge",
+   "pre_pass": "a.",
+   "single_pass": "a.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": ".a",
+   "tag": "english-edge",
+   "pre_pass": ".a",
+   "single_pass": ".a",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "I.",
+   "tag": "english-edge",
+   "pre_pass": "I.",
+   "single_pass": "I.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "A.B",
+   "tag": "english-edge",
+   "pre_pass": "A B",
+   "single_pass": "A B",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": ",a",
+   "tag": "english-edge",
+   "pre_pass": ",a",
+   "single_pass": ",a",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a,b",
+   "tag": "english-edge",
+   "pre_pass": "a,b",
+   "single_pass": "a,b",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a ,b",
+   "tag": "english-edge",
+   "pre_pass": "a ,b",
+   "single_pass": "a ,b",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a , b",
+   "tag": "english-edge",
+   "pre_pass": "a , b",
+   "single_pass": "a , b",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "a.b.c",
+   "tag": "english-edge",
+   "pre_pass": "a.b.c",
+   "single_pass": "a.b.c",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "kubectl",
+   "tag": "tech-token",
+   "pre_pass": "kubectl",
+   "single_pass": "kubectl",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "--dry-run",
+   "tag": "tech-token",
+   "pre_pass": "--dry-run",
+   "single_pass": "--dry-run",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "v1.2.3",
+   "tag": "tech-token",
+   "pre_pass": "v1.2.3",
+   "single_pass": "v1.2.3",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "fixture_base",
+   "tag": "tech-token",
+   "pre_pass": "fixture_base",
+   "single_pass": "fixture_base",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "README.md src/tts/manager.rs GPU kubectl --dry-run v1.2.3 fixture_base https://github.com/x/y",
+   "tag": "tech-token-all",
+   "pre_pass": "R E A D M E.md src/tts/manager.rs G P you kubectl --dry-run v1.2.3 fixture_base github dot com slash x slash y",
+   "single_pass": "R E A D M E.md src/tts/manager.rs G P you kubectl --dry-run v1.2.3 fixture_base github dot com slash x slash y",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "The quick review is done and the branch is ready for you to read. Most of the work was small, and the tests all passed on the first run.",
+   "tag": "spike-text",
+   "pre_pass": "The quick review is done and the branch is ready for you to read. Most of the work was small, and the tests all passed on the first run.",
+   "single_pass": "The quick review is done and the branch is ready for you to read. Most of the work was small, and the tests all passed on the first run.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Open src/tts/manager.rs:684 and check the retry loop before you merge.",
+   "tag": "spike-text",
+   "pre_pass": "Open src/tts/manager.rs:684 and check the retry loop before you merge.",
+   "single_pass": "Open src/tts/manager.rs:684 and check the retry loop before you merge.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Run cargo test with the --workspace flag, then run bun run lint.",
+   "tag": "spike-text",
+   "pre_pass": "Run cargo test with the --workspace flag, then run bun run lint.",
+   "single_pass": "Run cargo test with the --workspace flag, then run bun run lint.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Type /review to start a code review, or /help to see the other commands.",
+   "tag": "spike-text",
+   "pre_pass": "Type /review to start a code review, or /help to see the other commands.",
+   "single_pass": "Type /review to start a code review, or /help to see the other commands.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "The function parseHTTPRequest calls read_header and returns a Header.",
+   "tag": "spike-text",
+   "pre_pass": "The function parseHTTPRequest calls read_header and returns a Header.",
+   "single_pass": "The function parseHTTPRequest calls read_header and returns a Header.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Set HANDY_TTS_WORKER to the worker path if the default is wrong.",
+   "tag": "spike-text",
+   "pre_pass": "Set H A N D why_T T S_doubleyou O R K E R to the worker path if the default is wrong.",
+   "single_pass": "Set H A N D why_T T S_doubleyou O R K E R to the worker path if the default is wrong.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "The config lives in ~/.config/handy/settings.json and the log in handy.log.",
+   "tag": "spike-text",
+   "pre_pass": "The config lives in ~/.config/handy/settings.json and the log in handy.log.",
+   "single_pass": "The config lives in ~/.config/handy/settings.json and the log in handy.log.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Upgrade from v0.10.0 to v1.2.3 before the next release.",
+   "tag": "spike-text",
+   "pre_pass": "Upgrade from v0.10.0 to v1.2.3 before the next release.",
+   "single_pass": "Upgrade from v0.10.0 to v1.2.3 before the next release.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "See https://github.com/cjpais/Handy for the upstream project.",
+   "tag": "spike-text",
+   "pre_pass": "See github dot com slash cjpais slash Handy for the upstream project.",
+   "single_pass": "See github dot com slash cjpais slash Handy for the upstream project.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "The GPU runs the vocoder, the NPU runs the encoder, and the CPU runs the rest.",
+   "tag": "spike-text",
+   "pre_pass": "The G P you runs the vocoder, the N P you runs the encoder, and the C P you runs the rest.",
+   "single_pass": "The G P you runs the vocoder, the N P you runs the encoder, and the C P you runs the rest.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Use kubectl apply with the manifest in deploy/app.yaml, then check the pods.",
+   "tag": "spike-text",
+   "pre_pass": "Use kubectl apply with the manifest in deploy/app.yaml, then check the pods.",
+   "single_pass": "Use kubectl apply with the manifest in deploy/app.yaml, then check the pods.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "The model reads 24 kHz audio and writes 44.1 kHz output in about 0.04 seconds per second.",
+   "tag": "spike-text",
+   "pre_pass": "The model reads 24 kHz audio and writes 44.1 kHz output in about 0.04 seconds per second.",
+   "single_pass": "The model reads 24 kHz audio and writes 44.1 kHz output in about 0.04 seconds per second.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Call fixtureBase() from the setup step, then delete build/dist/old.rpm by hand.",
+   "tag": "spike-text",
+   "pre_pass": "Call fixtureBase() from the setup step, then delete build/dist/old.rpm by hand.",
+   "single_pass": "Call fixtureBase() from the setup step, then delete build/dist/old.rpm by hand.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "I will check back in ten minutes and tell you what changed.",
+   "tag": "spike-text",
+   "pre_pass": "I will check back in ten minutes and tell you what changed.",
+   "single_pass": "I will check back in ten minutes and tell you what changed.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma d",
+   "tag": "long-nocomma-248",
+   "pre_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma d",
+   "single_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma d",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma de",
+   "tag": "long-nocomma-249",
+   "pre_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma de",
+   "single_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma de",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma del",
+   "tag": "long-nocomma-250",
+   "pre_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma del",
+   "single_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma del",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delt",
+   "tag": "long-nocomma-251",
+   "pre_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delt",
+   "single_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delt",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta",
+   "tag": "long-nocomma-252",
+   "pre_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta",
+   "single_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e",
+   "tag": "long-nocomma-300",
+   "pre_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e",
+   "single_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta etaa",
+   "tag": "long-nocomma-500",
+   "pre_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta etaa",
+   "single_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta etaa",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta al",
+   "tag": "long-nocomma-600",
+   "pre_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta al",
+   "single_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta al",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma d, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil",
+   "tag": "long-comma-at-250",
+   "pre_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma d, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil",
+   "single_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma d, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma de, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil",
+   "tag": "long-comma-at-251",
+   "pre_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma de, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil",
+   "single_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma de, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma del, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil",
+   "tag": "long-comma-at-252",
+   "pre_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma del, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil",
+   "single_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma del, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delt, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil",
+   "tag": "long-comma-at-253",
+   "pre_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delt, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil",
+   "single_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delt, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": ",alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon z",
+   "tag": "long-comma-first",
+   "pre_pass": ",alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon z",
+   "single_pass": ",alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon z",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e",
+   "tag": "long-commas-many",
+   "pre_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e",
+   "single_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e, alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta e",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "tag": "long-no-space-600",
+   "pre_pass": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "single_pass": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil. alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil. alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil. alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil.",
+   "tag": "long-sentences",
+   "pre_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil. alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil. alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil. alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil.",
+   "single_pass": "alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil. alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil. alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil. alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsilon zeta eta theta alpha beta gamma delta epsil.",
+   "needs_more_than_one_pass": false
+  },
+  {
+   "input": "Dr. Rao paid Rs. 1,50,000 on 12/05/2024 at 3:45 pm, Dr. Rao paid Rs. 1,50,000 on 12/05/2024 at 3:45 pm, Dr. Rao paid Rs. 1,50,000 on 12/05/2024 at 3:45 pm, Dr. Rao paid Rs. 1,50,000 on 12/05/2024 at 3:45 pm, Dr. Rao paid Rs. 1,50,000 on 12/05/2024 at 3:45 pm, Dr. Rao paid Rs. 1,50,000 on 12/05/2024 at 3:45 pm, Dr. Rao paid Rs. 1,50,000 on 12/05/2024 at 3:45 pm, Dr. Rao paid Rs. 1,50,000 on 12/05/2024 at 3:45 pm,",
+   "tag": "long-with-abbr",
+   "pre_pass": "Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em, Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em, Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em, Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em, Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em, Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em, Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em, Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em,",
+   "single_pass": "Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em, Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em, Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em, Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em, Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em, Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em, Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em, Doctor Rao paid 1 lakh 50 thousand rupees on 12th May 2024 at 3 45 pee em,",
+   "needs_more_than_one_pass": false
+  }
+ ]
+}

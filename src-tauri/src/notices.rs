@@ -4,7 +4,8 @@
 //!
 //! A dictation notice replaces the overlay, so a failure site calls [`raise`]
 //! instead of hiding it. If another session owns the overlay by then, call
-//! [`raise_without_overlay`].
+//! [`raise_without_overlay`]. A read-aloud refusal takes the overlay only when
+//! no dictation session or dictation notice is on it and the reader is closed.
 
 use crate::overlay;
 use crate::tray;
@@ -25,15 +26,16 @@ pub enum NoticeLevel {
     Warning,
 }
 
-/// Each source has one slot in the store. Only dictation notices use the
-/// overlay: a file job finishes while the user is doing something else, and
-/// `Model` is a switch the user made in Settings or the tray.
+/// Each source has one slot in the store. Only dictation notices and read-aloud
+/// refusals use the overlay: a file job finishes while the user is doing
+/// something else, and `Model` is a switch the user made in Settings or the tray.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "lowercase")]
 pub enum NoticeSource {
     Dictation,
     File,
     Model,
+    ReadAloud,
 }
 
 /// The frontend maps each code to its text in `src/lib/notices.ts`.
@@ -48,9 +50,13 @@ pub enum NoticeCode {
     RecordingFailed,
     ModelLoadFailed,
     NoModelSelected,
+    ReadAloudUnavailable,
+    ReadAloudBusyPasting,
+    ReadAloudClipboardUnreadable,
     PostProcessFailed,
     FileTranscriptionFailed,
     FilePostProcessFailed,
+    VocabularyInvalid,
 }
 
 impl NoticeCode {
@@ -63,10 +69,15 @@ impl NoticeCode {
             | Self::MicrophoneSilent
             | Self::MicPermissionDenied
             | Self::RecordingFailed
+            | Self::ReadAloudUnavailable
+            | Self::ReadAloudBusyPasting
+            | Self::ReadAloudClipboardUnreadable
             | Self::ModelLoadFailed
             | Self::NoModelSelected
             | Self::FileTranscriptionFailed => NoticeLevel::Error,
-            Self::PostProcessFailed | Self::FilePostProcessFailed => NoticeLevel::Warning,
+            Self::PostProcessFailed | Self::FilePostProcessFailed | Self::VocabularyInvalid => {
+                NoticeLevel::Warning
+            }
         }
     }
 
@@ -82,9 +93,13 @@ impl NoticeCode {
             Self::RecordingFailed => &strings.recording_failed_title,
             Self::ModelLoadFailed => &strings.model_load_failed_title,
             Self::NoModelSelected => &strings.no_model_selected_title,
+            Self::ReadAloudUnavailable => &strings.read_aloud_unavailable_title,
+            Self::ReadAloudBusyPasting => &strings.read_aloud_busy_pasting_title,
+            Self::ReadAloudClipboardUnreadable => &strings.read_aloud_clipboard_unreadable_title,
             Self::PostProcessFailed => &strings.post_process_failed_title,
             Self::FileTranscriptionFailed => &strings.file_transcription_failed_title,
             Self::FilePostProcessFailed => &strings.file_post_process_failed_title,
+            Self::VocabularyInvalid => &strings.vocabulary_invalid_title,
         }
     }
 }
@@ -132,14 +147,18 @@ impl NoticeStore {
     }
 }
 
-fn insert(active: &mut Vec<Notice>, notice: Notice) {
+pub(crate) fn insert(active: &mut Vec<Notice>, notice: Notice) {
     remove(active, notice.source, None);
     active.insert(0, notice);
 }
 
 /// Removes the source's notice, if it has `code` when one is given. Returns
 /// whether one was removed.
-fn remove(active: &mut Vec<Notice>, source: NoticeSource, code: Option<NoticeCode>) -> bool {
+pub(crate) fn remove(
+    active: &mut Vec<Notice>,
+    source: NoticeSource,
+    code: Option<NoticeCode>,
+) -> bool {
     let before = active.len();
     active.retain(|notice| notice.source != source || code.is_some_and(|code| notice.code != code));
     active.len() != before
@@ -164,10 +183,31 @@ fn publish(app: &AppHandle, active: &[Notice], raised: Option<Notice>) {
     }
 }
 
-/// Replaces the source's previous notice. A dictation notice also replaces the
-/// overlay.
+/// Whether `notice` shows on the overlay. A dictation notice always does; a
+/// read-aloud refusal only when no dictation session or dictation notice is
+/// on the overlay and the reader is closed.
+pub(crate) fn overlay_takes(notice: &Notice, dictation_showing: bool, reader_open: bool) -> bool {
+    match (notice.source, notice.code) {
+        (NoticeSource::Dictation, _) => true,
+        (
+            _,
+            NoticeCode::ReadAloudUnavailable
+            | NoticeCode::ReadAloudBusyPasting
+            | NoticeCode::ReadAloudClipboardUnreadable,
+        ) => !dictation_showing && !reader_open,
+        _ => false,
+    }
+}
+
+/// Replaces the source's previous notice, and the overlay when
+/// [`overlay_takes`] says so.
 pub fn raise(app: &AppHandle, notice: Notice) {
-    if notice.source == NoticeSource::Dictation {
+    raise_beside_reader(app, notice, false);
+}
+
+/// [`raise`] for read aloud, which knows whether its reader is open.
+pub fn raise_beside_reader(app: &AppHandle, notice: Notice, reader_open: bool) {
+    if overlay_takes(&notice, overlay::is_dictation_showing(), reader_open) {
         overlay::show_overlay_notice(app, &notice);
     }
     raise_without_overlay(app, notice);
@@ -245,6 +285,56 @@ mod tests {
         Notice::new(code, NoticeSource::File)
     }
 
+    const READ_ALOUD_REFUSALS: [NoticeCode; 3] = [
+        NoticeCode::ReadAloudUnavailable,
+        NoticeCode::ReadAloudBusyPasting,
+        NoticeCode::ReadAloudClipboardUnreadable,
+    ];
+
+    fn read_aloud(code: NoticeCode) -> Notice {
+        Notice::new(code, NoticeSource::ReadAloud)
+    }
+
+    #[test]
+    fn read_aloud_refusal_floats_when_no_dictation_owns_the_overlay() {
+        for code in READ_ALOUD_REFUSALS {
+            assert!(overlay_takes(&read_aloud(code), false, false), "{code:?}");
+        }
+    }
+
+    #[test]
+    fn read_aloud_refusal_never_takes_a_dictation_overlay() {
+        for code in READ_ALOUD_REFUSALS {
+            assert!(!overlay_takes(&read_aloud(code), true, false), "{code:?}");
+        }
+    }
+
+    #[test]
+    fn read_aloud_refusal_stays_off_the_overlay_when_the_reader_is_open() {
+        for code in READ_ALOUD_REFUSALS {
+            assert!(!overlay_takes(&read_aloud(code), false, true), "{code:?}");
+        }
+    }
+
+    #[test]
+    fn vocabulary_warning_never_floats() {
+        let notice = read_aloud(NoticeCode::VocabularyInvalid);
+        for (dictation_showing, reader_open) in [(false, false), (true, false), (false, true)] {
+            assert!(!overlay_takes(&notice, dictation_showing, reader_open));
+        }
+    }
+
+    #[test]
+    fn dictation_notice_always_floats() {
+        for (dictation_showing, reader_open) in [(false, false), (true, false), (false, true)] {
+            assert!(overlay_takes(
+                &dictation(NoticeCode::PasteFailed),
+                dictation_showing,
+                reader_open
+            ));
+        }
+    }
+
     #[test]
     fn each_source_keeps_only_its_newest_notice_newest_first() {
         let mut active = Vec::new();
@@ -264,6 +354,14 @@ mod tests {
     #[test]
     fn no_model_selected_is_an_error() {
         assert_eq!(NoticeCode::NoModelSelected.level(), NoticeLevel::Error);
+    }
+
+    #[test]
+    fn unreadable_clipboard_is_an_error() {
+        assert_eq!(
+            NoticeCode::ReadAloudClipboardUnreadable.level(),
+            NoticeLevel::Error
+        );
     }
 
     #[test]

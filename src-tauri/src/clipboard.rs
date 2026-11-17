@@ -19,37 +19,1081 @@ use crate::utils::{is_gnome_wayland, is_kde_wayland, is_wayland};
 /// the user's clipboard. Only taken by `paste`, which never runs on the main thread.
 static PASTE_LOCK: Mutex<()> = Mutex::new(());
 
+pub(crate) const PASTE_TOOL_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// A paste failure whose display text is safe for both logs and notices.
+#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
+#[error("{}", self.reason())]
+pub struct PasteError(PasteFailure);
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum PasteFailure {
+    Authored(String),
+    Execute {
+        tool: &'static str,
+        reason: String,
+    },
+    ToolExit {
+        tool: &'static str,
+        code: Option<i32>,
+    },
+    Unknown,
+}
+
+impl PasteError {
+    fn authored(message: impl Into<String>) -> Self {
+        Self(PasteFailure::Authored(message.into()))
+    }
+
+    fn execute(tool: &'static str, error: std::io::Error) -> Self {
+        Self(PasteFailure::Execute {
+            tool,
+            reason: Self::io_reason(error),
+        })
+    }
+
+    fn io_reason(error: std::io::Error) -> String {
+        if let Some(code) = error.raw_os_error() {
+            std::io::Error::from_raw_os_error(code).to_string()
+        } else if matches!(
+            error.to_string().as_str(),
+            "paste probe output exceeded limit" | "nul byte found in provided data"
+        ) {
+            error.to_string()
+        } else {
+            std::io::Error::from(error.kind()).to_string()
+        }
+    }
+
+    fn tool_exit(tool: &'static str, status: std::process::ExitStatus) -> Self {
+        Self(PasteFailure::ToolExit {
+            tool,
+            code: status.code(),
+        })
+    }
+
+    pub(crate) fn input(operation: &'static str, error: enigo::InputError) -> Self {
+        let reason = match error {
+            // Mapping errors can name a character from the transcript.
+            enigo::InputError::Mapping(_) => "error when mapping keycode to keysym".into(),
+            enigo::InputError::Unmapping(_) => "error when unmapping keysym".into(),
+            other => other.to_string(),
+        };
+        Self::authored(format!("{operation}: {reason}"))
+    }
+
+    fn clipboard_write(error: tauri_plugin_clipboard_manager::Error) -> Self {
+        let reason = match error {
+            tauri_plugin_clipboard_manager::Error::Clipboard(message) => match message.as_str() {
+                "The clipboard contents were not available in the requested format or the clipboard is empty."
+                | "The selected clipboard is not supported with the current system configuration."
+                | "The native clipboard is not accessible due to being held by another party."
+                | "The image or the text that was about the be transferred to/from the clipboard could not be converted to the appropriate format."
+                | "Unknown error while interacting with the clipboard: NSPasteboard#writeObjects: returned false"
+                | "Unknown error while interacting with the clipboard: Could not place the specified text to the clipboard"
+                | "Unknown error while interacting with the clipboard: The clipboard handler thread seems to have stopped. Logging messages may reveal the cause. (See the `log` crate.)" => message,
+                _ => "clipboard operation failed".into(),
+            },
+            _ => "clipboard operation failed".into(),
+        };
+        Self::authored(format!("Failed to write to clipboard: {reason}"))
+    }
+
+    fn reason(&self) -> String {
+        let reason = match &self.0 {
+            PasteFailure::Authored(message) => message.clone(),
+            PasteFailure::Execute { tool, reason } => format!("Failed to execute {tool}: {reason}"),
+            PasteFailure::ToolExit { tool, code } => {
+                let label = if *tool == "external script" {
+                    "External script"
+                } else {
+                    tool
+                };
+                match code {
+                    Some(code) => format!("{label} failed (exit code {code})"),
+                    None => format!("{label} failed (terminated without an exit code)"),
+                }
+            }
+            PasteFailure::Unknown => "Paste failed for an unknown reason".into(),
+        };
+        let mut reason: String = reason
+            .chars()
+            .map(|c| if c.is_control() { ' ' } else { c })
+            .collect();
+        let mut end = reason.len().min(512);
+        while !reason.is_char_boundary(end) {
+            end -= 1;
+        }
+        reason.truncate(end);
+        reason
+    }
+}
+
+impl From<&str> for PasteError {
+    fn from(message: &str) -> Self {
+        match message {
+            "Input request expired"
+            | "Enigo state not initialized"
+            | "Main thread dropped the running input request"
+            | "Main thread input request expired before starting"
+            | "Main thread dropped the input request"
+            | "Invalid paste method for clipboard paste"
+            | "Unsupported paste method"
+            | "External script path is not configured" => Self::authored(message),
+            _ => Self(PasteFailure::Unknown),
+        }
+    }
+}
+
+impl From<String> for PasteError {
+    fn from(message: String) -> Self {
+        Self::from(message.as_str())
+    }
+}
+
+#[cfg(all(test, unix))]
+mod wbfix3 {
+    use super::*;
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn m1_execution_keeps_the_safe_nul_argument_error() {
+        let expected = Command::new("sh")
+            .arg("fixture\0transcript")
+            .output()
+            .unwrap_err()
+            .to_string();
+        let error = paste_via_external_script("fixture\0transcript", "sh").unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            format!("Failed to execute external script: {expected}"),
+            "execution must retain the safe NUL argument reason"
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn m1_native_unknown_and_execution_errors_have_safe_reasons() {
+        let error = unavailable_typing_tool(TypingTool::Dotool);
+        assert_eq!(
+            error.to_string(),
+            "Typing tool Dotool is not available on this system",
+            "unavailable tool must identify its cause"
+        );
+        let error = PasteError::input(
+            "Failed to send text directly",
+            enigo::InputError::InvalidInput("text contains a NULL byte"),
+        );
+        assert_eq!(error.to_string(), "Failed to send text directly: you tried to simulate invalid input: (text contains a NULL byte)", "native input must retain the safe reason");
+        let error = PasteError::input(
+            "Failed to send text directly",
+            enigo::InputError::Mapping("fixture transcript /private/path".into()),
+        );
+        assert_eq!(
+            error.to_string(),
+            "Failed to send text directly: error when mapping keycode to keysym",
+            "native mapping must not expose a transcript character"
+        );
+        let error = PasteError::clipboard_write(tauri_plugin_clipboard_manager::Error::Clipboard(
+            "The native clipboard is not accessible due to being held by another party.".into(),
+        ));
+        assert_eq!(error.to_string(), "Failed to write to clipboard: The native clipboard is not accessible due to being held by another party.", "clipboard write must retain its safe cause");
+        for error in [
+            PasteError::from("unknown fixture transcript /private/path".to_owned()),
+            PasteError::clipboard_write(tauri_plugin_clipboard_manager::Error::Clipboard(
+                "unknown fixture transcript /private/path".into(),
+            )),
+            PasteError::execute(
+                "dotool",
+                std::io::Error::other("fixture transcript /private/path"),
+            ),
+        ] {
+            let reason = error.to_string();
+            assert!(
+                !reason.contains("fixture") && !reason.contains("/private"),
+                "unknown error payloads must not reach diagnostics"
+            );
+        }
+        use std::os::unix::process::ExitStatusExt;
+        assert_eq!(
+            PasteError::tool_exit("ydotool", std::process::ExitStatus::from_raw(libc::SIGTERM))
+                .to_string(),
+            "ydotool failed (terminated without an exit code)",
+            "signalled tool failure must remain diagnosable"
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn m1_fake_ydotool_socket_error_on_stdout_is_not_captured() {
+        let script = "printf 'socket fixture failure'; exit 2";
+        let observed = Command::new("sh").args(["-c", script]).output().unwrap();
+        assert_eq!(observed.stdout, b"socket fixture failure");
+        assert!(observed.stderr.is_empty());
+        let output = paste_tool(Command::new("sh").args(["-c", script]), None).unwrap();
+        assert!(
+            output.stdout.is_empty(),
+            "typing helper stdout must remain discarded"
+        );
+        assert!(output.stderr.is_empty());
+        let notice =
+            crate::actions::paste_failure_notice(PasteError::tool_exit("ydotool", output.status));
+        assert_eq!(
+            notice.detail.as_deref(),
+            Some("ydotool failed (exit code 2)"),
+            "stdout-only socket failure must still show the exit status"
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn m1_authored_errors_keep_their_reason() {
+        let cancelled = std::sync::atomic::AtomicBool::new(true);
+        let errors = [
+            input_if_current(&cancelled, || Ok(())).unwrap_err(),
+            queued_input::<()>(|_| Ok(()), || Ok(()), Duration::from_millis(10)).unwrap_err(),
+            configured_script_path(None).unwrap_err(),
+            ydotool_key_args(&PasteMethod::None, YdotoolKeySyntax::RawKeycodes).unwrap_err(),
+            tool_available_with(
+                Command::new("sh").args(["-c", "exec sleep 30"]),
+                Duration::from_millis(50),
+            )
+            .unwrap_err(),
+            detect_ydotool_key_syntax_with(
+                Command::new("sh").args(["-c", "exec sleep 30"]),
+                &OnceLock::new(),
+                Duration::from_millis(50),
+            )
+            .unwrap_err(),
+        ];
+        for error in errors {
+            let expected = error.to_string();
+            assert_ne!(
+                expected, "Paste failed for an unknown reason",
+                "authored paste reason must not become unknown"
+            );
+            assert_eq!(
+                crate::actions::paste_failure_notice(error)
+                    .detail
+                    .as_deref(),
+                Some(expected.as_str()),
+                "authored paste reasons must reach the notice"
+            );
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn m1_wl_copy_and_unset_script_keep_their_cause() {
+        use std::os::unix::process::ExitStatusExt;
+        let error = write_clipboard_via_wl_copy_with("fixture transcript", |_, _| {
+            Ok(std::process::Output {
+                status: std::process::ExitStatus::from_raw(17 << 8),
+                stdout: Vec::new(),
+                stderr: b"fixture transcript /private/path".to_vec(),
+            })
+        })
+        .unwrap_err();
+        assert_eq!(
+            crate::actions::paste_failure_notice(error)
+                .detail
+                .as_deref(),
+            Some("wl-copy failed (exit code 17)"),
+            "wl-copy must retain its failure summary and status"
+        );
+        let error = configured_script_path(Some("")).unwrap_err();
+        assert_eq!(
+            crate::actions::paste_failure_notice(error)
+                .detail
+                .as_deref(),
+            Some("External script path is not configured"),
+            "unset script must retain its actual reason"
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn m1_tool_failure_keeps_status_and_io_but_no_private_output() {
+        let error = send_key_combo_via_dotool_with(&PasteMethod::CtrlV, |_, _| {
+            paste_tool(Command::new("sh").args(["-c", "printf 'fixture transcript /private/path'; printf 'fixture transcript /private/path' >&2; exit 9"]), None)
+        }).unwrap_err();
+        assert_eq!(
+            crate::actions::paste_failure_notice(error)
+                .detail
+                .as_deref(),
+            Some("dotool failed (exit code 9)"),
+            "tool failure must retain only summary and exit status"
+        );
+        let dir = tempfile::tempdir().unwrap();
+        let error = paste_via_external_script(
+            "fixture transcript",
+            dir.path().join("missing-script").to_str().unwrap(),
+        )
+        .unwrap_err();
+        let expected = format!(
+            "Failed to execute external script: {}",
+            std::io::Error::from_raw_os_error(libc::ENOENT)
+        );
+        assert_eq!(
+            crate::actions::paste_failure_notice(error)
+                .detail
+                .as_deref(),
+            Some(expected.as_str()),
+            "execution failure must retain the io reason without the script path"
+        );
+        use std::os::unix::fs::PermissionsExt;
+        let script = dir.path().join("script");
+        std::fs::write(
+            &script,
+            "#!/bin/sh\nprintf 'fixture transcript /private/path' >&2\nexit 11\n",
+        )
+        .unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let error =
+            paste_via_external_script("fixture transcript", script.to_str().unwrap()).unwrap_err();
+        assert_eq!(
+            crate::actions::paste_failure_notice(error)
+                .detail
+                .as_deref(),
+            Some("External script failed (exit code 11)"),
+            "script failure must exclude its path and stderr"
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn followup_xdotool_cleans_up_every_typing_outcome() {
+        use std::os::unix::process::ExitStatusExt;
+        for outcome in ["success", "nonzero", "killed", "spawn"] {
+            let mut calls = Vec::new();
+            let result = type_text_via_xdotool_with("fixture text", |cmd, input, timeout| {
+                assert_eq!(cmd.get_program(), "xdotool");
+                assert!(input.is_none());
+                let args: Vec<_> = cmd
+                    .get_args()
+                    .map(|s| s.to_str().unwrap().to_owned())
+                    .collect();
+                calls.push(args.clone());
+                if args[0] == "keyup" {
+                    assert_eq!(timeout, PASTE_TOOL_TIMEOUT);
+                    return Err(std::io::Error::other("cleanup failure"));
+                }
+                assert_eq!(args, ["type", "--clearmodifiers", "--", "fixture text"]);
+                assert_eq!(timeout, typing_timeout("fixture text"));
+                match outcome {
+                    "spawn" => Err(std::io::Error::from_raw_os_error(libc::ENOENT)),
+                    "killed" => paste_tool_with_timeout(
+                        Command::new("sh").args(["-c", "exec sleep 30"]),
+                        None,
+                        Duration::from_millis(100),
+                    ),
+                    _ => Ok(std::process::Output {
+                        status: std::process::ExitStatus::from_raw(if outcome == "success" {
+                            0
+                        } else {
+                            9 << 8
+                        }),
+                        stdout: Vec::new(),
+                        stderr: b"typing failure".to_vec(),
+                    }),
+                }
+            });
+            assert_eq!(
+                calls.len(),
+                2,
+                "every typing outcome must release modifiers"
+            );
+            assert_eq!(
+                calls[1],
+                [
+                    "keyup",
+                    "Control_L",
+                    "Control_R",
+                    "Shift_L",
+                    "Shift_R",
+                    "Alt_L",
+                    "Alt_R",
+                    "Super_L",
+                    "Super_R"
+                ]
+            );
+            match outcome {
+                "success" => assert_eq!(result, Ok(())),
+                "nonzero" => assert_eq!(
+                    result.unwrap_err().to_string(),
+                    "xdotool failed (exit code 9)"
+                ),
+                "spawn" => assert_eq!(
+                    result.unwrap_err().to_string(),
+                    format!(
+                        "Failed to execute xdotool: {}",
+                        std::io::Error::from_raw_os_error(libc::ENOENT)
+                    )
+                ),
+                _ => assert_eq!(
+                    result.unwrap_err().to_string(),
+                    format!(
+                        "Failed to execute xdotool: {}",
+                        std::io::Error::from(std::io::ErrorKind::TimedOut)
+                    ),
+                    "cleanup must preserve the original timeout error"
+                ),
+            }
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn followup_dotool_keys_use_direct_stdin() {
+        use std::os::unix::process::ExitStatusExt;
+        for (method, script) in [
+            (PasteMethod::CtrlV, "key ctrl+v\n"),
+            (PasteMethod::ShiftInsert, "key shift+insert\n"),
+            (PasteMethod::CtrlShiftV, "key ctrl+shift+v\n"),
+        ] {
+            let result = send_key_combo_via_dotool_with(&method, |cmd, input| {
+                assert_eq!(
+                    cmd.get_program(),
+                    "dotool",
+                    "key combinations must spawn dotool directly"
+                );
+                assert_eq!(cmd.get_args().count(), 0);
+                assert_eq!(
+                    input.as_deref(),
+                    Some(script.as_bytes()),
+                    "dotool must receive the original keystrokes on stdin"
+                );
+                Ok(std::process::Output {
+                    status: std::process::ExitStatus::from_raw(9 << 8),
+                    stdout: Vec::new(),
+                    stderr: b"fixture failure".to_vec(),
+                })
+            });
+            assert_eq!(
+                result.unwrap_err().to_string(),
+                "dotool failed (exit code 9)"
+            );
+        }
+    }
+
+    #[test]
+    fn typing_and_watchdog_budgets_scale_with_characters() {
+        for count in [0, 30, 3000] {
+            let text = "語".repeat(count);
+            assert_eq!(
+                typing_timeout(&text),
+                Duration::from_millis(30_000 + 100 * count as u64),
+                "typing budget must scale by characters"
+            );
+            let settings = crate::settings::AppSettings::default();
+            assert!(
+                paste_timeout(&settings, &text) > typing_timeout(&text),
+                "watchdog must cover typing and cleanup"
+            );
+        }
+    }
+
+    #[test]
+    #[ignore = "Runs the real 330-second typing deadline; invoked explicitly for wbfix3"]
+    fn long_typing_completes_and_hung_typing_expires() {
+        let dir = tempfile::tempdir().unwrap();
+        let delivered = dir.path().join("delivered");
+        let text = "a".repeat(3000);
+        let result = typing_tool(Command::new("python3").args(["-c", "import pathlib,sys,time; f=open(sys.argv[1],'w'); [(f.write(c),f.flush(),time.sleep(.04)) for c in sys.argv[2]]"]).arg(&delivered).arg(&text), None, &text).unwrap();
+        assert!(result.status.success());
+        assert_eq!(
+            std::fs::read_to_string(&delivered).unwrap(),
+            text,
+            "long typing must deliver every character"
+        );
+        let began = std::time::Instant::now();
+        let result = typing_tool(
+            Command::new("sh").args(["-c", "exec sleep 600"]),
+            None,
+            &text,
+        );
+        assert_eq!(result.unwrap_err().kind(), std::io::ErrorKind::TimedOut);
+        assert!(began.elapsed() >= typing_timeout(&text));
+        assert!(
+            began.elapsed() < typing_timeout(&text) + Duration::from_secs(2),
+            "hung typing must expire within scaled budget"
+        );
+    }
+
+    #[test]
+    fn stderr_flood_is_bounded_and_still_obeys_deadline() {
+        let output = paste_tool(
+            Command::new("python3").args([
+                "-c",
+                "import sys; sys.stderr.write('x'*200000); sys.exit(9)",
+            ]),
+            None,
+        )
+        .unwrap();
+        assert_eq!(output.status.code(), Some(9));
+        assert_eq!(
+            output.stderr.len(),
+            MAX_PROBE_BYTES,
+            "stderr must be bounded without failing the tool"
+        );
+        let began = std::time::Instant::now();
+        let result = paste_tool_with_timeout(
+            Command::new("python3").args([
+                "-c",
+                "import os; exec('while True: os.write(2,b\"x\"*8192)')",
+            ]),
+            None,
+            Duration::from_millis(100),
+        );
+        assert_eq!(result.unwrap_err().kind(), std::io::ErrorKind::TimedOut);
+        assert!(began.elapsed() < Duration::from_secs(2));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn helper_parent_fixture() {
+        let Some(pidfile) = std::env::var_os("HANDY_TEST_HELPER_PIDFILE") else {
+            return;
+        };
+        let _ = paste_tool(Command::new("python3").args(["-c", "import os,pathlib,sys,time; pathlib.Path(sys.argv[1]).write_text(str(os.getpid())); time.sleep(30)"]).arg(pidfile), None);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn running_helper_dies_with_parent() {
+        let dir = tempfile::tempdir().unwrap();
+        let pidfile = dir.path().join("helper.pid");
+        let mut parent = Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "clipboard::wbfix3::helper_parent_fixture",
+                "--nocapture",
+            ])
+            .env("HANDY_TEST_HELPER_PIDFILE", &pidfile)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .unwrap();
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        let pid = loop {
+            let pid = std::fs::read_to_string(&pidfile)
+                .ok()
+                .and_then(|p| p.trim().parse::<i32>().ok());
+            if pid.is_some() || std::time::Instant::now() >= deadline {
+                break pid;
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        };
+        parent.kill().unwrap();
+        parent.wait().unwrap();
+        let pid = pid.expect("helper must start before parent is killed");
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        let stopped = loop {
+            let state = std::fs::read_to_string(format!("/proc/{pid}/stat"));
+            if state
+                .as_ref()
+                .map_or(true, |s| s.split_whitespace().nth(2) == Some("Z"))
+            {
+                break true;
+            }
+            if std::time::Instant::now() >= deadline {
+                break false;
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        };
+        if !stopped {
+            // SAFETY: this PID names the test helper which has not exited.
+            unsafe {
+                libc::kill(pid, libc::SIGKILL);
+            }
+        }
+        assert!(stopped, "helper must die when its parent process dies");
+    }
+
+    #[test]
+    fn failures_preserve_bounded_stderr() {
+        let output = paste_tool(
+            Command::new("sh").args(["-c", "printf 'fixture failure' >&2; exit 7"]),
+            None,
+        )
+        .unwrap();
+        assert_eq!(output.status.code(), Some(7));
+        assert_eq!(
+            output.stderr, b"fixture failure",
+            "tool failure must retain stderr"
+        );
+    }
+}
+
+fn typing_timeout(text: &str) -> Duration {
+    PASTE_TOOL_TIMEOUT.saturating_add(Duration::from_millis(
+        u64::try_from(text.chars().count())
+            .unwrap_or(u64::MAX)
+            .saturating_mul(100),
+    ))
+}
+
+pub(crate) fn paste_timeout(settings: &crate::settings::AppSettings, text: &str) -> Duration {
+    typing_timeout(text)
+        + PASTE_TOOL_TIMEOUT * 5
+        + PASTE_PROBE_TIMEOUT * 7
+        + crate::paste_tx::RESTORE_TIMEOUT
+        + Duration::from_secs(2)
+        + Duration::from_millis(
+            settings
+                .paste_delay_ms
+                .saturating_add(settings.paste_delay_after_ms),
+        )
+}
+
+fn paste_tool(
+    command: &mut Command,
+    input: Option<Vec<u8>>,
+) -> Result<std::process::Output, std::io::Error> {
+    paste_tool_with_timeout(command, input, PASTE_TOOL_TIMEOUT)
+}
+#[cfg(any(target_os = "linux", all(test, unix)))]
+fn typing_tool(
+    command: &mut Command,
+    input: Option<Vec<u8>>,
+    text: &str,
+) -> std::io::Result<std::process::Output> {
+    paste_tool_with_timeout(command, input, typing_timeout(text))
+}
+
+pub(crate) fn quiet_tool(
+    command: &mut Command,
+    timeout: Duration,
+) -> std::io::Result<std::process::Output> {
+    run_paste_process(command, None, timeout, ProcessCapture::None)
+}
+
+/// Like [`quiet_tool`], with `input` written to the helper's stdin.
+#[cfg(target_os = "linux")]
+pub(crate) fn quiet_tool_with_input(
+    command: &mut Command,
+    input: Vec<u8>,
+    timeout: Duration,
+) -> std::io::Result<std::process::Output> {
+    run_paste_process(command, Some(input), timeout, ProcessCapture::None)
+}
+
+/// Runs a selection reader, draining its stdout as it runs, up to [`MAX_SELECTION_BYTES`].
+#[cfg(target_os = "linux")]
+pub(crate) fn read_selection_tool(
+    command: &mut Command,
+    timeout: Duration,
+) -> std::io::Result<std::process::Output> {
+    run_paste_process(command, None, timeout, ProcessCapture::Selection)
+}
+
+#[derive(Clone, Copy)]
+enum ProcessCapture {
+    None,
+    Stderr,
+    Probe,
+    #[cfg_attr(
+        not(target_os = "linux"),
+        expect(dead_code, reason = "only the Linux PRIMARY selection reader uses it")
+    )]
+    Selection,
+}
+
+/// Largest PRIMARY selection saved before a Shift+Insert paste.
+const MAX_SELECTION_BYTES: usize = 64 * 1024 * 1024;
+
+pub(crate) const PASTE_PROBE_TIMEOUT: Duration = Duration::from_secs(2);
+const MAX_PROBE_BYTES: usize = 64 * 1024;
+
+#[cfg(any(target_os = "linux", all(test, unix)))]
+fn paste_probe_with_timeout(
+    command: &mut Command,
+    timeout: Duration,
+) -> std::io::Result<std::process::Output> {
+    run_paste_process(command, None, timeout, ProcessCapture::Probe)
+}
+fn paste_tool_with_timeout(
+    command: &mut Command,
+    input: Option<Vec<u8>>,
+    timeout: Duration,
+) -> std::io::Result<std::process::Output> {
+    run_paste_process(command, input, timeout, ProcessCapture::Stderr)
+}
+fn run_paste_process(
+    command: &mut Command,
+    input: Option<Vec<u8>>,
+    timeout: Duration,
+    capture: ProcessCapture,
+) -> std::io::Result<std::process::Output> {
+    use std::{io::Write, process::Stdio};
+    let deadline = std::time::Instant::now() + timeout;
+    command.stdout(
+        if matches!(capture, ProcessCapture::Probe | ProcessCapture::Selection) {
+            Stdio::piped()
+        } else {
+            Stdio::null()
+        },
+    );
+    command.stderr(if !matches!(capture, ProcessCapture::None) {
+        Stdio::piped()
+    } else {
+        Stdio::null()
+    });
+    command.stdin(if input.is_some() {
+        Stdio::piped()
+    } else {
+        Stdio::null()
+    });
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        command.process_group(0);
+    }
+    #[cfg(target_os = "linux")]
+    crate::process_supervisor::set_parent_death_signal(command);
+    let owned = std::mem::replace(command, Command::new(""));
+    let mut child = crate::process_supervisor::spawn_from_supervisor(owned)?;
+    let result = (|| {
+        let mut stdout = child.stdout.take();
+        let mut stderr = child.stderr.take();
+        let mut stdin = child.stdin.take();
+        #[cfg(unix)]
+        {
+            if let Some(pipe) = &stdout {
+                nonblocking_pipe(pipe)?;
+            }
+            if let Some(pipe) = &stderr {
+                nonblocking_pipe(pipe)?;
+            }
+            if let Some(pipe) = &stdin {
+                nonblocking_pipe(pipe)?;
+            }
+        }
+        let input = input.unwrap_or_default();
+        let mut offset = 0;
+        let mut out = Vec::new();
+        let mut err = Vec::new();
+        loop {
+            if std::time::Instant::now() >= deadline {
+                return Err(std::io::ErrorKind::TimedOut.into());
+            }
+            if let Some(pipe) = &mut stdin {
+                match pipe.write(&input[offset..input.len().min(offset + 8192)]) {
+                    Ok(0) if offset < input.len() => {
+                        return Err(std::io::ErrorKind::WriteZero.into())
+                    }
+                    Ok(count) => offset += count,
+                    Err(e)
+                        if matches!(
+                            e.kind(),
+                            std::io::ErrorKind::WouldBlock | std::io::ErrorKind::Interrupted
+                        ) => {}
+                    Err(e) => return Err(e),
+                }
+                if offset == input.len() {
+                    stdin = None;
+                }
+            }
+            let stdout_eof = if matches!(capture, ProcessCapture::Selection) {
+                drain_selection(&mut stdout, &mut out)?
+            } else {
+                drain_probe(&mut stdout, &mut out, err.len())?
+            };
+            let stderr_eof = if matches!(capture, ProcessCapture::Probe) {
+                drain_probe(&mut stderr, &mut err, out.len())?
+            } else {
+                drain_tool_stderr(&mut stderr, &mut err)?
+            };
+            if child_exited(&mut child)? && stdout_eof && stderr_eof {
+                return Ok(std::process::Output {
+                    status: child.wait()?,
+                    stdout: out,
+                    stderr: err,
+                });
+            }
+            std::thread::sleep(Duration::from_millis(5));
+        }
+    })();
+    if result.is_err() {
+        log::warn!("Paste process failed or timed out; stopping and reaping the owned process");
+        #[cfg(unix)]
+        {
+            // SAFETY: the unreaped child reserves the process group created above.
+            unsafe {
+                libc::kill(-(child.id() as i32), libc::SIGKILL);
+            }
+        }
+        let _ = child.kill();
+        child.wait()?;
+    }
+    result
+}
+
+#[cfg(unix)]
+fn nonblocking_pipe(pipe: &impl std::os::fd::AsRawFd) -> std::io::Result<()> {
+    // SAFETY: the pipe is owned by the caller for the duration of both calls.
+    let flags = unsafe { libc::fcntl(pipe.as_raw_fd(), libc::F_GETFL) };
+    if flags == -1 {
+        return Err(std::io::Error::last_os_error());
+    }
+    // SAFETY: the pipe is live and the existing flags are preserved.
+    if unsafe { libc::fcntl(pipe.as_raw_fd(), libc::F_SETFL, flags | libc::O_NONBLOCK) } == -1 {
+        return Err(std::io::Error::last_os_error());
+    }
+    Ok(())
+}
+#[cfg(unix)]
+fn child_exited(child: &mut std::process::Child) -> std::io::Result<bool> {
+    // SAFETY: zero is a valid initial value for this output-only status structure.
+    let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
+    // SAFETY: waitid observes only this owned child and leaves it unreaped.
+    if unsafe {
+        libc::waitid(
+            libc::P_PID,
+            child.id(),
+            &mut info,
+            libc::WEXITED | libc::WNOHANG | libc::WNOWAIT,
+        )
+    } == -1
+    {
+        return Err(std::io::Error::last_os_error());
+    }
+    Ok(info.si_signo != 0)
+}
+#[cfg(windows)]
+fn child_exited(child: &mut std::process::Child) -> std::io::Result<bool> {
+    child.try_wait().map(|status| status.is_some())
+}
+
+trait ProbeRead {
+    fn read_ready(&mut self, buffer: &mut [u8]) -> std::io::Result<Option<usize>>;
+}
+#[cfg(unix)]
+impl<R: std::io::Read> ProbeRead for R {
+    fn read_ready(&mut self, buffer: &mut [u8]) -> std::io::Result<Option<usize>> {
+        match self.read(buffer) {
+            Err(e)
+                if matches!(
+                    e.kind(),
+                    std::io::ErrorKind::WouldBlock | std::io::ErrorKind::Interrupted
+                ) =>
+            {
+                Ok(None)
+            }
+            result => result.map(Some),
+        }
+    }
+}
+#[cfg(windows)]
+impl<R: std::io::Read + std::os::windows::io::AsRawHandle> ProbeRead for R {
+    fn read_ready(&mut self, buffer: &mut [u8]) -> std::io::Result<Option<usize>> {
+        use std::{ffi::c_void, ptr};
+        #[link(name = "kernel32")]
+        unsafe extern "system" {
+            #[link_name = "PeekNamedPipe"]
+            fn peek_named_pipe(
+                pipe: *mut c_void,
+                buffer: *mut c_void,
+                size: u32,
+                read: *mut u32,
+                available: *mut u32,
+                left: *mut u32,
+            ) -> i32;
+        }
+        let mut available = 0;
+        // SAFETY: this live pipe has one reader and available is a valid output pointer.
+        if unsafe {
+            peek_named_pipe(
+                self.as_raw_handle(),
+                ptr::null_mut(),
+                0,
+                ptr::null_mut(),
+                &mut available,
+                ptr::null_mut(),
+            )
+        } == 0
+        {
+            let error = std::io::Error::last_os_error();
+            return if error.raw_os_error()
+                == Some(windows::Win32::Foundation::ERROR_BROKEN_PIPE.0 as i32)
+            {
+                Ok(Some(0))
+            } else {
+                Err(error)
+            };
+        }
+        if available == 0 {
+            return Ok(None);
+        }
+        let count = buffer.len().min(available as usize);
+        self.read(&mut buffer[..count]).map(Some)
+    }
+}
+fn drain_probe<R: ProbeRead>(
+    pipe: &mut Option<R>,
+    bytes: &mut Vec<u8>,
+    other_bytes: usize,
+) -> std::io::Result<bool> {
+    let Some(reader) = pipe else {
+        return Ok(true);
+    };
+    let mut buffer = [0; 8192];
+    match reader.read_ready(&mut buffer)? {
+        Some(0) => {
+            *pipe = None;
+            Ok(true)
+        }
+        Some(count) => {
+            if bytes.len() + other_bytes + count > MAX_PROBE_BYTES {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "paste probe output exceeded limit",
+                ));
+            }
+            bytes.extend_from_slice(&buffer[..count]);
+            Ok(false)
+        }
+        None => Ok(false),
+    }
+}
+
+/// Reads everything `pipe` has ready, so a large selection never blocks its writer.
+fn drain_selection<R: ProbeRead>(
+    pipe: &mut Option<R>,
+    bytes: &mut Vec<u8>,
+) -> std::io::Result<bool> {
+    let Some(reader) = pipe else {
+        return Ok(true);
+    };
+    let mut buffer = vec![0; 64 * 1024];
+    loop {
+        match reader.read_ready(&mut buffer)? {
+            Some(0) => {
+                *pipe = None;
+                return Ok(true);
+            }
+            Some(count) => {
+                if bytes.len() + count > MAX_SELECTION_BYTES {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "selection exceeded limit",
+                    ));
+                }
+                bytes.extend_from_slice(&buffer[..count]);
+            }
+            None => return Ok(false),
+        }
+    }
+}
+fn drain_tool_stderr<R: ProbeRead>(
+    pipe: &mut Option<R>,
+    bytes: &mut Vec<u8>,
+) -> std::io::Result<bool> {
+    let Some(reader) = pipe else {
+        return Ok(true);
+    };
+    let mut buffer = [0; 8192];
+    match reader.read_ready(&mut buffer)? {
+        Some(0) => {
+            *pipe = None;
+            Ok(true)
+        }
+        Some(count) => {
+            let keep = count.min(MAX_PROBE_BYTES.saturating_sub(bytes.len()));
+            bytes.extend_from_slice(&buffer[..keep]);
+            Ok(false)
+        }
+        None => Ok(false),
+    }
+}
+
+fn input_if_current<T>(
+    cancelled: &std::sync::atomic::AtomicBool,
+    input: impl FnOnce() -> Result<T, PasteError>,
+) -> Result<T, PasteError> {
+    if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+        return Err("Input request expired".into());
+    }
+    input()
+}
+
 /// Runs `f` with the shared Enigo on the main thread (macOS TIS APIs require it)
 /// and waits for the result. Runs inline if already on the main thread, so no deadlock.
 fn with_enigo<T: Send + 'static>(
     app_handle: &AppHandle,
-    f: impl FnOnce(&mut Enigo) -> Result<T, String> + Send + 'static,
-) -> Result<T, String> {
-    let (tx, rx) = mpsc::sync_channel(1);
-    let app = app_handle.clone();
-    app_handle
-        .run_on_main_thread(move || {
-            let result = (|| {
-                let enigo_state = app
-                    .try_state::<EnigoState>()
-                    .ok_or("Enigo state not initialized")?;
-                let mut enigo = enigo_state
-                    .0
-                    .lock()
-                    .map_err(|e| format!("Failed to lock Enigo: {}", e))?;
-                f(&mut enigo)
-            })();
-            let _ = tx.send(result);
-        })
-        .map_err(|e| format!("Failed to run input on the main thread: {}", e))?;
-    // A dropped closure (event loop shutting down) closes the channel.
-    rx.recv()
-        .map_err(|_| "Main thread dropped the input request".to_string())?
+    f: impl FnOnce(&mut Enigo) -> Result<T, PasteError> + Send + 'static,
+) -> Result<T, PasteError> {
+    with_enigo_timeout(app_handle, PASTE_TOOL_TIMEOUT, f)
 }
 
-fn write_text_to_clipboard(app_handle: &AppHandle, text: &str) -> Result<(), String> {
+fn with_enigo_timeout<T: Send + 'static>(
+    app_handle: &AppHandle,
+    timeout: Duration,
+    f: impl FnOnce(&mut Enigo) -> Result<T, PasteError> + Send + 'static,
+) -> Result<T, PasteError> {
+    let app = app_handle.clone();
+    queued_input(
+        |job| {
+            app_handle.run_on_main_thread(job).map_err(|e| {
+                PasteError::authored(format!("Failed to run input on the main thread: {e}"))
+            })
+        },
+        move || {
+            let enigo_state = app
+                .try_state::<EnigoState>()
+                .ok_or("Enigo state not initialized")?;
+            let mut enigo = enigo_state
+                .0
+                .lock()
+                .map_err(|e| PasteError::authored(format!("Failed to lock Enigo: {e}")))?;
+            f(&mut enigo)
+        },
+        timeout,
+    )
+}
+fn queued_input<T: Send + 'static>(
+    queue: impl FnOnce(Box<dyn FnOnce() + Send>) -> Result<(), PasteError>,
+    input: impl FnOnce() -> Result<T, PasteError> + Send + 'static,
+    timeout: Duration,
+) -> Result<T, PasteError> {
+    let (tx, rx) = mpsc::sync_channel(1);
+    let cancelled = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let started = std::sync::Arc::new(Mutex::new(false));
+    let queued = cancelled.clone();
+    let running = started.clone();
+    queue(Box::new(move || {
+        let mut running = running.lock().unwrap_or_else(PoisonError::into_inner);
+        let result = input_if_current(&queued, || {
+            *running = true;
+            drop(running);
+            input()
+        });
+        let _ = tx.send(result);
+    }))?;
+    match rx.recv_timeout(timeout) {
+        Ok(result) => result,
+        Err(mpsc::RecvTimeoutError::Timeout) => {
+            let started = started.lock().unwrap_or_else(PoisonError::into_inner);
+            if *started {
+                drop(started);
+                log::warn!("Native input is still running; paste admission remains held");
+                rx.recv().map_err(|_| {
+                    PasteError::from("Main thread dropped the running input request")
+                })?
+            } else {
+                cancelled.store(true, std::sync::atomic::Ordering::Release);
+                Err("Main thread input request expired before starting".into())
+            }
+        }
+        Err(mpsc::RecvTimeoutError::Disconnected) => {
+            Err("Main thread dropped the input request".into())
+        }
+    }
+}
+
+fn write_text_to_clipboard(app_handle: &AppHandle, text: &str) -> Result<(), PasteError> {
     #[cfg(target_os = "linux")]
-    if is_wayland() && is_wl_copy_available() {
+    if is_wayland() && is_wl_copy_available()? {
         info!("Using wl-copy for clipboard write on Wayland");
         return write_clipboard_via_wl_copy(text);
     }
@@ -57,14 +1101,14 @@ fn write_text_to_clipboard(app_handle: &AppHandle, text: &str) -> Result<(), Str
     app_handle
         .clipboard()
         .write_text(text)
-        .map_err(|e| format!("Failed to write to clipboard: {}", e))
+        .map_err(PasteError::clipboard_write)
 }
 
 fn finish_clipboard_paste(
-    paste_result: Result<(), String>,
+    paste_result: Result<(), PasteError>,
     paste_delay_after_ms: u64,
     restore_clipboard: impl FnOnce(),
-) -> Result<(), String> {
+) -> Result<(), PasteError> {
     std::thread::sleep(Duration::from_millis(paste_delay_after_ms));
     restore_clipboard();
     paste_result
@@ -77,7 +1121,7 @@ fn paste_via_clipboard(
     paste_method: &PasteMethod,
     paste_delay_ms: u64,
     paste_delay_after_ms: u64,
-) -> Result<(), String> {
+) -> Result<(), PasteError> {
     let clipboard = app_handle.clipboard();
     let saved_text = clipboard.read_text().ok().filter(|t| !t.is_empty());
     // Only probe for an image when there is no text to restore. Text is by far the
@@ -94,14 +1138,7 @@ fn paste_via_clipboard(
     // reads PRIMARY, and writing it replaces the user's highlighted text.
     #[cfg(target_os = "linux")]
     let saved_primary = if *paste_method == PasteMethod::ShiftInsert {
-        let saved = crate::primary_selection::read();
-        match crate::primary_selection::write(text) {
-            Ok(()) => Some(saved),
-            Err(e) => {
-                log::warn!("Could not put the transcript on the primary selection: {e}");
-                None
-            }
-        }
+        crate::primary_selection::save_and_set(text)
     } else {
         None
     };
@@ -119,10 +1156,10 @@ fn paste_via_clipboard(
 
     // Capture key injection errors so the original clipboard is restored before
     // propagating them to the caller.
-    let paste_result = (|| -> Result<(), String> {
+    let paste_result = (|| -> Result<(), PasteError> {
         // Send paste key combo
         #[cfg(target_os = "linux")]
-        let key_combo_sent = try_send_key_combo_linux(paste_method);
+        let key_combo_sent = try_send_key_combo_linux(paste_method)?;
 
         #[cfg(not(target_os = "linux"))]
         let key_combo_sent = false;
@@ -164,87 +1201,102 @@ fn paste_via_clipboard(
     })
 }
 
+#[cfg(target_os = "linux")]
+type KeyComboProbe = fn() -> Result<bool, PasteError>;
+#[cfg(target_os = "linux")]
+type SendKeyCombo = fn(&PasteMethod) -> Result<(), PasteError>;
+
 /// Sends the paste key combination with the first Linux-native tool that works.
 /// A tool that is installed but fails (ydotool without its daemon, wtype on a
 /// compositor without the virtual-keyboard protocol) hands over to the next one.
 /// Returns `false` when none of them sent it, so the caller falls back to enigo.
 #[cfg(target_os = "linux")]
-fn try_send_key_combo_linux(paste_method: &PasteMethod) -> bool {
-    type SendKeyCombo = fn(&PasteMethod) -> Result<(), String>;
-    let mut tools: Vec<(&str, SendKeyCombo)> = Vec::new();
-    if is_wayland() {
+fn try_send_key_combo_linux(paste_method: &PasteMethod) -> Result<bool, PasteError> {
+    let tools: &[(&str, KeyComboProbe, SendKeyCombo)] = if is_wayland() {
         // Wayland: prefer wtype (but not on KDE or GNOME), then dotool, then ydotool
         // Note: wtype doesn't work on KDE (no zwp_virtual_keyboard_manager_v1 support)
-        // or on GNOME/Mutter (same reason — Mutter deliberately does not implement
+        // or on GNOME/Mutter (same reason - Mutter deliberately does not implement
         // the virtual-keyboard-v1 protocol).
-        if !is_kde_wayland() && !is_gnome_wayland() && is_wtype_available() {
-            tools.push(("wtype", send_key_combo_via_wtype));
-        }
-        if is_dotool_available() {
-            tools.push(("dotool", send_key_combo_via_dotool));
-        }
-    } else if is_xdotool_available() {
+        &[
+            ("wtype", wtype_usable, send_key_combo_via_wtype),
+            ("dotool", is_dotool_available, send_key_combo_via_dotool),
+            ("ydotool", is_ydotool_available, send_key_combo_via_ydotool),
+        ]
+    } else {
         // X11: prefer xdotool, then ydotool
-        tools.push(("xdotool", send_key_combo_via_xdotool));
-    }
-    if is_ydotool_available() {
-        tools.push(("ydotool", send_key_combo_via_ydotool));
-    }
+        &[
+            ("xdotool", is_xdotool_available, send_key_combo_via_xdotool),
+            ("ydotool", is_ydotool_available, send_key_combo_via_ydotool),
+        ]
+    };
+    send_key_combo_with_first_tool(paste_method, tools)
+}
 
-    for (name, send) in tools {
+#[cfg(target_os = "linux")]
+fn wtype_usable() -> Result<bool, PasteError> {
+    Ok(!is_kde_wayland() && !is_gnome_wayland() && is_wtype_available()?)
+}
+
+/// Probes each tool only after the previous one failed to send; a probe error stops the chain.
+#[cfg(target_os = "linux")]
+fn send_key_combo_with_first_tool(
+    paste_method: &PasteMethod,
+    tools: &[(&str, KeyComboProbe, SendKeyCombo)],
+) -> Result<bool, PasteError> {
+    for (name, available, send) in tools {
+        if !available()? {
+            continue;
+        }
         info!("Using {} for key combo", name);
         match send(paste_method) {
-            Ok(()) => return true,
+            Ok(()) => return Ok(true),
             Err(e) => log::warn!("{} could not send the paste keys: {}", name, e),
         }
     }
 
-    false
+    Ok(false)
 }
 
 /// Attempts to type text directly using Linux-native tools.
 /// Returns `Ok(true)` if a native tool handled it, `Ok(false)` to fall back to enigo.
 #[cfg(target_os = "linux")]
-fn try_direct_typing_linux(text: &str, preferred_tool: TypingTool) -> Result<bool, String> {
+fn try_direct_typing_linux(text: &str, preferred_tool: TypingTool) -> Result<bool, PasteError> {
     // If user specified a tool, try only that one
     if preferred_tool != TypingTool::Auto {
         return match preferred_tool {
-            TypingTool::Wtype if is_wtype_available() => {
+            TypingTool::Wtype if is_wtype_available()? => {
                 info!("Using user-specified wtype");
                 type_text_via_wtype(text)?;
                 Ok(true)
             }
-            TypingTool::Kwtype if is_kwtype_available() => {
+            TypingTool::Kwtype if is_kwtype_available()? => {
                 info!("Using user-specified kwtype");
                 type_text_via_kwtype(text)?;
                 Ok(true)
             }
-            TypingTool::Dotool if is_dotool_available() => {
+            TypingTool::Dotool if is_dotool_available()? => {
                 info!("Using user-specified dotool");
                 type_text_via_dotool(text)?;
                 Ok(true)
             }
-            TypingTool::Ydotool if is_ydotool_available() => {
+            TypingTool::Ydotool if is_ydotool_available()? => {
                 info!("Using user-specified ydotool");
                 type_text_via_ydotool(text)?;
                 Ok(true)
             }
-            TypingTool::Xdotool if is_xdotool_available() => {
+            TypingTool::Xdotool if is_xdotool_available()? => {
                 info!("Using user-specified xdotool");
                 type_text_via_xdotool(text)?;
                 Ok(true)
             }
-            _ => Err(format!(
-                "Typing tool {:?} is not available on this system",
-                preferred_tool
-            )),
+            _ => Err(unavailable_typing_tool(preferred_tool)),
         };
     }
 
     // Auto mode - existing fallback chain
     if is_wayland() {
         // KDE Wayland: prefer kwtype (uses KDE Fake Input protocol, supports umlauts)
-        if is_kde_wayland() && is_kwtype_available() {
+        if is_kde_wayland() && is_kwtype_available()? {
             info!("Using kwtype for direct text input on KDE Wayland");
             type_text_via_kwtype(text)?;
             return Ok(true);
@@ -253,29 +1305,29 @@ fn try_direct_typing_linux(text: &str, preferred_tool: TypingTool) -> Result<boo
         // Note: wtype doesn't work on KDE (no zwp_virtual_keyboard_manager_v1 support)
         // or on GNOME/Mutter (same reason — Mutter deliberately does not implement
         // the virtual-keyboard-v1 protocol).
-        if !is_kde_wayland() && !is_gnome_wayland() && is_wtype_available() {
+        if !is_kde_wayland() && !is_gnome_wayland() && is_wtype_available()? {
             info!("Using wtype for direct text input");
             type_text_via_wtype(text)?;
             return Ok(true);
         }
-        if is_dotool_available() {
+        if is_dotool_available()? {
             info!("Using dotool for direct text input");
             type_text_via_dotool(text)?;
             return Ok(true);
         }
-        if is_ydotool_available() {
+        if is_ydotool_available()? {
             info!("Using ydotool for direct text input");
             type_text_via_ydotool(text)?;
             return Ok(true);
         }
     } else {
         // X11: prefer xdotool, then ydotool
-        if is_xdotool_available() {
+        if is_xdotool_available()? {
             info!("Using xdotool for direct text input");
             type_text_via_xdotool(text)?;
             return Ok(true);
         }
-        if is_ydotool_available() {
+        if is_ydotool_available()? {
             info!("Using ydotool for direct text input");
             type_text_via_ydotool(text)?;
             return Ok(true);
@@ -285,47 +1337,65 @@ fn try_direct_typing_linux(text: &str, preferred_tool: TypingTool) -> Result<boo
     Ok(false)
 }
 
+#[cfg(target_os = "linux")]
+fn unavailable_typing_tool(tool: TypingTool) -> PasteError {
+    PasteError::authored(format!(
+        "Typing tool {tool:?} is not available on this system"
+    ))
+}
+
 /// Returns the list of available typing tools on this system.
 /// Always includes "auto" as the first entry.
 #[cfg(target_os = "linux")]
 pub fn get_available_typing_tools() -> Vec<String> {
     let mut tools = vec!["auto".to_string()];
-    if is_wtype_available() {
+    if is_wtype_available().unwrap_or(false) {
         tools.push("wtype".to_string());
     }
-    if is_kwtype_available() {
+    if is_kwtype_available().unwrap_or(false) {
         tools.push("kwtype".to_string());
     }
-    if is_dotool_available() {
+    if is_dotool_available().unwrap_or(false) {
         tools.push("dotool".to_string());
     }
-    if is_ydotool_available() {
+    if is_ydotool_available().unwrap_or(false) {
         tools.push("ydotool".to_string());
     }
-    if is_xdotool_available() {
+    if is_xdotool_available().unwrap_or(false) {
         tools.push("xdotool".to_string());
     }
     tools
 }
 
+#[cfg(target_os = "linux")]
+pub(crate) fn tool_available_with(
+    command: &mut Command,
+    timeout: Duration,
+) -> Result<bool, PasteError> {
+    paste_probe_with_timeout(command, timeout)
+        .map(|output| output.status.success())
+        .or_else(|error| {
+            if error.kind() == std::io::ErrorKind::TimedOut {
+                Err(PasteError::authored(format!(
+                    "Typing tool availability probe failed: {}",
+                    PasteError::io_reason(error)
+                )))
+            } else {
+                Ok(false)
+            }
+        })
+}
+
 /// Check if wtype is available (Wayland text input tool)
 #[cfg(target_os = "linux")]
-fn is_wtype_available() -> bool {
-    Command::new("which")
-        .arg("wtype")
-        .output()
-        .map(|output| output.status.success())
-        .unwrap_or(false)
+fn is_wtype_available() -> Result<bool, PasteError> {
+    tool_available_with(Command::new("which").arg("wtype"), PASTE_PROBE_TIMEOUT)
 }
 
 /// Check if dotool is available (another Wayland text input tool)
 #[cfg(target_os = "linux")]
-fn is_dotool_available() -> bool {
-    Command::new("which")
-        .arg("dotool")
-        .output()
-        .map(|output| output.status.success())
-        .unwrap_or(false)
+fn is_dotool_available() -> Result<bool, PasteError> {
+    tool_available_with(Command::new("which").arg("dotool"), PASTE_PROBE_TIMEOUT)
 }
 
 #[cfg(target_os = "linux")]
@@ -390,12 +1460,25 @@ fn ydotool_command() -> Command {
 /// Detects and caches a recognized ydotool key syntax. Unknown or failed probes are not cached,
 /// allowing a transient daemon or PATH problem to recover on a later paste attempt.
 #[cfg(target_os = "linux")]
-fn detect_ydotool_key_syntax() -> YdotoolKeySyntax {
-    if let Some(syntax) = YDOTOOL_KEY_SYNTAX.get() {
-        return *syntax;
+fn detect_ydotool_key_syntax() -> Result<YdotoolKeySyntax, PasteError> {
+    detect_ydotool_key_syntax_with(
+        ydotool_command().args(["key", "--help"]),
+        &YDOTOOL_KEY_SYNTAX,
+        PASTE_PROBE_TIMEOUT,
+    )
+}
+
+#[cfg(target_os = "linux")]
+fn detect_ydotool_key_syntax_with(
+    command: &mut Command,
+    cache: &OnceLock<YdotoolKeySyntax>,
+    timeout: Duration,
+) -> Result<YdotoolKeySyntax, PasteError> {
+    if let Some(syntax) = cache.get() {
+        return Ok(*syntax);
     }
 
-    match ydotool_command().args(["key", "--help"]).output() {
+    match paste_probe_with_timeout(command, timeout) {
         Ok(output) => {
             // ydotool 0.x writes help to stderr and its exit status varies by build.
             let mut help = String::from_utf8_lossy(&output.stdout).into_owned();
@@ -405,93 +1488,67 @@ fn detect_ydotool_key_syntax() -> YdotoolKeySyntax {
             help.push_str(&String::from_utf8_lossy(&output.stderr));
 
             if let Some(syntax) = classify_ydotool_key_syntax(&help) {
-                *YDOTOOL_KEY_SYNTAX.get_or_init(|| {
+                Ok(*cache.get_or_init(|| {
                     info!("Detected ydotool key syntax: {:?}", syntax);
                     syntax
-                })
+                }))
             } else {
                 // Preserve Handy's existing behavior and compatibility with current ydotool.
                 log::warn!(
                     "Could not recognize ydotool key --help output (exit status {:?}); using raw-keycode syntax",
                     output.status.code()
                 );
-                YDOTOOL_UNKNOWN_HELP_FALLBACK
+                Ok(YDOTOOL_UNKNOWN_HELP_FALLBACK)
             }
         }
-        Err(error) => {
-            log::warn!(
-                "Could not query ydotool key syntax: {}; using raw-keycode syntax",
-                error
-            );
-            YDOTOOL_UNKNOWN_HELP_FALLBACK
+        Err(error) if error.kind() != std::io::ErrorKind::TimedOut => {
+            log::warn!("Could not query ydotool key syntax: {error}; using raw-keycode syntax");
+            Ok(YDOTOOL_UNKNOWN_HELP_FALLBACK)
         }
+        Err(error) => Err(PasteError::authored(format!(
+            "Could not query ydotool key syntax: {}",
+            PasteError::io_reason(error)
+        ))),
     }
-}
-
-/// ydotool prints its errors, such as a missing ydotoold, on stdout rather than stderr.
-#[cfg(target_os = "linux")]
-fn ydotool_error(output: &std::process::Output) -> String {
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let message = [stderr.trim(), stdout.trim()]
-        .into_iter()
-        .filter(|part| !part.is_empty())
-        .collect::<Vec<_>>()
-        .join(" ");
-    format!("ydotool failed ({}): {}", output.status, message)
 }
 
 /// Check if ydotool is available (uinput-based, works on both Wayland and X11)
 #[cfg(target_os = "linux")]
-fn is_ydotool_available() -> bool {
-    Command::new("which")
-        .arg("ydotool")
-        .output()
-        .map(|output| output.status.success())
-        .unwrap_or(false)
+fn is_ydotool_available() -> Result<bool, PasteError> {
+    tool_available_with(Command::new("which").arg("ydotool"), PASTE_PROBE_TIMEOUT)
 }
 
 #[cfg(target_os = "linux")]
-fn is_xdotool_available() -> bool {
-    Command::new("which")
-        .arg("xdotool")
-        .output()
-        .map(|output| output.status.success())
-        .unwrap_or(false)
+fn is_xdotool_available() -> Result<bool, PasteError> {
+    tool_available_with(Command::new("which").arg("xdotool"), PASTE_PROBE_TIMEOUT)
 }
 
 /// Check if kwtype is available (KDE Wayland virtual keyboard input tool)
 #[cfg(target_os = "linux")]
-fn is_kwtype_available() -> bool {
-    Command::new("which")
-        .arg("kwtype")
-        .output()
-        .map(|output| output.status.success())
-        .unwrap_or(false)
+fn is_kwtype_available() -> Result<bool, PasteError> {
+    tool_available_with(Command::new("which").arg("kwtype"), PASTE_PROBE_TIMEOUT)
 }
 
 /// Check if wl-copy is available (Wayland clipboard tool)
 #[cfg(target_os = "linux")]
-fn is_wl_copy_available() -> bool {
-    Command::new("which")
-        .arg("wl-copy")
-        .output()
-        .map(|output| output.status.success())
-        .unwrap_or(false)
+fn is_wl_copy_available() -> Result<bool, PasteError> {
+    tool_available_with(Command::new("which").arg("wl-copy"), PASTE_PROBE_TIMEOUT)
 }
 
 /// Type text directly via wtype on Wayland.
 #[cfg(target_os = "linux")]
-fn type_text_via_wtype(text: &str) -> Result<(), String> {
-    let output = Command::new("wtype")
-        .arg("--") // Protect against text starting with -
-        .arg(text)
-        .output()
-        .map_err(|e| format!("Failed to execute wtype: {}", e))?;
+fn type_text_via_wtype(text: &str) -> Result<(), PasteError> {
+    let output = typing_tool(
+        Command::new("wtype")
+            .arg("--") // Protect against text starting with -
+            .arg(text),
+        None,
+        text,
+    )
+    .map_err(|e| PasteError::execute("wtype", e))?;
 
     if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("wtype failed: {}", stderr));
+        return Err(PasteError::tool_exit("wtype", output.status));
     }
 
     Ok(())
@@ -499,14 +1556,29 @@ fn type_text_via_wtype(text: &str) -> Result<(), String> {
 
 /// Type text directly via xdotool on X11.
 #[cfg(target_os = "linux")]
-fn type_text_via_xdotool(text: &str) -> Result<(), String> {
-    let output = Command::new("xdotool")
-        .arg("type")
-        .arg("--clearmodifiers")
-        .arg("--")
-        .arg(text)
-        .output()
-        .map_err(|e| format!("Failed to execute xdotool: {}", e))?;
+fn type_text_via_xdotool(text: &str) -> Result<(), PasteError> {
+    type_text_via_xdotool_with(text, paste_tool_with_timeout)
+}
+
+#[cfg(target_os = "linux")]
+fn type_text_via_xdotool_with(
+    text: &str,
+    mut run: impl FnMut(
+        &mut Command,
+        Option<Vec<u8>>,
+        Duration,
+    ) -> std::io::Result<std::process::Output>,
+) -> Result<(), PasteError> {
+    let output = run(
+        Command::new("xdotool")
+            .arg("type")
+            .arg("--clearmodifiers")
+            .arg("--")
+            .arg(text),
+        None,
+        typing_timeout(text),
+    )
+    .map_err(|e| PasteError::execute("xdotool", e));
 
     // `--clearmodifiers` restores the modifiers that were held when xdotool
     // started. If the user releases one while xdotool is typing, that synthetic
@@ -523,9 +1595,8 @@ fn type_text_via_xdotool(text: &str) -> Result<(), String> {
     // changed modifier state before returning an error. Cleanup remains
     // best-effort because the text may already have been partially or fully
     // typed, but failures are logged so they can be diagnosed.
-    match Command::new("xdotool")
-        .arg("keyup")
-        .args([
+    match run(
+        Command::new("xdotool").arg("keyup").args([
             "Control_L",
             "Control_R",
             "Shift_L",
@@ -534,24 +1605,23 @@ fn type_text_via_xdotool(text: &str) -> Result<(), String> {
             "Alt_R",
             "Super_L",
             "Super_R",
-        ])
-        .output()
-    {
+        ]),
+        None,
+        PASTE_TOOL_TIMEOUT,
+    ) {
         Ok(cleanup_output) if !cleanup_output.status.success() => {
-            let stderr = String::from_utf8_lossy(&cleanup_output.stderr);
             log::warn!(
-                "xdotool modifier cleanup failed with status {:?}: {}",
-                cleanup_output.status.code(),
-                stderr.trim()
+                "xdotool modifier cleanup failed with status {:?}",
+                cleanup_output.status.code()
             );
         }
         Err(error) => log::warn!("Failed to execute xdotool modifier cleanup: {}", error),
         _ => {}
     }
 
+    let output = output?;
     if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("xdotool failed: {}", stderr));
+        return Err(PasteError::tool_exit("xdotool", output.status));
     }
 
     Ok(())
@@ -582,45 +1652,31 @@ fn dotool_type_script(text: &str) -> String {
 
 /// Type text directly via dotool (works on both Wayland and X11 via uinput).
 #[cfg(target_os = "linux")]
-fn type_text_via_dotool(text: &str) -> Result<(), String> {
-    use std::io::Write;
-    use std::process::Stdio;
-
-    let mut child = Command::new("dotool")
-        .stdin(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("Failed to spawn dotool: {}", e))?;
-
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(dotool_type_script(text).as_bytes())
-            .map_err(|e| format!("Failed to write to dotool stdin: {}", e))?;
-    }
-
-    let output = child
-        .wait_with_output()
-        .map_err(|e| format!("Failed to wait for dotool: {}", e))?;
-
+fn type_text_via_dotool(text: &str) -> Result<(), PasteError> {
+    let output = typing_tool(
+        &mut Command::new("dotool"),
+        Some(dotool_type_script(text).into_bytes()),
+        text,
+    )
+    .map_err(|e| PasteError::execute("dotool", e))?;
     if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("dotool failed: {}", stderr));
+        return Err(PasteError::tool_exit("dotool", output.status));
     }
-
     Ok(())
 }
 
 /// Type text directly via ydotool (uinput-based, requires ydotoold daemon).
 #[cfg(target_os = "linux")]
-fn type_text_via_ydotool(text: &str) -> Result<(), String> {
-    let output = ydotool_command()
-        .arg("type")
-        .arg("--")
-        .arg(text)
-        .output()
-        .map_err(|e| format!("Failed to execute ydotool: {}", e))?;
+fn type_text_via_ydotool(text: &str) -> Result<(), PasteError> {
+    let output = typing_tool(
+        ydotool_command().arg("type").arg("--").arg(text),
+        None,
+        text,
+    )
+    .map_err(|e| PasteError::execute("ydotool", e))?;
 
     if !output.status.success() {
-        return Err(ydotool_error(&output));
+        return Err(PasteError::tool_exit("ydotool", output.status));
     }
 
     Ok(())
@@ -628,16 +1684,12 @@ fn type_text_via_ydotool(text: &str) -> Result<(), String> {
 
 /// Type text directly via kwtype (KDE Wayland virtual keyboard, uses KDE Fake Input protocol).
 #[cfg(target_os = "linux")]
-fn type_text_via_kwtype(text: &str) -> Result<(), String> {
-    let output = Command::new("kwtype")
-        .arg("--")
-        .arg(text)
-        .output()
-        .map_err(|e| format!("Failed to execute kwtype: {}", e))?;
+fn type_text_via_kwtype(text: &str) -> Result<(), PasteError> {
+    let output = typing_tool(Command::new("kwtype").arg("--").arg(text), None, text)
+        .map_err(|e| PasteError::execute("kwtype", e))?;
 
     if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("kwtype failed: {}", stderr));
+        return Err(PasteError::tool_exit("kwtype", output.status));
     }
 
     Ok(())
@@ -647,18 +1699,29 @@ fn type_text_via_kwtype(text: &str) -> Result<(), String> {
 /// Uses Stdio::null() to avoid blocking on repeated calls — wl-copy forks a
 /// daemon that inherits piped fds, causing read_to_end to hang indefinitely.
 #[cfg(target_os = "linux")]
-fn write_clipboard_via_wl_copy(text: &str) -> Result<(), String> {
+fn write_clipboard_via_wl_copy(text: &str) -> Result<(), PasteError> {
+    write_clipboard_via_wl_copy_with(text, quiet_tool)
+}
+
+#[cfg(target_os = "linux")]
+fn write_clipboard_via_wl_copy_with(
+    text: &str,
+    run: impl FnOnce(&mut Command, Duration) -> std::io::Result<std::process::Output>,
+) -> Result<(), PasteError> {
     use std::process::Stdio;
-    let status = Command::new("wl-copy")
-        .arg("--")
-        .arg(text)
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .map_err(|e| format!("Failed to execute wl-copy: {}", e))?;
+    let status = run(
+        Command::new("wl-copy")
+            .arg("--")
+            .arg(text)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null()),
+        PASTE_TOOL_TIMEOUT,
+    )
+    .map(|output| output.status)
+    .map_err(|e| PasteError::execute("wl-copy", e))?;
 
     if !status.success() {
-        return Err("wl-copy failed".into());
+        return Err(PasteError::tool_exit("wl-copy", status));
     }
 
     Ok(())
@@ -666,7 +1729,7 @@ fn write_clipboard_via_wl_copy(text: &str) -> Result<(), String> {
 
 /// Send a key combination (e.g., Ctrl+V) via wtype on Wayland.
 #[cfg(target_os = "linux")]
-fn send_key_combo_via_wtype(paste_method: &PasteMethod) -> Result<(), String> {
+fn send_key_combo_via_wtype(paste_method: &PasteMethod) -> Result<(), PasteError> {
     let args: Vec<&str> = match paste_method {
         PasteMethod::CtrlV => vec!["-M", "ctrl", "-k", "v", "-m", "ctrl"],
         PasteMethod::ShiftInsert => vec!["-M", "shift", "-k", "Insert", "-m", "shift"],
@@ -676,14 +1739,11 @@ fn send_key_combo_via_wtype(paste_method: &PasteMethod) -> Result<(), String> {
         _ => return Err("Unsupported paste method".into()),
     };
 
-    let output = Command::new("wtype")
-        .args(&args)
-        .output()
-        .map_err(|e| format!("Failed to execute wtype: {}", e))?;
+    let output = paste_tool(Command::new("wtype").args(&args), None)
+        .map_err(|e| PasteError::execute("wtype", e))?;
 
     if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("wtype failed: {}", stderr));
+        return Err(PasteError::tool_exit("wtype", output.status));
     }
 
     Ok(())
@@ -691,24 +1751,28 @@ fn send_key_combo_via_wtype(paste_method: &PasteMethod) -> Result<(), String> {
 
 /// Send a key combination (e.g., Ctrl+V) via dotool.
 #[cfg(target_os = "linux")]
-fn send_key_combo_via_dotool(paste_method: &PasteMethod) -> Result<(), String> {
-    let command;
-    match paste_method {
-        PasteMethod::CtrlV => command = "echo key ctrl+v | dotool",
-        PasteMethod::ShiftInsert => command = "echo key shift+insert | dotool",
-        PasteMethod::CtrlShiftV => command = "echo key ctrl+shift+v | dotool",
+fn send_key_combo_via_dotool(paste_method: &PasteMethod) -> Result<(), PasteError> {
+    send_key_combo_via_dotool_with(paste_method, paste_tool)
+}
+
+#[cfg(target_os = "linux")]
+fn send_key_combo_via_dotool_with(
+    paste_method: &PasteMethod,
+    run: impl FnOnce(&mut Command, Option<Vec<u8>>) -> std::io::Result<std::process::Output>,
+) -> Result<(), PasteError> {
+    let command = match paste_method {
+        PasteMethod::CtrlV => "key ctrl+v\n",
+        PasteMethod::ShiftInsert => "key shift+insert\n",
+        PasteMethod::CtrlShiftV => "key ctrl+shift+v\n",
         _ => return Err("Unsupported paste method".into()),
-    }
-    use std::process::Stdio;
-    let status = Command::new("sh")
-        .arg("-c")
-        .arg(command)
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .map_err(|e| format!("Failed to execute dotool: {}", e))?;
-    if !status.success() {
-        return Err("dotool failed".into());
+    };
+    let output = run(
+        &mut Command::new("dotool"),
+        Some(command.as_bytes().to_vec()),
+    )
+    .map_err(|e| PasteError::execute("dotool", e))?;
+    if !output.status.success() {
+        return Err(PasteError::tool_exit("dotool", output.status));
     }
 
     Ok(())
@@ -718,7 +1782,7 @@ fn send_key_combo_via_dotool(paste_method: &PasteMethod) -> Result<(), String> {
 fn ydotool_key_args(
     paste_method: &PasteMethod,
     syntax: YdotoolKeySyntax,
-) -> Result<&'static [&'static str], String> {
+) -> Result<&'static [&'static str], PasteError> {
     let args = match (paste_method, syntax) {
         (PasteMethod::CtrlV, YdotoolKeySyntax::Symbolic) => &["key", "ctrl+v"][..],
         (PasteMethod::CtrlShiftV, YdotoolKeySyntax::Symbolic) => &["key", "ctrl+shift+v"][..],
@@ -740,17 +1804,15 @@ fn ydotool_key_args(
 
 /// Send a key combination (e.g., Ctrl+V) via ydotool (requires ydotoold daemon).
 #[cfg(target_os = "linux")]
-fn send_key_combo_via_ydotool(paste_method: &PasteMethod) -> Result<(), String> {
-    let syntax = detect_ydotool_key_syntax();
+fn send_key_combo_via_ydotool(paste_method: &PasteMethod) -> Result<(), PasteError> {
+    let syntax = detect_ydotool_key_syntax()?;
     let args = ydotool_key_args(paste_method, syntax)?;
 
-    let output = ydotool_command()
-        .args(args)
-        .output()
-        .map_err(|e| format!("Failed to execute ydotool: {}", e))?;
+    let output = paste_tool(ydotool_command().args(args), None)
+        .map_err(|e| PasteError::execute("ydotool", e))?;
 
     if !output.status.success() {
-        return Err(ydotool_error(&output));
+        return Err(PasteError::tool_exit("ydotool", output.status));
     }
 
     Ok(())
@@ -758,7 +1820,7 @@ fn send_key_combo_via_ydotool(paste_method: &PasteMethod) -> Result<(), String> 
 
 /// Send a key combination (e.g., Ctrl+V) via xdotool on X11.
 #[cfg(target_os = "linux")]
-fn send_key_combo_via_xdotool(paste_method: &PasteMethod) -> Result<(), String> {
+fn send_key_combo_via_xdotool(paste_method: &PasteMethod) -> Result<(), PasteError> {
     let key_combo = match paste_method {
         PasteMethod::CtrlV => "ctrl+v",
         PasteMethod::CtrlShiftV => "ctrl+shift+v",
@@ -766,25 +1828,31 @@ fn send_key_combo_via_xdotool(paste_method: &PasteMethod) -> Result<(), String> 
         _ => return Err("Unsupported paste method".into()),
     };
 
-    let output = Command::new("xdotool")
-        .arg("key")
-        .arg("--clearmodifiers")
-        .arg(key_combo)
-        .output()
-        .map_err(|e| format!("Failed to execute xdotool: {}", e))?;
+    let output = paste_tool(
+        Command::new("xdotool")
+            .arg("key")
+            .arg("--clearmodifiers")
+            .arg(key_combo),
+        None,
+    )
+    .map_err(|e| PasteError::execute("xdotool", e))?;
 
     if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("xdotool failed: {}", stderr));
+        return Err(PasteError::tool_exit("xdotool", output.status));
     }
 
     Ok(())
 }
 
+fn configured_script_path(path: Option<&str>) -> Result<&str, PasteError> {
+    path.filter(|p| !p.is_empty())
+        .ok_or_else(|| "External script path is not configured".into())
+}
+
 /// Pastes text by invoking an external script.
 /// The script receives the text to paste as a single argument.
-fn paste_via_external_script(text: &str, script_path: &str) -> Result<(), String> {
-    info!("Pasting via external script: {}", script_path);
+fn paste_via_external_script(text: &str, script_path: &str) -> Result<(), PasteError> {
+    info!("Pasting via external script");
 
     // Do not capture the script's stdio. Wayland clipboard helpers such as
     // wl-copy may fork a background selection daemon that inherits those file
@@ -792,20 +1860,19 @@ fn paste_via_external_script(text: &str, script_path: &str) -> Result<(), String
     // clipboard selection is replaced instead of returning after the script
     // itself exits.
     use std::process::Stdio;
-    let status = Command::new(script_path)
-        .arg(text)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .map_err(|e| format!("Failed to execute external script '{}': {}", script_path, e))?;
+    let status = quiet_tool(
+        Command::new(script_path)
+            .arg(text)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null()),
+        typing_timeout(text),
+    )
+    .map(|output| output.status)
+    .map_err(|e| PasteError::execute("external script", e))?;
 
     if !status.success() {
-        return Err(format!(
-            "External script '{}' failed with exit code {:?}",
-            script_path,
-            status.code()
-        ));
+        return Err(PasteError::tool_exit("external script", status));
     }
 
     Ok(())
@@ -816,58 +1883,72 @@ fn paste_direct(
     text: &str,
     app_handle: &AppHandle,
     #[cfg(target_os = "linux")] typing_tool: TypingTool,
-) -> Result<(), String> {
+) -> Result<(), PasteError> {
     #[cfg(target_os = "linux")]
-    {
-        if try_direct_typing_linux(text, typing_tool)? {
-            return Ok(());
-        }
-        info!("Falling back to enigo for direct text input");
-    }
+    let handled = try_direct_typing_linux(text, typing_tool);
+    #[cfg(not(target_os = "linux"))]
+    let handled = Ok(false);
 
-    let text = text.to_string();
-    with_enigo(app_handle, move |enigo| {
-        input::paste_text_direct(enigo, &text)
+    paste_with_fallback(handled, || {
+        info!("Falling back to enigo for direct text input");
+        let text = text.to_string();
+        with_enigo_timeout(app_handle, typing_timeout(&text), move |enigo| {
+            input::paste_text_direct(enigo, &text)
+        })
     })
 }
 
-pub(crate) fn send_return_key(enigo: &mut Enigo, key_type: AutoSubmitKey) -> Result<(), String> {
+fn paste_with_fallback(
+    handled: Result<bool, PasteError>,
+    native: impl FnOnce() -> Result<(), PasteError>,
+) -> Result<(), PasteError> {
+    if handled? {
+        Ok(())
+    } else {
+        native()
+    }
+}
+
+pub(crate) fn send_return_key(
+    enigo: &mut Enigo,
+    key_type: AutoSubmitKey,
+) -> Result<(), PasteError> {
     match key_type {
         AutoSubmitKey::Enter => {
             enigo
                 .key(Key::Return, Direction::Press)
-                .map_err(|e| format!("Failed to press Return key: {}", e))?;
+                .map_err(|e| PasteError::input("Failed to press Return key", e))?;
             enigo
                 .key(Key::Return, Direction::Release)
-                .map_err(|e| format!("Failed to release Return key: {}", e))?;
+                .map_err(|e| PasteError::input("Failed to release Return key", e))?;
         }
         AutoSubmitKey::CtrlEnter => {
             enigo
                 .key(Key::Control, Direction::Press)
-                .map_err(|e| format!("Failed to press Control key: {}", e))?;
+                .map_err(|e| PasteError::input("Failed to press Control key", e))?;
             enigo
                 .key(Key::Return, Direction::Press)
-                .map_err(|e| format!("Failed to press Return key: {}", e))?;
+                .map_err(|e| PasteError::input("Failed to press Return key", e))?;
             enigo
                 .key(Key::Return, Direction::Release)
-                .map_err(|e| format!("Failed to release Return key: {}", e))?;
+                .map_err(|e| PasteError::input("Failed to release Return key", e))?;
             enigo
                 .key(Key::Control, Direction::Release)
-                .map_err(|e| format!("Failed to release Control key: {}", e))?;
+                .map_err(|e| PasteError::input("Failed to release Control key", e))?;
         }
         AutoSubmitKey::CmdEnter => {
             enigo
                 .key(Key::Meta, Direction::Press)
-                .map_err(|e| format!("Failed to press Meta/Cmd key: {}", e))?;
+                .map_err(|e| PasteError::input("Failed to press Meta/Cmd key", e))?;
             enigo
                 .key(Key::Return, Direction::Press)
-                .map_err(|e| format!("Failed to press Return key: {}", e))?;
+                .map_err(|e| PasteError::input("Failed to press Return key", e))?;
             enigo
                 .key(Key::Return, Direction::Release)
-                .map_err(|e| format!("Failed to release Return key: {}", e))?;
+                .map_err(|e| PasteError::input("Failed to release Return key", e))?;
             enigo
                 .key(Key::Meta, Direction::Release)
-                .map_err(|e| format!("Failed to release Meta/Cmd key: {}", e))?;
+                .map_err(|e| PasteError::input("Failed to release Meta/Cmd key", e))?;
         }
     }
 
@@ -897,32 +1978,50 @@ fn sends_keys(paste_method: PasteMethod) -> bool {
     }
 }
 
-/// Pastes `text` into the focused app. Call from a worker thread, never the main
-/// thread: it sleeps between steps (input injection hops via `with_enigo`).
-pub fn paste(text: String, app_handle: AppHandle) -> Result<PasteOutcome, String> {
+fn with_paste_lock<T>(paste: impl FnOnce() -> Result<T, PasteError>) -> Result<T, PasteError> {
     let _paste = PASTE_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
-    let settings = get_settings(&app_handle);
-
-    // Windows drops the keystrokes Handy sends to an elevated window and may
-    // not say so, so ask before pasting instead of trusting the result. The
-    // paste still runs as usual; only what Handy reports changes.
-    let blocked =
-        sends_keys(settings.paste_method) && crate::utils::foreground_window_is_elevated();
-    let result = paste_as_configured(text, app_handle, settings);
-    if !blocked {
-        return result.map(|()| PasteOutcome::Pasted);
-    }
-    if let Err(e) = result {
-        log::warn!("Paste into an elevated window failed: {e}");
-    }
-    Ok(PasteOutcome::Blocked)
+    paste()
 }
 
-fn paste_as_configured(
+pub fn paste(
+    text: String,
+    app_handle: AppHandle,
+    completion: handy_tts_core::handoff::PasteCompletion,
+) -> Result<PasteOutcome, PasteError> {
+    with_paste_lock(|| {
+        let settings = get_settings(&app_handle);
+
+        // Windows drops the keystrokes Handy sends to an elevated window and may
+        // not say so, so ask before pasting instead of trusting the result. The
+        // paste still runs as usual; only what Handy reports changes.
+        let blocked =
+            sends_keys(settings.paste_method) && crate::utils::foreground_window_is_elevated();
+        let result = paste_inner(text, app_handle, settings, &completion);
+        let result = acknowledge_paste(result, &completion);
+        if !blocked {
+            return result.map(|()| PasteOutcome::Pasted);
+        }
+        if let Err(e) = result {
+            log::warn!("Paste into an elevated window failed: {e}");
+        }
+        Ok(PasteOutcome::Blocked)
+    })
+}
+fn acknowledge_paste(
+    result: Result<bool, PasteError>,
+    completion: &handy_tts_core::handoff::PasteCompletion,
+) -> Result<(), PasteError> {
+    if !matches!(result, Ok(true)) {
+        completion.settle_with(|| {});
+    }
+    result.map(|_| ())
+}
+fn paste_inner(
     text: String,
     app_handle: AppHandle,
     settings: AppSettings,
-) -> Result<(), String> {
+    _completion: &handy_tts_core::handoff::PasteCompletion,
+) -> Result<bool, PasteError> {
     let paste_method = settings.paste_method;
     let paste_delay_ms = settings.paste_delay_ms;
     let paste_delay_after_ms = settings.paste_delay_after_ms;
@@ -967,19 +2066,24 @@ fn paste_as_configured(
                     settings.auto_submit_key,
                     settings.clipboard_handling,
                 );
+                let completion = _completion.clone();
                 let reliable_result = with_enigo(&app_handle, move |enigo| {
                     crate::paste_tx::try_reliable_paste(
                         &text,
                         &app,
                         &paste_method,
                         enigo,
-                        auto_submit,
-                        auto_submit_key,
-                        clipboard_handling,
+                        crate::paste_tx::TransactionOptions {
+                            auto_submit,
+                            auto_submit_key,
+                            clipboard_handling,
+                            completion,
+                        },
                     )
+                    .map_err(PasteError::authored)
                 });
                 match reliable_result {
-                    Ok(()) => return Ok(()),
+                    Ok(()) => return Ok(true),
                     Err(e) => {
                         log::warn!("Reliable paste unavailable ({e}); falling back to legacy paste")
                     }
@@ -994,11 +2098,7 @@ fn paste_as_configured(
             )?
         }
         PasteMethod::ExternalScript => {
-            let script_path = settings
-                .external_script_path
-                .as_ref()
-                .filter(|p| !p.is_empty())
-                .ok_or("External script path is not configured")?;
+            let script_path = configured_script_path(settings.external_script_path.as_deref())?;
             paste_via_external_script(&text, script_path)?;
         }
     }
@@ -1018,11 +2118,744 @@ fn paste_as_configured(
         write_text_to_clipboard(&app_handle, &text)?;
     }
 
-    Ok(())
+    Ok(false)
 }
 
 #[cfg(test)]
 mod tests {
+    #[cfg(target_os = "linux")]
+    mod key_combo_chain {
+        use super::super::{send_key_combo_with_first_tool, PasteError};
+        use crate::settings::PasteMethod;
+        use std::cell::RefCell;
+
+        thread_local! {
+            static CALLS: RefCell<Vec<&'static str>> = const { RefCell::new(Vec::new()) };
+        }
+        fn record(call: &'static str) {
+            CALLS.with(|calls| calls.borrow_mut().push(call));
+        }
+        fn calls() -> Vec<&'static str> {
+            CALLS.with(|calls| calls.borrow_mut().drain(..).collect())
+        }
+        fn present() -> Result<bool, PasteError> {
+            record("probe present");
+            Ok(true)
+        }
+        fn probe_timed_out() -> Result<bool, PasteError> {
+            record("probe timed out");
+            Err(PasteError::authored("availability probe timed out"))
+        }
+        fn sends() -> fn(&PasteMethod) -> Result<(), PasteError> {
+            |_| {
+                record("send ok");
+                Ok(())
+            }
+        }
+        fn fails() -> fn(&PasteMethod) -> Result<(), PasteError> {
+            |_| {
+                record("send failed");
+                Err(PasteError::authored("no daemon"))
+            }
+        }
+
+        #[test]
+        fn a_later_tools_probe_does_not_run_once_an_earlier_tool_sends() {
+            calls();
+            let sent = send_key_combo_with_first_tool(
+                &PasteMethod::CtrlV,
+                &[
+                    ("first", present, sends()),
+                    ("second", probe_timed_out, sends()),
+                ],
+            );
+            assert_eq!(sent, Ok(true));
+            assert_eq!(calls(), ["probe present", "send ok"]);
+        }
+
+        #[test]
+        fn a_probe_that_times_out_stops_the_chain_with_an_error() {
+            calls();
+            let sent = send_key_combo_with_first_tool(
+                &PasteMethod::CtrlV,
+                &[
+                    ("first", present, fails()),
+                    ("second", probe_timed_out, sends()),
+                    ("third", present, sends()),
+                ],
+            );
+            assert!(
+                sent.is_err(),
+                "a hung probe is an error, not a missing tool"
+            );
+            assert_eq!(calls(), ["probe present", "send failed", "probe timed out"]);
+        }
+
+        #[test]
+        fn a_tool_that_fails_to_send_hands_over_to_the_next() {
+            calls();
+            let sent = send_key_combo_with_first_tool(
+                &PasteMethod::CtrlV,
+                &[("first", present, fails()), ("second", present, sends())],
+            );
+            assert_eq!(sent, Ok(true));
+            assert_eq!(
+                calls(),
+                ["probe present", "send failed", "probe present", "send ok"]
+            );
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn wbfix2_unspawnable_probe_keeps_native_fallback() {
+        let dir = tempfile::tempdir().unwrap();
+        let missing = dir.path().join("missing-probe");
+        for (path, kind) in [
+            (missing.as_path(), std::io::ErrorKind::NotFound),
+            (dir.path(), std::io::ErrorKind::PermissionDenied),
+        ] {
+            assert!(path.is_absolute());
+            assert_eq!(Command::new(path).output().unwrap_err().kind(), kind);
+            let available = tool_available_with(&mut Command::new(path), Duration::from_secs(1));
+            assert_eq!(
+                available,
+                Ok(false),
+                "unspawnable probe must be unavailable"
+            );
+            let called = Cell::new(false);
+            let result = paste_with_fallback(available, || {
+                called.set(true);
+                Ok(())
+            });
+            assert!(result.is_ok());
+            assert!(called.get(), "missing probe must reach native paste");
+        }
+        let called = Cell::new(false);
+        let result = paste_with_fallback(
+            tool_available_with(
+                Command::new("sh").args(["-c", "sleep 2"]),
+                Duration::from_millis(60),
+            ),
+            || {
+                called.set(true);
+                Ok(())
+            },
+        );
+        assert!(result.is_err(), "probe timeout must abort native fallback");
+        assert!(!called.get());
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn wbfix2_failed_help_probe_uses_uncached_fallback_and_recovers() {
+        let dir = tempfile::tempdir().unwrap();
+        let missing = dir.path().join("missing-help-probe");
+        for path in [missing.as_path(), dir.path()] {
+            let cache = OnceLock::new();
+            assert_eq!(
+                detect_ydotool_key_syntax_with(
+                    &mut Command::new(path),
+                    &cache,
+                    Duration::from_secs(1)
+                ),
+                Ok(YDOTOOL_UNKNOWN_HELP_FALLBACK),
+                "failed help probe must retain raw-keycode fallback"
+            );
+            assert!(
+                cache.get().is_none(),
+                "failed help must not poison syntax cache"
+            );
+            assert_eq!(
+                detect_ydotool_key_syntax_with(
+                    Command::new("sh").args(["-c", "printf 'separated by plus (+)'"]),
+                    &cache,
+                    Duration::from_secs(1)
+                ),
+                Ok(YdotoolKeySyntax::Symbolic),
+                "later help probe must recover"
+            );
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn wbfix2_unreadable_probe_output_keeps_fallbacks() {
+        let script = "import sys; sys.stdout.write('x'*70000)";
+        let available = tool_available_with(
+            Command::new("python3").args(["-c", script]),
+            Duration::from_secs(2),
+        );
+        assert_eq!(
+            available,
+            Ok(false),
+            "unreadable availability output must allow fallback"
+        );
+        let cache = OnceLock::new();
+        assert_eq!(
+            detect_ydotool_key_syntax_with(
+                Command::new("python3").args(["-c", script]),
+                &cache,
+                Duration::from_secs(2)
+            ),
+            Ok(YDOTOOL_UNKNOWN_HELP_FALLBACK),
+            "unreadable help output must allow fallback"
+        );
+        assert!(cache.get().is_none());
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn wbfix2_tool_receives_complete_large_stdin() {
+        let dir = tempfile::tempdir().unwrap();
+        let received = dir.path().join("stdin");
+        let capacity = dir.path().join("capacity");
+        let payload = b"type complete payload\n".repeat(16384);
+        let output = paste_tool_with_timeout(
+            Command::new("python3")
+                .args([
+                    "-c",
+                    r#"import fcntl, pathlib, sys
+capacity = fcntl.fcntl(sys.stdin.fileno(), fcntl.F_GETPIPE_SZ)
+pathlib.Path(sys.argv[2]).write_text(str(capacity))
+pathlib.Path(sys.argv[1]).write_bytes(sys.stdin.buffer.read())
+"#,
+                ])
+                .arg(&received)
+                .arg(&capacity),
+            Some(payload.clone()),
+            Duration::from_secs(5),
+        )
+        .unwrap();
+        assert!(output.status.success());
+        let capacity: usize = std::fs::read_to_string(capacity).unwrap().parse().unwrap();
+        assert!(
+            payload.len() > capacity,
+            "fixture must exceed pipe capacity"
+        );
+        assert!(
+            std::fs::read(received).unwrap() == payload,
+            "tool must receive every stdin byte"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn wbfix2_external_script_descendant_serves_after_return() {
+        use std::io::{Read, Write};
+        use std::os::unix::{fs::PermissionsExt, net::UnixListener};
+        let dir = tempfile::tempdir().unwrap();
+        let socket = dir.path().join("clipboard.sock");
+        let listener = UnixListener::bind(&socket).unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let script = dir.path().join("clipboard-helper");
+        std::fs::write(
+            &script,
+            r#"#!/usr/bin/python3
+import os, socket, sys
+ready_read, ready_write = os.pipe()
+if os.fork():
+    os.close(ready_write)
+    os.read(ready_read, 1)
+    os.close(ready_read)
+    sys.exit(0)
+os.close(ready_read)
+with socket.socket(socket.AF_UNIX) as stream:
+    stream.settimeout(5)
+    stream.connect(sys.argv[1])
+    os.write(ready_write, b'1')
+    os.close(ready_write)
+    request = stream.recv(64)
+    stream.sendall(request)
+"#,
+        )
+        .unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let began = std::time::Instant::now();
+        let result = paste_via_external_script(socket.to_str().unwrap(), script.to_str().unwrap());
+        assert!(result.is_ok(), "clipboard helper must return successfully");
+        assert!(
+            began.elapsed() < Duration::from_secs(2),
+            "helper must not wait for its serving descendant"
+        );
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        let mut stream = loop {
+            match listener.accept() {
+                Ok((stream, _)) => break stream,
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    assert!(
+                        std::time::Instant::now() < deadline,
+                        "serving descendant must connect"
+                    );
+                    std::thread::sleep(Duration::from_millis(5));
+                }
+                Err(error) => panic!("accept clipboard descendant: {error}"),
+            }
+        };
+        stream
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .unwrap();
+        stream
+            .set_write_timeout(Some(Duration::from_secs(5)))
+            .unwrap();
+        let request = b"clipboard requested after parent returned";
+        let sent = stream.write_all(request);
+        let mut response = Vec::new();
+        let read = stream.read_to_end(&mut response);
+        assert!(
+            sent.is_ok() && read.is_ok() && response == request,
+            "serving descendant must survive successful tool return"
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn wbfix_fix1_ydotool_help_keeps_both_streams_and_legacy_exit_status() {
+        for (help, stream, expected) in [
+            (YDOTOOL_0_1_8_HELP, "stderr", YdotoolKeySyntax::Symbolic),
+            (YDOTOOL_1_0_4_HELP, "stdout", YdotoolKeySyntax::RawKeycodes),
+        ] {
+            let cache = OnceLock::new();
+            let syntax = detect_ydotool_key_syntax_with(
+                Command::new("python3").args([
+                    "-c",
+                    "import sys; print(sys.argv[1], file=getattr(sys, sys.argv[2])); sys.exit(1)",
+                    help,
+                    stream,
+                ]),
+                &cache,
+                Duration::from_secs(2),
+            )
+            .unwrap();
+            assert_eq!(
+                syntax, expected,
+                "captured help must preserve syntax detection"
+            );
+            assert_eq!(cache.get(), Some(&expected));
+            assert_eq!(
+                detect_ydotool_key_syntax_with(
+                    &mut Command::new("missing-cached-probe"),
+                    &cache,
+                    Duration::from_millis(10)
+                )
+                .unwrap(),
+                expected
+            );
+        }
+        let cache = OnceLock::new();
+        assert_eq!(
+            detect_ydotool_key_syntax_with(
+                Command::new("sh").args(["-c", "printf unrecognized"]),
+                &cache,
+                Duration::from_secs(2)
+            )
+            .unwrap(),
+            YDOTOOL_UNKNOWN_HELP_FALLBACK
+        );
+        assert!(cache.get().is_none());
+    }
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn wbfix_fix1_availability_probe_is_bounded_and_missing_tool_is_not_an_error() {
+        let began = std::time::Instant::now();
+        let result = tool_available_with(
+            Command::new("sh").args(["-c", "sleep 2; exit 0"]),
+            Duration::from_millis(60),
+        );
+        assert!(
+            result.is_err(),
+            "availability probe deadline must abort the paste"
+        );
+        assert!(began.elapsed() < Duration::from_secs(1));
+        assert!(!tool_available_with(
+            Command::new("sh").args(["-c", "exit 1"]),
+            Duration::from_secs(1)
+        )
+        .unwrap());
+    }
+    #[cfg(unix)]
+    #[test]
+    fn wbfix_fix1_probe_deadline_covers_inherited_pipes_after_parent_exit() {
+        let result = paste_probe_with_timeout(
+            Command::new("sh").args(["-c", "sleep 2 & exit 0"]),
+            Duration::from_millis(60),
+        );
+        assert!(
+            result.is_err(),
+            "probe deadline must cover descendant-held pipes"
+        );
+        assert_eq!(result.unwrap_err().kind(), std::io::ErrorKind::TimedOut);
+    }
+    #[cfg(unix)]
+    #[test]
+    fn wbfix_fix1_probe_output_is_bounded_across_stdout_and_stderr() {
+        let result = paste_probe_with_timeout(
+            Command::new("python3").args([
+                "-c",
+                "import sys; sys.stdout.write('a'*40000); sys.stderr.write('b'*40000)",
+            ]),
+            Duration::from_secs(2),
+        );
+        assert!(result.is_err(), "probe output must stay bounded");
+        assert_eq!(result.unwrap_err().kind(), std::io::ErrorKind::InvalidData);
+    }
+    #[test]
+    fn wbfix_fix1_queued_input_expiry_prevents_late_execution() {
+        let queued = std::sync::Mutex::new(None);
+        let called = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let observed = called.clone();
+        let result = queued_input(
+            |job| {
+                *queued.lock().unwrap() = Some(job);
+                Ok(())
+            },
+            move || {
+                observed.store(true, std::sync::atomic::Ordering::Release);
+                Ok(())
+            },
+            Duration::from_millis(10),
+        );
+        assert!(result.is_err());
+        queued.lock().unwrap().take().unwrap()();
+        assert!(
+            !called.load(std::sync::atomic::Ordering::Acquire),
+            "expired queued input must never run later"
+        );
+    }
+    #[test]
+    fn wbfix_fix1_unowned_native_hang_keeps_admission_and_reports_later_failure() {
+        use handy_tts_core::handoff::{PasteCompletion, PasteFence, PipelineFence};
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use std::sync::{Arc, Mutex};
+        let fence = Arc::new(PasteFence::default());
+        let pipeline = Arc::new(Mutex::new(PipelineFence::default()));
+        let generation = pipeline.lock().unwrap().begin();
+        pipeline.lock().unwrap().queued(generation);
+        let pending = pipeline.clone();
+        let (settled, finished) = mpsc::channel();
+        let completion = PasteCompletion::with_timeout(Duration::from_millis(50), move || {
+            let mut state = pending.lock().unwrap();
+            state.pasted(generation);
+            settled.send(state.finish(generation)).unwrap();
+        });
+        let trace = Arc::new(Mutex::new(Vec::new()));
+        let (entered, started) = mpsc::channel();
+        let (release, blocked) = mpsc::channel();
+        let native_join = Arc::new(Mutex::new(None));
+        let native_worker = native_join.clone();
+        let observed = trace.clone();
+        let old = fence.clone();
+        let first = std::thread::spawn(move || {
+            old.queue_native(
+                Arc::new(|job| {
+                    job();
+                    Ok(())
+                }),
+                Box::new(move || {
+                    let _completion = completion;
+                    let _ = with_paste_lock(|| {
+                        queued_input(
+                            |job| {
+                                *native_worker.lock().unwrap() = Some(std::thread::spawn(job));
+                                Ok(())
+                            },
+                            move || {
+                                entered.send(()).unwrap();
+                                let _ = blocked.recv_timeout(Duration::from_secs(3));
+                                observed.lock().unwrap().push("old finished");
+                                Ok(())
+                            },
+                            Duration::from_millis(20),
+                        )
+                    });
+                }),
+                Arc::new(|e| panic!("first admission failed: {e}")),
+            );
+        });
+        started.recv_timeout(Duration::from_secs(2)).unwrap();
+        assert!(finished.recv_timeout(Duration::from_secs(2)).unwrap());
+        let new_generation = pipeline.lock().unwrap().begin();
+        let recorder_started = std::cell::Cell::new(false);
+        let recording_usable = new_generation != generation
+            && crate::actions::start_after_read_aloud(
+                || Ok(()),
+                || {
+                    recorder_started.set(true);
+                    true
+                },
+            );
+        let began = std::time::Instant::now();
+        let captured = fence.reserve_capture();
+        if captured {
+            fence.release_capture();
+        }
+        let capture_elapsed = began.elapsed();
+        let called = Arc::new(AtomicBool::new(false));
+        let input = called.clone();
+        let notices = Arc::new(Mutex::new(Vec::new()));
+        let displayed = notices.clone();
+        let completed = Arc::new(AtomicBool::new(false));
+        let done = completed.clone();
+        let began = std::time::Instant::now();
+        fence.queue_native(
+            Arc::new(|job| {
+                job();
+                Ok(())
+            }),
+            Box::new(move || {
+                with_paste_lock(|| {
+                    input.store(true, Ordering::Release);
+                    Ok(())
+                })
+                .unwrap();
+            }),
+            Arc::new(move |_| {
+                crate::actions::paste_admission_failed_with(
+                    |notice| displayed.lock().unwrap().push(notice),
+                    || done.store(true, Ordering::Release),
+                )
+            }),
+        );
+        let refusal_elapsed = began.elapsed();
+        let _ = release.send(());
+        first.join().unwrap();
+        native_join.lock().unwrap().take().unwrap().join().unwrap();
+        let third = trace.clone();
+        fence.queue_native(
+            Arc::new(|job| {
+                job();
+                Ok(())
+            }),
+            Box::new(move || {
+                with_paste_lock(|| {
+                    third.lock().unwrap().push("third admitted");
+                    Ok(())
+                })
+                .unwrap();
+            }),
+            Arc::new(|e| panic!("third admission failed: {e}")),
+        );
+        assert!(
+            recording_usable && recorder_started.get(),
+            "watchdog must leave recording usable"
+        );
+        assert!(
+            !captured && capture_elapsed < Duration::from_millis(100),
+            "unkillable input must retain prompt capture refusal"
+        );
+        assert!(
+            !called.load(Ordering::Acquire),
+            "later paste must remain refused while native input runs"
+        );
+        assert!(refusal_elapsed < Duration::from_millis(100));
+        assert!(
+            completed.load(Ordering::Acquire),
+            "rejected paste must settle processing"
+        );
+        assert_eq!(
+            notices.lock().unwrap().as_slice(),
+            [crate::notices::Notice::new(
+                crate::notices::NoticeCode::PasteFailed,
+                crate::notices::NoticeSource::Dictation
+            )],
+            "rejected paste must show Paste Failed"
+        );
+        assert_eq!(*trace.lock().unwrap(), ["old finished", "third admitted"]);
+    }
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn wbfix_fix1_hung_probe_reaps_and_releases_real_paste_admission() {
+        use handy_tts_core::handoff::{Job, NativeQueue, PasteFence};
+        use std::os::unix::fs::PermissionsExt;
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use std::sync::{Arc, Mutex};
+        let scratch =
+            tempfile::tempdir_in(std::env::var_os("HANDY_TTS_TEST_SCRATCH").unwrap()).unwrap();
+        let binary = scratch.path().join("ydotool");
+        let pid_file = scratch.path().join("probe.pid");
+        std::fs::write(
+            &binary,
+            r#"#!/bin/sh
+printf '%s' "$$" > "$3"
+exec /usr/bin/python3 - "$@" <<'PY'
+import sys, time
+assert sys.argv[1:3] == ['key', '--help']
+time.sleep(2)
+print('Each key sequence: modifiers separated by plus (+)', file=sys.stderr)
+PY
+"#,
+        )
+        .unwrap();
+        std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let fence = Arc::new(PasteFence::default());
+        let (finished, wait) = mpsc::channel();
+        let joins = Arc::new(Mutex::new(Vec::new()));
+        let workers = joins.clone();
+        let queue: NativeQueue = Arc::new(move |job: Job| {
+            let finished = finished.clone();
+            workers.lock().unwrap().push(std::thread::spawn(move || {
+                job();
+                finished.send(()).unwrap();
+            }));
+            Ok(())
+        });
+        let (result, receive) = mpsc::channel();
+        let input_called = Arc::new(AtomicBool::new(false));
+        let input = input_called.clone();
+        let pid = pid_file.clone();
+        let began = std::time::Instant::now();
+        fence.queue_native(
+            queue.clone(),
+            Box::new(move || {
+                let outcome = with_paste_lock(|| {
+                    detect_ydotool_key_syntax_with(
+                        Command::new(binary).args(["key", "--help"]).arg(pid),
+                        &OnceLock::new(),
+                        Duration::from_millis(250),
+                    )?;
+                    input.store(true, Ordering::Release);
+                    Ok(())
+                });
+                result.send(outcome).unwrap();
+            }),
+            Arc::new(|error| panic!("first admission failed: {error}")),
+        );
+        wait.recv_timeout(Duration::from_secs(5)).unwrap();
+        let elapsed = began.elapsed();
+        let outcome = receive.recv().unwrap();
+        let reaped = match std::fs::read_to_string(pid_file) {
+            Ok(pid) => {
+                let pid: i32 = pid.parse().unwrap();
+                let mut status = 0;
+                // SAFETY: pid was written by the child started by this test.
+                let waited = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
+                waited == -1 && std::io::Error::last_os_error().raw_os_error() == Some(libc::ECHILD)
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => true,
+            Err(error) => panic!("cannot read probe pid: {error}"),
+        };
+        let reserved = fence.reserve_capture();
+        if reserved {
+            fence.release_capture();
+        }
+        let second_called = Arc::new(AtomicBool::new(false));
+        let called = second_called.clone();
+        fence.queue_native(
+            queue,
+            Box::new(move || {
+                with_paste_lock(|| {
+                    called.store(true, Ordering::Release);
+                    Ok(())
+                })
+                .unwrap();
+            }),
+            Arc::new(|error| panic!("second admission failed: {error}")),
+        );
+        wait.recv_timeout(Duration::from_secs(2)).unwrap();
+        for join in joins.lock().unwrap().drain(..) {
+            join.join().unwrap();
+        }
+        assert!(
+            outcome.is_err(),
+            "probe deadline must abort the first paste"
+        );
+        assert!(
+            !input_called.load(Ordering::Acquire),
+            "expired probe must never continue to input"
+        );
+        assert!(
+            elapsed < Duration::from_secs(1),
+            "probe expiry must unwind the owned job promptly"
+        );
+        assert!(
+            reaped,
+            "probe child must be reaped before releasing admission"
+        );
+        assert!(
+            reserved,
+            "capture must reserve after the original job unwinds"
+        );
+        assert!(
+            second_called.load(Ordering::Acquire),
+            "the second paste callback must actually run"
+        );
+    }
+    #[test]
+    fn wbfix_timed_out_input_never_runs_later_on_the_main_thread() {
+        let cancelled = std::sync::atomic::AtomicBool::new(true);
+        let called = std::cell::Cell::new(false);
+        assert!(input_if_current(&cancelled, || {
+            called.set(true);
+            Ok(())
+        })
+        .is_err());
+        assert!(
+            !called.get(),
+            "expired input must never paste into a later session"
+        );
+    }
+    #[cfg(unix)]
+    #[test]
+    fn wbfix_hung_owned_paste_tool_is_killed_and_reaped() {
+        let began = std::time::Instant::now();
+        let result = paste_tool_with_timeout(
+            Command::new("sh").args(["-c", "exec sleep 30"]),
+            None,
+            Duration::from_millis(60),
+        );
+        assert_eq!(result.unwrap_err().kind(), std::io::ErrorKind::TimedOut);
+        assert!(began.elapsed() < Duration::from_secs(2));
+    }
+    #[test]
+    fn fix1_paste_adapter_acknowledges_only_synchronous_success_or_failure() {
+        use handy_tts_core::handoff::{PasteCompletion, PipelineFence};
+        use handy_tts_core::referee::{Effect, Event, Referee};
+        let pipeline = std::sync::Arc::new(std::sync::Mutex::new(PipelineFence::default()));
+        let referee = std::sync::Arc::new(std::sync::Mutex::new(Referee::default()));
+        let generation = pipeline.lock().unwrap().begin();
+        pipeline.lock().unwrap().queued(generation);
+        referee.lock().unwrap().apply(Event::DictationStart);
+        referee.lock().unwrap().apply(Event::DictationProcessing);
+        let Effect::Capture { ticket } = referee.lock().unwrap().apply(Event::ReadShortcut)[0]
+        else {
+            panic!()
+        };
+        referee.lock().unwrap().apply(Event::Clipboard {
+            ticket,
+            text: "captured original".into(),
+        });
+        let native_settled = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let settled = native_settled.clone();
+        let pending = pipeline.clone();
+        let popup = referee.clone();
+        let completion = PasteCompletion::new(move || {
+            assert!(settled.load(std::sync::atomic::Ordering::Acquire));
+            let mut pending = pending.lock().unwrap();
+            pending.pasted(generation);
+            assert!(pending.finish(generation));
+            assert_eq!(
+                popup.lock().unwrap().apply(Event::DictationFinished),
+                [Effect::OpenPopup {
+                    text: "captured original".into()
+                }]
+            );
+        });
+        super::acknowledge_paste(Ok(true), &completion).unwrap();
+        assert!(!pipeline.lock().unwrap().finish(generation));
+        assert!(!referee.lock().unwrap().popup_open);
+        completion.settle_with(|| native_settled.store(true, std::sync::atomic::Ordering::Release));
+        completion.settle_with(|| panic!("native settlement runs exactly once"));
+        assert!(referee.lock().unwrap().popup_open);
+        for result in [Ok(false), Err("Input request expired".into())] {
+            let acknowledged = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+            let done = acknowledged.clone();
+            let completion = PasteCompletion::new(move || {
+                done.store(true, std::sync::atomic::Ordering::Release)
+            });
+            let _ = super::acknowledge_paste(result, &completion);
+            assert!(acknowledged.load(std::sync::atomic::Ordering::Acquire));
+        }
+    }
     use super::*;
     use std::cell::Cell;
 
@@ -1143,11 +2976,11 @@ e.g. 28:1 28:0 means pressing on the Enter button on a standard US keyboard.
     #[test]
     fn clipboard_is_restored_before_key_injection_error_is_returned() {
         let restored = Cell::new(false);
-        let result = finish_clipboard_paste(Err("input failed".into()), 0, || {
+        let result = finish_clipboard_paste(Err("Input request expired".into()), 0, || {
             restored.set(true);
         });
 
-        assert_eq!(result.unwrap_err(), "input failed");
+        assert_eq!(result.unwrap_err().to_string(), "Input request expired");
         assert!(restored.get());
     }
 

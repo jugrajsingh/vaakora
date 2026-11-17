@@ -3,20 +3,35 @@
     "settings": "Configurações...",
     "checkUpdates": "Verificar Atualizações...",
     "copyLastTranscript": "Copiar última transcrição",
-    "unloadModel": "Descarregar modelo",
+    "unloadModel": "Descarregar modelo de transcrição",
+    "cleanup": "Modelo de pós-processamento",
+    "cleanupReady": "pronto",
+    "cleanupNotLoaded": "não carregado",
+    "cleanupLoading": "carregando",
+    "cleanupError": "erro",
+    "noCleanupModel": "Nenhum modelo de pós-processamento",
+    "unloadPostProcessingModel": "Descarregar modelo de pós-processamento",
     "model": "Modelo",
+    "transcriptionModel": "Modelo de transcrição",
     "quit": "Sair",
     "cancel": "Cancelar",
     "secureInputWarning": "⚠ Atalhos bloqueados pelo Secure Input",
     "language": "Idioma",
     "autoLanguage": "Automático",
-    "otherLanguages": "Outros idiomas"
+    "otherLanguages": "Outros idiomas",
+    "ttsModel": "Modelo de conversão de texto em fala",
+    "ttsUnload": "Descarregar modelo de conversão de texto em fala",
+    "ttsStarting": "Iniciando",
+    "ttsReady": "Carregado",
+    "ttsStopping": "Parando",
+    "ttsFailed": "Falhou",
+    "ttsUnloaded": "Descarregado"
   },
   "sidebar": {
     "general": "Geral",
-    "models": "Modelos",
+    "models": "Modelos de transcrição",
     "advanced": "Avançado",
-    "postProcessing": "Pós-Processamento",
+    "postProcessing": "Modelos de pós-processamento",
     "history": "Histórico",
     "debug": "Depuração",
     "about": "Sobre"
@@ -144,6 +159,10 @@
       },
       "model": "Modelo",
       "showAll": "Mostrar todos os {{count}} modelos",
+      "noPick": "Nenhum modelo recomendado cobre {{languages}}.",
+      "noPickNext": "Mostre todos os modelos ou volte e altere os seus idiomas.",
+      "showAllButton": "Mostrar todos os modelos",
+      "pickOne": "Escolha um modelo",
       "download": "Baixar {{size}}",
       "downloadInstead": "Baixar {{size}} em vez disso",
       "pauses": "{{name}} pausa em {{percent}}%",
@@ -306,6 +325,8 @@
     "alreadyAdded_other": "{{languages}} já foram adicionados."
   },
   "modelSelector": {
+    "status": "Status do modelo: {{modelName}}",
+    "size": "{{size}} MiB",
     "custom": "Personalizado",
     "streaming": "Streaming",
     "active": "Ativo",
@@ -336,18 +357,26 @@
         "none": "Nenhum atalho configurado",
         "notFound": "Atalho não encontrado",
         "pressKeys": "Pressione as teclas...",
+        "unassigned": "Não atribuído",
         "bindings": {
           "transcribe": {
             "name": "Atalho de Transcrição",
             "description": "O atalho de teclado para gravar e transcrever sua voz."
+          },
+          "transcribe_raw": {
+            "name": "Atalho Bruto"
           },
           "cancel": {
             "name": "Atalho de Cancelar",
             "description": "O atalho de teclado para cancelar a gravação atual."
           },
           "transcribe_with_post_process": {
-            "name": "Tecla de Pós-Processamento",
+            "name": "Atalho de Pós-Processamento",
             "description": "Opcional: Uma tecla de atalho dedicada que sempre aplica pós-processamento com IA à sua transcrição."
+          },
+          "read_aloud": {
+            "name": "Atalho de leitura em voz alta",
+            "description": "Abre o popup e lê em voz alta o texto copiado."
           }
         },
         "errors": {
@@ -517,8 +546,8 @@
           }
         },
         "position": {
-          "title": "Posição da Sobreposição",
-          "description": "Exibir sobreposição de feedback visual durante gravação e transcrição. No Linux, 'Nenhum' é recomendado.",
+          "title": "Posição da Janela Flutuante",
+          "description": "\"Superior\" mantém a parte inferior da tela livre, útil quando você dita em um terminal.",
           "options": {
             "bottom": "Inferior",
             "top": "Superior"
@@ -628,8 +657,8 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "Tecla de atalho"
+      "provider": {
+        "title": "Provedor"
       },
       "api": {
         "title": "API",
@@ -688,10 +717,76 @@
         "cancel": "Cancelar",
         "selectToEdit": "Selecione um prompt acima para visualizar e editar seus detalhes.",
         "createFirst": "Clique em 'Criar Novo Prompt' acima para criar seu primeiro prompt de pós-processamento."
+      },
+      "localLlm": {
+        "noCleanupModel": "Nenhum modelo de pós-processamento",
+        "s1Description": "Usa os controles de estilo, estrutura e contexto.",
+        "plainDescription": "Usa o prompt do Handy selecionado.",
+        "groupTitle": "Modelo local",
+        "size": "{{size}} MiB",
+        "downloaded": "Baixado",
+        "use": "Usar",
+        "download": "Baixar",
+        "downloading": "Baixando {{percent}}%",
+        "delete": "Excluir",
+        "deleteConfirm": "Excluir {{name}}? Isso libera {{size}}.",
+        "deleteConfirmAction": "Excluir modelo",
+        "status": {
+          "title": "Status",
+          "description": "O modelo é carregado quando um ditado com pós-processamento começa e descarregado após o tempo limite de descarregamento do modelo.",
+          "notLoaded": "Não carregado",
+          "loading": "Carregando",
+          "ready": "Pronto",
+          "error": "Erro: {{reason}}"
+        },
+        "styling": {
+          "title": "Estilo",
+          "description": "Quão formal é o texto pós-processado.",
+          "options": {
+            "casual": "Informal",
+            "semi_casual": "Semi-informal",
+            "semi_formal": "Semiformal",
+            "formal": "Formal"
+          }
+        },
+        "structure": {
+          "title": "Estrutura",
+          "description": "Parágrafos em prosa ou listas em Markdown.",
+          "options": {
+            "prose": "Prosa",
+            "lists": "Listas"
+          }
+        },
+        "context": {
+          "title": "Contexto",
+          "description": "Texto geral ou formato de e-mail.",
+          "options": {
+            "general": "Geral",
+            "email": "E-mail"
+          }
+        },
+        "licenseNotes": {
+          "s1Name": "Apache-2.0 com uma condição adicional: o modelo deve ser sempre chamado \"S1-mini\" da \"Superwhisper\", exatamente com estas maiúsculas e minúsculas."
+        },
+        "promptRequired": "Selecione um prompt do Handy não vazio no grupo Prompts. Até lá, o pós-processamento é ignorado e a transcrição bruta é usada.",
+        "promptHidden": "Este modelo usa seu próprio prompt fixo e as configurações de Estilo, Estrutura e Contexto acima, por isso o editor de prompt está oculto."
       }
     },
     "history": {
       "title": "Histórico",
+      "cleaned": "Pós-processado",
+      "cleanedWith": "Pós-processado com {{model}}",
+      "raw": "Bruto",
+      "copyRaw": "Copiar texto bruto",
+      "copyPostProcessed": "Copiar texto pós-processado",
+      "compare": {
+        "title": "Visualização de comparação",
+        "diff": "Diferenças",
+        "side_by_side": "Lado a lado",
+        "stacked": "Empilhado"
+      },
+      "clearHistory": "Limpar histórico",
+      "clearConfirmation": "Remover {{count}} entradas do histórico sem estrela e {{recordings}} gravações? As entradas com estrela e suas gravações serão mantidas.",
       "openFolder": "Abrir Pasta de Gravações",
       "loading": "Carregando histórico...",
       "empty": "Nenhuma transcrição ainda. Comece a gravar para construir seu histórico!",
@@ -701,6 +796,8 @@
       "unsave": "Remover dos salvos",
       "delete": "Excluir entrada",
       "deleteError": "Falha ao excluir entrada. Por favor, tente novamente.",
+      "deleteConfirm": "Excluir esta entrada e a gravação dela?",
+      "deleteConfirmAction": "Excluir entrada",
       "retranscribe": "Re-transcrever",
       "cancelTranscription": "Cancelar transcrição",
       "transcribing": "Transcrevendo...",
@@ -716,7 +813,14 @@
       "showMore": "Mostrar mais",
       "showLess": "Mostrar menos",
       "dropTitle": "Solte para transcrever",
-      "dropDescription": "Ele aparecerá no histórico."
+      "dropDescription": "Ele aparecerá no histórico.",
+      "retentionConfirm": {
+        "preserveLimit": "Excluir as entradas sem estrela além das {{count}} mais recentes e suas gravações? As entradas com estrela e os arquivos transcritos são mantidos.",
+        "days3": "Excluir as entradas sem estrela com mais de 3 dias e suas gravações? As entradas com estrela e os arquivos transcritos são mantidos.",
+        "weeks2": "Excluir as entradas sem estrela com mais de 2 semanas e suas gravações? As entradas com estrela e os arquivos transcritos são mantidos.",
+        "months3": "Excluir as entradas sem estrela com mais de 3 meses e suas gravações? As entradas com estrela e os arquivos transcritos são mantidos.",
+        "action": "Excluir entradas"
+      }
     },
     "debug": {
       "title": "Depuração",
@@ -927,9 +1031,15 @@
     "open": "Abrir",
     "copy": "Copiar",
     "clear": "Limpar",
-    "noOptionsFound": "Nenhuma opção encontrada"
+    "noOptionsFound": "Nenhuma opção encontrada",
+    "cancel": "Cancelar"
   },
   "errors": {
+    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
+    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
+    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudClipboardUnreadableTitle": "Área de Transferência ilegível",
+    "readAloudClipboardUnreadable": "Não foi possível ler o texto da Área de Transferência.",
     "loadDirectory": "Erro ao carregar diretório: {{error}}",
     "micPermissionDeniedTitle": "Acesso ao microfone negado",
     "micPermissionDenied": {
@@ -957,7 +1067,9 @@
     "filePostProcessFailedTitle": "Transcrito sem pós-processamento",
     "filePostProcessFailed": "O pós-processamento não terminou, então a transcrição foi salva como está.",
     "fileTranscriptionFailedTitle": "Falha na transcrição do arquivo",
-    "transcriptionFailedTitle": "Falha na transcrição"
+    "transcriptionFailedTitle": "Falha na transcrição",
+    "vocabularyInvalidTitle": "O arquivo de vocabulário tem um erro",
+    "vocabularyInvalid": "A leitura em voz alta usou o vocabulário integrado porque não foi possível usar o seu arquivo de vocabulário. Corrija o arquivo indicado abaixo para usar as suas próprias entradas."
   },
   "notices": {
     "errorOne": "{{n}} erro",
@@ -980,9 +1092,10 @@
     }
   },
   "overlay": {
-    "transcribing": "Transcrevendo...",
-    "processing": "Processando...",
-    "loadingModel": "Carregando modelo..."
+    "transcribing": "Transcrevendo",
+    "processing": "Limpando",
+    "loadingModel": "Carregando modelo",
+    "cancel": "Cancelar ditado"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} pode estar bloqueando 1 atalho",
@@ -994,5 +1107,345 @@
     "learnMore": "Como resolver isso",
     "recorderBlocked": "Não é possível gravar atalhos agora — o Secure Input do macOS está bloqueando os eventos de tecla. Resolva primeiro o aviso do Secure Input.",
     "dismiss": "Dispensar"
+  },
+  "tts": {
+    "ratings": {
+      "quality": "Qualidade",
+      "speed": "Velocidade",
+      "recommended": "Recomendado",
+      "tooltip": "Primeiro áudio {{firstAudio}} s, {{faster}}x mais rápido que o tempo real, carrega em {{load}} s"
+    },
+    "devices": {
+      "auto": "Automático",
+      "cpu": "CPU",
+      "gpu": "GPU",
+      "npu": "NPU"
+    },
+    "errors": {
+      "notDownloaded": "Baixe este modelo antes de ler.",
+      "audio": "Não foi possível abrir o dispositivo de saída.",
+      "text": "Não foi possível preparar este texto.",
+      "clock": "A sincronização da reprodução falhou.",
+      "worker": "O processo de conversão de texto em fala foi interrompido.",
+      "unavailable": "A conversão de texto em fala não está disponível.",
+      "notReady": "A conversão de texto em fala ainda está iniciando.",
+      "generic": "A conversão de texto em fala falhou.",
+      "memory": "É necessário pelo menos 1 GiB de memória disponível.",
+      "gatedToken": "As vozes Pocket exigem um token do Hugging Face e a aceitação dos termos das vozes.",
+      "model": "Escolha um modelo de conversão de texto em fala disponível.",
+      "device": "Este dispositivo não está disponível.",
+      "npuDriverTooOld": "Driver da NPU desatualizado. Atualize-o ou escolha outro dispositivo.",
+      "selection": "Não foi possível aplicar a seleção.",
+      "busy": "Uma operação de conversão de texto em fala já está em andamento.",
+      "cancelled": "A leitura foi cancelada.",
+      "clipboard": "Não foi possível ler o texto da área de transferência.",
+      "deviceNotSupported": "Este modelo não oferece suporte ao dispositivo selecionado.",
+      "deviceUnavailable": "O dispositivo selecionado não está disponível.",
+      "download": "O download do modelo falhou.",
+      "driverDiscovery": "Não foi possível detectar o driver da NPU.",
+      "failed": "O processo falhou três vezes. Selecione um modelo para tentar novamente.",
+      "integrity": "Um arquivo do modelo falhou na verificação de integridade.",
+      "invalidControls": "Escolha uma velocidade de 0.5x a 2.0x e um tom de -6 a +6 semitons.",
+      "invalidRatings": "As avaliações do modelo estão ausentes ou inválidas.",
+      "invalidVoice": "Escolha uma voz para o modelo selecionado.",
+      "outputUnavailable": "O dispositivo de saída não está disponível.",
+      "path": "O diretório de armazenamento da conversão de texto em fala não está disponível.",
+      "prepareFailed": "O dispositivo selecionado não conseguiu preparar este modelo.",
+      "protocol": "O processo de conversão de texto em fala retornou uma resposta inválida.",
+      "registry": "O registro de modelos de conversão de texto em fala é inválido.",
+      "settings": "Não foi possível salvar as configurações de conversão de texto em fala.",
+      "start": "Não foi possível iniciar o processo de conversão de texto em fala.",
+      "starting": "O processo de conversão de texto em fala está iniciando.",
+      "tokenRejected": "O token do Hugging Face foi rejeitado. Verifique o acesso aos termos das vozes Pocket.",
+      "tokenRequired": "Defina um token do Hugging Face e aceite os termos das vozes Pocket antes de baixar vozes.",
+      "unknownModel": "O modelo de conversão de texto em fala selecionado é desconhecido.",
+      "window": "Não foi possível abrir a janela de leitura em voz alta.",
+      "accessDenied": "O acesso aos arquivos do modelo foi negado.",
+      "localIo": "Não foi possível ler ou gravar os arquivos do modelo.",
+      "downloading": "Este modelo já está sendo baixado."
+    },
+    "runOn": "Executar em",
+    "preparing": "Preparando para {{device}}: {{graph}}",
+    "buffering": "Carregando em buffer",
+    "title": "Leitura em voz alta",
+    "textLabel": "Texto a ler",
+    "placeholder": "Cole o texto a ser lido",
+    "play": "Reproduzir",
+    "pause": "Pausar",
+    "stop": "Parar",
+    "close": "Fechar",
+    "readClipboard": "Ler a área de transferência",
+    "editText": "Editar texto",
+    "progress": "Progresso",
+    "time": "{{elapsed}} s decorridos, {{remaining}} s restantes",
+    "openModels": "Modelos de conversão de texto em fala",
+    "outputFallback": "Usando o dispositivo de saída padrão",
+    "states": {
+      "waiting": "Aguardando",
+      "starting": "Iniciando",
+      "buffering": "Carregando em buffer",
+      "playing": "Reproduzindo",
+      "paused": "Pausado",
+      "finished": "Concluído",
+      "error": "Erro"
+    },
+    "modelsTitle": "Modelos de conversão de texto em fala",
+    "modelsSubtitle": "Escolha um modelo de voz. Os valores de velocidade foram medidos no computador do desenvolvedor; os seus podem ser diferentes.",
+    "downloaded": "Baixado",
+    "availableToDownload": "Disponível para download",
+    "recommended": "Recomendado",
+    "downloading": "Baixando",
+    "needsToken": "Requer um token do Hugging Face",
+    "tokenSet": "Token definido",
+    "active": "Ativo",
+    "use": "Usar",
+    "download": "Baixar",
+    "delete": "Excluir",
+    "deleteConfirm": "Excluir {{name}}? Isso libera {{size}}. Seu vocabulário e seu histórico são mantidos.",
+    "deleteConfirmSelected": "A leitura em voz alta para de funcionar até você escolher outro modelo.",
+    "deleteConfirmAction": "Excluir modelo",
+    "cancel": "Cancelar",
+    "token": "Token do Hugging Face",
+    "tokenHelp": "Necessário apenas para as vozes Pocket restritas, depois de aceitar os termos das vozes no Hugging Face. O token fica na memória e é apagado quando o Handy reinicia.",
+    "clearToken": "Limpar token",
+    "showToken": "Mostrar token",
+    "hideToken": "Ocultar token",
+    "saveToken": "Definir token",
+    "model": "Modelo",
+    "voice": "Voz",
+    "preview": "Pré-visualizar voz",
+    "speed": "Velocidade: {{value}}x",
+    "pitch": "Tom: {{value}} semitons",
+    "output": "Dispositivo de saída",
+    "sameAsHandy": "Igual ao Handy",
+    "readCode": "Ler blocos de código",
+    "technicalReading": "Leitura técnica",
+    "fullPaths": "Ler caminhos completos",
+    "fullLinks": "Ler links completos",
+    "pocketAttribution": "As vozes do Pocket TTS são licenciadas sob CC-BY-4.0. Siga a atribuição e os termos de consentimento de cada voz no cartão do modelo.",
+    "supertonicRestrictions": "O Supertonic 3 usa OpenRAIL-M. Consulte as restrições de uso no cartão do modelo.",
+    "kokoroAttribution": "Os pesos do modelo Kokoro usam a licença Apache-2.0.",
+    "paradeeAttribution": "Paradee-8M v1.2 de Sahil Mahendrakar, destilado do Kokoro-82M (hexgrad). Licença Apache-2.0.",
+    "phononAttribution": "Phonon 31m English da Gradium (Apache-2.0), baseado no Pocket TTS e no codec Mimi da Kyutai (CC-BY-4.0). Vozes de gradium/phonon-voices (Apache-2.0).",
+    "indicTinyEnglishAttribution": "Indic Tiny TTS (English) de Sulabh Katiyar, CC-BY-4.0. Vozes treinadas em LIMMITS 2024 (SYSPIN, Indian Institute of Science, Bangalore, SPIRE Lab), CC-BY-4.0. O consentimento dos locutores para a publicação não é documentado pela fonte. Vocoder: Vocos de Charactr Inc., MIT.",
+    "indicTinyHindiAttribution": "Indic Tiny TTS (Hindi) de Sulabh Katiyar, CC-BY-4.0, treinado no conjunto de dados AI4Bharat Rasa (CC-BY-4.0; Varadhan, Sankar, Raju e Khapra, INTERSPEECH 2024). Vocoder: Vocos de Charactr Inc., MIT.",
+    "indicTinyPunjabiAttribution": "Indic Tiny TTS (Punjabi) de Sulabh Katiyar, CC-BY-4.0, treinado no conjunto de dados AI4Bharat Rasa (CC-BY-4.0; Varadhan, Sankar, Raju e Khapra, INTERSPEECH 2024). Vocoder: Vocos de Charactr Inc., MIT.",
+    "status": {
+      "failed": "Falhou",
+      "ready": "Pronto",
+      "starting": "Iniciando",
+      "stopping": "Parando",
+      "unloaded": "Descarregado"
+    },
+    "previewSentence": "Reading clearly, one phrase at a time.",
+    "description": {
+      "pocket-en": "Vozes expressivas em inglês com a maior pontuação de audição.",
+      "supertonic-3": "Síntese rápida em inglês com execução em CPU, GPU e NPU.",
+      "kokoro-82m-int8": "Vozes compactas em inglês de um modelo INT8.",
+      "paradee-8m-int8": "Vozes em inglês muito pequenas e rápidas de um modelo destilado do Kokoro.",
+      "phonon-31m-en": "Vozes em inglês pequenas e naturais baseadas no Pocket TTS, com 26 vozes.",
+      "indic-tiny-en": "Vozes pequenas em inglês indiano, feminina e masculina.",
+      "indic-tiny-hi": "Vozes pequenas em híndi, feminina e masculina. As palavras em inglês são soletradas letra por letra.",
+      "indic-tiny-pa": "Vozes pequenas em punjabi (gurmukhi), feminina e masculina. As palavras em inglês são soletradas letra por letra."
+    },
+    "voiceCount": "{{count}} vozes",
+    "downloadProgress": "Progresso do download do modelo",
+    "settingsTitle": "Conversão de texto em fala",
+    "speedLabel": "Velocidade",
+    "pitchLabel": "Tom",
+    "help": {
+      "model": "Escolha um modelo de conversão de texto em fala baixado.",
+      "voice": "Escolha uma voz para este modelo e ouça a pré-visualização.",
+      "speed": "Ajuste a velocidade de leitura do texto.",
+      "pitch": "Ajuste o tom da voz em semitons.",
+      "output": "Escolha onde o áudio da leitura em voz alta é reproduzido.",
+      "readCode": "Inclui blocos de código delimitados na leitura.",
+      "technicalReading": "Pronuncia caminhos, nomes de arquivo, opções e nomes de código por inteiro, usando o seu arquivo de vocabulário.",
+      "fullPaths": "Lê cada pasta de um caminho. Desativado, lê apenas o nome do arquivo.",
+      "fullLinks": "Lê o endereço web inteiro. Desativado, diz apenas o nome do site."
+    },
+    "tabs": {
+      "settings": "Configurações",
+      "history": "Histórico",
+      "vocabulary": "Vocabulário"
+    },
+    "history": {
+      "title": "Definições do histórico",
+      "reading": "Palavras escritas com o que foi dito",
+      "hint": "Arraste sobre as palavras para selecionar um trecho e corrigir como foi lido.",
+      "empty": "Ainda não foi lido nada em voz alta. As leituras que reproduzir aparecem aqui.",
+      "limit": {
+        "title": "Limite do histórico",
+        "description": "Máximo de leituras guardadas no histórico",
+        "entries": "leituras"
+      },
+      "retention": {
+        "title": "Eliminação automática",
+        "description": "Eliminar também automaticamente as leituras mais antigas",
+        "keepNothing": "Nunca guardar",
+        "keepLimit": "Manter as últimas {{count}}",
+        "days3": "Após 3 dias",
+        "weeks2": "Após 2 semanas",
+        "months3": "Após 3 meses"
+      },
+      "clear": {
+        "title": "Limpar histórico",
+        "description": "Remove todas as leituras guardadas. O seu vocabulário não muda.",
+        "confirmation": "Remover as {{count}} leituras guardadas? O seu vocabulário não muda."
+      },
+      "retentionConfirm": {
+        "message_one": "Excluir {{count}} leitura guardada agora? O seu vocabulário não muda.",
+        "message": "Excluir {{count}} leituras guardadas agora? O seu vocabulário não muda.",
+        "action": "Excluir leituras"
+      }
+    },
+    "vocabulary": {
+      "columns": {
+        "written": "Escrito",
+        "spoken": "Falado",
+        "kind": "Tipo",
+        "voices": "Vozes",
+        "match": "Correspondência",
+        "enabled": "Ativo",
+        "actions": "Ações"
+      },
+      "kinds": {
+        "symbol": "Símbolo",
+        "extension": "Extensão",
+        "term": "Termo",
+        "acronym": "Acrônimo"
+      },
+      "voices": {
+        "all": "Todas as vozes",
+        "except": "exceto {{names}}",
+        "add": "+ voz"
+      },
+      "origins": {
+        "builtin": "Integrado",
+        "owner": "Seu"
+      },
+      "skipped": "(ignorado)",
+      "buttons": {
+        "add": "Adicionar entrada",
+        "edit": "Editar",
+        "listen": "Ouvir",
+        "delete": "Excluir",
+        "reset": "Redefinir para o padrão",
+        "save": "Salvar",
+        "cancel": "Cancelar"
+      },
+      "match": {
+        "whole": "Palavra inteira",
+        "anywhere": "Em qualquer parte de uma palavra",
+        "prefix": "Início de uma palavra",
+        "suffix": "Fim de uma palavra",
+        "regex": "Padrão",
+        "caseSensitive": "Diferenciar maiúsculas",
+        "extension": "Fim de um nome de arquivo",
+        "symbol": "Em qualquer parte",
+        "acronym": "Palavra inteira ou parte de um nome"
+      },
+      "filter": "Pesquisar no escrito ou no falado",
+      "toggle": "Usar {{written}}",
+      "editTitle": "Editar entrada",
+      "fields": {
+        "skip": "Ignorar",
+        "appliesTo": "Aplica-se a"
+      },
+      "empty": "Nenhuma entrada corresponde ao filtro.",
+      "deleteConfirmation": "Excluir {{written}} do seu vocabulário? Isso não pode ser desfeito.",
+      "resetConfirm": "Redefinir {{written}} para a leitura integrada? Sua entrada é excluída.",
+      "errors": {
+        "changed": "O arquivo de vocabulário mudou no disco. A tabela foi recarregada; refaça sua edição.",
+        "fileInvalid": "Seu arquivo de vocabulário tem um erro e não pode ser editado aqui: {{message}}",
+        "invalidEdit": "Não foi possível salvar esta entrada: {{message}}",
+        "tooLarge": "O arquivo de vocabulário ficaria maior que 1 MiB, então nada foi salvo.",
+        "io": "Não foi possível gravar o arquivo de vocabulário: {{message}}",
+        "voicesChanged": "O vocabulário mudou enquanto isto esperava, então a alteração das vozes não foi aplicada. Escolha as vozes novamente."
+      },
+      "problems": {
+        "shadowed": "Nunca se aplica: uma entrada de maior prioridade sempre vence",
+        "unreachable": "Nunca se aplica: {{reason}}",
+        "disabled": "Desativada"
+      },
+      "unreachable": {
+        "containsSpace": "um termo é comparado palavra por palavra, então seu texto não pode ter espaços",
+        "endsWithPunctuation": "a pontuação no fim de uma palavra é separada antes de comparar os termos",
+        "notOneCharacter": "um símbolo tem exatamente um caractere",
+        "extensionNotAlphanumeric": "uma extensão contém apenas letras e dígitos",
+        "neverMatches": "ela não muda como seu exemplo é lido"
+      },
+      "derive": {
+        "unchanged": "As palavras faladas não mudaram, não há nada para guardar.",
+        "severalWords": "A alteração afeta mais de uma palavra escrita. Corrija uma palavra de cada vez.",
+        "notExplained": "Nenhuma regra única faz o texto ser lido assim.",
+        "invalid": "Não é possível guardar: {{detail}}"
+      },
+      "check": {
+        "title": "Verificar em todas as vozes",
+        "playAll": "Reproduzir tudo",
+        "playing": "A reproduzir {{model}}",
+        "checking": "A verificar cada voz...",
+        "heardRight": "ouvido corretamente",
+        "missed": "ouvido errado: {{heard}}",
+        "failed": "não foi possível verificar: {{error}}",
+        "row": "{{model}}: {{outcome}}",
+        "advisory": "Algumas vozes não leram isto corretamente. Ainda pode guardar.",
+        "saveAllAnyway": "Guardar para todas as vozes mesmo assim",
+        "savePassedOnly": "Guardar apenas para as vozes aprovadas",
+        "pickOne": "Escolher uma voz",
+        "dictating": "Há um ditado em curso. Verifique de novo quando terminar.",
+        "transcribeFailed": "A conversão de voz em texto não conseguiu transcrever a voz."
+      },
+      "filters": {
+        "voice": "Voz",
+        "kind": "Tipo",
+        "source": "Origem",
+        "all": "Todos",
+        "changed": "Alterado por você",
+        "onlyProblems": "Somente problemas"
+      },
+      "defaultLabel": "padrão:",
+      "defaultLabelFor": "padrão para {{voices}}:"
+    },
+    "correction": {
+      "add": "Adicionar correção",
+      "start": "Adicionar uma correção",
+      "writtenText": "Texto escrito",
+      "next": "Seguinte",
+      "title": "Corrigir uma leitura",
+      "selected": "Selecionado",
+      "spokenAs": "Falado como",
+      "shouldSay": "Deveria dizer",
+      "savesAs": "Guarda como",
+      "deriving": "A calcular a regra...",
+      "exactOnly": "Apenas este texto exato",
+      "chooseScope": "Escolher onde se aplica",
+      "scopeRequired": "Escolha Todas as vozes ou uma voz antes de guardar.",
+      "acronymStyle": "Estilo de siglas por voz",
+      "style": {
+        "spaced": "Letras separadas (C L I)",
+        "capitals": "Maiúsculas (CLI)",
+        "inherit": "Igual a todas as vozes"
+      },
+      "reach": {
+        "extension": "afeta todos os ficheiros {{extension}}",
+        "acronym": "afeta a sigla {{acronym}} em todo o lado",
+        "term": "afeta {{term}} em todo o lado",
+        "symbol": "afeta {{symbol}} dentro de cada palavra técnica",
+        "exact": "apenas {{text}}"
+      },
+      "savesAsFormat": "{{written}} -> \"{{spoken}}\" · {{reach}}",
+      "microphone": {
+        "idle": "Diga em vez de digitar",
+        "recording": "Parar e preencher o que disse",
+        "transcribing": "A transcrever o que disse...",
+        "busy": "Há um ditado, uma gravação ou uma transcrição de ficheiro em curso. Tente o microfone de novo quando terminar.",
+        "stopped": "O microfone parou antes de as suas palavras serem ouvidas, por isso nada foi preenchido.",
+        "reading": "A leitura em voz alta está aberta. Feche-a e depois use o microfone.",
+        "failed": "Não foi possível iniciar o microfone.",
+        "transcribeFailed": "A conversão de voz em texto não conseguiu transcrever o que disse."
+      }
+    }
   }
 }

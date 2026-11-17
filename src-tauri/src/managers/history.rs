@@ -1,12 +1,12 @@
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local, Utc};
 use log::{debug, error, info, warn};
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
 use rusqlite_migration::{MigrationDefinitionError, Migrations, M};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tauri::AppHandle;
 use tauri_specta::Event;
 
@@ -33,6 +33,8 @@ static MIGRATIONS: &[M] = &[
     M::up("ALTER TABLE transcription_history ADD COLUMN post_processed_text TEXT;"),
     M::up("ALTER TABLE transcription_history ADD COLUMN post_process_prompt TEXT;"),
     M::up("ALTER TABLE transcription_history ADD COLUMN post_process_requested BOOLEAN NOT NULL DEFAULT 0;"),
+    M::up("ALTER TABLE transcription_history ADD COLUMN post_process_provider TEXT;"),
+    M::up("ALTER TABLE transcription_history ADD COLUMN post_process_model TEXT;"),
 ];
 
 /// Nullable columns added outside [`MIGRATIONS`]; see
@@ -42,12 +44,18 @@ const ADDED_COLUMNS: &[&str] = &["source_name", "language", "language_source"];
 /// Every column a [`HistoryEntry`] is read from.
 const ENTRY_COLUMNS: &str = "id, file_name, timestamp, saved, title, transcription_text, \
     post_processed_text, post_process_prompt, post_process_requested, source_name, language, \
-    language_source";
+    language_source, post_process_provider, post_process_model";
 
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]
 pub struct PaginatedHistory {
     pub entries: Vec<HistoryEntry>,
     pub has_more: bool,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Type)]
+pub struct HistoryClearSummary {
+    pub entries: usize,
+    pub recordings: usize,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Type, tauri_specta::Event)]
@@ -61,6 +69,8 @@ pub enum HistoryUpdatePayload {
     Deleted { id: i64 },
     #[serde(rename = "toggled")]
     Toggled { id: i64 },
+    #[serde(rename = "cleared")]
+    Cleared {},
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]
@@ -81,6 +91,22 @@ pub struct HistoryEntry {
     pub language: Option<String>,
     /// How that language was chosen; `None` before it was recorded.
     pub language_source: Option<LanguageSource>,
+    pub post_process_provider: Option<String>,
+    pub post_process_model: Option<String>,
+}
+
+/// Provider and model from the settings snapshot used for successful cleanup.
+#[derive(Clone, Debug)]
+pub struct PostProcessProvenance {
+    pub provider: String,
+    pub model: Option<String>,
+}
+
+/// Language and cleanup provenance produced for one dictation.
+#[derive(Default)]
+pub struct HistoryMetadata {
+    pub language: Option<LanguageDecision>,
+    pub provenance: Option<PostProcessProvenance>,
 }
 
 pub struct HistoryManager {
@@ -252,7 +278,9 @@ impl HistoryManager {
     }
 
     fn get_connection(&self) -> Result<Connection> {
-        Ok(Connection::open(&self.db_path)?)
+        let conn = Connection::open(&self.db_path)?;
+        conn.busy_timeout(std::time::Duration::from_secs(30))?;
+        Ok(conn)
     }
 
     fn map_history_entry(row: &rusqlite::Row<'_>) -> rusqlite::Result<HistoryEntry> {
@@ -272,6 +300,8 @@ impl HistoryManager {
                 .get::<_, Option<String>>("language_source")?
                 .as_deref()
                 .and_then(LanguageSource::parse),
+            post_process_provider: row.get("post_process_provider")?,
+            post_process_model: row.get("post_process_model")?,
         })
     }
 
@@ -288,9 +318,10 @@ impl HistoryManager {
         post_process_requested: bool,
         post_processed_text: Option<String>,
         post_process_prompt: Option<String>,
-        language: Option<LanguageDecision>,
+        metadata: HistoryMetadata,
     ) -> Result<HistoryEntry> {
-        let (language, language_source) = split_language(language);
+        let (language, language_source) = split_language(metadata.language);
+        let provenance = metadata.provenance;
         let entry = self.insert_entry(HistoryEntry {
             id: 0,
             file_name,
@@ -304,9 +335,9 @@ impl HistoryManager {
             source_name: None,
             language,
             language_source,
+            post_process_provider: provenance.as_ref().map(|value| value.provider.clone()),
+            post_process_model: provenance.and_then(|value| value.model),
         })?;
-
-        self.cleanup_old_entries()?;
 
         Ok(entry)
     }
@@ -325,6 +356,8 @@ impl HistoryManager {
             post_processed_text: None,
             post_process_prompt: None,
             post_process_requested: false,
+            post_process_provider: None,
+            post_process_model: None,
             source_name: Some(source_name),
             language: None,
             language_source: None,
@@ -335,49 +368,78 @@ impl HistoryManager {
     fn insert_entry(&self, mut entry: HistoryEntry) -> Result<HistoryEntry> {
         entry.title = self.format_timestamp_title(entry.timestamp);
 
-        let conn = self.get_connection()?;
+        let mut conn = self.get_connection()?;
+        let retention_period = crate::settings::get_recording_retention_period(&self.app_handle);
+        let history_limit = crate::settings::get_history_limit(&self.app_handle);
+        Self::save_entry_and_notify_with_connection(
+            &mut conn,
+            &self.recordings_dir,
+            entry,
+            retention_period,
+            history_limit,
+            Utc::now().timestamp(),
+            |event| self.emit_history_update(event),
+        )
+    }
+
+    fn save_entry_and_notify_with_connection(
+        conn: &mut Connection,
+        recordings_dir: &Path,
+        mut entry: HistoryEntry,
+        retention_period: crate::settings::RecordingRetentionPeriod,
+        history_limit: usize,
+        now: i64,
+        mut notify: impl FnMut(HistoryUpdatePayload),
+    ) -> Result<HistoryEntry> {
+        entry.id = Self::insert_history_entry_with_conn(conn, &entry)?;
+        debug!("Saved history entry with id {}", entry.id);
+        notify(HistoryUpdatePayload::Added {
+            entry: entry.clone(),
+        });
+        if entry.source_name.is_none() {
+            if let Err(error) = Self::cleanup_and_notify_with_connection(
+                conn,
+                recordings_dir,
+                retention_period,
+                history_limit,
+                now,
+                &mut notify,
+            ) {
+                error!("Failed to clean up history retention: {error}");
+            }
+        }
+        Ok(entry)
+    }
+
+    fn emit_history_update(&self, event: HistoryUpdatePayload) {
+        if let Err(error) = event.emit(&self.app_handle) {
+            error!("Failed to emit history-updated event: {}", error);
+        }
+    }
+
+    fn insert_history_entry_with_conn(conn: &Connection, entry: &HistoryEntry) -> Result<i64> {
         conn.execute(
-            "INSERT INTO transcription_history (
-                file_name,
-                timestamp,
-                saved,
-                title,
-                transcription_text,
-                post_processed_text,
-                post_process_prompt,
-                post_process_requested,
-                source_name,
-                language,
-                language_source
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            "INSERT INTO transcription_history (file_name, timestamp, saved, title,
+             transcription_text, post_processed_text, post_process_prompt,
+             post_process_requested, post_process_provider, post_process_model, source_name, language, language_source)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
-                &entry.file_name,
+                entry.file_name,
                 entry.timestamp,
                 entry.saved,
-                &entry.title,
-                &entry.transcription_text,
-                &entry.post_processed_text,
-                &entry.post_process_prompt,
+                entry.title,
+                entry.transcription_text,
+                entry.post_processed_text,
+                entry.post_process_prompt,
                 entry.post_process_requested,
-                &entry.source_name,
-                &entry.language,
+                entry.post_process_provider,
+                entry.post_process_model,
+                entry.source_name,
+                entry.language,
                 entry.language_source.map(LanguageSource::as_str),
             ],
         )?;
-        entry.id = conn.last_insert_rowid();
-
-        debug!("Saved history entry with id {}", entry.id);
-
-        // Emit typed event for real-time frontend updates
-        if let Err(e) = (HistoryUpdatePayload::Added {
-            entry: entry.clone(),
-        })
-        .emit(&self.app_handle)
-        {
-            error!("Failed to emit history-updated event: {}", e);
-        }
-
-        Ok(entry)
+        Ok(conn.last_insert_rowid())
     }
 
     /// Update an existing history entry with new transcription results (used by retry).
@@ -388,36 +450,24 @@ impl HistoryManager {
         post_processed_text: Option<String>,
         post_process_prompt: Option<String>,
         language: Option<LanguageDecision>,
+        provenance: Option<PostProcessProvenance>,
     ) -> Result<HistoryEntry> {
         let (language, language_source) = split_language(language);
-        let conn = self.get_connection()?;
-        let updated = conn.execute(
-            "UPDATE transcription_history
-             SET transcription_text = ?1,
-                 post_processed_text = ?2,
-                 post_process_prompt = ?3,
-                 language = ?4,
-                 language_source = ?5
-             WHERE id = ?6",
-            params![
-                transcription_text,
-                post_processed_text,
-                post_process_prompt,
-                language,
-                language_source.map(LanguageSource::as_str),
-                id
-            ],
+        let mut conn = self.get_connection()?;
+        let tx = conn.transaction()?;
+        tx.execute(
+            "UPDATE transcription_history SET language = ?1, language_source = ?2 WHERE id = ?3",
+            params![language, language_source.map(LanguageSource::as_str), id],
         )?;
-
-        if updated == 0 {
-            return Err(anyhow!("History entry {} not found", id));
-        }
-
-        let entry = conn.query_row(
-            &format!("SELECT {ENTRY_COLUMNS} FROM transcription_history WHERE id = ?1"),
-            params![id],
-            Self::map_history_entry,
+        let entry = Self::update_transcription_with_conn(
+            &tx,
+            id,
+            transcription_text,
+            post_processed_text,
+            post_process_prompt,
+            provenance,
         )?;
+        tx.commit()?;
 
         debug!("Updated transcription for history entry {}", id);
 
@@ -432,126 +482,247 @@ impl HistoryManager {
         Ok(entry)
     }
 
-    pub fn cleanup_old_entries(&self) -> Result<()> {
-        let retention_period = crate::settings::get_recording_retention_period(&self.app_handle);
+    /// Write retry text and provenance together using the supplied connection.
+    pub fn update_transcription_with_conn(
+        conn: &Connection,
+        id: i64,
+        transcription_text: String,
+        post_processed_text: Option<String>,
+        post_process_prompt: Option<String>,
+        provenance: Option<PostProcessProvenance>,
+    ) -> Result<HistoryEntry> {
+        let updated = conn.execute(
+            "UPDATE transcription_history
+             SET transcription_text = ?1,
+                 post_processed_text = ?2,
+                 post_process_prompt = ?3,
+                 post_process_provider = ?4,
+                 post_process_model = ?5
+             WHERE id = ?6",
+            params![
+                transcription_text,
+                post_processed_text,
+                post_process_prompt,
+                provenance.as_ref().map(|value| value.provider.as_str()),
+                provenance.as_ref().and_then(|value| value.model.as_deref()),
+                id
+            ],
+        )?;
 
-        match retention_period {
-            crate::settings::RecordingRetentionPeriod::Never => {
-                // Don't delete anything
-                Ok(())
-            }
-            crate::settings::RecordingRetentionPeriod::PreserveLimit => {
-                // Use the old count-based logic with history_limit
-                let limit = crate::settings::get_history_limit(&self.app_handle);
-                self.cleanup_by_count(limit)
-            }
-            _ => {
-                // Use time-based logic
-                self.cleanup_by_time(retention_period)
-            }
+        if updated == 0 {
+            return Err(anyhow!("History entry {} not found", id));
         }
+
+        let entry = conn.query_row(
+            &format!("SELECT {ENTRY_COLUMNS} FROM transcription_history WHERE id = ?1"),
+            params![id],
+            Self::map_history_entry,
+        )?;
+
+        Ok(entry)
     }
 
-    fn delete_entries_and_files(&self, entries: &[(i64, String)]) -> Result<usize> {
-        if entries.is_empty() {
-            return Ok(0);
+    pub fn cleanup_old_entries(&self) -> Result<()> {
+        let retention_period = crate::settings::get_recording_retention_period(&self.app_handle);
+        if retention_period == crate::settings::RecordingRetentionPeriod::Never {
+            return Ok(());
         }
+        let history_limit = crate::settings::get_history_limit(&self.app_handle);
+        let mut conn = self.get_connection()?;
+        Self::cleanup_and_notify_with_connection(
+            &mut conn,
+            &self.recordings_dir,
+            retention_period,
+            history_limit,
+            Utc::now().timestamp(),
+            |event| self.emit_history_update(event),
+        )?;
+        Ok(())
+    }
 
-        let conn = self.get_connection()?;
-        let mut deleted_count = 0;
+    fn clear_candidates(conn: &Connection, keep_saved: bool) -> Result<Vec<(i64, String)>> {
+        let mut statement = conn.prepare(
+            "SELECT id, file_name FROM transcription_history WHERE (?1 = 0 OR saved = 0) ORDER BY id",
+        )?;
+        let rows =
+            statement.query_map(params![keep_saved], |row| Ok((row.get(0)?, row.get(1)?)))?;
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+    }
 
-        for (id, file_name) in entries {
-            // Delete database entry
-            conn.execute(
+    fn delete_entries_with_conn(conn: &Connection, entries: &[(i64, String)]) -> Result<usize> {
+        let mut removed = 0;
+        for (id, _) in entries {
+            removed += conn.execute(
                 "DELETE FROM transcription_history WHERE id = ?1",
                 params![id],
             )?;
-
-            // Delete WAV file
-            let file_path = self.recordings_dir.join(file_name);
-            if file_path.exists() {
-                if let Err(e) = fs::remove_file(&file_path) {
-                    error!("Failed to delete WAV file {}: {}", file_name, e);
-                } else {
-                    debug!("Deleted old WAV file: {}", file_name);
-                    deleted_count += 1;
-                }
-            }
         }
-
-        Ok(deleted_count)
+        Ok(removed)
     }
 
-    fn cleanup_by_count(&self, limit: usize) -> Result<()> {
-        let conn = self.get_connection()?;
+    fn delete_recording_files(recordings_dir: &Path, entries: &[(i64, String)]) -> usize {
+        let mut removed = 0;
+        for (_, file_name) in entries {
+            match fs::remove_file(recordings_dir.join(file_name)) {
+                Ok(()) => removed += 1,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(error) => error!("Failed to delete WAV file {}: {}", file_name, error),
+            }
+        }
+        removed
+    }
 
-        // Unsaved dictations, newest first. Transcribed files are only ever
-        // deleted explicitly, and don't count toward the limit.
-        let mut stmt = conn.prepare(
-            "SELECT id, file_name FROM transcription_history WHERE saved = 0 AND source_name IS NULL ORDER BY timestamp DESC"
-        )?;
-
-        let rows = stmt.query_map([], |row| {
-            Ok((row.get::<_, i64>("id")?, row.get::<_, String>("file_name")?))
+    fn clear_history_with_connection(
+        conn: &mut Connection,
+        recordings_dir: &Path,
+        keep_saved: bool,
+        mut cancel: impl FnMut(i64),
+    ) -> Result<HistoryClearSummary> {
+        let (removed, entries) = Self::with_clear_transaction(conn, |transaction| {
+            let entries = Self::clear_candidates(transaction, keep_saved)?;
+            for (id, _) in &entries {
+                cancel(*id);
+            }
+            let removed = Self::delete_entries_with_conn(transaction, &entries)?;
+            Ok((removed, entries))
         })?;
-
-        let mut entries: Vec<(i64, String)> = Vec::new();
-        for row in rows {
-            entries.push(row?);
-        }
-
-        if entries.len() > limit {
-            let entries_to_delete = &entries[limit..];
-            let deleted_count = self.delete_entries_and_files(entries_to_delete)?;
-
-            if deleted_count > 0 {
-                debug!("Cleaned up {} old history entries by count", deleted_count);
-            }
-        }
-
-        Ok(())
+        Ok(HistoryClearSummary {
+            entries: removed,
+            recordings: Self::delete_recording_files(recordings_dir, &entries),
+        })
     }
 
-    fn cleanup_by_time(
+    fn with_clear_transaction<T>(
+        conn: &mut Connection,
+        operation: impl FnOnce(&Connection) -> Result<T>,
+    ) -> Result<T> {
+        let transaction = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let result = operation(&transaction)?;
+        transaction.commit()?;
+        Ok(result)
+    }
+
+    /// Count all eligible history rows and their existing recordings for confirmation.
+    pub fn history_clear_summary(&self, keep_saved: bool) -> Result<HistoryClearSummary> {
+        let conn = self.get_connection()?;
+        Self::history_clear_summary_with_conn(&conn, &self.recordings_dir, keep_saved)
+    }
+
+    fn history_clear_summary_with_conn(
+        conn: &Connection,
+        recordings_dir: &Path,
+        keep_saved: bool,
+    ) -> Result<HistoryClearSummary> {
+        let entries = Self::clear_candidates(conn, keep_saved)?;
+        let recordings = entries
+            .iter()
+            .filter(|(_, name)| recordings_dir.join(name).is_file())
+            .count();
+        Ok(HistoryClearSummary {
+            entries: entries.len(),
+            recordings,
+        })
+    }
+
+    /// Clear a serialized snapshot of history and emit one update after commit.
+    pub fn clear_history(
         &self,
+        keep_saved: bool,
+        cancel: impl FnMut(i64),
+    ) -> Result<HistoryClearSummary> {
+        let mut conn = self.get_connection()?;
+        Self::clear_history_and_notify_with_connection(
+            &mut conn,
+            &self.recordings_dir,
+            keep_saved,
+            cancel,
+            |event| {
+                if let Err(error) = event.emit(&self.app_handle) {
+                    error!("Failed to emit cleared history event: {error}");
+                }
+            },
+        )
+    }
+
+    fn clear_history_and_notify_with_connection(
+        conn: &mut Connection,
+        recordings_dir: &Path,
+        keep_saved: bool,
+        cancel: impl FnMut(i64),
+        mut notify: impl FnMut(HistoryUpdatePayload),
+    ) -> Result<HistoryClearSummary> {
+        let removed =
+            Self::clear_history_with_connection(conn, recordings_dir, keep_saved, cancel)?;
+        notify(HistoryUpdatePayload::Cleared {});
+        Ok(removed)
+    }
+
+    fn cleanup_and_notify_with_connection(
+        conn: &mut Connection,
+        recordings_dir: &Path,
         retention_period: crate::settings::RecordingRetentionPeriod,
-    ) -> Result<()> {
-        let conn = self.get_connection()?;
-
-        // Calculate cutoff timestamp (current time minus retention period)
-        let now = Utc::now().timestamp();
-        let cutoff_timestamp = match retention_period {
-            crate::settings::RecordingRetentionPeriod::Days3 => now - (3 * 24 * 60 * 60), // 3 days in seconds
-            crate::settings::RecordingRetentionPeriod::Weeks2 => now - (2 * 7 * 24 * 60 * 60), // 2 weeks in seconds
-            crate::settings::RecordingRetentionPeriod::Months3 => now - (3 * 30 * 24 * 60 * 60), // 3 months in seconds (approximate)
-            _ => unreachable!("Should not reach here"),
-        };
-
-        // Unsaved dictations older than the cutoff; transcribed files are only
-        // ever deleted explicitly.
-        let mut stmt = conn.prepare(
-            "SELECT id, file_name FROM transcription_history WHERE saved = 0 AND source_name IS NULL AND timestamp < ?1",
-        )?;
-
-        let rows = stmt.query_map(params![cutoff_timestamp], |row| {
-            Ok((row.get::<_, i64>("id")?, row.get::<_, String>("file_name")?))
-        })?;
-
-        let mut entries_to_delete: Vec<(i64, String)> = Vec::new();
-        for row in rows {
-            entries_to_delete.push(row?);
+        history_limit: usize,
+        now: i64,
+        mut notify: impl FnMut(HistoryUpdatePayload),
+    ) -> Result<HistoryClearSummary> {
+        use crate::settings::RecordingRetentionPeriod;
+        if retention_period == RecordingRetentionPeriod::Never {
+            return Ok(HistoryClearSummary::default());
         }
-
-        let deleted_count = self.delete_entries_and_files(&entries_to_delete)?;
-
-        if deleted_count > 0 {
+        let (removed, entries) = Self::with_clear_transaction(conn, |transaction| {
+            let entries =
+                Self::retention_candidates(transaction, retention_period, history_limit, now)?;
+            let removed = Self::delete_entries_with_conn(transaction, &entries)?;
+            Ok((removed, entries))
+        })?;
+        let removed = HistoryClearSummary {
+            entries: removed,
+            recordings: Self::delete_recording_files(recordings_dir, &entries),
+        };
+        for (id, _) in entries {
+            notify(HistoryUpdatePayload::Deleted { id });
+        }
+        if removed.recordings > 0 {
             debug!(
-                "Cleaned up {} old history entries based on retention period",
-                deleted_count
+                "Removed {} old history recordings by retention",
+                removed.recordings
             );
         }
+        Ok(removed)
+    }
 
-        Ok(())
+    fn retention_candidates(
+        conn: &Connection,
+        retention_period: crate::settings::RecordingRetentionPeriod,
+        history_limit: usize,
+        now: i64,
+    ) -> Result<Vec<(i64, String)>> {
+        use crate::settings::RecordingRetentionPeriod;
+        let cutoff = match retention_period {
+            RecordingRetentionPeriod::Never => return Ok(Vec::new()),
+            RecordingRetentionPeriod::PreserveLimit => None,
+            RecordingRetentionPeriod::Days3 => Some(now - 3 * 24 * 60 * 60),
+            RecordingRetentionPeriod::Weeks2 => Some(now - 2 * 7 * 24 * 60 * 60),
+            RecordingRetentionPeriod::Months3 => Some(now - 3 * 30 * 24 * 60 * 60),
+        };
+        let entries = if let Some(cutoff) = cutoff {
+            let mut statement = conn.prepare(
+                "SELECT id, file_name FROM transcription_history WHERE saved = 0 AND source_name IS NULL AND timestamp < ?1 ORDER BY id",
+            )?;
+            let rows =
+                statement.query_map(params![cutoff], |row| Ok((row.get(0)?, row.get(1)?)))?;
+            rows.collect::<rusqlite::Result<Vec<_>>>()?
+        } else {
+            let mut statement = conn.prepare(
+                "SELECT id, file_name FROM transcription_history WHERE saved = 0 AND source_name IS NULL ORDER BY timestamp DESC",
+            )?;
+            let rows = statement.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?;
+            rows.collect::<rusqlite::Result<Vec<_>>>()?
+                .into_iter()
+                .skip(history_limit)
+                .collect()
+        };
+        Ok(entries)
     }
 
     pub async fn get_history_entries(
@@ -644,31 +815,47 @@ impl HistoryManager {
         Ok(entry)
     }
 
-    pub async fn toggle_saved_status(&self, id: i64) -> Result<()> {
-        let conn = self.get_connection()?;
-
-        // Get current saved status
-        let current_saved: bool = conn.query_row(
-            "SELECT saved FROM transcription_history WHERE id = ?1",
-            params![id],
-            |row| row.get("saved"),
-        )?;
-
-        let new_saved = !current_saved;
-
-        conn.execute(
-            "UPDATE transcription_history SET saved = ?1 WHERE id = ?2",
-            params![new_saved, id],
-        )?;
+    /// Toggle a star in an immediate transaction and emit its update after commit.
+    pub fn toggle_saved_status(&self, id: i64) -> Result<()> {
+        let mut conn = self.get_connection()?;
+        let new_saved = Self::toggle_saved_status_with_conn(&mut conn, id)?;
 
         debug!("Toggled saved status for entry {}: {}", id, new_saved);
 
-        // Emit history updated event
         if let Err(e) = (HistoryUpdatePayload::Toggled { id }).emit(&self.app_handle) {
             error!("Failed to emit history-updated event: {}", e);
         }
 
         Ok(())
+    }
+
+    fn toggle_saved_status_with_conn(conn: &mut Connection, id: i64) -> Result<bool> {
+        Self::toggle_saved_status_with_conn_after_read(conn, id, || Ok(()))
+    }
+
+    fn toggle_saved_status_with_conn_after_read(
+        conn: &mut Connection,
+        id: i64,
+        after_read: impl FnOnce() -> Result<()>,
+    ) -> Result<bool> {
+        let transaction = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+
+        let current_saved: bool = transaction.query_row(
+            "SELECT saved FROM transcription_history WHERE id = ?1",
+            params![id],
+            |row| row.get("saved"),
+        )?;
+
+        after_read()?;
+        let new_saved = !current_saved;
+
+        transaction.execute(
+            "UPDATE transcription_history SET saved = ?1 WHERE id = ?2",
+            params![new_saved, id],
+        )?;
+
+        transaction.commit()?;
+        Ok(new_saved)
     }
 
     pub fn get_audio_file_path(&self, file_name: &str) -> PathBuf {
@@ -711,10 +898,7 @@ impl HistoryManager {
 
         debug!("Deleted history entry with id: {}", id);
 
-        // Emit history updated event
-        if let Err(e) = (HistoryUpdatePayload::Deleted { id }).emit(&self.app_handle) {
-            error!("Failed to emit history-updated event: {}", e);
-        }
+        self.emit_history_update(HistoryUpdatePayload::Deleted { id });
 
         Ok(())
     }
@@ -734,27 +918,1059 @@ impl HistoryManager {
 mod tests {
     use super::*;
     use rusqlite::{params, Connection};
+    use std::sync::mpsc;
+    use std::time::Duration;
 
     fn setup_conn() -> Connection {
-        let conn = Connection::open_in_memory().expect("open in-memory db");
-        conn.execute_batch(
-            "CREATE TABLE transcription_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                file_name TEXT NOT NULL,
-                timestamp INTEGER NOT NULL,
-                saved BOOLEAN NOT NULL DEFAULT 0,
-                title TEXT NOT NULL,
-                transcription_text TEXT NOT NULL,
-                post_processed_text TEXT,
-                post_process_prompt TEXT,
-                post_process_requested BOOLEAN NOT NULL DEFAULT 0,
-                source_name TEXT,
-                language TEXT,
-                language_source TEXT
-            );",
-        )
-        .expect("create transcription_history table");
+        let mut conn = Connection::open_in_memory().unwrap();
+        HistoryManager::apply_migrations(&mut conn).unwrap();
         conn
+    }
+
+    mod bulk_clear_jobs {
+        use super::*;
+        use crate::managers::transcription_jobs::{
+            execute_job, JobEnd, Jobs, TranscriptionJobStatus,
+        };
+        use std::cell::{Cell, RefCell};
+        use std::sync::atomic::Ordering;
+
+        #[test]
+        fn bulk_clear_cancels_only_removed_history_jobs() {
+            for (keep_saved, running_saved, new_after_snapshot) in [
+                (true, false, true),
+                (true, true, true),
+                (false, false, true),
+                (false, false, false),
+            ] {
+                let dir = tempfile::tempdir().unwrap();
+                let path = dir.path().join("history.db");
+                let mut conn = Connection::open(&path).unwrap();
+                HistoryManager::apply_migrations(&mut conn).unwrap();
+                let observer = Connection::open(&path).unwrap();
+                for timestamp in [100, 200, 300, 400] {
+                    insert_entry(&conn, timestamp, "pending", None);
+                    fs::write(dir.path().join(format!("handy-{timestamp}.wav")), b"audio").unwrap();
+                }
+                conn.execute(
+                    "UPDATE transcription_history SET saved = 1 WHERE id = 2",
+                    [],
+                )
+                .unwrap();
+                let jobs = RefCell::new(Jobs::default());
+                let model_active = Cell::new(false);
+                let running_id = if running_saved { 2 } else { 1 };
+                jobs.borrow_mut().queue(running_id, false);
+                let (_, cancelled) = jobs.borrow_mut().start_next().unwrap();
+                for id in [1, 2, 3, 4] {
+                    jobs.borrow_mut().queue(id, id == 4);
+                }
+                jobs.borrow().sync_active(|active| model_active.set(active));
+                assert!(model_active.get());
+                let expected = if keep_saved {
+                    vec![1, 3, 4]
+                } else {
+                    vec![1, 2, 3, 4]
+                };
+                let mut cancelled_ids = Vec::new();
+                let mut events = Vec::new();
+                let removed = HistoryManager::clear_history_and_notify_with_connection(
+                    &mut conn,
+                    dir.path(),
+                    keep_saved,
+                    |id| {
+                        for &candidate in &expected {
+                            let exists: bool = observer.query_row(
+                                "SELECT EXISTS(SELECT 1 FROM transcription_history WHERE id = ?1)",
+                                [candidate], |row| row.get(0),
+                            ).unwrap();
+                            assert!(exists, "all cancellation must precede row deletion");
+                            assert!(
+                                dir.path()
+                                    .join(format!("handy-{}.wav", candidate * 100))
+                                    .exists(),
+                                "all cancellation must precede file deletion"
+                            );
+                        }
+                        cancelled_ids.push(id);
+                        let mut jobs = jobs.borrow_mut();
+                        jobs.cancel(id);
+                        jobs.sync_active(|active| model_active.set(active));
+                    },
+                    |event| {
+                        assert!(matches!(event, HistoryUpdatePayload::Cleared {}));
+                        let rows: usize = observer
+                            .query_row("SELECT COUNT(*) FROM transcription_history", [], |row| {
+                                row.get(0)
+                            })
+                            .unwrap();
+                        assert_eq!(rows, usize::from(keep_saved), "notify follows commit");
+                        // A file import can commit and queue as soon as Clear releases its transaction.
+                        if new_after_snapshot {
+                            insert_entry(&observer, 500, "new import", None);
+                            fs::write(dir.path().join("handy-500.wav"), b"new audio").unwrap();
+                            assert_eq!(observer.last_insert_rowid(), 5);
+                            jobs.borrow_mut().queue(5, false);
+                            jobs.borrow().sync_active(|active| model_active.set(active));
+                        }
+                        events.push(event);
+                    },
+                )
+                .unwrap();
+                assert_eq!(
+                    cancelled_ids, expected,
+                    "bulk clear must cancel exactly its deletion snapshot"
+                );
+                assert_eq!(removed.entries, expected.len());
+                assert_eq!(removed.recordings, expected.len());
+                assert_eq!(events.len(), 1);
+                assert_eq!(
+                    cancelled.load(Ordering::Acquire),
+                    !running_saved || !keep_saved,
+                    "bulk clear must cancel a removed running job and preserve a saved running job"
+                );
+                assert!(
+                    model_active.get(),
+                    "a running job holds the model until it acknowledges cancellation"
+                );
+
+                let mut notices = Vec::new();
+                let mut executed = Vec::new();
+                let mut next = Some((running_id, cancelled));
+                while let Some((id, cancelled)) = next {
+                    executed.push(id);
+                    let status = execute_job(
+                        id,
+                        &cancelled,
+                        || {
+                            // An in-flight chunk may finish with a missing-row error after deliberate deletion.
+                            HistoryManager::update_transcription_with_conn(
+                                &conn,
+                                id,
+                                "completed".into(),
+                                None,
+                                None,
+                                None,
+                            )?;
+                            assert!(dir.path().join(format!("handy-{}.wav", id * 100)).is_file());
+                            Ok(JobEnd::Finished {
+                                post_process_failed: false,
+                            })
+                        },
+                        || {
+                            jobs.borrow_mut().finish(|active| model_active.set(active));
+                        },
+                        |notice| {
+                            if let Some(notice) = notice {
+                                notices.push(notice);
+                            }
+                        },
+                    );
+                    assert_eq!(
+                        status,
+                        TranscriptionJobStatus::Finished,
+                        "deliberate deletion must finish without FileTranscriptionFailed"
+                    );
+                    let has_remaining = if id == running_id {
+                        keep_saved && !running_saved || new_after_snapshot
+                    } else {
+                        id == 2 && new_after_snapshot
+                    };
+                    assert_eq!(
+                        model_active.get(),
+                        has_remaining,
+                        "the model lock must release after the final surviving job finishes"
+                    );
+                    next = jobs.borrow_mut().start_next();
+                    if let Some((id, flag)) = &next {
+                        assert!(
+                            keep_saved && *id == 2 || *id == 5,
+                            "removed queued jobs must never execute"
+                        );
+                        assert!(
+                            !flag.load(Ordering::Acquire),
+                            "saved and new jobs must stay uncancelled"
+                        );
+                    }
+                }
+                let mut expected_executed = vec![running_id];
+                if keep_saved && !running_saved {
+                    expected_executed.push(2);
+                }
+                if new_after_snapshot {
+                    expected_executed.push(5);
+                }
+                assert_eq!(executed, expected_executed);
+                assert!(
+                    notices.is_empty(),
+                    "intentional deletion must raise no failure notice"
+                );
+                assert!(!model_active.get(), "all jobs must release the model lock");
+                for id in expected_executed
+                    .into_iter()
+                    .filter(|id| !expected.contains(id))
+                {
+                    let text: String = conn
+                        .query_row(
+                            "SELECT transcription_text FROM transcription_history WHERE id = ?1",
+                            [id],
+                            |row| row.get(0),
+                        )
+                        .unwrap();
+                    assert_eq!(text, "completed", "surviving jobs must finish successfully");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn wbfix3_failed_delete_or_commit_preserves_recordings() {
+        for (commit_failure, retention) in
+            [(false, false), (true, false), (false, true), (true, true)]
+        {
+            let dir = tempfile::tempdir().unwrap();
+            let mut conn = Connection::open_in_memory().unwrap();
+            HistoryManager::apply_migrations(&mut conn).unwrap();
+            for timestamp in [100, 200] {
+                insert_entry(&conn, timestamp, "raw", None);
+                fs::write(dir.path().join(format!("handy-{timestamp}.wav")), b"audio").unwrap();
+            }
+            if commit_failure {
+                conn.execute_batch("PRAGMA foreign_keys=ON; CREATE TABLE failure (id INTEGER REFERENCES transcription_history(id) DEFERRABLE INITIALLY DEFERRED); CREATE TRIGGER fail_commit AFTER DELETE ON transcription_history BEGIN INSERT INTO failure VALUES (99999); END;").unwrap();
+            } else {
+                conn.execute_batch("CREATE TRIGGER fail_delete BEFORE DELETE ON transcription_history WHEN OLD.id = 2 BEGIN SELECT RAISE(ABORT, 'fixture deletion failure'); END;").unwrap();
+            }
+            let result = if retention {
+                HistoryManager::cleanup_and_notify_with_connection(
+                    &mut conn,
+                    dir.path(),
+                    crate::settings::RecordingRetentionPeriod::PreserveLimit,
+                    0,
+                    300,
+                    |_| panic!("failed retention must not notify"),
+                )
+            } else {
+                HistoryManager::clear_history_with_connection(&mut conn, dir.path(), false, |_| {})
+            };
+            assert!(result.is_err());
+            assert_eq!(
+                conn.query_row("SELECT COUNT(*) FROM transcription_history", [], |r| r
+                    .get::<_, usize>(0))
+                    .unwrap(),
+                2
+            );
+            for timestamp in [100, 200] {
+                assert!(
+                    dir.path().join(format!("handy-{timestamp}.wav")).exists(),
+                    "failed transaction must preserve audio"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn wbfix3_retention_failure_does_not_fail_saved_entry() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut conn = Connection::open_in_memory().unwrap();
+        HistoryManager::apply_migrations(&mut conn).unwrap();
+        insert_entry(&conn, 100, "raw", None);
+        let entry = HistoryManager::get_latest_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        conn.execute_batch("CREATE TRIGGER fail_delete BEFORE DELETE ON transcription_history BEGIN SELECT RAISE(ABORT, 'fixture retention failure'); END;").unwrap();
+        let mut events = Vec::new();
+        let result = HistoryManager::save_entry_and_notify_with_connection(
+            &mut conn,
+            dir.path(),
+            entry,
+            crate::settings::RecordingRetentionPeriod::PreserveLimit,
+            1,
+            200,
+            |e| events.push(e),
+        );
+        assert!(
+            result.is_ok(),
+            "retention failure must not fail a committed save"
+        );
+        assert!(
+            matches!(events.as_slice(), [HistoryUpdatePayload::Added { .. }]),
+            "save must notify Added before failed retention"
+        );
+    }
+
+    #[test]
+    fn wbfix3_file_import_does_not_trigger_dictation_retention() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut conn = Connection::open_in_memory().unwrap();
+        HistoryManager::apply_migrations(&mut conn).unwrap();
+        insert_entry(&conn, 100, "raw", None);
+        let mut entry = HistoryManager::get_latest_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        entry.source_name = Some("fixture.wav".into());
+        let mut events = Vec::new();
+        HistoryManager::save_entry_and_notify_with_connection(
+            &mut conn,
+            dir.path(),
+            entry,
+            crate::settings::RecordingRetentionPeriod::PreserveLimit,
+            0,
+            200,
+            |e| events.push(e),
+        )
+        .unwrap();
+        assert_eq!(
+            conn.query_row("SELECT COUNT(*) FROM transcription_history", [], |r| r
+                .get::<_, usize>(0))
+                .unwrap(),
+            2,
+            "file import must not trigger retention"
+        );
+        assert!(matches!(
+            events.as_slice(),
+            [HistoryUpdatePayload::Added { .. }]
+        ));
+    }
+
+    #[test]
+    fn count_retention_notifies_added_then_deleted_ids_after_commit() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("history.db");
+        let mut conn = Connection::open(&path).unwrap();
+        HistoryManager::apply_migrations(&mut conn).unwrap();
+        let observer = Connection::open(&path).unwrap();
+        observer.busy_timeout(Duration::ZERO).unwrap();
+        for timestamp in [100, 200, 300, 400, 500] {
+            insert_entry(&conn, timestamp, "raw", None);
+            if timestamp != 300 {
+                fs::write(dir.path().join(format!("handy-{timestamp}.wav")), b"audio").unwrap();
+            }
+        }
+        conn.execute(
+            "UPDATE transcription_history SET saved = 1 WHERE id = 1",
+            [],
+        )
+        .unwrap();
+        let mut pending = HistoryManager::get_latest_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        pending.timestamp = 600;
+        pending.file_name = "handy-600.wav".into();
+        fs::write(dir.path().join(&pending.file_name), b"new audio").unwrap();
+        let mut events = Vec::new();
+        let added = HistoryManager::save_entry_and_notify_with_connection(
+            &mut conn,
+            dir.path(),
+            pending,
+            crate::settings::RecordingRetentionPeriod::PreserveLimit,
+            2,
+            600,
+            |event| {
+                if matches!(event, HistoryUpdatePayload::Added { .. }) {
+                    assert_eq!(
+                        observer
+                            .query_row("SELECT COUNT(*) FROM transcription_history", [], |r| r
+                                .get::<_, usize>(0))
+                            .unwrap(),
+                        6,
+                        "Added must precede retention"
+                    );
+                    events.push(serde_json::to_value(event).unwrap());
+                    return;
+                }
+                let mut statement = observer
+                    .prepare("SELECT id FROM transcription_history ORDER BY id")
+                    .unwrap();
+                let surviving = statement
+                    .query_map([], |row| row.get::<_, i64>(0))
+                    .unwrap()
+                    .collect::<rusqlite::Result<Vec<_>>>()
+                    .unwrap();
+                assert_eq!(
+                    surviving,
+                    [1, 5, 6],
+                    "Count retention must commit before notifying"
+                );
+                assert!(!dir.path().join("handy-200.wav").exists());
+                assert!(!dir.path().join("handy-400.wav").exists());
+                events.push(serde_json::to_value(event).unwrap());
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            events,
+            vec![
+                serde_json::to_value(HistoryUpdatePayload::Added { entry: added }).unwrap(),
+                serde_json::json!({"action": "deleted", "id": 4}),
+                serde_json::json!({"action": "deleted", "id": 3}),
+                serde_json::json!({"action": "deleted", "id": 2}),
+            ],
+            "Count retention must notify Added before every removed id"
+        );
+        for timestamp in [100, 500, 600] {
+            assert!(dir.path().join(format!("handy-{timestamp}.wav")).exists());
+        }
+        HistoryManager::cleanup_and_notify_with_connection(
+            &mut conn,
+            dir.path(),
+            crate::settings::RecordingRetentionPeriod::PreserveLimit,
+            2,
+            600,
+            |_| panic!("No retention deletion means no event"),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn time_retention_notifies_added_then_deleted_ids_after_commit() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("history.db");
+        let mut conn = Connection::open(&path).unwrap();
+        HistoryManager::apply_migrations(&mut conn).unwrap();
+        let observer = Connection::open(&path).unwrap();
+        observer.busy_timeout(Duration::ZERO).unwrap();
+        let now = 2_000_000;
+        let day = 24 * 60 * 60;
+        for timestamp in [
+            now - 4 * day,
+            now - 3 * day - 1,
+            now - 3 * day,
+            now,
+            now - 5 * day,
+        ] {
+            insert_entry(&conn, timestamp, "raw", None);
+            fs::write(dir.path().join(format!("handy-{timestamp}.wav")), b"audio").unwrap();
+        }
+        conn.execute(
+            "UPDATE transcription_history SET saved = 1 WHERE id = 5",
+            [],
+        )
+        .unwrap();
+        let mut pending = HistoryManager::get_latest_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        pending.timestamp = now + 1;
+        pending.file_name = format!("handy-{}.wav", pending.timestamp);
+        fs::write(dir.path().join(&pending.file_name), b"new audio").unwrap();
+        let mut events = Vec::new();
+        let added = HistoryManager::save_entry_and_notify_with_connection(
+            &mut conn,
+            dir.path(),
+            pending,
+            crate::settings::RecordingRetentionPeriod::Days3,
+            0,
+            now,
+            |event| {
+                if matches!(event, HistoryUpdatePayload::Added { .. }) {
+                    assert_eq!(
+                        observer
+                            .query_row("SELECT COUNT(*) FROM transcription_history", [], |r| r
+                                .get::<_, usize>(0))
+                            .unwrap(),
+                        6,
+                        "Added must precede retention"
+                    );
+                    events.push(serde_json::to_value(event).unwrap());
+                    return;
+                }
+                let mut statement = observer
+                    .prepare("SELECT id FROM transcription_history ORDER BY id")
+                    .unwrap();
+                let surviving = statement
+                    .query_map([], |row| row.get::<_, i64>(0))
+                    .unwrap()
+                    .collect::<rusqlite::Result<Vec<_>>>()
+                    .unwrap();
+                assert_eq!(
+                    surviving,
+                    [3, 4, 5, 6],
+                    "Time retention must commit before notifying"
+                );
+                for timestamp in [now - 4 * day, now - 3 * day - 1] {
+                    assert!(!dir.path().join(format!("handy-{timestamp}.wav")).exists());
+                }
+                events.push(serde_json::to_value(event).unwrap());
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            events,
+            vec![
+                serde_json::to_value(HistoryUpdatePayload::Added { entry: added }).unwrap(),
+                serde_json::json!({"action": "deleted", "id": 1}),
+                serde_json::json!({"action": "deleted", "id": 2}),
+            ],
+            "Time retention must notify Added before every removed id"
+        );
+        for timestamp in [now - 3 * day, now, now - 5 * day, now + 1] {
+            assert!(dir.path().join(format!("handy-{timestamp}.wav")).exists());
+        }
+        HistoryManager::cleanup_and_notify_with_connection(
+            &mut conn,
+            dir.path(),
+            crate::settings::RecordingRetentionPeriod::Never,
+            0,
+            now,
+            |_| panic!("Never retention must not notify"),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn retention_does_not_notify_on_delete_or_commit_failure() {
+        use crate::settings::RecordingRetentionPeriod;
+        for period in [
+            RecordingRetentionPeriod::PreserveLimit,
+            RecordingRetentionPeriod::Days3,
+        ] {
+            let dir = tempfile::tempdir().unwrap();
+            let path = dir.path().join("history.db");
+            let mut conn = Connection::open(&path).unwrap();
+            HistoryManager::apply_migrations(&mut conn).unwrap();
+            let observer = Connection::open(&path).unwrap();
+            insert_entry(&conn, 100, "raw", None);
+            let mut events = Vec::new();
+            conn.execute_batch("CREATE TRIGGER stop_delete BEFORE DELETE ON transcription_history BEGIN SELECT RAISE(ABORT, 'blocked'); END;").unwrap();
+            let failed = HistoryManager::cleanup_and_notify_with_connection(
+                &mut conn,
+                dir.path(),
+                period,
+                0,
+                2_000_000,
+                |event| events.push(event),
+            );
+            assert_eq!(failed.unwrap_err().to_string(), "blocked");
+            assert!(
+                events.is_empty(),
+                "Failed retention deletion must not notify"
+            );
+            conn.execute_batch("DROP TRIGGER stop_delete;").unwrap();
+            conn.pragma_update(None, "foreign_keys", true).unwrap();
+            conn.execute_batch("CREATE TABLE history_reference (history_id INTEGER REFERENCES transcription_history(id) DEFERRABLE INITIALLY DEFERRED); INSERT INTO history_reference SELECT id FROM transcription_history;").unwrap();
+            let failed = HistoryManager::cleanup_and_notify_with_connection(
+                &mut conn,
+                dir.path(),
+                period,
+                0,
+                2_000_000,
+                |event| events.push(event),
+            );
+            assert_eq!(
+                failed.unwrap_err().to_string(),
+                "FOREIGN KEY constraint failed"
+            );
+            assert!(events.is_empty(), "Failed retention commit must not notify");
+            let remaining: usize = observer
+                .query_row("SELECT COUNT(*) FROM transcription_history", [], |row| {
+                    row.get(0)
+                })
+                .unwrap();
+            assert_eq!(remaining, 1);
+        }
+    }
+
+    #[test]
+    fn clear_summary_counts_full_history_and_existing_eligible_recordings_without_changes() {
+        let conn = setup_conn();
+        let dir = tempfile::tempdir().unwrap();
+        assert_eq!(
+            HistoryManager::history_clear_summary_with_conn(&conn, dir.path(), true).unwrap(),
+            HistoryClearSummary::default()
+        );
+        assert_eq!(
+            HistoryManager::history_clear_summary_with_conn(&conn, dir.path(), false).unwrap(),
+            HistoryClearSummary::default()
+        );
+        for timestamp in 1..=150 {
+            insert_entry(&conn, timestamp, "raw", None);
+            if timestamp % 3 == 0 {
+                conn.execute(
+                    "UPDATE transcription_history SET saved = 1 WHERE timestamp = ?1",
+                    [timestamp],
+                )
+                .unwrap();
+            }
+            if timestamp % 2 == 0 {
+                fs::write(dir.path().join(format!("handy-{timestamp}.wav")), b"audio").unwrap();
+            }
+        }
+        assert_eq!(
+            HistoryManager::history_clear_summary_with_conn(&conn, dir.path(), true).unwrap(),
+            HistoryClearSummary {
+                entries: 100,
+                recordings: 50
+            }
+        );
+        assert_eq!(
+            HistoryManager::history_clear_summary_with_conn(&conn, dir.path(), false).unwrap(),
+            HistoryClearSummary {
+                entries: 150,
+                recordings: 75
+            }
+        );
+        let (rows, saved): (usize, usize) = conn
+            .query_row(
+                "SELECT COUNT(*), SUM(saved) FROM transcription_history",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!((rows, saved), (150, 50));
+        for timestamp in 1..=150 {
+            assert_eq!(
+                dir.path().join(format!("handy-{timestamp}.wav")).is_file(),
+                timestamp % 2 == 0
+            );
+        }
+    }
+
+    #[test]
+    fn clear_notifies_once_after_commit_and_never_on_delete_or_commit_failure() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("history.db");
+        let mut conn = Connection::open(&path).unwrap();
+        HistoryManager::apply_migrations(&mut conn).unwrap();
+        let observer = Connection::open(path).unwrap();
+        observer.busy_timeout(Duration::ZERO).unwrap();
+        insert_entry(&conn, 100, "raw", None);
+        fs::write(dir.path().join("handy-100.wav"), b"audio").unwrap();
+        let mut events = Vec::new();
+        let removed = HistoryManager::clear_history_and_notify_with_connection(
+            &mut conn,
+            dir.path(),
+            true,
+            |_| {},
+            |event| {
+                assert!(matches!(event, HistoryUpdatePayload::Cleared {}));
+                let committed_rows: usize = observer
+                    .query_row("SELECT COUNT(*) FROM transcription_history", [], |row| {
+                        row.get(0)
+                    })
+                    .unwrap();
+                assert_eq!(committed_rows, 0, "Clear must commit before notifying");
+                assert!(!dir.path().join("handy-100.wav").exists());
+                events.push(event);
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            removed,
+            HistoryClearSummary {
+                entries: 1,
+                recordings: 1
+            }
+        );
+        assert_eq!(events.len(), 1, "successful Clear must notify exactly once");
+
+        insert_entry(&conn, 200, "delete failure", None);
+        fs::write(dir.path().join("handy-200.wav"), b"audio").unwrap();
+        conn.execute_batch("CREATE TRIGGER stop_delete BEFORE DELETE ON transcription_history BEGIN SELECT RAISE(ABORT, 'blocked'); END;").unwrap();
+        let failed = HistoryManager::clear_history_and_notify_with_connection(
+            &mut conn,
+            dir.path(),
+            true,
+            |_| {},
+            |event| events.push(event),
+        );
+        assert_eq!(failed.unwrap_err().to_string(), "blocked");
+        assert_eq!(events.len(), 1, "failed deletion must not notify");
+        assert!(dir.path().join("handy-200.wav").exists());
+        conn.execute_batch("DROP TRIGGER stop_delete;").unwrap();
+        conn.pragma_update(None, "foreign_keys", true).unwrap();
+        conn.execute_batch("CREATE TABLE history_reference (history_id INTEGER REFERENCES transcription_history(id) DEFERRABLE INITIALLY DEFERRED); INSERT INTO history_reference SELECT id FROM transcription_history;").unwrap();
+        let failed = HistoryManager::clear_history_and_notify_with_connection(
+            &mut conn,
+            dir.path(),
+            true,
+            |_| {},
+            |event| events.push(event),
+        );
+        assert_eq!(
+            failed.unwrap_err().to_string(),
+            "FOREIGN KEY constraint failed"
+        );
+        assert_eq!(events.len(), 1, "failed commit must not notify");
+        let remaining: usize = observer
+            .query_row("SELECT COUNT(*) FROM transcription_history", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(remaining, 1);
+    }
+
+    #[test]
+    fn toggle_saved_blocks_a_competing_writer_after_read_and_clear_preserves_the_star() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("history.db");
+        let mut conn = Connection::open(&path).unwrap();
+        conn.busy_timeout(Duration::ZERO).unwrap();
+        HistoryManager::apply_migrations(&mut conn).unwrap();
+        insert_entry(&conn, 100, "raw", None);
+        let id = conn.last_insert_rowid();
+        fs::write(dir.path().join("handy-100.wav"), b"audio").unwrap();
+        let (read_tx, read_rx) = mpsc::channel();
+        let (attempted_tx, attempted_rx) = mpsc::channel();
+        let (committed_tx, committed_rx) = mpsc::channel();
+        let recordings = dir.path().to_path_buf();
+        let writer = std::thread::spawn(move || {
+            let mut conn = Connection::open(path).unwrap();
+            conn.busy_timeout(Duration::ZERO).unwrap();
+            read_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+            let mut entered = false;
+            let attempt = HistoryManager::with_clear_transaction(&mut conn, |_| {
+                entered = true;
+                Ok(())
+            });
+            let busy = matches!(attempt.as_ref().err().and_then(|error| error.downcast_ref::<rusqlite::Error>()),
+                Some(rusqlite::Error::SqliteFailure(error, _)) if error.code == rusqlite::ErrorCode::DatabaseBusy);
+            attempted_tx.send(!entered && busy).unwrap();
+            committed_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+            conn.busy_timeout(Duration::from_secs(30)).unwrap();
+            HistoryManager::clear_history_with_connection(&mut conn, &recordings, true, |_| {})
+                .unwrap()
+        });
+        let mut blocked_after_read = false;
+        let saved = HistoryManager::toggle_saved_status_with_conn_after_read(&mut conn, id, || {
+            read_tx.send(()).unwrap();
+            blocked_after_read = attempted_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+            Ok(())
+        });
+        committed_tx.send(()).unwrap();
+        let removed = writer.join().unwrap();
+        assert!(saved.unwrap());
+        assert!(
+            blocked_after_read,
+            "competing writer must reach SQLite and be blocked after the saved-status SELECT"
+        );
+        assert_eq!(removed, HistoryClearSummary::default());
+        let entry = HistoryManager::get_latest_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        assert!(entry.saved);
+        assert!(dir.path().join(&entry.file_name).is_file());
+    }
+
+    #[test]
+    fn clear_keeps_starred_rows_and_their_files_and_handles_missing_files() {
+        let mut conn = setup_conn();
+        let dir = tempfile::tempdir().unwrap();
+        for timestamp in [100, 200, 300] {
+            insert_entry(&conn, timestamp, "raw", None);
+        }
+        conn.execute(
+            "UPDATE transcription_history SET saved = 1 WHERE timestamp = 200",
+            [],
+        )
+        .unwrap();
+        fs::write(dir.path().join("handy-100.wav"), b"audio").unwrap();
+        fs::write(dir.path().join("handy-200.wav"), b"starred").unwrap();
+        let removed =
+            HistoryManager::clear_history_with_connection(&mut conn, dir.path(), true, |_| {})
+                .unwrap();
+        assert_eq!(
+            removed,
+            HistoryClearSummary {
+                entries: 2,
+                recordings: 1
+            }
+        );
+        assert!(!dir.path().join("handy-100.wav").exists());
+        assert!(dir.path().join("handy-200.wav").exists());
+        let remaining: i64 = conn
+            .query_row("SELECT COUNT(*) FROM transcription_history", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(remaining, 1);
+        let all =
+            HistoryManager::clear_history_with_connection(&mut conn, dir.path(), false, |_| {})
+                .unwrap();
+        assert_eq!(
+            all,
+            HistoryClearSummary {
+                entries: 1,
+                recordings: 1
+            }
+        );
+        assert_eq!(
+            HistoryManager::clear_history_with_connection(&mut conn, dir.path(), true, |_| {})
+                .unwrap(),
+            HistoryClearSummary::default()
+        );
+    }
+
+    #[test]
+    fn clear_and_save_are_serialized_without_orphaning_a_recording() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("history.db");
+        let recordings = dir.path().join("recordings");
+        fs::create_dir(&recordings).unwrap();
+        let mut conn = Connection::open(&path).unwrap();
+        conn.busy_timeout(Duration::from_secs(30)).unwrap();
+        HistoryManager::apply_migrations(&mut conn).unwrap();
+        insert_entry(&conn, 100, "before clear", None);
+        fs::write(recordings.join("handy-100.wav"), b"before").unwrap();
+        let mut pending = HistoryManager::get_latest_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        pending.file_name = "handy-200.wav".into();
+        pending.timestamp = 200;
+        pending.transcription_text = "after clear".into();
+        let (attempted_tx, attempted_rx) = mpsc::channel();
+        let (done_tx, done_rx) = mpsc::channel();
+        let writer_dir = recordings.clone();
+        let (candidates, writer) = HistoryManager::with_clear_transaction(&mut conn, |transaction| {
+            let writer = std::thread::spawn(move || {
+                let conn = Connection::open(path).unwrap();
+                conn.busy_timeout(Duration::ZERO).unwrap();
+                fs::write(writer_dir.join(&pending.file_name), b"in flight").unwrap();
+                let attempt = HistoryManager::insert_history_entry_with_conn(&conn, &pending);
+                let blocked = matches!(attempt.as_ref().err().and_then(|error| error.downcast_ref::<rusqlite::Error>()),
+                    Some(rusqlite::Error::SqliteFailure(error, _)) if error.code == rusqlite::ErrorCode::DatabaseBusy);
+                attempted_tx.send(blocked).unwrap();
+                if attempt.is_err() {
+                    conn.busy_timeout(Duration::from_secs(30)).unwrap();
+                    HistoryManager::insert_history_entry_with_conn(&conn, &pending).unwrap();
+                }
+                done_tx.send(()).unwrap();
+            });
+            assert!(attempted_rx.recv_timeout(Duration::from_secs(2)).unwrap(),
+                "writer must reach SQLite and encounter Clear's write lock");
+            assert!(matches!(done_rx.recv_timeout(Duration::from_millis(50)), Err(mpsc::RecvTimeoutError::Timeout)));
+            let candidates = HistoryManager::clear_candidates(transaction, true).unwrap();
+            let removed = HistoryManager::delete_entries_with_conn(transaction, &candidates).unwrap();
+            assert_eq!(removed, 1);
+            Ok((candidates, writer))
+        }).unwrap();
+        assert_eq!(
+            HistoryManager::delete_recording_files(&recordings, &candidates),
+            1
+        );
+        done_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+        writer.join().unwrap();
+        let entry = HistoryManager::get_latest_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        assert_eq!(entry.transcription_text, "after clear");
+        assert!(recordings.join(&entry.file_name).exists());
+        assert!(!recordings.join("handy-100.wav").exists());
+    }
+
+    #[test]
+    fn clear_preserves_file_when_database_delete_fails() {
+        let mut conn = setup_conn();
+        let dir = tempfile::tempdir().unwrap();
+        insert_entry(&conn, 100, "raw", None);
+        fs::write(dir.path().join("handy-100.wav"), b"audio").unwrap();
+        conn.execute_batch("CREATE TRIGGER stop_delete BEFORE DELETE ON transcription_history BEGIN SELECT RAISE(ABORT, 'blocked'); END;").unwrap();
+        assert!(
+            HistoryManager::clear_history_with_connection(&mut conn, dir.path(), true, |_| {})
+                .is_err()
+        );
+        assert!(dir.path().join("handy-100.wav").exists());
+    }
+
+    #[test]
+    fn toggle_saved_commits_before_clear_and_deleted_entries_stay_deleted() {
+        let mut conn = setup_conn();
+        let dir = tempfile::tempdir().unwrap();
+        insert_entry(&conn, 100, "raw", None);
+        let id = conn.last_insert_rowid();
+        fs::write(dir.path().join("handy-100.wav"), b"audio").unwrap();
+        assert!(HistoryManager::toggle_saved_status_with_conn(&mut conn, id).unwrap());
+        assert_eq!(
+            HistoryManager::clear_history_with_connection(&mut conn, dir.path(), true, |_| {})
+                .unwrap(),
+            HistoryClearSummary::default()
+        );
+        assert!(!HistoryManager::toggle_saved_status_with_conn(&mut conn, id).unwrap());
+        assert_eq!(
+            HistoryManager::clear_history_with_connection(&mut conn, dir.path(), true, |_| {})
+                .unwrap()
+                .entries,
+            1
+        );
+        assert!(HistoryManager::toggle_saved_status_with_conn(&mut conn, id).is_err());
+        let error = HistoryManager::update_transcription_with_conn(
+            &conn,
+            id,
+            "retry".into(),
+            None,
+            None,
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(error.to_string(), format!("History entry {id} not found"));
+        assert!(HistoryManager::get_latest_entry_with_conn(&conn)
+            .unwrap()
+            .is_none());
+    }
+
+    #[test]
+    fn cleared_event_uses_existing_action_protocol() {
+        assert_eq!(
+            serde_json::to_value(HistoryUpdatePayload::Cleared {}).unwrap(),
+            serde_json::json!({"action": "cleared"})
+        );
+    }
+
+    #[test]
+    fn pre_provenance_rows_migrate_and_read_with_null_provenance() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        Migrations::new(MIGRATIONS[..4].to_vec())
+            .to_latest(&mut conn)
+            .unwrap();
+        insert_entry(&conn, 100, "before migration", Some("Before migration."));
+        HistoryManager::apply_migrations(&mut conn).unwrap();
+        let entry = HistoryManager::get_latest_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        assert_eq!(entry.transcription_text, "before migration");
+        assert_eq!(entry.post_process_provider, None);
+        assert_eq!(entry.post_process_model, None);
+    }
+
+    #[test]
+    fn retry_writes_and_clears_provenance_with_the_processed_text() {
+        let conn = setup_conn();
+        insert_entry(&conn, 100, "raw", None);
+        let entry = HistoryManager::get_latest_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        let updated = HistoryManager::update_transcription_with_conn(
+            &conn,
+            entry.id,
+            "raw".into(),
+            Some("Clean.".into()),
+            None,
+            Some(PostProcessProvenance {
+                provider: "local_llm".into(),
+                model: Some("s1-mini-q4km".into()),
+            }),
+        )
+        .unwrap();
+        assert_eq!(updated.post_processed_text.as_deref(), Some("Clean."));
+        assert_eq!(updated.post_process_provider.as_deref(), Some("local_llm"));
+        assert_eq!(updated.post_process_model.as_deref(), Some("s1-mini-q4km"));
+        let failed = HistoryManager::update_transcription_with_conn(
+            &conn,
+            entry.id,
+            "retry raw".into(),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(failed.post_processed_text, None);
+        assert_eq!(failed.post_process_provider, None);
+        assert_eq!(failed.post_process_model, None);
+    }
+
+    #[test]
+    fn initial_save_roundtrips_processed_text_and_provenance_together() {
+        let conn = setup_conn();
+        let mut entry = HistoryEntry {
+            id: 0,
+            file_name: "handy-100.wav".into(),
+            timestamp: 100,
+            saved: false,
+            title: "Recording".into(),
+            transcription_text: "raw".into(),
+            post_processed_text: Some("Clean.".into()),
+            post_process_prompt: None,
+            post_process_requested: true,
+            post_process_provider: Some("local_llm".into()),
+            post_process_model: Some("s1-mini-q4km".into()),
+            source_name: Some("fixture.wav".into()),
+            language: Some("en".into()),
+            language_source: Some(LanguageSource::Selected),
+        };
+        entry.id = HistoryManager::insert_history_entry_with_conn(&conn, &entry).unwrap();
+        let stored = HistoryManager::get_latest_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        assert_eq!(stored.id, entry.id);
+        assert_eq!(stored.post_processed_text, entry.post_processed_text);
+        assert_eq!(stored.post_process_provider, entry.post_process_provider);
+        assert_eq!(stored.post_process_model, entry.post_process_model);
+        assert_eq!(stored.source_name, entry.source_name);
+        assert_eq!(stored.language, entry.language);
+        assert_eq!(stored.language_source, entry.language_source);
+    }
+
+    #[test]
+    fn pending_cleanup_stores_the_request_snapshot_after_settings_change() {
+        use crate::actions::process_transcription_output_with_dependencies;
+        use std::cell::{Cell, RefCell};
+        use std::future::{poll_fn, ready, Future};
+        use std::task::Poll;
+
+        let conn = setup_conn();
+        insert_entry(&conn, 100, "raw", None);
+        let entry = HistoryManager::get_latest_entry_with_conn(&conn)
+            .unwrap()
+            .unwrap();
+        let mut settings = crate::settings::get_default_settings();
+        settings.post_process_provider_id = "local_llm".into();
+        settings.local_llm_model_id = Some("s1-mini-q4km".into());
+        let source = RefCell::new(settings);
+        let reads = Cell::new(0);
+        let cleanup_started = Cell::new(false);
+        let (complete, response) = tokio::sync::oneshot::channel();
+
+        let processed = tauri::async_runtime::block_on(async {
+            let request = process_transcription_output_with_dependencies(
+                "raw",
+                true,
+                || {
+                    reads.set(reads.get() + 1);
+                    source.borrow().clone()
+                },
+                |snapshot, _| {
+                    assert_eq!(snapshot.post_process_provider_id, "local_llm");
+                    ready(None)
+                },
+                |snapshot, text| {
+                    cleanup_started.set(true);
+                    assert_eq!(text, "raw");
+                    assert_eq!(snapshot.post_process_provider_id, "local_llm");
+                    assert_eq!(snapshot.local_llm_model_id.as_deref(), Some("s1-mini-q4km"));
+                    async move { response.await.unwrap() }
+                },
+            );
+            let mut request = std::pin::pin!(request);
+            poll_fn(|cx| {
+                assert!(request.as_mut().poll(cx).is_pending());
+                Poll::Ready(())
+            })
+            .await;
+            assert!(cleanup_started.get());
+            source.borrow_mut().post_process_provider_id = "custom".into();
+            source.borrow_mut().local_llm_model_id = Some("later-selection".into());
+            source
+                .borrow_mut()
+                .post_process_models
+                .insert("custom".into(), "later-api-model".into());
+            complete.send(Some("Clean.".into())).unwrap();
+            request.await
+        });
+
+        assert_eq!(reads.get(), 1);
+        assert_eq!(source.borrow().post_process_provider_id, "custom");
+        assert_eq!(processed.final_text, "Clean.");
+        assert_eq!(processed.post_processed_text.as_deref(), Some("Clean."));
+        let stored = HistoryManager::update_transcription_with_conn(
+            &conn,
+            entry.id,
+            "raw".into(),
+            processed.post_processed_text,
+            processed.post_process_prompt,
+            processed.provenance,
+        )
+        .unwrap();
+        assert_eq!(stored.post_processed_text.as_deref(), Some("Clean."));
+        assert_eq!(stored.post_process_provider.as_deref(), Some("local_llm"));
+        assert_eq!(stored.post_process_model.as_deref(), Some("s1-mini-q4km"));
     }
 
     fn insert_entry(conn: &Connection, timestamp: i64, text: &str, post_processed: Option<&str>) {

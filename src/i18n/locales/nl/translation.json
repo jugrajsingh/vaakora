@@ -3,20 +3,35 @@
     "settings": "Instellingen...",
     "checkUpdates": "Controleren op updates...",
     "copyLastTranscript": "Laatste transcriptie kopiëren",
-    "unloadModel": "Model ontladen",
+    "unloadModel": "Transcriptiemodel ontladen",
+    "cleanup": "Naverwerkingsmodel",
+    "cleanupReady": "gereed",
+    "cleanupNotLoaded": "niet geladen",
+    "cleanupLoading": "laden",
+    "cleanupError": "fout",
+    "noCleanupModel": "Geen naverwerkingsmodel",
+    "unloadPostProcessingModel": "Naverwerkingsmodel ontladen",
     "model": "Model",
+    "transcriptionModel": "Transcriptiemodel",
     "quit": "Afsluiten",
     "cancel": "Annuleren",
     "secureInputWarning": "⚠ Sneltoetsen geblokkeerd door Secure Input",
     "language": "Taal",
     "autoLanguage": "Automatisch",
-    "otherLanguages": "Andere talen"
+    "otherLanguages": "Andere talen",
+    "ttsModel": "Tekst-naar-spraakmodel",
+    "ttsUnload": "Tekst-naar-spraakmodel ontladen",
+    "ttsStarting": "Starten",
+    "ttsReady": "Geladen",
+    "ttsStopping": "Stoppen",
+    "ttsFailed": "Mislukt",
+    "ttsUnloaded": "Ontladen"
   },
   "sidebar": {
     "general": "Algemeen",
-    "models": "Modellen",
+    "models": "Transcriptiemodellen",
     "advanced": "Geavanceerd",
-    "postProcessing": "Naverwerking",
+    "postProcessing": "Naverwerkingsmodellen",
     "history": "Geschiedenis",
     "debug": "Probleemoplossing",
     "about": "Over Handy"
@@ -144,6 +159,10 @@
       },
       "model": "Model",
       "showAll": "Alle {{count}} modellen tonen",
+      "noPick": "Geen aanbevolen model dekt {{languages}}.",
+      "noPickNext": "Toon alle modellen, of ga terug en wijzig je talen.",
+      "showAllButton": "Alle modellen tonen",
+      "pickOne": "Kies een model",
       "download": "{{size}} downloaden",
       "downloadInstead": "In plaats daarvan {{size}} downloaden",
       "pauses": "{{name}} pauzeert bij {{percent}}%",
@@ -306,6 +325,8 @@
     "alreadyAdded_other": "{{languages}} zijn al toegevoegd."
   },
   "modelSelector": {
+    "status": "Modelstatus: {{modelName}}",
+    "size": "{{size}} MiB",
     "custom": "Aangepast",
     "streaming": "Streaming",
     "active": "Actief",
@@ -336,10 +357,14 @@
         "none": "Geen sneltoetsen geconfigureerd",
         "notFound": "Sneltoets niet gevonden",
         "pressKeys": "Druk op toetsen...",
+        "unassigned": "Niet toegewezen",
         "bindings": {
           "transcribe": {
             "name": "Sneltoets voor dicteren",
             "description": "De sneltoets om je stem op te nemen en te transcriberen."
+          },
+          "transcribe_raw": {
+            "name": "Sneltoets voor ruwe tekst"
           },
           "cancel": {
             "name": "Sneltoets voor annuleren",
@@ -348,6 +373,10 @@
           "transcribe_with_post_process": {
             "name": "Sneltoets voor naverwerking",
             "description": "Optioneel: Een specifieke sneltoets die altijd AI-naverwerking toepast op je transcriptie."
+          },
+          "read_aloud": {
+            "name": "Sneltoets voor voorlezen",
+            "description": "Opent het pop-upvenster en leest gekopieerde tekst voor."
           }
         },
         "errors": {
@@ -517,8 +546,8 @@
           }
         },
         "position": {
-          "title": "Overlay-positie",
-          "description": "Waar de overlay op het scherm verschijnt tijdens het opnemen en transcriberen.",
+          "title": "Positie van zwevend venster",
+          "description": "\"Bovenkant\" houdt de onderkant van het scherm vrij, handig als je in een terminal dicteert.",
           "options": {
             "bottom": "Onderkant",
             "top": "Bovenkant"
@@ -628,8 +657,8 @@
       }
     },
     "postProcessing": {
-      "hotkey": {
-        "title": "Sneltoets"
+      "provider": {
+        "title": "Aanbieder"
       },
       "api": {
         "title": "API",
@@ -688,10 +717,76 @@
         "cancel": "Annuleren",
         "selectToEdit": "Selecteer hierboven een prompt om de details te bekijken en te bewerken.",
         "createFirst": "Klik hierboven op 'Nieuwe prompt maken' om je eerste naverwerkingsprompt aan te maken."
+      },
+      "localLlm": {
+        "noCleanupModel": "Geen naverwerkingsmodel",
+        "s1Description": "Gebruikt de instellingen voor stijl, structuur en context.",
+        "plainDescription": "Gebruikt je geselecteerde Handy-prompt.",
+        "groupTitle": "Lokaal model",
+        "size": "{{size}} MiB",
+        "downloaded": "Gedownload",
+        "use": "Gebruiken",
+        "download": "Downloaden",
+        "downloading": "Downloaden {{percent}}%",
+        "delete": "Verwijderen",
+        "deleteConfirm": "{{name}} verwijderen? Dit maakt {{size}} vrij.",
+        "deleteConfirmAction": "Model verwijderen",
+        "status": {
+          "title": "Status",
+          "description": "Het model wordt geladen wanneer een dictaat met naverwerking begint en na de time-out voor het ontladen van modellen weer ontladen.",
+          "notLoaded": "Niet geladen",
+          "loading": "Laden",
+          "ready": "Gereed",
+          "error": "Fout: {{reason}}"
+        },
+        "styling": {
+          "title": "Stijl",
+          "description": "Hoe formeel de naverwerkte tekst klinkt.",
+          "options": {
+            "casual": "Informeel",
+            "semi_casual": "Halfinformeel",
+            "semi_formal": "Halfformeel",
+            "formal": "Formeel"
+          }
+        },
+        "structure": {
+          "title": "Structuur",
+          "description": "Alinea's met lopende tekst of Markdown-lijsten.",
+          "options": {
+            "prose": "Lopende tekst",
+            "lists": "Lijsten"
+          }
+        },
+        "context": {
+          "title": "Context",
+          "description": "Algemene tekst of een e-mailopmaak.",
+          "options": {
+            "general": "Algemeen",
+            "email": "E-mail"
+          }
+        },
+        "licenseNotes": {
+          "s1Name": "Apache-2.0 met één extra voorwaarde: het model moet altijd \"S1-mini\" van \"Superwhisper\" heten, met precies deze hoofdletters en kleine letters."
+        },
+        "promptRequired": "Selecteer in de groep Prompts een niet-lege Handy-prompt. Tot die tijd wordt naverwerking overgeslagen en wordt de ruwe transcriptie gebruikt.",
+        "promptHidden": "Dit model gebruikt zijn eigen vaste prompt en de instellingen voor stijl, structuur en context hierboven, dus de prompt-editor is verborgen."
       }
     },
     "history": {
       "title": "Geschiedenis",
+      "cleaned": "Naverwerkt",
+      "cleanedWith": "Naverwerkt met {{model}}",
+      "raw": "Ruw",
+      "copyRaw": "Ruwe tekst kopiëren",
+      "copyPostProcessed": "Naverwerkte tekst kopiëren",
+      "compare": {
+        "title": "Vergelijkingsweergave",
+        "diff": "Verschillen",
+        "side_by_side": "Naast elkaar",
+        "stacked": "Onder elkaar"
+      },
+      "clearHistory": "Geschiedenis wissen",
+      "clearConfirmation": "{{count}} niet-gemarkeerde geschiedenisitems en {{recordings}} opnamen verwijderen? Gemarkeerde items en hun opnamen blijven bewaard.",
       "openFolder": "Opnamemap openen",
       "loading": "Geschiedenis laden...",
       "empty": "Nog geen transcripties. Start met opnemen om je geschiedenis op te bouwen!",
@@ -701,6 +796,8 @@
       "unsave": "Verwijderen uit opgeslagen",
       "delete": "Item verwijderen",
       "deleteError": "Item verwijderen mislukt. Probeer het opnieuw.",
+      "deleteConfirm": "Dit item en de opname ervan verwijderen?",
+      "deleteConfirmAction": "Item verwijderen",
       "retranscribe": "Opnieuw transcriberen",
       "cancelTranscription": "Transcriptie annuleren",
       "transcribing": "Transcriberen...",
@@ -716,7 +813,14 @@
       "showMore": "Meer tonen",
       "showLess": "Minder tonen",
       "dropTitle": "Loslaten om te transcriberen",
-      "dropDescription": "Het verschijnt in de geschiedenis."
+      "dropDescription": "Het verschijnt in de geschiedenis.",
+      "retentionConfirm": {
+        "preserveLimit": "Items zonder ster buiten de nieuwste {{count}} en hun opnames verwijderen? Items met ster en getranscribeerde bestanden blijven bewaard.",
+        "days3": "Items zonder ster ouder dan 3 dagen en hun opnames verwijderen? Items met ster en getranscribeerde bestanden blijven bewaard.",
+        "weeks2": "Items zonder ster ouder dan 2 weken en hun opnames verwijderen? Items met ster en getranscribeerde bestanden blijven bewaard.",
+        "months3": "Items zonder ster ouder dan 3 maanden en hun opnames verwijderen? Items met ster en getranscribeerde bestanden blijven bewaard.",
+        "action": "Items verwijderen"
+      }
     },
     "debug": {
       "title": "Probleemoplossing",
@@ -927,9 +1031,15 @@
     "open": "Openen",
     "copy": "Kopiëren",
     "clear": "Wissen",
-    "noOptionsFound": "Geen opties gevonden"
+    "noOptionsFound": "Geen opties gevonden",
+    "cancel": "Annuleren"
   },
   "errors": {
+    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
+    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
+    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudClipboardUnreadableTitle": "Klembord niet leesbaar",
+    "readAloudClipboardUnreadable": "De tekst op het klembord kon niet worden gelezen.",
     "loadDirectory": "Fout bij laden van map: {{error}}",
     "micPermissionDeniedTitle": "Microfoontoegang geweigerd",
     "micPermissionDenied": {
@@ -957,7 +1067,9 @@
     "filePostProcessFailedTitle": "Getranscribeerd zonder naverwerking",
     "filePostProcessFailed": "De naverwerking is niet voltooid, dus de transcriptie is ongewijzigd opgeslagen.",
     "fileTranscriptionFailedTitle": "Transcriptie van bestand mislukt",
-    "transcriptionFailedTitle": "Transcriptie mislukt"
+    "transcriptionFailedTitle": "Transcriptie mislukt",
+    "vocabularyInvalidTitle": "Woordenlijstbestand bevat een fout",
+    "vocabularyInvalid": "Voorlezen gebruikte de ingebouwde woordenlijst omdat je woordenlijstbestand niet bruikbaar was. Herstel het hieronder genoemde bestand om je eigen vermeldingen te gebruiken."
   },
   "notices": {
     "errorOne": "{{n}} fout",
@@ -980,9 +1092,10 @@
     }
   },
   "overlay": {
-    "transcribing": "Transcriberen...",
-    "processing": "Verwerken...",
-    "loadingModel": "Model laden..."
+    "transcribing": "Transcriberen",
+    "processing": "Opschonen",
+    "loadingModel": "Model laden",
+    "cancel": "Dicteren annuleren"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokkeert mogelijk 1 sneltoets",
@@ -994,5 +1107,345 @@
     "learnMore": "Hoe je dit oplost",
     "recorderBlocked": "Sneltoetsen kunnen nu niet worden opgenomen — Secure Input van macOS blokkeert toetsgebeurtenissen. Los eerst de Secure Input-waarschuwing op.",
     "dismiss": "Sluiten"
+  },
+  "tts": {
+    "ratings": {
+      "quality": "Kwaliteit",
+      "speed": "Snelheid",
+      "recommended": "Aanbevolen",
+      "tooltip": "Eerste audio na {{firstAudio}} s, {{faster}}x sneller dan realtime, laadt in {{load}} s"
+    },
+    "devices": {
+      "auto": "Automatisch",
+      "cpu": "CPU",
+      "gpu": "GPU",
+      "npu": "NPU"
+    },
+    "errors": {
+      "notDownloaded": "Download dit model voordat je gaat voorlezen.",
+      "audio": "Het uitvoerapparaat kon niet worden geopend.",
+      "text": "Deze tekst kon niet worden voorbereid.",
+      "clock": "De timing van het afspelen is mislukt.",
+      "worker": "De tekst-naar-spraakworker is gestopt.",
+      "unavailable": "Tekst-naar-spraak is niet beschikbaar.",
+      "notReady": "Tekst-naar-spraak is nog bezig met starten.",
+      "generic": "Tekst-naar-spraak is mislukt.",
+      "memory": "Minstens 1 GiB beschikbaar geheugen is vereist.",
+      "gatedToken": "Pocket-stemmen vereisen een Hugging Face-token en geaccepteerde stemvoorwaarden.",
+      "model": "Kies een beschikbaar tekst-naar-spraakmodel.",
+      "device": "Dit apparaat is niet beschikbaar.",
+      "npuDriverTooOld": "NPU-stuurprogramma te oud. Werk het bij of kies een ander apparaat.",
+      "selection": "De selectie kon niet worden toegepast.",
+      "busy": "Er loopt al een tekst-naar-spraakbewerking.",
+      "cancelled": "Voorlezen is geannuleerd.",
+      "clipboard": "De tekst op het klembord kon niet worden gelezen.",
+      "deviceNotSupported": "Dit model ondersteunt het geselecteerde apparaat niet.",
+      "deviceUnavailable": "Het geselecteerde apparaat is niet beschikbaar.",
+      "download": "Het downloaden van het model is mislukt.",
+      "driverDiscovery": "Het NPU-stuurprogramma kon niet worden gedetecteerd.",
+      "failed": "De worker is drie keer mislukt. Selecteer een model om het opnieuw te proberen.",
+      "integrity": "Een modelbestand heeft de integriteitscontrole niet doorstaan.",
+      "invalidControls": "Kies een snelheid van 0.5x tot 2.0x en een toonhoogte van -6 tot +6 halve tonen.",
+      "invalidRatings": "De modelbeoordelingen ontbreken of zijn ongeldig.",
+      "invalidVoice": "Kies een stem voor het geselecteerde model.",
+      "outputUnavailable": "Het uitvoerapparaat is niet beschikbaar.",
+      "path": "De opslagmap voor tekst-naar-spraak is niet beschikbaar.",
+      "prepareFailed": "Het geselecteerde apparaat kon dit model niet voorbereiden.",
+      "protocol": "De tekst-naar-spraakworker gaf een ongeldig antwoord.",
+      "registry": "Het register van tekst-naar-spraakmodellen is ongeldig.",
+      "settings": "De tekst-naar-spraakinstellingen konden niet worden opgeslagen.",
+      "start": "De tekst-naar-spraakworker kon niet starten.",
+      "starting": "De tekst-naar-spraakworker wordt gestart.",
+      "tokenRejected": "Het Hugging Face-token is geweigerd. Controleer de toegang tot de Pocket-stemvoorwaarden.",
+      "tokenRequired": "Stel een Hugging Face-token in en accepteer de Pocket-stemvoorwaarden voordat je stemmen downloadt.",
+      "unknownModel": "Het geselecteerde tekst-naar-spraakmodel is onbekend.",
+      "window": "Het venster voor voorlezen kon niet worden geopend.",
+      "accessDenied": "Toegang tot de modelbestanden is geweigerd.",
+      "localIo": "De modelbestanden konden niet worden gelezen of geschreven.",
+      "downloading": "Dit model wordt al gedownload."
+    },
+    "runOn": "Uitvoeren op",
+    "preparing": "Voorbereiden voor {{device}}: {{graph}}",
+    "buffering": "Bufferen",
+    "title": "Voorlezen",
+    "textLabel": "Voor te lezen tekst",
+    "placeholder": "Plak tekst om voor te lezen",
+    "play": "Afspelen",
+    "pause": "Pauzeren",
+    "stop": "Stoppen",
+    "close": "Sluiten",
+    "readClipboard": "Klembord voorlezen",
+    "editText": "Tekst bewerken",
+    "progress": "Voortgang",
+    "time": "{{elapsed}} s verstreken, {{remaining}} s resterend",
+    "openModels": "Tekst-naar-spraakmodellen",
+    "outputFallback": "Het standaarduitvoerapparaat wordt gebruikt",
+    "states": {
+      "waiting": "Wachten",
+      "starting": "Starten",
+      "buffering": "Bufferen",
+      "playing": "Afspelen",
+      "paused": "Gepauzeerd",
+      "finished": "Voltooid",
+      "error": "Fout"
+    },
+    "modelsTitle": "Tekst-naar-spraakmodellen",
+    "modelsSubtitle": "Kies een stemmodel. De snelheidscijfers zijn gemeten op de computer van de ontwikkelaar; die van jou kunnen afwijken.",
+    "downloaded": "Gedownload",
+    "availableToDownload": "Beschikbaar om te downloaden",
+    "recommended": "Aanbevolen",
+    "downloading": "Downloaden",
+    "needsToken": "Heeft een Hugging Face-token nodig",
+    "tokenSet": "Token ingesteld",
+    "active": "Actief",
+    "use": "Gebruiken",
+    "download": "Downloaden",
+    "delete": "Verwijderen",
+    "deleteConfirm": "{{name}} verwijderen? Dit maakt {{size}} vrij. Je woordenschat en geschiedenis blijven bewaard.",
+    "deleteConfirmSelected": "Voorlezen werkt niet meer totdat je een ander model kiest.",
+    "deleteConfirmAction": "Model verwijderen",
+    "cancel": "Annuleren",
+    "token": "Hugging Face-token",
+    "tokenHelp": "Alleen nodig voor afgeschermde Pocket-stemmen nadat je de stemvoorwaarden op Hugging Face hebt geaccepteerd. Het token blijft in het geheugen en wordt gewist wanneer Handy opnieuw start.",
+    "clearToken": "Token wissen",
+    "showToken": "Token tonen",
+    "hideToken": "Token verbergen",
+    "saveToken": "Token instellen",
+    "model": "Model",
+    "voice": "Stem",
+    "preview": "Stem beluisteren",
+    "speed": "Snelheid: {{value}}x",
+    "pitch": "Toonhoogte: {{value}} halve tonen",
+    "output": "Uitvoerapparaat",
+    "sameAsHandy": "Hetzelfde als Handy",
+    "readCode": "Codeblokken voorlezen",
+    "technicalReading": "Technisch voorlezen",
+    "fullPaths": "Volledige paden voorlezen",
+    "fullLinks": "Volledige links voorlezen",
+    "pocketAttribution": "Pocket TTS-stemmen vallen onder de licentie CC-BY-4.0. Volg de naamsvermelding en toestemmingsvoorwaarden van elke stem op de modelkaart.",
+    "supertonicRestrictions": "Supertonic 3 gebruikt OpenRAIL-M. Bekijk de gebruiksbeperkingen op de modelkaart.",
+    "kokoroAttribution": "De modelgewichten van Kokoro vallen onder de Apache-2.0-licentie.",
+    "paradeeAttribution": "Paradee-8M v1.2 van Sahil Mahendrakar, gedistilleerd uit Kokoro-82M (hexgrad). Apache-2.0-licentie.",
+    "phononAttribution": "Phonon 31m English van Gradium (Apache-2.0), gebaseerd op Pocket TTS en de Mimi-codec van Kyutai (CC-BY-4.0). Stemmen uit gradium/phonon-voices (Apache-2.0).",
+    "indicTinyEnglishAttribution": "Indic Tiny TTS (English) van Sulabh Katiyar, CC-BY-4.0. Stemmen getraind op LIMMITS 2024 (SYSPIN, Indian Institute of Science, Bangalore, SPIRE Lab), CC-BY-4.0. De toestemming van de sprekers voor publicatie is door de bron niet gedocumenteerd. Vocoder: Vocos van Charactr Inc., MIT.",
+    "indicTinyHindiAttribution": "Indic Tiny TTS (Hindi) van Sulabh Katiyar, CC-BY-4.0, getraind op de dataset AI4Bharat Rasa (CC-BY-4.0; Varadhan, Sankar, Raju en Khapra, INTERSPEECH 2024). Vocoder: Vocos van Charactr Inc., MIT.",
+    "indicTinyPunjabiAttribution": "Indic Tiny TTS (Punjabi) van Sulabh Katiyar, CC-BY-4.0, getraind op de dataset AI4Bharat Rasa (CC-BY-4.0; Varadhan, Sankar, Raju en Khapra, INTERSPEECH 2024). Vocoder: Vocos van Charactr Inc., MIT.",
+    "status": {
+      "failed": "Mislukt",
+      "ready": "Gereed",
+      "starting": "Starten",
+      "stopping": "Stoppen",
+      "unloaded": "Ontladen"
+    },
+    "previewSentence": "Reading clearly, one phrase at a time.",
+    "description": {
+      "pocket-en": "Expressieve Engelse stemmen met de hoogste luisterscore.",
+      "supertonic-3": "Snelle Engelse spraaksynthese met uitvoering op CPU, GPU en NPU.",
+      "kokoro-82m-int8": "Compacte Engelse stemmen uit een INT8-model.",
+      "paradee-8m-int8": "Zeer kleine, snelle Engelse stemmen uit een model dat is gedistilleerd uit Kokoro.",
+      "phonon-31m-en": "Kleine, natuurlijke Engelse stemmen gebaseerd op Pocket TTS, met 26 stemmen.",
+      "indic-tiny-en": "Kleine stemmen in Indiaas Engels, vrouwelijk en mannelijk.",
+      "indic-tiny-hi": "Kleine Hindi-stemmen, vrouwelijk en mannelijk. Engelse woorden worden letter voor letter gespeld.",
+      "indic-tiny-pa": "Kleine Punjabi-stemmen (Gurmukhi), vrouwelijk en mannelijk. Engelse woorden worden letter voor letter gespeld."
+    },
+    "voiceCount": "{{count}} stemmen",
+    "downloadProgress": "Voortgang van modeldownload",
+    "settingsTitle": "Tekst-naar-spraak",
+    "speedLabel": "Snelheid",
+    "pitchLabel": "Toonhoogte",
+    "help": {
+      "model": "Kies een gedownload tekst-naar-spraakmodel.",
+      "voice": "Kies een stem voor dit model en beluister die.",
+      "speed": "Pas aan hoe snel de tekst wordt voorgelezen.",
+      "pitch": "Pas de toonhoogte van de stem aan in halve tonen.",
+      "output": "Kies waar de audio van het voorlezen wordt afgespeeld.",
+      "readCode": "Neem omheinde codeblokken mee bij het voorlezen.",
+      "technicalReading": "Spreekt paden, bestandsnamen, opties en codenamen volledig uit met behulp van je woordenlijstbestand.",
+      "fullPaths": "Leest elke map in een pad voor. Uit leest alleen de bestandsnaam voor.",
+      "fullLinks": "Leest het hele webadres voor. Uit noemt alleen de sitenaam."
+    },
+    "tabs": {
+      "settings": "Instellingen",
+      "history": "Geschiedenis",
+      "vocabulary": "Woordenschat"
+    },
+    "history": {
+      "title": "Instellingen voor geschiedenis",
+      "reading": "Geschreven woorden met wat er gezegd is",
+      "hint": "Sleep over woorden om een stuk te selecteren en te corrigeren hoe het is voorgelezen.",
+      "empty": "Er is nog niets voorgelezen. Voorlezingen die je afspeelt verschijnen hier.",
+      "limit": {
+        "title": "Limiet van de geschiedenis",
+        "description": "Maximum aantal voorlezingen dat in de geschiedenis wordt bewaard",
+        "entries": "voorlezingen"
+      },
+      "retention": {
+        "title": "Automatisch verwijderen",
+        "description": "Verwijder oudere voorlezingen ook automatisch",
+        "keepNothing": "Nooit bewaren",
+        "keepLimit": "Laatste {{count}} bewaren",
+        "days3": "Na 3 dagen",
+        "weeks2": "Na 2 weken",
+        "months3": "Na 3 maanden"
+      },
+      "clear": {
+        "title": "Geschiedenis wissen",
+        "description": "Verwijdert alle bewaarde voorlezingen. Je woordenlijst verandert niet.",
+        "confirmation": "Alle {{count}} bewaarde voorlezingen verwijderen? Je woordenlijst verandert niet."
+      },
+      "retentionConfirm": {
+        "message_one": "Nu {{count}} bewaarde voorlezing verwijderen? Je woordenlijst verandert niet.",
+        "message": "Nu {{count}} bewaarde voorlezingen verwijderen? Je woordenlijst verandert niet.",
+        "action": "Voorlezingen verwijderen"
+      }
+    },
+    "vocabulary": {
+      "columns": {
+        "written": "Geschreven",
+        "spoken": "Uitgesproken",
+        "kind": "Soort",
+        "voices": "Stemmen",
+        "match": "Overeenkomst",
+        "enabled": "Aan",
+        "actions": "Acties"
+      },
+      "kinds": {
+        "symbol": "Symbool",
+        "extension": "Extensie",
+        "term": "Term",
+        "acronym": "Acroniem"
+      },
+      "voices": {
+        "all": "Alle stemmen",
+        "except": "behalve {{names}}",
+        "add": "+ stem"
+      },
+      "origins": {
+        "builtin": "Ingebouwd",
+        "owner": "Van jou"
+      },
+      "skipped": "(overgeslagen)",
+      "buttons": {
+        "add": "Item toevoegen",
+        "edit": "Bewerken",
+        "listen": "Beluisteren",
+        "delete": "Verwijderen",
+        "reset": "Terugzetten naar standaard",
+        "save": "Opslaan",
+        "cancel": "Annuleren"
+      },
+      "match": {
+        "whole": "Heel woord",
+        "anywhere": "Overal in een woord",
+        "prefix": "Begin van een woord",
+        "suffix": "Einde van een woord",
+        "regex": "Patroon",
+        "caseSensitive": "Hoofdlettergevoelig",
+        "extension": "Einde van een bestandsnaam",
+        "symbol": "Overal",
+        "acronym": "Heel woord of naamdeel"
+      },
+      "filter": "Zoeken in geschreven of gesproken tekst",
+      "toggle": "{{written}} gebruiken",
+      "editTitle": "Item bewerken",
+      "fields": {
+        "skip": "Overslaan",
+        "appliesTo": "Geldt voor"
+      },
+      "empty": "Geen items komen overeen met je filter.",
+      "deleteConfirmation": "{{written}} uit je woordenschat verwijderen? Dit kan niet ongedaan worden gemaakt.",
+      "resetConfirm": "{{written}} terugzetten naar de ingebouwde uitspraak? Je item wordt verwijderd.",
+      "errors": {
+        "changed": "Het woordenschatbestand is op schijf gewijzigd. De tabel is opnieuw geladen; voer je wijziging opnieuw uit.",
+        "fileInvalid": "Je woordenschatbestand bevat een fout en kan hier niet worden bewerkt: {{message}}",
+        "invalidEdit": "Dit item kon niet worden opgeslagen: {{message}}",
+        "tooLarge": "Het woordenschatbestand zou groter zijn dan 1 MiB, dus er is niets opgeslagen.",
+        "io": "Het woordenschatbestand kon niet worden geschreven: {{message}}",
+        "voicesChanged": "De woordenschat veranderde terwijl dit wachtte, dus de wijziging van stemmen is niet toegepast. Kies de stemmen opnieuw."
+      },
+      "problems": {
+        "shadowed": "Is nooit van toepassing: een item met hogere prioriteit wint altijd",
+        "unreachable": "Is nooit van toepassing: {{reason}}",
+        "disabled": "Uitgeschakeld"
+      },
+      "unreachable": {
+        "containsSpace": "een term wordt woord voor woord vergeleken, dus de geschreven tekst mag geen spatie bevatten",
+        "endsWithPunctuation": "leestekens aan het einde van een woord worden afgesplitst voordat termen worden vergeleken",
+        "notOneCharacter": "een symbool is precies één teken",
+        "extensionNotAlphanumeric": "een extensie bevat alleen letters en cijfers",
+        "neverMatches": "het verandert niet hoe het voorbeeld wordt gelezen"
+      },
+      "derive": {
+        "unchanged": "De uitgesproken woorden zijn niet veranderd, er valt niets op te slaan.",
+        "severalWords": "De wijziging raakt meer dan één geschreven woord. Corrigeer één woord tegelijk.",
+        "notExplained": "Geen enkele regel laat de tekst zo klinken.",
+        "invalid": "Opslaan lukt niet: {{detail}}"
+      },
+      "check": {
+        "title": "Controle over alle stemmen",
+        "playAll": "Alles afspelen",
+        "playing": "{{model}} wordt afgespeeld",
+        "checking": "Elke stem wordt gecontroleerd...",
+        "heardRight": "goed verstaan",
+        "missed": "verkeerd verstaan: {{heard}}",
+        "failed": "kon niet controleren: {{error}}",
+        "row": "{{model}}: {{outcome}}",
+        "advisory": "Sommige stemmen lazen dit niet goed. Je kunt het toch opslaan.",
+        "saveAllAnyway": "Toch opslaan voor alle stemmen",
+        "savePassedOnly": "Alleen opslaan voor geslaagde stemmen",
+        "pickOne": "Kies één stem",
+        "dictating": "Er loopt een dictaat. Controleer opnieuw als het klaar is.",
+        "transcribeFailed": "Spraak-naar-tekst kon de stem niet transcriberen."
+      },
+      "filters": {
+        "voice": "Stem",
+        "kind": "Soort",
+        "source": "Bron",
+        "all": "Alles",
+        "changed": "Door jou gewijzigd",
+        "onlyProblems": "Alleen problemen"
+      },
+      "defaultLabel": "standaard:",
+      "defaultLabelFor": "standaard voor {{voices}}:"
+    },
+    "correction": {
+      "add": "Correctie toevoegen",
+      "start": "Een correctie toevoegen",
+      "writtenText": "Geschreven tekst",
+      "next": "Volgende",
+      "title": "Een uitspraak corrigeren",
+      "selected": "Geselecteerd",
+      "spokenAs": "Uitgesproken als",
+      "shouldSay": "Zou moeten zeggen",
+      "savesAs": "Wordt opgeslagen als",
+      "deriving": "Regel wordt bepaald...",
+      "exactOnly": "Alleen deze exacte tekst",
+      "chooseScope": "Kies waar het geldt",
+      "scopeRequired": "Kies Alle stemmen of één stem voordat je opslaat.",
+      "acronymStyle": "Afkortingsstijl per stem",
+      "style": {
+        "spaced": "Losse letters (C L I)",
+        "capitals": "Hoofdletters (CLI)",
+        "inherit": "Zelfde als alle stemmen"
+      },
+      "reach": {
+        "extension": "geldt voor elk {{extension}}-bestand",
+        "acronym": "geldt overal voor de afkorting {{acronym}}",
+        "term": "geldt overal voor {{term}}",
+        "symbol": "geldt voor {{symbol}} in elk technisch woord",
+        "exact": "alleen {{text}}"
+      },
+      "savesAsFormat": "{{written}} -> \"{{spoken}}\" · {{reach}}",
+      "microphone": {
+        "idle": "Zeg het in plaats van te typen",
+        "recording": "Stoppen en invullen wat je zei",
+        "transcribing": "Wat je zei wordt getranscribeerd...",
+        "busy": "Er loopt een dictaat, een opname of een bestandstranscriptie. Probeer de microfoon opnieuw als het klaar is.",
+        "stopped": "De microfoon stopte voordat je woorden werden gehoord, dus er is niets ingevuld.",
+        "reading": "Voorlezen is geopend. Sluit het en gebruik daarna de microfoon.",
+        "failed": "De microfoon kon niet starten.",
+        "transcribeFailed": "Spraak-naar-tekst kon niet transcriberen wat je zei."
+      }
+    }
   }
 }

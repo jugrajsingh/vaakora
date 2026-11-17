@@ -8,6 +8,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { platform } from "@tauri-apps/plugin-os";
+import { listen } from "@tauri-apps/api/event";
 import {
   checkAccessibilityPermission,
   checkMicrophonePermission,
@@ -102,6 +103,16 @@ function App() {
 
   useEffect(() => {
     checkOnboardingStatus();
+  }, []);
+
+  useEffect(() => {
+    const unlisten = listen("open-tts-models", () => {
+      setCurrentSection("ttsmodels");
+      void commands.showMainWindowCommand();
+    });
+    return () => {
+      void unlisten.then((stop) => stop());
+    };
   }, []);
 
   // Initialize RTL direction when language changes
@@ -332,7 +343,12 @@ function App() {
           />
           {/* Scrollable content area */}
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div ref={settingsScrollRef} className="flex-1 overflow-y-auto">
+            <div
+              ref={settingsScrollRef}
+              data-settings-scroll
+              style={{ overflowAnchor: "none" }}
+              className="flex-1 overflow-y-auto"
+            >
               {/* Models fills the window: its table scrolls, not the page. */}
               <div
                 className={`flex flex-col items-center p-4 gap-4 ${currentSection === "models" ? "h-full" : ""}`}
@@ -350,7 +366,10 @@ function App() {
           </div>
         </div>
         {/* Fixed footer at bottom */}
-        <Footer onShowHistory={showHistory} />
+        <Footer
+          onShowHistory={showHistory}
+          onOpenPostProcessing={() => setCurrentSection("postprocessing")}
+        />
         <FileDropOverlay onDropped={showHistory} />
       </div>
     );

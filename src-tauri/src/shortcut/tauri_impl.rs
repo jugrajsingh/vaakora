@@ -4,17 +4,29 @@
 //! global-shortcut plugin.
 
 use log::{debug, error, warn};
-use tauri::AppHandle;
+use std::collections::HashMap;
+use std::sync::Mutex;
+use tauri::{AppHandle, Manager};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 use crate::settings::{self, ShortcutBinding};
 
 use super::handler::handle_shortcut_event;
 
+#[derive(Default)]
+struct RegisteredShortcuts(Mutex<HashMap<String, Shortcut>>);
+
+fn registration_state(app: &AppHandle) -> tauri::State<'_, RegisteredShortcuts> {
+    if app.try_state::<RegisteredShortcuts>().is_none() {
+        app.manage(RegisteredShortcuts::default());
+    }
+    app.state::<RegisteredShortcuts>()
+}
+
 /// Initialize shortcuts using Tauri's global-shortcut plugin
-pub fn init_shortcuts(app: &AppHandle) {
+pub fn init_shortcuts(app: &impl super::policy::RegistrationContext) {
+    let user_settings = app.load_settings();
     let default_bindings = settings::get_default_settings().bindings;
-    let user_settings = settings::load_or_create_app_settings(app);
 
     // Register all default shortcuts, applying user customizations
     for (id, default_binding) in default_bindings {
@@ -74,7 +86,19 @@ pub fn validate_shortcut(raw: &str) -> Result<(), String> {
 }
 
 /// Register a shortcut using Tauri's global-shortcut plugin
-pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<(), String> {
+pub fn register_shortcut(
+    app: &impl super::policy::RegistrationContext,
+    binding: ShortcutBinding,
+) -> Result<(), String> {
+    super::policy::register_nonempty(binding, |binding| {
+        app.register_native(settings::KeyboardImplementation::Tauri, binding)
+    })
+}
+
+pub(super) fn register_nonempty_shortcut(
+    app: &AppHandle,
+    binding: ShortcutBinding,
+) -> Result<(), String> {
     // Validate for Tauri requirements
     if let Err(e) = validate_shortcut(&binding.current_binding) {
         warn!(
@@ -96,6 +120,12 @@ pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<()
             return Err(error_msg);
         }
     };
+
+    let state = registration_state(app);
+    let mut registered = state
+        .0
+        .lock()
+        .map_err(|error| format!("Shortcut ownership lock failed: {error}"))?;
 
     // Prevent duplicate registrations that would silently shadow one another
     if app.global_shortcut().is_registered(shortcut) {
@@ -136,6 +166,7 @@ pub fn register_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<()
             error_msg
         })?;
 
+    registered.insert(binding.id, shortcut);
     Ok(())
 }
 
@@ -153,6 +184,12 @@ pub fn unregister_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<
         }
     };
 
+    let state = registration_state(app);
+    let mut registered = state
+        .0
+        .lock()
+        .map_err(|error| format!("Shortcut ownership lock failed: {error}"))?;
+
     app.global_shortcut().unregister(shortcut).map_err(|e| {
         let error_msg = format!(
             "Failed to unregister shortcut '{}': {}",
@@ -162,6 +199,9 @@ pub fn unregister_shortcut(app: &AppHandle, binding: ShortcutBinding) -> Result<
         error_msg
     })?;
 
+    if registered.get(&binding.id) == Some(&shortcut) {
+        registered.remove(&binding.id);
+    }
     Ok(())
 }
 
