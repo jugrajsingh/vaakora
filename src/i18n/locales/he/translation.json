@@ -385,11 +385,16 @@
       "loading": "טוען מודלים",
       "empty": {
         "dictation": "אין עדיין מודל הכתבה.",
-        "readAloud": "אין עדיין מודל הקראה."
+        "readAloud": "אין עדיין מודל הקראה.",
+        "cleanup": "אין עדיין מודל ניקוי."
       },
       "help": {
         "dictation": "בחר מודל הכתבה שהורד.",
-        "readAloud": "בחר מודל הקראה שהורד."
+        "readAloud": "בחר מודל הקראה שהורד.",
+        "cleanup": "המודל המקומי שמנקה הכתבות."
+      },
+      "failed": {
+        "cleanup": "לא ניתן היה להציג את רשימת המודלים."
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "ביטול",
       "readAloud": "הקראה",
       "activation": "הפעלה",
-      "activationHelp": "לקיצורי מקשים של הכתבה"
+      "activationHelp": "לקיצורי מקשים של הכתבה",
+      "cancelLinuxHelp": "ב-Linux קיצור המקשים לביטול אינו עוצר הכתבה, כי קיצורי מקשים שנרשמים במהלך הכתבה אינם אמינים שם. השתמשו ב-X בשכבת-העל, ב'ביטול' בתפריט מגש המערכת, או הריצו handy --cancel."
     },
     "modelSettings": {
       "title": "הגדרות עבור {{model}}"
@@ -776,14 +782,6 @@
         "noCleanupModel": "אין מודל עיבוד משלים",
         "s1Description": "משתמש בהגדרות סגנון, מבנה והקשר.",
         "plainDescription": "משתמש בפרומפט Handy שבחרת.",
-        "size": "{{size}} MiB",
-        "downloaded": "הורד",
-        "use": "השתמש",
-        "download": "הורד",
-        "downloading": "מוריד {{percent}}%",
-        "delete": "מחק",
-        "deleteConfirm": "למחוק את {{name}}? יתפנו {{size}}.",
-        "deleteConfirmAction": "מחק מודל",
         "status": {
           "title": "מצב",
           "description": "המודל נטען כשמתחילה הכתבה עם עיבוד משלים, ונפרק לאחר זמן הקצאת פריקת המודל.",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "ההקראה עסוקה בהדבקה",
+    "readAloudBusyPasting": "Handy עדיין מדביק. נסו שוב את ההקראה לאחר שההדבקה תסתיים.",
+    "readAloudUnavailableTitle": "ההקראה אינה זמינה",
     "readAloudClipboardUnreadableTitle": "לא ניתן לקרוא את הלוח",
     "readAloudClipboardUnreadable": "לא ניתן היה לקרוא את הטקסט מהלוח.",
     "loadDirectory": "שגיאה בטעינת תיקייה: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "כהה"
     }
   },
+  "floating": {
+    "position": {
+      "help": "היכן על המסך יופיעו שכבת-העל וחלון ההקראה. מיקום עליון משאיר את תחתית המסך פנויה, וזה שימושי כשמכתיבים לטרמינל.",
+      "cells": {
+        "top_left": "למעלה משמאל",
+        "top": "למעלה במרכז",
+        "top_right": "למעלה מימין",
+        "center_left": "באמצע משמאל",
+        "center": "במרכז",
+        "center_right": "באמצע מימין",
+        "bottom_left": "למטה משמאל",
+        "bottom": "למטה במרכז",
+        "bottom_right": "למטה מימין"
+      }
+    },
+    "style": {
+      "help": "ללא: אין חלון צף. שגיאות עדיין מופיעות במגש המערכת ובחלון הראשי. מינימלי: קפסולה קטנה בזמן ההכתבה. בזמן אמת: מציג גם את המילים בזמן שאתם מדברים, עם מודלים שתומכים בכך. ב-Linux מומלץ לבחור 'ללא'."
+    }
+  },
   "overlay": {
     "transcribing": "מתמלל",
     "processing": "מנקה",
     "loadingModel": "טוען מודל",
-    "cancel": "ביטול הכתבה"
+    "cancel": "ביטול הכתבה",
+    "starting": "מפעיל את המיקרופון",
+    "recording": "מקליט"
   },
   "secureInput": {
     "blockedWithCulprit_one": "ייתכן ש-{{name}} חוסם קיצור דרך אחד",
@@ -1215,12 +1234,6 @@
     "dismiss": "התעלם"
   },
   "tts": {
-    "ratings": {
-      "quality": "איכות",
-      "speed": "מהירות",
-      "recommended": "מומלץ",
-      "tooltip": "שמע ראשון תוך {{firstAudio}} שנ', מהיר פי {{faster}} מזמן אמת, נטען תוך {{load}} שנ'"
-    },
     "devices": {
       "auto": "אוטומטי",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "מתכונן עבור {{device}}: {{graph}}",
     "buffering": "מבצע אחסון זמני",
     "title": "הקראה",
+    "modelVoice": "{{model}}, {{voice}}",
     "textLabel": "טקסט להקראה",
     "placeholder": "הדבק טקסט להקראה",
     "play": "נגן",
     "pause": "השהה",
-    "stop": "עצור",
     "close": "סגור",
     "readClipboard": "קריאת הלוח",
     "editText": "עריכת טקסט",
     "progress": "התקדמות",
-    "time": "חלפו {{elapsed}} שנ', נותרו {{remaining}} שנ'",
-    "openModels": "מודלי הקראה",
+    "timeAbout": "{{elapsed}} / בערך {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Enter",
+      "close": "Esc"
+    },
+    "chooseModel": "בחירת מודל",
+    "failedLine": "ההקראה נכשלה. {{reason}}",
     "outputFallback": "משתמש בהתקן הפלט המוגדר כברירת מחדל",
     "states": {
       "waiting": "ממתין",
@@ -1293,25 +1311,10 @@
       "playing": "מנגן",
       "paused": "מושהה",
       "finished": "הסתיים",
-      "error": "שגיאה"
+      "error": "נכשל"
     },
-    "modelsSubtitle": "בחר מודל קול. נתוני המהירות נמדדו על המחשב של המפתח; אצלך הם עשויים להיות שונים.",
-    "downloaded": "הורד",
-    "availableToDownload": "זמין להורדה",
-    "recommended": "מומלץ",
-    "downloading": "מוריד",
     "needsToken": "נדרש אסימון Hugging Face",
     "tokenSet": "האסימון הוגדר",
-    "active": "פעיל",
-    "use": "השתמש",
-    "download": "הורד",
-    "delete": "מחק",
-    "deleteConfirm": "למחוק את {{name}}? יתפנו {{size}}. אוצר המילים וההיסטוריה שלך נשמרים.",
-    "deleteConfirmSelected": "ההקראה תפסיק לעבוד עד שתבחר מודל אחר.",
-    "deleteConfirmAction": "מחק מודל",
-    "cancel": "ביטול",
-    "token": "אסימון Hugging Face",
-    "tokenHelp": "נדרש רק לקולות Pocket הנעולים, לאחר אישור תנאי הקולות ב-Hugging Face. האסימון נשמר בזיכרון ונמחק כש-Handy מופעל מחדש.",
     "clearToken": "נקה אסימון",
     "showToken": "הצג אסימון",
     "hideToken": "הסתר אסימון",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "קולות קטנים בהינדית, נשי וגברי. מילים באנגלית מאוית אות אחר אות.",
       "indic-tiny-pa": "קולות קטנים בפנג'אבית (גורמוקהי), נשי וגברי. מילים באנגלית מאוית אות אחר אות."
     },
-    "voiceCount": "קולות: {{count}}",
-    "downloadProgress": "התקדמות הורדת המודל",
     "speedLabel": "מהירות",
     "pitchLabel": "גובה צליל",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "תמלול מקורי",
     "diffNote": "מוצגים ההבדלים מהתמלול המקורי.",
     "noCleanup": "ללא ניקוי"
+  },
+  "models": {
+    "tags": {
+      "recommended": "מומלץ",
+      "live": "חי",
+      "translates": "מתרגם",
+      "custom": "מותאם אישית",
+      "oldFormat": "פורמט ישן",
+      "needsToken": "נדרש אסימון",
+      "nativeWords": "רשימת מילים מובנית"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "לא נמדד",
+      "licence": "הרישיון לא צוין",
+      "languages": "לא צוינו",
+      "notListed": "לא צוין"
+    },
+    "measured": {
+      "maker": "נתון היצרן ({{machine}}, {{backend}}), לא של מחשב זה",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}, מוגדר בהגדרות, מתקדם",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "רשימת מילים מובנית",
+      "corrected": "מתוקן לאחר הזיהוי",
+      "unknown": "ידוע לאחר טעינת המודל"
+    },
+    "speedFigure": {
+      "dictation": "{{value}} שנ׳ ל-30 שניות דיבור"
+    },
+    "search": "חיפוש מודלים",
+    "noMatch": "אין התאמה ל\"{{query}}\".",
+    "noFilterMatch": "אין מודל שמתאים למסננים האלה.",
+    "clearFilters": "נקה מסננים",
+    "selected": "נבחר",
+    "runtime": {
+      "notLoaded": "לא נטען",
+      "loading": "טוען",
+      "ready": "מוכן",
+      "failed": "נכשל"
+    },
+    "downloading": "מוריד {{percent}}% מתוך {{size}}",
+    "row": {
+      "open": "הצגת פרטים",
+      "close": "הסתרת פרטים"
+    },
+    "detail": {
+      "languages": "שפות",
+      "runOn": "הפעל על",
+      "memory": "זיכרון",
+      "measuredOn": "נמדד על",
+      "voices": "קולות",
+      "licence": "רישיון",
+      "modelCard": "כרטיס המודל",
+      "source": "מקור",
+      "revision": "{{repository}} · גרסה {{revision}}",
+      "customWords": "מילים מותאמות אישית"
+    },
+    "delete": {
+      "action": "מחק מודל",
+      "ask": "למחוק את {{name}}? זה ישחרר {{size}}.",
+      "askUnknownSize": "למחוק את {{name}}?",
+      "selected": {
+        "dictation": "ההכתבה תפסיק לעבוד עד שתבחר מודל אחר.",
+        "readAloud": "ההקראה תפסיק לעבוד עד שתבחר מודל אחר.",
+        "cleanup": "הניקוי יפסיק לעבוד עד שתבחר מודל אחר."
+      },
+      "kept": {
+        "dictation": "ההיסטוריה שלך נשמרת.",
+        "readAloud": "אוצר המילים וההיסטוריה שלך נשמרים.",
+        "cleanup": "ההנחיות וההיסטוריה שלך נשמרים."
+      }
+    },
+    "heads": {
+      "score": "ציון",
+      "speed": "מהירות",
+      "size": "גודל"
+    },
+    "legend": {
+      "open": "מה העמודות אומרות",
+      "score": {
+        "readAloud": "איכות האזנה מתוך 10.",
+        "cleanup": "למודלי ניקוי אין עדיין ציון."
+      },
+      "speed": {
+        "readAloud": "ציון מהירות מתוך 10 במכשיר שהמודל רץ עליו.",
+        "cleanup": "למודלי ניקוי אין עדיין מהירות מדודה."
+      },
+      "range": "{{low}} עד {{high}}",
+      "unmeasured": "? לא נמדד.",
+      "measuredOn": "נמדד על {{machine}}.",
+      "speedNote": {
+        "accelerated": "כמה זמן לוקח להקליד 30 שניות של דיבור על שבב הגרפיקה של מחשב הבדיקה שלנו. לא נמדד במחשב הזה.",
+        "cpu": "כמה זמן לוקח להקליד 30 שניות של דיבור על המעבד של מחשב הבדיקה שלנו. לא נמדד במחשב הזה."
+      }
+    },
+    "cell": {
+      "value": "{{head}}: {{figure}}",
+      "measured": "{{head}}: {{figure}}, נמדד על {{provenance}}",
+      "unmeasured": "{{head}}: לא נמדד"
+    },
+    "mark": {
+      "select": "בחר את {{name}}",
+      "download": "הורד את {{name}}",
+      "cancel": "הפסק להוריד את {{name}}",
+      "needsToken": "נדרש אסימון Hugging Face. הוסף אותו בפרטים."
+    },
+    "remove": "מחק את {{name}}",
+    "chips": {
+      "accelerated": "GPU או NPU"
+    },
+    "busy": "המתן לסיום ההורדה או המחיקה הנוכחית.",
+    "listen": "האזן ל-{{voice}}",
+    "voiceCount_one": "{{count}} קול",
+    "voiceCount": "קולות: {{count}}",
+    "sections": {
+      "available": "זמינים"
+    },
+    "token": {
+      "label": "אסימון Hugging Face",
+      "help": "אשרו תחילה את תנאי הקול ב-Hugging Face. האסימון נשמר בזיכרון עד שהאפליקציה Handy תופעל מחדש."
+    }
   }
 }

@@ -11,7 +11,6 @@ import { LanguageDetection } from "../LanguageDetection";
 import { AccelerationSelector } from "../AccelerationSelector";
 import { LazyStreamClose } from "../LazyStreamClose";
 import { AirPodsMode } from "../AirPodsMode";
-import { HfTokenSetting } from "../tts/HfTokenSetting";
 import { VadBackendSelector } from "../VadBackendSelector";
 
 export const AdvancedSettings: React.FC = () => {
@@ -27,7 +26,6 @@ export const AdvancedSettings: React.FC = () => {
           descriptionMode="tooltip"
           grouped={true}
         />
-        <HfTokenSetting />
       </SettingsGroup>
 
       <SettingsGroup title={t("settings.groups.dictationEngine")}>

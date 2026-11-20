@@ -82,7 +82,6 @@ const markers: [string, string][] = [
   ["./AccelerationSelector", "AccelerationSelector"],
   ["./LazyStreamClose", "LazyStreamClose"],
   ["./AirPodsMode", "AirPodsMode"],
-  ["./tts/HfTokenSetting", "HfTokenSetting"],
   ["./VadBackendSelector", "VadBackendSelector"],
   ["./SoundPicker", "SoundPicker"],
   ["./AppLanguageSelector", "AppLanguageSelector"],
@@ -182,7 +181,6 @@ const HOME: Record<string, "dictation" | "general" | "advanced"> = {
   AutostartToggle: "general",
   ShowTrayIcon: "general",
   ModelUnloadTimeoutSetting: "advanced",
-  HfTokenSetting: "advanced",
   VoiceActivityDetection: "advanced",
   LongFormChunking: "advanced",
   ExperimentalToggle: "advanced",
@@ -253,7 +251,7 @@ describe("settings inventory", () => {
     assert.deepEqual(groups(<AdvancedSettings />), [
       {
         title: "Models",
-        rows: ["ModelUnloadTimeoutSetting", "HfTokenSetting"],
+        rows: ["ModelUnloadTimeoutSetting"],
       },
       {
         title: "Dictation engine",

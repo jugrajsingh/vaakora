@@ -61,6 +61,7 @@ pub struct ModelInfo {
     pub is_custom: bool,            // Whether this is a user-provided custom model
     pub supports_streaming: bool, // Whether this model supports live streaming preview (transcribe-cpp)
     pub supports_language_detection: bool, // Whether the model can auto-detect language (gates the "Auto" option)
+    pub supports_vocabulary: Option<bool>, // Native custom-word list; None before the model has loaded in this run
 }
 
 const CHINESE_LANGUAGE_CODE: &str = "zh";
@@ -230,6 +231,7 @@ impl ModelDescriptor {
             is_custom: false,
             supports_streaming: self.caps.supports_streaming.unwrap_or(false),
             supports_language_detection: self.caps.supports_language_detect.unwrap_or(false),
+            supports_vocabulary: None,
         }
     }
 }
@@ -932,6 +934,7 @@ impl ModelManager {
                 is_custom: false,
                 supports_streaming: false,
                 supports_language_detection: true,
+                supports_vocabulary: None,
             },
         );
 
@@ -963,6 +966,7 @@ impl ModelManager {
                 is_custom: false,
                 supports_streaming: false,
                 supports_language_detection: true,
+                supports_vocabulary: None,
             },
         );
 
@@ -993,6 +997,7 @@ impl ModelManager {
                 is_custom: false,
                 supports_streaming: false,
                 supports_language_detection: true,
+                supports_vocabulary: None,
             },
         );
 
@@ -1023,6 +1028,7 @@ impl ModelManager {
                 is_custom: false,
                 supports_streaming: false,
                 supports_language_detection: true,
+                supports_vocabulary: None,
             },
         );
 
@@ -1054,6 +1060,7 @@ impl ModelManager {
                 is_custom: false,
                 supports_streaming: false,
                 supports_language_detection: true,
+                supports_vocabulary: None,
             },
         );
 
@@ -1221,14 +1228,36 @@ impl ModelManager {
         supports_streaming: bool,
         supports_translation: bool,
         supports_language_detection: bool,
+        supports_vocabulary: bool,
+        supported_languages: Vec<String>,
+    ) {
+        let mut models = self.available_models.lock().unwrap();
+        Self::apply_runtime_capabilities(
+            &mut models,
+            model_id,
+            supports_streaming,
+            supports_translation,
+            supports_language_detection,
+            supports_vocabulary,
+            supported_languages,
+        );
+    }
+
+    fn apply_runtime_capabilities(
+        models: &mut HashMap<String, ModelInfo>,
+        model_id: &str,
+        supports_streaming: bool,
+        supports_translation: bool,
+        supports_language_detection: bool,
+        supports_vocabulary: bool,
         supported_languages: Vec<String>,
     ) {
         let supported_languages = canonicalize_supported_languages(supported_languages);
-        let mut models = self.available_models.lock().unwrap();
         if let Some(model) = models.get_mut(model_id) {
             model.supports_streaming = supports_streaming;
             model.supports_translation = supports_translation;
             model.supports_language_detection = supports_language_detection;
+            model.supports_vocabulary = Some(supports_vocabulary);
             // An empty set means the model is language-agnostic — but it is also
             // what a failed capability read leaves behind, so keep the probed /
             // catalog list rather than blanking a known one to nothing.
@@ -1661,6 +1690,7 @@ impl ModelManager {
                     is_custom: true,
                     supports_streaming: caps.supports_streaming,
                     supports_language_detection: caps.supports_language_detection,
+                    supports_vocabulary: None,
                 },
             );
         }
@@ -1802,6 +1832,7 @@ impl ModelManager {
                             is_custom: false,
                             supports_streaming: caps.supports_streaming,
                             supports_language_detection: caps.supports_language_detection,
+                            supports_vocabulary: None,
                         },
                     );
                 }
@@ -3002,6 +3033,34 @@ mod tests {
     }
 
     #[test]
+    fn runtime_capabilities_record_vocabulary() {
+        let mut models = HashMap::new();
+        ModelManager::seed_catalog_models(&mut models);
+        let id = models.keys().next().expect("catalog seeds a model").clone();
+        assert_eq!(models[&id].supports_vocabulary, None);
+        ModelManager::apply_runtime_capabilities(
+            &mut models,
+            &id,
+            false,
+            false,
+            false,
+            true,
+            Vec::new(),
+        );
+        assert_eq!(models[&id].supports_vocabulary, Some(true));
+        ModelManager::apply_runtime_capabilities(
+            &mut models,
+            &id,
+            false,
+            false,
+            false,
+            false,
+            Vec::new(),
+        );
+        assert_eq!(models[&id].supports_vocabulary, Some(false));
+    }
+
+    #[test]
     fn test_canonicalize_supported_languages_collapses_chinese_scripts() {
         let languages = canonicalize_supported_languages(
             vec!["en", "zh", "zh-Hans", "zh-Hant", "yue"]
@@ -3083,6 +3142,7 @@ mod tests {
                 // Legacy entry: preserve the historical "Auto offered" behavior.
                 // (Catalog GGUFs and on-disk probes derive this from metadata.)
                 supports_language_detection: true,
+                supports_vocabulary: None,
             },
         );
 

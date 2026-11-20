@@ -27,8 +27,12 @@ mock.module("@/hooks/useSettings", () => ({
     isUpdating: () => false,
   }),
 }));
+const manageSeen: (() => void)[] = [];
 mock.module("./PostProcessingSettings", () => ({
-  PostProcessingSettings: () => <div data-marker="post-processing" />,
+  PostProcessingSettings: ({ manage }: { manage: () => void }) => {
+    manageSeen.push(manage);
+    return <div data-marker="post-processing" />;
+  },
 }));
 // Records every switch's props and renders the real switch as well.
 const { Switch: RealSwitch } = await import("@/components/ui/Switch");
@@ -46,13 +50,15 @@ const { CleanupTab } = await import("./CleanupTab");
 const i18n = i18next.createInstance();
 await i18n.init({ lng: "en", resources: { en: { translation: en } } });
 
+let manageCalls = 0;
 function render(enabled: boolean): string {
   stored.post_process_enabled = enabled;
+  manageSeen.length = 0;
   switches.length = 0;
   updates.length = 0;
   return renderToStaticMarkup(
     <I18nextProvider i18n={i18n}>
-      <CleanupTab />
+      <CleanupTab manage={() => (manageCalls += 1)} />
     </I18nextProvider>,
   );
 }
@@ -74,6 +80,16 @@ describe("CleanupTab", () => {
     assert.ok(marker > label);
     assert.equal(switches.length, 1);
     assert.equal(switches[0].checked, true);
+  });
+
+  it("manage_passes_through_to_the_cleanup_settings", () => {
+    manageCalls = 0;
+    render(true);
+    assert.equal(manageSeen.length, 1);
+    manageSeen[0]();
+    assert.equal(manageCalls, 1, "Manage models reaches the page's navigate");
+    render(false);
+    assert.equal(manageSeen.length, 0, "off: no settings, no model row");
   });
 
   it("switch_writes_post_process_enabled", () => {

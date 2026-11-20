@@ -57,7 +57,7 @@ export function RunOnControl({
     <div className="text-xs text-text/50">
       {downloaded && (
         <label className="flex items-center gap-1.5">
-          {t("tts.runOn")}
+          <span className="sr-only">{t("tts.runOn")}</span>
           <select
             className="rounded-lg border border-line bg-background px-2 py-1 text-xs text-text focus:outline-none focus:border-logo-primary"
             value={value}

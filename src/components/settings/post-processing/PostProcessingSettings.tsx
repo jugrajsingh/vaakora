@@ -7,6 +7,8 @@ import {
   type PostProcessApiFormat,
 } from "@/bindings";
 import { cleanupHost, promptControls } from "@/lib/utils/localLlmPresentation";
+import { JobModelGroup } from "@/components/shared/JobModelGroup";
+import { useLocalLlmDownloadStore } from "@/stores/localLlmDownloadStore";
 
 import { Alert } from "../../ui/Alert";
 import { Dropdown, SettingContainer, SettingsGroup } from "@/components/ui";
@@ -25,9 +27,12 @@ import { useSettings } from "../../../hooks/useSettings";
 import {
   LOCAL_LLM_PROVIDER_ID,
   LocalLlmSettings,
+  cleanupJobState,
+  useLocalLlmActions,
   useLocalLlmModels,
 } from "./LocalLlmSettings";
 import { PromptDialog } from "./PromptDialog";
+import type { LocalLlmModelInfo } from "@/bindings";
 
 const PostProcessingProvider: React.FC<{ state: PostProcessProviderState }> = ({
   state,
@@ -350,11 +355,44 @@ export const PostProcessingSettingsPrompts = React.memo(
 );
 PostProcessingSettingsPrompts.displayName = "PostProcessingSettingsPrompts";
 
-export const PostProcessingSettings: React.FC = () => {
+/** The downloaded cleanup models; choosing one writes the same `local_llm_model_id` as before. */
+export function CleanupModelSelect({
+  models,
+  selectedId,
+  busy,
+  placeholder,
+  onSelect,
+}: {
+  models: readonly LocalLlmModelInfo[];
+  selectedId: string | null;
+  /** A download or delete is running: no choosing. */
+  busy: boolean;
+  /** Shown when no downloaded model is selected (none saved, or the saved one is gone). */
+  placeholder: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <Dropdown
+      options={models
+        .filter((model) => model.downloaded)
+        .map((model) => ({ value: model.id, label: model.display_name }))}
+      selectedValue={selectedId}
+      placeholder={placeholder}
+      onSelect={onSelect}
+      disabled={busy}
+    />
+  );
+}
+
+export const PostProcessingSettings: React.FC<{ manage: () => void }> = ({
+  manage,
+}) => {
   const { t } = useTranslation();
   const state = usePostProcessProviderState();
   const { getSetting } = useSettings();
-  const { models } = useLocalLlmModels();
+  const { models, loadState, reloadChecked } = useLocalLlmModels();
+  const { actions, deletingId, error } = useLocalLlmActions(reloadChecked);
+  const downloadId = useLocalLlmDownloadStore((s) => s.modelId);
   const localModel = models.find(
     (m) => m.id === getSetting("local_llm_model_id"),
   );
@@ -387,14 +425,28 @@ export const PostProcessingSettings: React.FC = () => {
       )}
 
       {isLocalLlm && (
-        <SettingsGroup title={t("settings.groups.localModel")}>
-          <LocalLlmSettings />
+        <JobModelGroup
+          role="cleanup"
+          title={t("settings.groups.localModel")}
+          state={cleanupJobState(loadState, models)}
+          manage={manage}
+          select={
+            <CleanupModelSelect
+              models={models}
+              selectedId={getSetting("local_llm_model_id") ?? null}
+              busy={downloadId !== null || deletingId !== null}
+              placeholder={t("settings.jobModel.choose")}
+              onSelect={(id) => void actions.select(id)}
+            />
+          }
+        >
+          <LocalLlmSettings models={models} actionError={error} />
           {hidePrompts && (
             <p className="px-4 py-3 text-sm text-ink-3">
               {t("settings.postProcessing.localLlm.promptHidden")}
             </p>
           )}
-        </SettingsGroup>
+        </JobModelGroup>
       )}
     </div>
   );

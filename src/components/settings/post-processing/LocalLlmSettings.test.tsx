@@ -5,134 +5,106 @@ import { renderToStaticMarkup } from "react-dom/server";
 import i18next from "i18next";
 import { I18nextProvider } from "react-i18next";
 import en from "../../../i18n/locales/en/translation.json";
-import type { LocalLlmModelListProps } from "./LocalLlmModelList";
+import type { AppSettings, LocalLlmModelInfo } from "@/bindings";
 const {
-  mock,
   describe,
   it,
+  mock,
 }: {
-  mock: { module: (name: string, factory: () => unknown) => void };
   describe: (name: string, run: () => void) => void;
   it: (name: string, run: () => Promise<void> | void) => void;
+  mock: { module: (name: string, factory: () => unknown) => void };
 } = createRequire(import.meta.url)("bun:test");
 
-// useRowConfirm is replaced by a recorder: the page's wiring is what is under test.
-type Deps = {
-  apply: (id: string) => void;
-  present?: (id: string) => boolean;
-};
-const calls: string[] = [];
-let deps: Deps | undefined;
-const recordedDeps = () => deps;
-let asking: string | null = null;
-const rowsRef = { current: null };
-const real = await import("@/components/shared/InlineConfirm");
-mock.module("@/components/shared/InlineConfirm", () => ({
-  ...real,
-  useRowConfirm: (given: Deps) => {
-    deps = given;
-    return {
-      asking,
-      ask: (id: string) => calls.push(`ask:${id}`),
-      cancel: () => calls.push("cancel"),
-      confirm: () => calls.push("confirm"),
-      rowsRef,
-    };
-  },
-}));
-const lists: LocalLlmModelListProps[] = [];
-mock.module("./LocalLlmModelList", () => ({
-  LocalLlmModelList: (props: LocalLlmModelListProps) => {
-    lists.push(props);
-    return null;
-  },
-}));
-mock.module("@/components/ui", () => ({
-  Dropdown: () => null,
-  SettingContainer: ({ children }: { children?: React.ReactNode }) => children,
-}));
-const deleted: string[] = [];
-mock.module("@/bindings", () => ({
-  commands: {
-    getLocalLlmModels: async () => [],
-    deleteLocalLlmModel: async (id: string) => {
-      deleted.push(id);
-      return { status: "ok", data: null };
-    },
-  },
-}));
-mock.module("@/hooks/useSettings", () => ({
-  useSettings: () => ({
-    getSetting: () => undefined,
-    updateSetting: async () => {},
-    refreshSettingsChecked: async () => {},
-  }),
-}));
-mock.module("@/hooks/useLocalLlmStatus", () => ({
-  useLocalLlmStatus: () => ({ status: null, error: null }),
-}));
-const downloadState = {
-  version: 0,
-  modelId: null,
-  percentage: null,
-  error: null,
-  clearError: () => {},
-  download: async () => {},
-  modelsChanged: () => {},
-};
-mock.module("@/stores/localLlmDownloadStore", () => ({
-  initializeLocalLlmDownloadProgress: async () => {},
-  useLocalLlmDownloadStore: Object.assign(
-    (select: (state: typeof downloadState) => unknown) => select(downloadState),
-    { getState: () => downloadState },
-  ),
-}));
-const { LocalLlmSettings } = await import("./LocalLlmSettings");
+// Environment shim: `@/i18n` reads locales with a bundler-only glob; every settings test stubs it.
+mock.module("@/i18n", () => ({ default: i18next }));
+const { LocalLlmSettings, cleanupJobState } = await import(
+  "./LocalLlmSettings"
+);
+const { useSettingsStore } = await import("@/stores/settingsStore");
 const i18n = i18next.createInstance();
 await i18n.init({ lng: "en", resources: { en: { translation: en } } });
 
-function render() {
-  calls.length = 0;
-  lists.length = 0;
-  deps = undefined;
-  renderToStaticMarkup(
+const s1: LocalLlmModelInfo = {
+  id: "s1-mini-q4km",
+  display_name: "S1-mini",
+  attribution: "Superwhisper",
+  card_url: "https://superwhisper.com",
+  license: "Apache-2.0",
+  license_url: "https://example.com/license",
+  license_note: null,
+  size_bytes: 484_219_808,
+  prompt_style: "s1_control_line",
+  downloaded: true,
+  source: null,
+};
+const quill: LocalLlmModelInfo = {
+  ...s1,
+  id: "quill-0-8b-q4km",
+  display_name: "Quill 0.8B",
+  prompt_style: "plain_system_prompt",
+};
+
+function render(
+  props: { models?: LocalLlmModelInfo[]; actionError?: string | null } = {},
+  selectedId: string | null = s1.id,
+): string {
+  useSettingsStore.setState({
+    settings: {
+      post_process_provider_id: "local_llm",
+      local_llm_model_id: selectedId,
+      post_process_prompts: [],
+      post_process_selected_prompt_id: null,
+    } as unknown as AppSettings,
+  });
+  return renderToStaticMarkup(
     <I18nextProvider i18n={i18n}>
-      <LocalLlmSettings />
+      <LocalLlmSettings
+        models={props.models ?? [s1, quill]}
+        actionError={props.actionError ?? null}
+      />
     </I18nextProvider>,
   );
-  const seen = recordedDeps();
-  assert.ok(seen, "the settings ask useRowConfirm for their delete question");
-  const [list] = lists;
-  assert.ok(list, "the model list renders");
-  return { list, deps: seen };
 }
 
-describe("LocalLlmSettings delete question", () => {
-  it("list_delete_asks_and_the_question_buttons_confirm_or_cancel", () => {
-    const { list } = render();
-    list.onDelete("alternative-a");
-    assert.deepEqual(calls, ["ask:alternative-a"], "Delete only asks");
-    list.onConfirmDelete();
-    list.onCancelDelete();
-    assert.deepEqual(calls, ["ask:alternative-a", "confirm", "cancel"]);
-    assert.deepEqual(deleted, [], "nothing is deleted before the apply runs");
+describe("LocalLlmSettings", () => {
+  it("keeps_status_controls_and_attribution_and_drops_the_model_list", () => {
+    const html = render();
+    assert.ok(html.includes("Status"), "the status row stays");
+    assert.ok(html.includes("Not loaded"));
+    assert.ok(html.includes("Styling"), "the S1 controls stay");
+    assert.ok(html.includes(">Superwhisper</button>"), "attribution stays");
+    assert.equal(html.includes("data-confirm-row"), false, "no model list");
+    for (const word of [
+      ">Use</button>",
+      ">Download</button>",
+      ">Delete</button>",
+      "Downloaded</span>",
+    ]) {
+      assert.equal(html.includes(word), false, word);
+    }
   });
-  it("the_list_shows_the_asked_model_question", () => {
-    asking = "alternative-a";
-    assert.equal(render().list.askingId, "alternative-a");
-    asking = null;
-    assert.equal(render().list.askingId, null);
+
+  it("plain_model_has_no_s1_controls", () => {
+    const html = render({}, quill.id);
+    assert.equal(html.includes("Styling"), false);
   });
-  it("apply_deletes_the_asked_model_and_present_reads_the_downloaded_flag", async () => {
-    const { deps: seen } = render();
-    seen.apply("alternative-a");
-    await Promise.resolve();
-    await Promise.resolve();
-    assert.deepEqual(deleted, ["alternative-a"]);
+
+  it("shows_the_action_error_the_page_passes", () => {
+    const html = render({ actionError: "select failed" });
+    assert.ok(html.includes("Error: select failed"), html);
+    assert.equal(render().includes("Error: "), false, "none without an error");
+  });
+
+  it("job_state_waits_for_the_list_and_reports_a_failed_load", () => {
+    assert.equal(cleanupJobState("loading", []), "loading");
+    assert.equal(cleanupJobState("failed", [s1]), "failed");
+    assert.equal(cleanupJobState("loaded", []), "empty");
     assert.equal(
-      seen.present?.("alternative-a"),
-      false,
-      "the settings hold no downloaded models yet, so a question for one is dropped",
+      cleanupJobState("loaded", [{ ...s1, downloaded: false }]),
+      "empty",
+      "a model that is not downloaded does not count",
     );
+    assert.equal(cleanupJobState("loaded", [s1, quill]), "ready");
   });
 });

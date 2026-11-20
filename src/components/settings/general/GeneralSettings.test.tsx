@@ -98,14 +98,23 @@ describe("GeneralSettings shortcuts", () => {
       "shortcut:cancel",
       "shortcut:read_aloud",
     ]);
-    const linux = shortcutsGroup(render("linux", true));
+    const linuxHtml = render("linux", true);
+    const linux = shortcutsGroup(linuxHtml);
     assert.ok(!linux.includes("shortcut:cancel"));
     assert.deepEqual(linux, [
       "shortcut:transcribe",
       "shortcut:transcribe_with_post_process",
       "activation",
+      "cancel-help",
       "shortcut:read_aloud",
     ]);
+    assert.ok(!shortcutsGroup(render("windows", true)).includes("cancel-help"));
+    const help = /<p[^>]*data-row="cancel-help"[^>]*>([^<]*)<\/p>/.exec(
+      linuxHtml,
+    );
+    assert.ok(help, "cancel-help is a text line");
+    assert.equal(help[1], en.settings.shortcuts.cancelLinuxHelp);
+    assert.match(help[0], /text-ink-2/);
   });
 
   it("activation_is_labelled_for_dictation", () => {

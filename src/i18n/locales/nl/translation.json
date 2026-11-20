@@ -385,11 +385,16 @@
       "loading": "Modellen laden",
       "empty": {
         "dictation": "Nog geen dicteermodel.",
-        "readAloud": "Nog geen voorleesmodel."
+        "readAloud": "Nog geen voorleesmodel.",
+        "cleanup": "Nog geen opschoonmodel."
       },
       "help": {
         "dictation": "Kies een gedownload dicteermodel.",
-        "readAloud": "Kies een gedownload voorleesmodel."
+        "readAloud": "Kies een gedownload voorleesmodel.",
+        "cleanup": "Het lokale model dat dicteringen opschoont."
+      },
+      "failed": {
+        "cleanup": "De modellen konden niet worden weergegeven."
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "Annuleren",
       "readAloud": "Voorlezen",
       "activation": "Activering",
-      "activationHelp": "Voor dicteersneltoetsen"
+      "activationHelp": "Voor dicteersneltoetsen",
+      "cancelLinuxHelp": "Op Linux stopt de sneltoets voor annuleren een dictaat niet, omdat sneltoetsen die tijdens een dictaat worden geregistreerd daar onbetrouwbaar zijn. Gebruik het X op de overlay, Annuleren in het menu van het systeemvak, of voer handy --cancel uit."
     },
     "modelSettings": {
       "title": "Instellingen voor {{model}}"
@@ -776,14 +782,6 @@
         "noCleanupModel": "Geen naverwerkingsmodel",
         "s1Description": "Gebruikt de instellingen voor stijl, structuur en context.",
         "plainDescription": "Gebruikt je geselecteerde Handy-prompt.",
-        "size": "{{size}} MiB",
-        "downloaded": "Gedownload",
-        "use": "Gebruiken",
-        "download": "Downloaden",
-        "downloading": "Downloaden {{percent}}%",
-        "delete": "Verwijderen",
-        "deleteConfirm": "{{name}} verwijderen? Dit maakt {{size}} vrij.",
-        "deleteConfirmAction": "Model verwijderen",
         "status": {
           "title": "Status",
           "description": "Het model wordt geladen wanneer een dictaat met naverwerking begint en na de time-out voor het ontladen van modellen weer ontladen.",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "Voorlezen is bezig met plakken",
+    "readAloudBusyPasting": "Handy is nog aan het plakken. Probeer Voorlezen opnieuw nadat het plakken klaar is.",
+    "readAloudUnavailableTitle": "Voorlezen niet beschikbaar",
     "readAloudClipboardUnreadableTitle": "Klembord niet leesbaar",
     "readAloudClipboardUnreadable": "De tekst op het klembord kon niet worden gelezen.",
     "loadDirectory": "Fout bij laden van map: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "Donker"
     }
   },
+  "floating": {
+    "position": {
+      "help": "Waar de overlay en het voorleesvenster op het scherm verschijnen. Een positie bovenaan houdt de onderkant van het scherm vrij, handig als je in een terminal dicteert.",
+      "cells": {
+        "top_left": "Linksboven",
+        "top": "Boven midden",
+        "top_right": "Rechtsboven",
+        "center_left": "Links midden",
+        "center": "Midden",
+        "center_right": "Rechts midden",
+        "bottom_left": "Linksonder",
+        "bottom": "Onder midden",
+        "bottom_right": "Rechtsonder"
+      }
+    },
+    "style": {
+      "help": "Geen: geen zwevend venster. Fouten verschijnen nog steeds in het systeemvak en in het hoofdvenster. Minimaal: een klein pilletje terwijl je dicteert. Live: toont ook de woorden terwijl je spreekt, met modellen die dat ondersteunen. Op Linux wordt Geen aanbevolen."
+    }
+  },
   "overlay": {
     "transcribing": "Transcriberen",
     "processing": "Opschonen",
     "loadingModel": "Model laden",
-    "cancel": "Dicteren annuleren"
+    "cancel": "Dicteren annuleren",
+    "starting": "Microfoon wordt gestart",
+    "recording": "Opnemen"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokkeert mogelijk 1 sneltoets",
@@ -1215,12 +1234,6 @@
     "dismiss": "Sluiten"
   },
   "tts": {
-    "ratings": {
-      "quality": "Kwaliteit",
-      "speed": "Snelheid",
-      "recommended": "Aanbevolen",
-      "tooltip": "Eerste audio na {{firstAudio}} s, {{faster}}x sneller dan realtime, laadt in {{load}} s"
-    },
     "devices": {
       "auto": "Automatisch",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "Voorbereiden voor {{device}}: {{graph}}",
     "buffering": "Bufferen",
     "title": "Voorlezen",
+    "modelVoice": "{{model}}, {{voice}}",
     "textLabel": "Voor te lezen tekst",
     "placeholder": "Plak tekst om voor te lezen",
     "play": "Afspelen",
     "pause": "Pauzeren",
-    "stop": "Stoppen",
     "close": "Sluiten",
     "readClipboard": "Klembord voorlezen",
     "editText": "Tekst bewerken",
     "progress": "Voortgang",
-    "time": "{{elapsed}} s verstreken, {{remaining}} s resterend",
-    "openModels": "Tekst-naar-spraakmodellen",
+    "timeAbout": "{{elapsed}} / ongeveer {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Enter",
+      "close": "Esc"
+    },
+    "chooseModel": "Kies een model",
+    "failedLine": "Voorlezen mislukt. {{reason}}",
     "outputFallback": "Het standaarduitvoerapparaat wordt gebruikt",
     "states": {
       "waiting": "Wachten",
@@ -1293,25 +1311,10 @@
       "playing": "Afspelen",
       "paused": "Gepauzeerd",
       "finished": "Voltooid",
-      "error": "Fout"
+      "error": "Mislukt"
     },
-    "modelsSubtitle": "Kies een stemmodel. De snelheidscijfers zijn gemeten op de computer van de ontwikkelaar; die van jou kunnen afwijken.",
-    "downloaded": "Gedownload",
-    "availableToDownload": "Beschikbaar om te downloaden",
-    "recommended": "Aanbevolen",
-    "downloading": "Downloaden",
     "needsToken": "Heeft een Hugging Face-token nodig",
     "tokenSet": "Token ingesteld",
-    "active": "Actief",
-    "use": "Gebruiken",
-    "download": "Downloaden",
-    "delete": "Verwijderen",
-    "deleteConfirm": "{{name}} verwijderen? Dit maakt {{size}} vrij. Je woordenschat en geschiedenis blijven bewaard.",
-    "deleteConfirmSelected": "Voorlezen werkt niet meer totdat je een ander model kiest.",
-    "deleteConfirmAction": "Model verwijderen",
-    "cancel": "Annuleren",
-    "token": "Hugging Face-token",
-    "tokenHelp": "Alleen nodig voor afgeschermde Pocket-stemmen nadat je de stemvoorwaarden op Hugging Face hebt geaccepteerd. Het token blijft in het geheugen en wordt gewist wanneer Handy opnieuw start.",
     "clearToken": "Token wissen",
     "showToken": "Token tonen",
     "hideToken": "Token verbergen",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "Kleine Hindi-stemmen, vrouwelijk en mannelijk. Engelse woorden worden letter voor letter gespeld.",
       "indic-tiny-pa": "Kleine Punjabi-stemmen (Gurmukhi), vrouwelijk en mannelijk. Engelse woorden worden letter voor letter gespeld."
     },
-    "voiceCount": "{{count}} stemmen",
-    "downloadProgress": "Voortgang van modeldownload",
     "speedLabel": "Snelheid",
     "pitchLabel": "Toonhoogte",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "Oorspronkelijke transcriptie",
     "diffNote": "Toont de verschillen met de oorspronkelijke transcriptie.",
     "noCleanup": "Geen opschoning"
+  },
+  "models": {
+    "tags": {
+      "recommended": "Aanbevolen",
+      "live": "Live",
+      "translates": "Vertaalt",
+      "custom": "Eigen",
+      "oldFormat": "Oud formaat",
+      "needsToken": "Token nodig",
+      "nativeWords": "Ingebouwde woordenlijst"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "Niet gemeten",
+      "licence": "Licentie niet vermeld",
+      "languages": "Niet vermeld",
+      "notListed": "Niet vermeld"
+    },
+    "measured": {
+      "maker": "Cijfer van de maker ({{machine}}, {{backend}}), niet van deze computer",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}, ingesteld in Instellingen, Geavanceerd",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "Ingebouwde woordenlijst",
+      "corrected": "Gecorrigeerd na herkenning",
+      "unknown": "Bekend zodra het model is geladen"
+    },
+    "speedFigure": {
+      "dictation": "{{value}} s voor 30 seconden spraak"
+    },
+    "search": "Modellen zoeken",
+    "noMatch": "Niets komt overeen met '{{query}}'.",
+    "noFilterMatch": "Geen model past bij deze filters.",
+    "clearFilters": "Filters wissen",
+    "selected": "Geselecteerd",
+    "runtime": {
+      "notLoaded": "Niet geladen",
+      "loading": "Laden",
+      "ready": "Gereed",
+      "failed": "Mislukt"
+    },
+    "downloading": "Downloaden {{percent}}% van {{size}}",
+    "row": {
+      "open": "Details tonen",
+      "close": "Details verbergen"
+    },
+    "detail": {
+      "languages": "Talen",
+      "runOn": "Uitvoeren op",
+      "memory": "Geheugen",
+      "measuredOn": "Gemeten op",
+      "voices": "Stemmen",
+      "licence": "Licentie",
+      "modelCard": "Modelkaart",
+      "source": "Bron",
+      "revision": "{{repository}} · revisie {{revision}}",
+      "customWords": "Eigen woordenlijst"
+    },
+    "delete": {
+      "action": "Model verwijderen",
+      "ask": "{{name}} verwijderen? Dit maakt {{size}} vrij.",
+      "askUnknownSize": "{{name}} verwijderen?",
+      "selected": {
+        "dictation": "Dicteren werkt niet meer totdat je een ander model kiest.",
+        "readAloud": "Voorlezen werkt niet meer totdat je een ander model kiest.",
+        "cleanup": "Opschonen werkt niet meer totdat je een ander model kiest."
+      },
+      "kept": {
+        "dictation": "Je geschiedenis blijft bewaard.",
+        "readAloud": "Je woordenschat en geschiedenis blijven bewaard.",
+        "cleanup": "Je prompts en geschiedenis blijven bewaard."
+      }
+    },
+    "heads": {
+      "score": "Score",
+      "speed": "Snelheid",
+      "size": "Grootte"
+    },
+    "legend": {
+      "open": "Wat de kolommen betekenen",
+      "score": {
+        "readAloud": "Luisterkwaliteit op 10.",
+        "cleanup": "Opschoonmodellen hebben nog geen score."
+      },
+      "speed": {
+        "readAloud": "Snelheidsscore op 10 op het apparaat waarop het model draait.",
+        "cleanup": "Opschoonmodellen hebben nog geen gemeten snelheid."
+      },
+      "range": "{{low}} tot {{high}}",
+      "unmeasured": "? is niet gemeten.",
+      "measuredOn": "Gemeten op {{machine}}.",
+      "speedNote": {
+        "accelerated": "Hoe lang het duurt om 30 seconden spraak uit te typen op de grafische chip van onze testlaptop. Niet gemeten op deze computer.",
+        "cpu": "Hoe lang het duurt om 30 seconden spraak uit te typen op de processor van onze testlaptop. Niet gemeten op deze computer."
+      }
+    },
+    "cell": {
+      "value": "{{head}}: {{figure}}",
+      "measured": "{{head}}: {{figure}}, gemeten op {{provenance}}",
+      "unmeasured": "{{head}}: niet gemeten"
+    },
+    "mark": {
+      "select": "{{name}} selecteren",
+      "download": "{{name}} downloaden",
+      "cancel": "Downloaden van {{name}} stoppen",
+      "needsToken": "Vereist een Hugging Face-token. Voeg het toe bij de details."
+    },
+    "remove": "{{name}} verwijderen",
+    "chips": {
+      "accelerated": "GPU of NPU"
+    },
+    "busy": "Wacht tot de lopende download of verwijdering klaar is.",
+    "listen": "{{voice}} beluisteren",
+    "voiceCount_one": "{{count}} stem",
+    "voiceCount": "{{count}} stemmen",
+    "sections": {
+      "available": "Beschikbaar"
+    },
+    "token": {
+      "label": "Hugging Face-token",
+      "help": "Accepteer eerst de stemvoorwaarden op Hugging Face. Het token blijft in het geheugen tot Handy opnieuw start."
+    }
   }
 }

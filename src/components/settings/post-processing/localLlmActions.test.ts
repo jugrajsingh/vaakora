@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import type { Result } from "@/bindings";
+import type { LocalLlmModelInfo } from "@/bindings";
 import {
   createLocalLlmActions,
+  createModelsLoader,
+  whileAlive,
   type LocalLlmActionDependencies,
 } from "./localLlmActions";
 
@@ -191,4 +194,76 @@ assert.equal(settled, false, "selection waits for its checked refresh");
 finishRefresh();
 await selecting;
 assert.equal(settled, true);
+// Lifetime: an outcome that lands after the page is gone sets none of its state.
+for (const action of ["select", "delete", "download"] as const) {
+  let alive = true;
+  const shown: (string | null)[] = [];
+  let fail!: (reason: Error) => void;
+  const late = new Promise<never>((_, reject) => {
+    fail = reject;
+  });
+  const gone = setup({
+    setError: whileAlive(
+      () => alive,
+      (message) => shown.push(message),
+    ),
+    setLocalLlmModel: () => late,
+    deleteLocalLlmModel: () => late,
+    downloadLocalLlmModel: () => late,
+  });
+  const running = gone.actions[action]("downloaded-a");
+  alive = false;
+  fail(new Error(`late ${action} failure`));
+  await running;
+  assert.deepEqual(
+    shown,
+    [null],
+    `${action}: the failure that lands after unmount is not shown`,
+  );
+  if (action === "delete") {
+    assert.deepEqual(
+      gone.deleting,
+      ["downloaded-a", null],
+      "the busy mark still clears, so no delete stays stuck busy",
+    );
+  }
+}
+{
+  let alive = true;
+  const shown: (string | null)[] = [];
+  const live = whileAlive(
+    () => alive,
+    (message: string | null) => shown.push(message),
+  );
+  live("while mounted");
+  alive = false;
+  live("after unmount");
+  assert.deepEqual(shown, ["while mounted"]);
+}
+{
+  const listed: LocalLlmModelInfo[] = [];
+  let alive = true;
+  const seen: LocalLlmModelInfo[][] = [];
+  let answer!: (models: LocalLlmModelInfo[]) => void;
+  const reply = new Promise<LocalLlmModelInfo[]>((resolve) => {
+    answer = resolve;
+  });
+  const load = createModelsLoader({
+    fetch: () => reply,
+    set: (models: LocalLlmModelInfo[]) => void seen.push(models),
+    alive: () => alive,
+  });
+  const loading = load();
+  alive = false;
+  answer(listed);
+  await loading;
+  assert.equal(seen.length, 0, "a list that arrives after unmount is dropped");
+  alive = true;
+  await createModelsLoader({
+    fetch: async () => listed,
+    set: (models: LocalLlmModelInfo[]) => void seen.push(models),
+    alive: () => alive,
+  })();
+  assert.deepEqual(seen, [listed], "a list that arrives while mounted is set");
+}
 console.log("localLlmActions: all orchestration assertions passed");

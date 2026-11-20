@@ -6,7 +6,11 @@ import { useTranslation } from "react-i18next";
 import { commands, type SessionSnapshot, type Result } from "@/bindings";
 import { createPopupAdapter, type PopupEvent } from "./adapter";
 import { routePopupKey } from "./actions";
-import { enterPopupEdit, togglePopupPlayback } from "./presentation";
+import {
+  enterPopupEdit,
+  readerHeading,
+  togglePopupPlayback,
+} from "./presentation";
 import { ReadAloudPopup } from "./ReadAloudPopup";
 import { followTheme } from "@/lib/utils/followTheme";
 import "@/i18n";
@@ -34,7 +38,8 @@ function PopupApp() {
   const { t } = useTranslation();
   const [text, setText] = useState("");
   const [editing, setEditing] = useState(false);
-  const [modelName, setModelName] = useState<string>();
+  const [heading, setHeading] =
+    useState<ReturnType<typeof readerHeading>>(null);
   const documentId = useRef<number | null>(null);
   const [snapshot, setSnapshot] = useState(initial);
   const current = useRef({ ...initial, text: "" });
@@ -117,18 +122,13 @@ function PopupApp() {
   }, [actions]);
   useEffect(() => {
     let alive = true;
-    setModelName(undefined);
+    setHeading(null);
     void Promise.all([
       commands.getAppSettings().then(unwrap),
       commands.getTtsModels().then(unwrap),
     ])
       .then(([settings, models]) => {
-        if (alive)
-          setModelName(
-            models.find(
-              (model) => model.id === (settings.tts_model_id ?? "pocket-en"),
-            )?.display_name,
-          );
+        if (alive) setHeading(readerHeading(settings, models));
       })
       .catch(() => {});
     return () => {
@@ -138,10 +138,11 @@ function PopupApp() {
   return (
     <ReadAloudPopup
       text={text}
-      modelName={modelName}
+      heading={heading}
       editing={editing}
       enterEdit={(value) =>
-        enterPopupEdit(value, {
+        enterPopupEdit(value, snapshot.state, {
+          current: text,
           edit: (next) => void actions.edit(next),
           setEditing,
         })
@@ -155,9 +156,6 @@ function PopupApp() {
           toggle: () => void actions.toggle(),
           setEditing,
         });
-      }}
-      stop={() => {
-        void actions.stop();
       }}
       close={() => {
         void actions.close();

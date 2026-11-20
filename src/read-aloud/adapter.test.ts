@@ -211,7 +211,7 @@ async function editBeforePlay() {
       `${state}: edit then toggle reads replaced text`,
     );
   }
-  for (const cancel of ["close", "stop", "edit", "toggle"] as const) {
+  for (const cancel of ["close", "edit", "toggle"] as const) {
     const stopped = deferred();
     const f = fixture({
       stop: async () => {

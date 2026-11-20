@@ -6,22 +6,31 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { ClipboardPaste, Pause, Play, Square, X } from "lucide-react";
+import {
+  CircleAlert,
+  ClipboardPaste,
+  Pause,
+  Play,
+  TriangleAlert,
+  X,
+} from "lucide-react";
 import type { SessionSnapshot } from "@/bindings";
-import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { createFollower, followTarget } from "@/lib/utils/followScroll";
 import { routePopupKey } from "./actions";
 import {
   highlightedText,
   progressPresentation,
   popupMode,
-  formatTime,
+  reasonLine,
   registerPopupPaste,
   restorePopupEditor,
   routeTextClick,
+  stateWord,
   textEditable,
+  timeLabel,
 } from "./presentation";
 const focusRing = "focus-visible:ring-2 focus-visible:ring-logo-primary";
 
@@ -34,12 +43,11 @@ const markInView = (preview: HTMLElement, mark: HTMLElement) => {
 export interface PopupProps {
   text: string;
   snapshot: SessionSnapshot;
-  modelName?: string;
+  heading: { model: string; voice: string } | null;
   editing: boolean;
   enterEdit: (text: string) => void;
   edit: (text: string) => void;
   toggle: () => void;
-  stop: () => void;
   close: () => void;
   readClipboard: () => void;
   models: () => void;
@@ -47,12 +55,11 @@ export interface PopupProps {
 export function ReadAloudPopup({
   text,
   snapshot,
-  modelName,
+  heading,
   editing,
   enterEdit,
   edit,
   toggle,
-  stop,
   close,
   readClipboard,
   models,
@@ -76,6 +83,9 @@ export function ReadAloudPopup({
     snapshot.source_end,
   );
   const progress = progressPresentation(snapshot);
+  const time = timeLabel(snapshot, t);
+  const word = stateWord(snapshot.state);
+  const reason = reasonLine(snapshot);
   const mode = popupMode(snapshot.state, editing);
   const playing =
     snapshot.state === "playing" || snapshot.state === "buffering";
@@ -140,10 +150,22 @@ export function ReadAloudPopup({
     <section
       className="h-screen flex flex-col overflow-hidden rounded-xl border border-line bg-background text-text text-sm"
       aria-label={t("tts.title")}
-      onKeyDown={(event) => routePopupKey(event, { close, toggle })}
+      onKeyDownCapture={(event) => routePopupKey(event, { close, toggle })}
     >
       <header className="flex shrink-0 items-center justify-between gap-2 border-b border-line px-3 py-1">
-        <span className="truncate font-medium">{modelName}</span>
+        <div className="flex min-w-0 items-baseline gap-2">
+          <span className="shrink-0 font-medium">{t("tts.title")}</span>
+          {heading && (
+            <Tooltip
+              text={t("tts.modelVoice", heading)}
+              className="min-w-0 grid-cols-[minmax(0,1fr)]"
+            >
+              <span className="min-w-0 truncate text-ink-2">
+                {t("tts.modelVoice", heading)}
+              </span>
+            </Tooltip>
+          )}
+        </div>
         <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
@@ -156,15 +178,18 @@ export function ReadAloudPopup({
           >
             {t("tts.editText")}
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={focusRing}
-            onClick={close}
-            aria-label={t("tts.close")}
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </Button>
+          <Tooltip title={t("tts.close")} text={t("tts.keys.close")}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={focusRing}
+              onClick={close}
+              aria-label={t("tts.close")}
+              aria-keyshortcuts="Escape"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </Tooltip>
         </div>
       </header>
       <div className="min-h-0 flex-1 p-2">
@@ -213,61 +238,68 @@ export function ReadAloudPopup({
           </div>
         )}
       </div>
-      {snapshot.error && (
-        <div role="alert" className="shrink-0 px-2 pb-1">
-          <Alert className="p-2">
-            {t(snapshot.error)}
-            {snapshot.error === "tts.errors.notDownloaded" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className={focusRing}
-                onClick={models}
-              >
-                {t("tts.openModels")}
-              </Button>
-            )}
-          </Alert>
+      {reason?.kind === "error" && (
+        <div
+          role="alert"
+          className="flex shrink-0 items-start gap-1.5 px-3 pb-1 text-xs text-error"
+        >
+          <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="line-clamp-2 min-w-0 flex-1 break-words">
+            {t("tts.failedLine", { reason: t(reason.key) })}
+          </span>
+          {reason.chooseModel && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`shrink-0 whitespace-nowrap ${focusRing}`}
+              onClick={models}
+            >
+              {t("tts.chooseModel")}
+            </Button>
+          )}
         </div>
       )}
-      {snapshot.output_fallback && (
-        <span className="shrink-0 px-3 text-xs text-ink-3" data-output-fallback>
-          {t("tts.outputFallback")}
-        </span>
+      {reason?.kind === "fallback" && (
+        <div
+          className="flex shrink-0 items-center gap-1.5 px-3 pb-1 text-xs text-ink-2"
+          data-output-fallback
+        >
+          <TriangleAlert
+            className="h-4 w-4 shrink-0 text-warning"
+            aria-hidden="true"
+          />
+          <span>{t("tts.outputFallback")}</span>
+        </div>
       )}
       <div className="flex shrink-0 items-center gap-2 border-t border-line px-3 py-2">
+        <Tooltip
+          title={t(playing ? "tts.pause" : "tts.play")}
+          text={t("tts.keys.toggle")}
+        >
+          <Button
+            variant="secondary"
+            size="sm"
+            className={focusRing}
+            onClick={toggle}
+            disabled={!text.trim() || snapshot.state === "starting"}
+            aria-label={t(playing ? "tts.pause" : "tts.play")}
+            aria-keyshortcuts="Control+Enter"
+          >
+            {playing ? (
+              <Pause className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Play className="h-4 w-4" aria-hidden="true" />
+            )}
+          </Button>
+        </Tooltip>
         <Button
           variant="secondary"
           size="sm"
-          className={focusRing}
-          onClick={toggle}
-          disabled={!text.trim() || snapshot.state === "starting"}
-          aria-label={t(playing ? "tts.pause" : "tts.play")}
-        >
-          {playing ? (
-            <Pause className="h-4 w-4" aria-hidden="true" />
-          ) : (
-            <Play className="h-4 w-4" aria-hidden="true" />
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={focusRing}
+          className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap ${focusRing}`}
           onClick={readClipboard}
-          aria-label={t("tts.readClipboard")}
         >
           <ClipboardPaste className="h-4 w-4" aria-hidden="true" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={focusRing}
-          onClick={stop}
-          disabled={["waiting", "finished"].includes(snapshot.state)}
-          aria-label={t("tts.stop")}
-        >
-          <Square className="h-4 w-4" aria-hidden="true" />
+          {t("tts.readClipboard")}
         </Button>
         <div
           role="progressbar"
@@ -282,13 +314,14 @@ export function ReadAloudPopup({
             style={{ width: `${progress.percent}%` }}
           />
         </div>
-        <span className="tabular-nums text-xs whitespace-nowrap">
-          {formatTime(snapshot.elapsed_seconds)} /{" "}
-          {formatTime(snapshot.elapsed_seconds + snapshot.remaining_seconds)}
-        </span>
-        <span role="status" className="text-xs text-ink-2">
-          {t(progress.stateKey)}
-        </span>
+        {time && (
+          <span className="tabular-nums text-xs whitespace-nowrap">{time}</span>
+        )}
+        {word && (
+          <span role="status" className="text-xs text-ink-2">
+            {t(word)}
+          </span>
+        )}
       </div>
     </section>
   );

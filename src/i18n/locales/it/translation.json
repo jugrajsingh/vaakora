@@ -385,11 +385,16 @@
       "loading": "Caricamento dei modelli",
       "empty": {
         "dictation": "Ancora nessun modello di dettatura.",
-        "readAloud": "Ancora nessun modello di lettura ad alta voce."
+        "readAloud": "Ancora nessun modello di lettura ad alta voce.",
+        "cleanup": "Ancora nessun modello di pulizia."
       },
       "help": {
         "dictation": "Scegli un modello di dettatura scaricato.",
-        "readAloud": "Scegli un modello di lettura ad alta voce scaricato."
+        "readAloud": "Scegli un modello di lettura ad alta voce scaricato.",
+        "cleanup": "Il modello locale che ripulisce le dettature."
+      },
+      "failed": {
+        "cleanup": "Non è stato possibile elencare i modelli."
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "Annulla",
       "readAloud": "Lettura ad alta voce",
       "activation": "Attivazione",
-      "activationHelp": "Per le scorciatoie di dettatura"
+      "activationHelp": "Per le scorciatoie di dettatura",
+      "cancelLinuxHelp": "Su Linux la scorciatoia di annullamento non interrompe una dettatura, perché le scorciatoie registrate durante una dettatura lì non sono affidabili. Usa la X sull'overlay, Annulla nel menu dell'area di notifica oppure esegui handy --cancel."
     },
     "modelSettings": {
       "title": "Impostazioni di {{model}}"
@@ -776,14 +782,6 @@
         "noCleanupModel": "Nessun modello di post-elaborazione",
         "s1Description": "Usa i controlli di stile, struttura e contesto.",
         "plainDescription": "Usa il prompt di Handy selezionato.",
-        "size": "{{size}} MiB",
-        "downloaded": "Scaricato",
-        "use": "Usa",
-        "download": "Scarica",
-        "downloading": "Download {{percent}}%",
-        "delete": "Elimina",
-        "deleteConfirm": "Eliminare {{name}}? Libera {{size}}.",
-        "deleteConfirmAction": "Elimina modello",
         "status": {
           "title": "Stato",
           "description": "Il modello viene caricato all'avvio di una dettatura con post-elaborazione e rilasciato dopo il timeout di rilascio del modello.",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "La lettura ad alta voce è occupata con l'incolla",
+    "readAloudBusyPasting": "Handy sta ancora incollando. Riprova la lettura ad alta voce al termine dell'incolla.",
+    "readAloudUnavailableTitle": "Lettura ad alta voce non disponibile",
     "readAloudClipboardUnreadableTitle": "Appunti non leggibili",
     "readAloudClipboardUnreadable": "Impossibile leggere il testo degli appunti.",
     "loadDirectory": "Errore di caricamento cartella: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "Scuro"
     }
   },
+  "floating": {
+    "position": {
+      "help": "Dove appaiono sullo schermo l'overlay e la finestra di lettura ad alta voce. Una posizione in alto lascia libera la parte bassa dello schermo, utile quando detti in un terminale.",
+      "cells": {
+        "top_left": "In alto a sinistra",
+        "top": "In alto al centro",
+        "top_right": "In alto a destra",
+        "center_left": "Al centro a sinistra",
+        "center": "Al centro",
+        "center_right": "Al centro a destra",
+        "bottom_left": "In basso a sinistra",
+        "bottom": "In basso al centro",
+        "bottom_right": "In basso a destra"
+      }
+    },
+    "style": {
+      "help": "Nessuno: nessuna finestra mobile. Gli errori compaiono comunque nell'area di notifica e nella finestra principale. Minimo: una piccola pillola mentre detti. In tempo reale: mostra anche le parole mentre parli, con i modelli che lo supportano. Su Linux si raccomanda l'opzione Nessuno."
+    }
+  },
   "overlay": {
     "transcribing": "Trascrizione",
     "processing": "Pulizia",
     "loadingModel": "Caricamento del modello",
-    "cancel": "Annulla dettatura"
+    "cancel": "Annulla dettatura",
+    "starting": "Avvio del microfono",
+    "recording": "Registrazione"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} potrebbe bloccare 1 scorciatoia",
@@ -1215,12 +1234,6 @@
     "dismiss": "Ignora"
   },
   "tts": {
-    "ratings": {
-      "quality": "Qualità",
-      "speed": "Velocità",
-      "recommended": "Consigliato",
-      "tooltip": "Primo audio {{firstAudio}} s, {{faster}}x più veloce del tempo reale, caricamento in {{load}} s"
-    },
     "devices": {
       "auto": "Auto",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "Preparazione per {{device}}: {{graph}}",
     "buffering": "Buffering",
     "title": "Lettura ad alta voce",
+    "modelVoice": "{{model}}, {{voice}}",
     "textLabel": "Testo da leggere",
     "placeholder": "Incolla il testo da leggere",
     "play": "Riproduci",
     "pause": "Pausa",
-    "stop": "Stop",
     "close": "Chiudi",
     "readClipboard": "Leggi gli appunti",
     "editText": "Modifica testo",
     "progress": "Avanzamento",
-    "time": "{{elapsed}} s trascorsi, {{remaining}} s rimanenti",
-    "openModels": "Modelli di sintesi vocale",
+    "timeAbout": "{{elapsed}} / circa {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Invio",
+      "close": "Esc"
+    },
+    "chooseModel": "Scegli un modello",
+    "failedLine": "Lettura ad alta voce non riuscita. {{reason}}",
     "outputFallback": "Uso del dispositivo di output predefinito",
     "states": {
       "waiting": "In attesa",
@@ -1293,25 +1311,10 @@
       "playing": "In riproduzione",
       "paused": "In pausa",
       "finished": "Terminato",
-      "error": "Errore"
+      "error": "Non riuscito"
     },
-    "modelsSubtitle": "Scegli un modello vocale. I valori di velocità sono stati misurati sul computer dello sviluppatore; i tuoi possono differire.",
-    "downloaded": "Scaricato",
-    "availableToDownload": "Disponibile per il download",
-    "recommended": "Consigliato",
-    "downloading": "Download in corso",
     "needsToken": "Richiede un token Hugging Face",
     "tokenSet": "Token impostato",
-    "active": "Attivo",
-    "use": "Usa",
-    "download": "Scarica",
-    "delete": "Elimina",
-    "deleteConfirm": "Eliminare {{name}}? Libera {{size}}. Il tuo vocabolario e la cronologia vengono mantenuti.",
-    "deleteConfirmSelected": "La lettura ad alta voce smette di funzionare finché non scegli un altro modello.",
-    "deleteConfirmAction": "Elimina modello",
-    "cancel": "Annulla",
-    "token": "Token Hugging Face",
-    "tokenHelp": "Necessario solo per le voci Pocket protette, dopo aver accettato i termini delle voci su Hugging Face. Il token resta in memoria e viene cancellato al riavvio di Handy.",
     "clearToken": "Cancella token",
     "showToken": "Mostra token",
     "hideToken": "Nascondi token",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "Piccole voci in hindi, femminile e maschile. Le parole inglesi vengono sillabate lettera per lettera.",
       "indic-tiny-pa": "Piccole voci in punjabi (gurmukhi), femminile e maschile. Le parole inglesi vengono sillabate lettera per lettera."
     },
-    "voiceCount": "{{count}} voci",
-    "downloadProgress": "Avanzamento del download del modello",
     "speedLabel": "Velocità",
     "pitchLabel": "Tono",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "Trascrizione originale",
     "diffNote": "Mostra le differenze rispetto alla trascrizione originale.",
     "noCleanup": "Nessuna pulizia"
+  },
+  "models": {
+    "tags": {
+      "recommended": "Consigliato",
+      "live": "Dal vivo",
+      "translates": "Traduce",
+      "custom": "Personalizzato",
+      "oldFormat": "Formato vecchio",
+      "needsToken": "Serve un token",
+      "nativeWords": "Elenco di parole nativo"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "Non misurato",
+      "licence": "Licenza non indicata",
+      "languages": "Non indicate",
+      "notListed": "Non indicato"
+    },
+    "measured": {
+      "maker": "Dato del produttore ({{machine}}, {{backend}}), non di questo computer",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}, impostato in Impostazioni, Avanzate",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "Elenco di parole nativo",
+      "corrected": "Corretto dopo il riconoscimento",
+      "unknown": "Noto dopo il caricamento del modello"
+    },
+    "speedFigure": {
+      "dictation": "{{value}} s per 30 secondi di parlato"
+    },
+    "search": "Cerca modelli",
+    "noMatch": "Nessun risultato per «{{query}}».",
+    "noFilterMatch": "Nessun modello corrisponde a questi filtri.",
+    "clearFilters": "Cancella filtri",
+    "selected": "Selezionato",
+    "runtime": {
+      "notLoaded": "Non caricato",
+      "loading": "Caricamento",
+      "ready": "Pronto",
+      "failed": "Non riuscito"
+    },
+    "downloading": "Download {{percent}}% di {{size}}",
+    "row": {
+      "open": "Mostra dettagli",
+      "close": "Nascondi dettagli"
+    },
+    "detail": {
+      "languages": "Lingue",
+      "runOn": "Esegui su",
+      "memory": "Memoria",
+      "measuredOn": "Misurato su",
+      "voices": "Voci",
+      "licence": "Licenza",
+      "modelCard": "Scheda del modello",
+      "source": "Origine",
+      "revision": "{{repository}} · revisione {{revision}}",
+      "customWords": "Parole personalizzate"
+    },
+    "delete": {
+      "action": "Elimina modello",
+      "ask": "Eliminare {{name}}? Libera {{size}}.",
+      "askUnknownSize": "Eliminare {{name}}?",
+      "selected": {
+        "dictation": "La dettatura smette di funzionare finché non scegli un altro modello.",
+        "readAloud": "La lettura ad alta voce smette di funzionare finché non scegli un altro modello.",
+        "cleanup": "La pulizia smette di funzionare finché non scegli un altro modello."
+      },
+      "kept": {
+        "dictation": "La cronologia viene conservata.",
+        "readAloud": "Il vocabolario e la cronologia vengono conservati.",
+        "cleanup": "I prompt e la cronologia vengono conservati."
+      }
+    },
+    "heads": {
+      "score": "Punteggio",
+      "speed": "Velocità",
+      "size": "Dimensione"
+    },
+    "legend": {
+      "open": "Cosa indicano le colonne",
+      "score": {
+        "readAloud": "Qualità d'ascolto su 10.",
+        "cleanup": "I modelli di pulizia non hanno ancora un punteggio."
+      },
+      "speed": {
+        "readAloud": "Punteggio di velocità su 10 sul dispositivo su cui gira il modello.",
+        "cleanup": "I modelli di pulizia non hanno ancora una velocità misurata."
+      },
+      "range": "da {{low}} a {{high}}",
+      "unmeasured": "? non è stato misurato.",
+      "measuredOn": "Misurato su {{machine}}.",
+      "speedNote": {
+        "accelerated": "Quanto tempo servono per trascrivere 30 secondi di parlato sulla scheda grafica del nostro portatile di prova. Non misurato su questo computer.",
+        "cpu": "Quanto tempo servono per trascrivere 30 secondi di parlato sul processore del nostro portatile di prova. Non misurato su questo computer."
+      }
+    },
+    "cell": {
+      "value": "{{head}}: {{figure}}",
+      "measured": "{{head}}: {{figure}}, misurato su {{provenance}}",
+      "unmeasured": "{{head}}: non misurato"
+    },
+    "mark": {
+      "select": "Seleziona {{name}}",
+      "download": "Scarica {{name}}",
+      "cancel": "Interrompi il download di {{name}}",
+      "needsToken": "Richiede un token Hugging Face. Aggiungilo nei dettagli."
+    },
+    "remove": "Elimina {{name}}",
+    "chips": {
+      "accelerated": "GPU o NPU"
+    },
+    "busy": "Attendi la fine del download o dell'eliminazione in corso.",
+    "listen": "Ascolta {{voice}}",
+    "voiceCount_one": "{{count}} voce",
+    "voiceCount": "{{count}} voci",
+    "sections": {
+      "available": "Disponibili"
+    },
+    "token": {
+      "label": "Token Hugging Face",
+      "help": "Accetta prima i termini della voce su Hugging Face. Il token resta in memoria fino al riavvio di Handy."
+    }
   }
 }

@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import i18next from "i18next";
 import { I18nextProvider } from "react-i18next";
 import en from "../../../i18n/locales/en/translation.json";
+import de from "../../../i18n/locales/de/translation.json";
 import { createRequire } from "node:module";
 import type { LLMPrompt, LocalLlmModelInfo } from "@/bindings";
 import type { PromptDialogProps } from "./PromptDialog";
@@ -128,14 +129,35 @@ mock.module(
   "@/components/settings/PostProcessingSettingsApi/usePostProcessProviderState",
   () => ({ usePostProcessProviderState: () => state }),
 );
+let loadState: "loading" | "loaded" | "failed" = "loaded";
+const selectedIds: string[] = [];
+const realLocalLlm = await import(
+  "@/components/settings/post-processing/LocalLlmSettings"
+);
 mock.module("@/components/settings/post-processing/LocalLlmSettings", () => ({
+  ...realLocalLlm,
   LOCAL_LLM_PROVIDER_ID: "local_llm",
   LocalLlmSettings: () => <div data-marker="LocalLlmSettings" />,
-  useLocalLlmModels: () => ({ models: llmModels }),
+  useLocalLlmModels: () => ({
+    models: llmModels,
+    loadState,
+    reloadChecked: async () => {},
+  }),
+  useLocalLlmActions: () => ({
+    actions: {
+      select: async (id: string) => {
+        selectedIds.push(id);
+      },
+    },
+    deletingId: null,
+    error: null,
+  }),
 }));
-const { PostProcessingSettings, PostProcessingSettingsPrompts } = await import(
-  "./PostProcessingSettings"
-);
+const {
+  PostProcessingSettings,
+  PostProcessingSettingsPrompts,
+  CleanupModelSelect,
+} = await import("./PostProcessingSettings");
 const i18n = i18next.createInstance();
 await i18n.init({ lng: "en", resources: { en: { translation: en } } });
 
@@ -143,7 +165,10 @@ function render(
   provider: string,
   baseUrl: string,
   models: LocalLlmModelInfo[] = [],
+  manage: () => void = () => {},
+  opts: { selected?: string | null; i18n?: typeof i18n } = {},
 ): string {
+  buttons.length = 0;
   state = {
     ...baseState,
     selectedProviderId: provider,
@@ -154,14 +179,15 @@ function render(
   };
   llmModels = models;
   stored.post_process_provider_id = provider;
-  stored.local_llm_model_id = models[0]?.id;
+  stored.local_llm_model_id =
+    "selected" in opts ? opts.selected : models[0]?.id;
   stored.post_process_prompts = [
     { id: "p1", name: "Clean up", prompt: "Fix the text.\n${output}" },
   ];
   stored.post_process_selected_prompt_id = "p1";
   return renderToStaticMarkup(
-    <I18nextProvider i18n={i18n}>
-      <PostProcessingSettings />
+    <I18nextProvider i18n={opts.i18n ?? i18n}>
+      <PostProcessingSettings manage={manage} />
     </I18nextProvider>,
   );
 }
@@ -202,6 +228,145 @@ describe("PostProcessingSettings", () => {
       "the model list sits in the Local model group",
     );
     assert.ok(!html.includes('role="note"'));
+  });
+
+  it("local_model_group_shows_the_model_row_and_no_model_list", () => {
+    const second = { ...llmModel("plain_system_prompt"), id: "local-b" };
+    const html = render("local_llm", "local-llm://in-app", [
+      llmModel("plain_system_prompt"),
+      { ...second, display_name: "Local B" },
+    ]);
+    assert.deepEqual(groupTitles(html), [
+      "Provider",
+      "Instructions",
+      "Local model",
+    ]);
+    const group = html.slice(html.indexOf(">Local model</h2>"));
+    assert.ok(group.includes(">Model</h3>"), "the Model row");
+    assert.ok(group.includes("More information"), "its help trigger");
+    assert.ok(group.includes("Local A"), "the selected model is shown");
+    assert.equal(html.includes("data-confirm-row"), false, "no model list");
+    for (const word of [
+      ">Use</button>",
+      ">Download</button>",
+      ">Delete</button>",
+    ]) {
+      assert.equal(html.includes(word), false, word);
+    }
+    assert.equal(
+      groupTitles(html).filter((title) => title === "Local model").length,
+      1,
+      "no group inside the group",
+    );
+  });
+
+  it("manage_models_calls_the_passed_manage", () => {
+    let calls = 0;
+    render(
+      "local_llm",
+      "local-llm://in-app",
+      [llmModel("plain_system_prompt")],
+      () => {
+        calls += 1;
+      },
+    );
+    const manage = buttons.find(
+      (button) => button.children === "Manage models",
+    );
+    assert.ok(manage, "the Model row offers Manage models");
+    manage.onClick?.({} as never);
+    assert.equal(calls, 1);
+  });
+
+  it("no_model_downloaded_shows_the_empty_state_with_choose_a_model", () => {
+    let calls = 0;
+    const html = render("local_llm", "local-llm://in-app", [], () => {
+      calls += 1;
+    });
+    assert.ok(html.includes("No cleanup model yet."));
+    assert.equal(html.includes('data-marker="LocalLlmSettings"'), false);
+    const choose = buttons.find(
+      (button) => button.children === "Choose a model",
+    );
+    assert.ok(choose);
+    choose.onClick?.({} as never);
+    assert.equal(calls, 1);
+    loadState = "loading";
+    const loading = render("local_llm", "local-llm://in-app", []);
+    loadState = "loaded";
+    assert.ok(loading.includes("Loading models"));
+    assert.equal(loading.includes("No cleanup model yet."), false);
+  });
+
+  it("model_select_lists_downloaded_models_and_selects_through_the_actions", () => {
+    const a = llmModel("plain_system_prompt");
+    const b = { ...a, id: "local-b", display_name: "Local B" };
+    const missing = {
+      ...a,
+      id: "local-c",
+      display_name: "Local C",
+      downloaded: false,
+    };
+    const picked: string[] = [];
+    const element = CleanupModelSelect({
+      models: [a, b, missing],
+      selectedId: "local-a",
+      busy: false,
+      placeholder: "Choose a model",
+      onSelect: (id) => picked.push(id),
+    });
+    assert.deepEqual(element.props.options, [
+      { value: "local-a", label: "Local A" },
+      { value: "local-b", label: "Local B" },
+    ]);
+    assert.equal(element.props.selectedValue, "local-a");
+    assert.equal(element.props.disabled, false);
+    element.props.onSelect("local-b");
+    assert.deepEqual(picked, ["local-b"]);
+    assert.equal(
+      CleanupModelSelect({
+        models: [a],
+        selectedId: "local-a",
+        busy: true,
+        placeholder: "Choose a model",
+        onSelect: () => {},
+      }).props.disabled,
+      true,
+      "no choosing while a download or delete runs",
+    );
+  });
+
+  it("model_select_shows_a_translated_placeholder_when_no_downloaded_model_is_selected", async () => {
+    const german = i18next.createInstance();
+    await german.init({ lng: "de", resources: { de: { translation: de } } });
+    const models = [llmModel("plain_system_prompt")];
+    const nothingSaved = render(
+      "local_llm",
+      "local-llm://in-app",
+      models,
+      () => {},
+      {
+        selected: null,
+        i18n: german,
+      },
+    );
+    const gone = render("local_llm", "local-llm://in-app", models, () => {}, {
+      selected: "deleted-model",
+      i18n: german,
+    });
+    const chosen = render("local_llm", "local-llm://in-app", models, () => {}, {
+      i18n: german,
+    });
+    for (const [name, html] of [
+      ["no saved model", nothingSaved],
+      ["saved model is gone", gone],
+    ]) {
+      assert.ok(html.includes(">Modell wählen</span>"), name);
+      assert.equal(html.includes("Select an option"), false, name);
+      assert.equal(html.includes("Local A"), false, "nothing is auto-selected");
+    }
+    assert.ok(chosen.includes(">Local A</span>"), "a saved model still shows");
+    assert.equal(chosen.includes("Select an option"), false);
   });
 
   it("remote_provider_has_no_local_model_group_and_names_the_host", () => {

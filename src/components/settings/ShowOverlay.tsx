@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Dropdown } from "../ui/Dropdown";
 import { SettingContainer } from "../ui/SettingContainer";
+import { CELLS, PositionGrid } from "./PositionGrid";
 import { useSettings } from "../../hooks/useSettings";
 import type { OverlayPosition, OverlayStyle } from "@/bindings";
 
@@ -30,29 +31,18 @@ export const ShowOverlay: React.FC<ShowOverlayProps> = React.memo(
       },
     ];
 
-    const positionOptions = [
-      {
-        value: "bottom",
-        label: t("settings.advanced.overlay.position.options.bottom"),
-      },
-      {
-        value: "top",
-        label: t("settings.advanced.overlay.position.options.top"),
-      },
-    ];
-
     const selectedStyle = (getSetting("overlay_style") ||
       "live") as OverlayStyle;
-    // Only "top" and "bottom" are selectable; anything else (empty, or a legacy
-    // "none" from before the position was retired) falls back to "bottom".
+    const storedPosition = getSetting("overlay_position");
+    // A missing, empty or legacy "none" value selects the bottom centre cell.
     const selectedPosition: OverlayPosition =
-      getSetting("overlay_position") === "top" ? "top" : "bottom";
+      CELLS.find((cell) => cell === storedPosition) ?? "bottom";
 
     return (
       <>
         <SettingContainer
           title={t("settings.advanced.overlay.style.title")}
-          description={t("settings.advanced.overlay.style.description")}
+          description={t("floating.style.help")}
           descriptionMode={descriptionMode}
           grouped={grouped}
         >
@@ -68,17 +58,15 @@ export const ShowOverlay: React.FC<ShowOverlayProps> = React.memo(
 
         <SettingContainer
           title={t("settings.advanced.overlay.position.title")}
-          description={t("settings.advanced.overlay.position.description")}
+          description={t("floating.position.help")}
           descriptionMode={descriptionMode}
           grouped={grouped}
         >
-          <Dropdown
-            options={positionOptions}
-            selectedValue={selectedPosition}
-            onSelect={(value) =>
-              updateSetting("overlay_position", value as OverlayPosition)
-            }
-            disabled={isUpdating("overlay_position")}
+          <PositionGrid
+            value={selectedPosition}
+            onChange={(cell) => updateSetting("overlay_position", cell)}
+            label={t("settings.advanced.overlay.position.title")}
+            cellLabel={(cell) => t(`floating.position.cells.${cell}`)}
           />
         </SettingContainer>
       </>

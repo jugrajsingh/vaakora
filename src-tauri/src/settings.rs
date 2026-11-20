@@ -123,16 +123,34 @@ pub struct PostProcessProvider {
     pub api_format: PostProcessApiFormat,
 }
 
+/// Cell of the 3x3 floating-window grid shared by the overlay and the reader.
+/// `Top` and `Bottom` are the top-centre and bottom-centre cells; they keep the
+/// stored names `"top"` and `"bottom"` from the two-position setting.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub enum OverlayPosition {
+    TopLeft,
+    // Top centre.
     Top,
+    TopRight,
+    CenterLeft,
+    Center,
+    CenterRight,
+    BottomLeft,
+    // Bottom centre.
     // `none` is retired: overlay visibility is owned by `OverlayStyle` now. The
     // alias keeps legacy stores (`"overlay_position": "none"`) deserializing
     // instead of failing the whole load; the one-time overlay migration reads the
     // raw stored string to recover the old "hidden" intent as `OverlayStyle::None`.
     #[serde(alias = "none")]
     Bottom,
+    BottomRight,
+}
+
+/// Parses a stored position name (legacy `"none"` is `Bottom`).
+pub fn parse_overlay_position(value: &str) -> Result<OverlayPosition, String> {
+    serde_json::from_value(serde_json::Value::String(value.to_string()))
+        .map_err(|_| "Invalid overlay position".to_string())
 }
 
 /// Which recording overlay to display. `Minimal` and `Live` share one base
@@ -726,13 +744,14 @@ fn default_selected_language() -> String {
 
 fn default_overlay_position() -> OverlayPosition {
     // Position only matters when the overlay is shown; whether it shows at all is
-    // `overlay_style` (Linux defaults that to None). So a single default suffices.
+    // `overlay_style` (Linux defaults that to None). So a single default suffices:
+    // the bottom-centre cell.
     OverlayPosition::Bottom
 }
 
 fn default_overlay_style() -> OverlayStyle {
     // Linux hides the overlay by default; other platforms show the live overlay.
-    // Position is independent and only selects top vs. bottom placement.
+    // Position is independent and only selects the grid cell.
     #[cfg(target_os = "linux")]
     return OverlayStyle::None;
     #[cfg(not(target_os = "linux"))]
@@ -2226,6 +2245,177 @@ mod tests {
         assert!(apply_settings_migrations(&mut settings, &raw));
         assert_eq!(settings.overlay_style, OverlayStyle::Live);
         assert_eq!(settings.overlay_position, OverlayPosition::Top);
+    }
+
+    /// Every position with its stored string, in grid order.
+    const POSITION_WIRE_NAMES: [(OverlayPosition, &str); 9] = [
+        (OverlayPosition::TopLeft, "top_left"),
+        (OverlayPosition::Top, "top"),
+        (OverlayPosition::TopRight, "top_right"),
+        (OverlayPosition::CenterLeft, "center_left"),
+        (OverlayPosition::Center, "center"),
+        (OverlayPosition::CenterRight, "center_right"),
+        (OverlayPosition::BottomLeft, "bottom_left"),
+        (OverlayPosition::Bottom, "bottom"),
+        (OverlayPosition::BottomRight, "bottom_right"),
+    ];
+
+    #[test]
+    fn positions_keep_their_wire_names() {
+        for (position, wire) in POSITION_WIRE_NAMES {
+            assert_eq!(
+                serde_json::to_value(position).unwrap(),
+                serde_json::json!(wire)
+            );
+            assert_eq!(
+                serde_json::from_value::<OverlayPosition>(serde_json::json!(wire)).unwrap(),
+                position
+            );
+        }
+        assert_eq!(
+            serde_json::from_value::<OverlayPosition>(serde_json::json!("none")).unwrap(),
+            OverlayPosition::Bottom
+        );
+    }
+
+    #[test]
+    fn parse_overlay_position_accepts_every_cell() {
+        for (position, wire) in POSITION_WIRE_NAMES {
+            assert_eq!(parse_overlay_position(wire), Ok(position), "{wire}");
+        }
+        assert_eq!(parse_overlay_position("none"), Ok(OverlayPosition::Bottom));
+        for unknown in ["middle", ""] {
+            assert_eq!(
+                parse_overlay_position(unknown),
+                Err("Invalid overlay position".to_string()),
+                "{unknown:?}"
+            );
+        }
+    }
+
+    /// Loads a stored value as a start does; returns the settings and every persisted JSON.
+    fn load_recording(stored: serde_json::Value) -> (AppSettings, Vec<serde_json::Value>) {
+        let mut persisted = Vec::new();
+        let settings = load_settings_with(Some(stored), |settings| {
+            persisted.push(serde_json::to_value(settings).unwrap());
+        });
+        (settings, persisted)
+    }
+
+    /// Stores to load, each with the position it loads and the position string it persists.
+    /// The default store without `whats_new_last_seen_version`, so every load persists.
+    fn position_stores() -> Vec<(serde_json::Value, OverlayPosition, &'static str)> {
+        let store = |edit: &dyn Fn(&mut serde_json::Map<String, serde_json::Value>)| {
+            let mut stored = default_settings_json();
+            let map = stored.as_object_mut().unwrap();
+            map.remove("whats_new_last_seen_version");
+            edit(map);
+            stored
+        };
+        let mut stores: Vec<_> = POSITION_WIRE_NAMES
+            .into_iter()
+            .map(|(position, wire)| {
+                let stored = store(&|map| {
+                    map.insert("overlay_position".into(), serde_json::json!(wire));
+                });
+                (stored, position, wire)
+            })
+            .collect();
+        stores.push((
+            store(&|map| {
+                map.insert("overlay_position".into(), serde_json::json!("none"));
+                map.remove("overlay_style");
+            }),
+            OverlayPosition::Bottom,
+            "bottom",
+        ));
+        stores.push((
+            store(&|map| {
+                map.remove("overlay_position");
+            }),
+            OverlayPosition::Bottom,
+            "bottom",
+        ));
+        stores
+    }
+
+    /// An unknown position beside other stored choices; salvage keeps them.
+    fn unknown_position_store() -> serde_json::Value {
+        serde_json::json!({
+            "overlay_position": "middle",
+            "history_limit": 7,
+            "overlay_style": "minimal"
+        })
+    }
+
+    #[test]
+    fn stored_positions_load_unchanged() {
+        for (stored, position, persisted_wire) in position_stores() {
+            let label = stored.get("overlay_position").cloned();
+            serde_json::from_value::<AppSettings>(stored.clone())
+                .unwrap_or_else(|e| panic!("{label:?} needs salvage: {e}"));
+            let legacy_none = label == Some(serde_json::json!("none"));
+
+            let (settings, persisted) = load_recording(stored);
+
+            assert_eq!(settings.overlay_position, position, "{label:?}");
+            let last = persisted
+                .last()
+                .unwrap_or_else(|| panic!("{label:?} did not persist"));
+            assert_eq!(
+                last["overlay_position"],
+                serde_json::json!(persisted_wire),
+                "{label:?} persisted another position"
+            );
+            if legacy_none {
+                assert_eq!(settings.overlay_style, OverlayStyle::None);
+            }
+        }
+    }
+
+    #[test]
+    fn unknown_position_keeps_other_settings() {
+        let stored = unknown_position_store();
+        assert!(serde_json::from_value::<AppSettings>(stored.clone()).is_err());
+
+        let (settings, persisted) = load_recording(stored);
+
+        assert_eq!(settings.overlay_position, OverlayPosition::Bottom);
+        assert_eq!(settings.history_limit, 7);
+        assert_eq!(settings.overlay_style, OverlayStyle::Minimal);
+        let last = persisted.last().expect("salvage persists");
+        assert_eq!(last["overlay_position"], serde_json::json!("bottom"));
+        assert_eq!(last["history_limit"], serde_json::json!(7));
+        assert_eq!(last["overlay_style"], serde_json::json!("minimal"));
+    }
+
+    #[test]
+    fn second_start_writes_nothing() {
+        let stores = position_stores()
+            .into_iter()
+            .map(|(stored, _, _)| stored)
+            .chain([unknown_position_store()]);
+        for stored in stores {
+            let label = stored.get("overlay_position").cloned();
+            let (first, persisted) = load_recording(stored);
+            let file = persisted
+                .last()
+                .unwrap_or_else(|| panic!("{label:?} did not persist"))
+                .clone();
+
+            let (second, persisted_again) = load_recording(file.clone());
+
+            assert!(
+                persisted_again.is_empty(),
+                "{label:?} wrote on a second start"
+            );
+            assert_eq!(serde_json::to_value(&second).unwrap(), file, "{label:?}");
+            assert_eq!(
+                serde_json::to_value(&second).unwrap(),
+                serde_json::to_value(&first).unwrap(),
+                "{label:?}"
+            );
+        }
     }
 
     #[test]

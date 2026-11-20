@@ -80,12 +80,12 @@ console.log(
   "read-aloud actions: empty/busy/edit/epoch/close assertions passed",
 );
 
-for (const [state, playCount, stopCount] of [
-  ["starting", 0, 1],
-  ["paused", 1, 1],
-  ["error", 1, 1],
-  ["playing", 1, 1],
-  ["waiting", 1, 0],
+for (const [state, playCount] of [
+  ["starting", 0],
+  ["paused", 1],
+  ["error", 1],
+  ["playing", 1],
+  ["waiting", 1],
 ] as const) {
   let plays = 0;
   let stops = 0;
@@ -108,12 +108,12 @@ for (const [state, playCount, stopCount] of [
     },
   );
   await guarded.play();
-  await guarded.stop();
+  await guarded.edit("typed");
   assert.equal(plays, playCount, `${state} play dependency count`);
-  assert.equal(stops, stopCount, `${state} stop dependency count`);
+  assert.equal(stops, 1, `${state}: the editor stops the read once per edit`);
+  assert.equal("stop" in guarded, false, `${state}: no popup stop action`);
 }
 let emptyPlays = 0;
-let idleStops = 0;
 const empty = createPopupActions(
   () => ({ ...snapshot, text: "", state: "waiting" }),
   () => {},
@@ -122,9 +122,7 @@ const empty = createPopupActions(
       emptyPlays++;
     },
     pause: async () => {},
-    stop: async () => {
-      idleStops++;
-    },
+    stop: async () => {},
     replaceText: async () => {},
     close: async () => {},
     readClipboard: async () => {},
@@ -132,9 +130,7 @@ const empty = createPopupActions(
   },
 );
 await empty.play();
-await empty.stop();
 assert.equal(emptyPlays, 0, "empty play dependency count");
-assert.equal(idleStops, 0, "idle stop dependency count");
 console.log("popup per-state play/stop dependency counts passed");
 
 const { routePopupKey } = await import("./actions");
@@ -240,7 +236,7 @@ assert.deepEqual(
   );
 }
 
-for (const interrupt of ["edit", "stop", "close"] as const) {
+for (const interrupt of ["edit", "toggle", "close"] as const) {
   const trace: string[] = [];
   const settle: (() => void)[] = [];
   const view: PopupSnapshot = {
@@ -277,8 +273,8 @@ for (const interrupt of ["edit", "stop", "close"] as const) {
   const second =
     interrupt === "edit"
       ? queued.edit("B")
-      : interrupt === "stop"
-        ? queued.stop()
+      : interrupt === "toggle"
+        ? queued.toggle()
         : queued.close();
   for (let i = 0; i < 20; i++) {
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -298,7 +294,7 @@ for (const interrupt of ["edit", "stop", "close"] as const) {
     );
 }
 console.log(
-  "popup Read clipboard: queued action cancelled by edit, Stop and Close",
+  "popup Read clipboard: queued action cancelled by edit, Play or Pause and Close",
 );
 
 {
@@ -352,4 +348,108 @@ console.log(
     "unnamed_failure_is_generic",
   );
   console.log("popup errors: named refusal keys and generic fallback passed");
+}
+
+{
+  // stop_failure_in_an_edit_keeps_its_reason
+  const view: PopupSnapshot = {
+    ...snapshot,
+    text: "read this",
+    state: "playing",
+  };
+  const trace: string[] = [];
+  const stops: ((reason?: unknown) => void)[] = [];
+  const editor = () =>
+    createPopupActions(
+      () => view,
+      () => {},
+      {
+        play: async () => {},
+        pause: async () => {},
+        stop: () =>
+          new Promise<void>((resolve, reject) => {
+            stops.push((reason) =>
+              reason === undefined ? resolve() : reject(reason),
+            );
+          }),
+        replaceText: async (text) => {
+          trace.push(`replace:${text}`);
+        },
+        close: async () => {},
+        readClipboard: async () => {},
+        error: (key) => {
+          trace.push(`error:${key}`);
+        },
+      },
+    );
+  const settle = async () => {
+    for (let i = 0; i < 10; i++)
+      await new Promise((resolve) => setTimeout(resolve, 0));
+  };
+
+  const live = editor();
+  const liveEdit = live.edit("typed");
+  stops.shift()?.(new Error("tts.errors.busy"));
+  await liveEdit;
+  assert.deepEqual(
+    trace,
+    ["error:tts.errors.busy"],
+    "stop_failure_in_an_edit_keeps_its_reason: the named reason reaches error once, nothing is replaced",
+  );
+
+  trace.length = 0;
+  const unnamed = editor();
+  const unnamedEdit = unnamed.edit("typed");
+  stops.shift()?.(new Error("worker crashed"));
+  await unnamedEdit;
+  assert.deepEqual(
+    trace,
+    ["error:tts.errors.generic"],
+    "stop_failure_in_an_edit_keeps_its_reason: an unnamed stop failure stays generic",
+  );
+
+  trace.length = 0;
+  const closing = editor();
+  const closedEdit = closing.edit("typed");
+  await closing.close();
+  stops.shift()?.(new Error("tts.errors.busy"));
+  await closedEdit;
+  await settle();
+  assert.deepEqual(
+    trace,
+    [],
+    "stop_failure_in_an_edit_keeps_its_reason: no error after close()",
+  );
+
+  const reopened = editor();
+  const first = reopened.edit("first");
+  reopened.reopen({ ...view, epoch: view.epoch + 1 });
+  const second = reopened.edit("second");
+  stops.shift()?.(new Error("tts.errors.busy"));
+  stops.shift()?.(new Error("tts.errors.audio"));
+  await Promise.all([first, second]);
+  await settle();
+  assert.deepEqual(
+    trace,
+    ["error:tts.errors.audio"],
+    "stop_failure_in_an_edit_keeps_its_reason: after reopen() only the second edit's failure applies",
+  );
+
+  trace.length = 0;
+  const replaced = editor();
+  const older = replaced.edit("older");
+  replaced.reopen({ ...view, epoch: view.epoch + 2 });
+  const newer = replaced.edit("newer");
+  stops.shift()?.(new Error("tts.errors.busy"));
+  stops.shift()?.();
+  await Promise.all([older, newer]);
+  await settle();
+  assert.deepEqual(
+    trace,
+    ["replace:newer"],
+    "stop_failure_in_an_edit_keeps_its_reason: after reopen() a stale failure never reports and the new edit lands",
+  );
+  console.log(
+    "popup edit: stop failure keeps its reason, never after close or reopen passed",
+  );
 }

@@ -14,7 +14,9 @@ export function jobModelState(downloaded: number | null): JobModelState {
 }
 
 export interface JobModelGroupProps {
-  role: "dictation" | "readAloud";
+  role: "dictation" | "readAloud" | "cleanup";
+  /** The group heading; the model group's own by default. */
+  title?: string;
   state: JobModelState;
   manage: () => void;
   select: React.ReactNode;
@@ -23,13 +25,14 @@ export interface JobModelGroupProps {
 
 export function JobModelGroup({
   role,
+  title: heading,
   state,
   manage,
   select,
   children,
 }: JobModelGroupProps): React.JSX.Element {
   const { t } = useTranslation();
-  const title = t("settings.groups.model");
+  const title = heading ?? t("settings.groups.model");
   if (state === "empty") {
     return (
       <div className="space-y-2">
@@ -51,7 +54,11 @@ export function JobModelGroup({
     <SettingsGroup title={title}>
       {state === "failed" ? (
         <div role="alert">
-          <Alert>{t("tts.errors.generic")}</Alert>
+          <Alert>
+            {role === "cleanup"
+              ? t("settings.jobModel.failed.cleanup")
+              : t("tts.errors.generic")}
+          </Alert>
         </div>
       ) : state === "loading" ? (
         <p role="status" className="px-4 py-3 text-sm text-ink-2">

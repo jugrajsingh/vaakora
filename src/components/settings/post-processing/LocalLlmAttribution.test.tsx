@@ -26,6 +26,7 @@ const s1: LocalLlmModelInfo = {
   license_note: "settings.postProcessing.localLlm.licenseNotes.s1Name",
   size_bytes: 484219808,
   prompt_style: "s1_control_line",
+  source: null,
 };
 const render = (model: LocalLlmModelInfo) =>
   renderToStaticMarkup(<LocalLlmAttribution model={model} />);

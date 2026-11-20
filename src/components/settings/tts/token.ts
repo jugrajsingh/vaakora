@@ -17,18 +17,18 @@ export function createTokenPresence() {
 }
 export const tokenPresence = createTokenPresence();
 export interface TokenEntryState {
-  expanded: boolean;
   visible: boolean;
   draft: string;
   pending: boolean;
   error: string | null;
 }
+export type TokenActions = ReturnType<typeof tokenEntry>;
+
 export function tokenEntry(
   presence: ReturnType<typeof createTokenPresence>,
   persist: (value: string) => Promise<boolean>,
 ) {
   let state: TokenEntryState = {
-    expanded: false,
     visible: false,
     draft: "",
     pending: false,
@@ -39,16 +39,22 @@ export function tokenEntry(
     state = { ...state, ...patch };
     listeners.forEach((listener) => listener());
   };
-  const hide = () => update({ draft: "", expanded: false, visible: false });
+  /** Bumped by every `hide`; a save that started before it no longer owns the entry. */
+  let generation = 0;
+  const hide = () => {
+    generation += 1;
+    update({ draft: "", visible: false, error: null });
+  };
   const save = async (value: string) => {
     if (state.pending) return false;
+    const started = generation;
     update({ pending: true, error: null });
     try {
       presence.set(await persist(value));
-      hide();
+      if (started === generation) hide();
       return true;
     } catch {
-      update({ error: "tts.errors.generic" });
+      if (started === generation) update({ error: "tts.errors.generic" });
       return false;
     } finally {
       update({ pending: false });
@@ -61,11 +67,6 @@ export function tokenEntry(
       return () => {
         listeners.delete(listener);
       };
-    },
-    toggle: () => {
-      if (state.pending) return;
-      if (state.expanded) hide();
-      else update({ expanded: true, error: null });
     },
     edit: (draft: string) => update({ draft }),
     show: () => update({ visible: !state.visible }),

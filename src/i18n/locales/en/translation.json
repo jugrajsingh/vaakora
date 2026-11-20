@@ -385,11 +385,16 @@
       "loading": "Loading models",
       "empty": {
         "dictation": "No dictation model yet.",
-        "readAloud": "No read-aloud model yet."
+        "readAloud": "No read-aloud model yet.",
+        "cleanup": "No cleanup model yet."
       },
       "help": {
         "dictation": "Choose a downloaded dictation model.",
-        "readAloud": "Choose a downloaded read-aloud model."
+        "readAloud": "Choose a downloaded read-aloud model.",
+        "cleanup": "The local model that cleans up dictations."
+      },
+      "failed": {
+        "cleanup": "The models could not be listed."
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "Cancel",
       "readAloud": "Read aloud",
       "activation": "Activation",
-      "activationHelp": "For dictation shortcuts"
+      "activationHelp": "For dictation shortcuts",
+      "cancelLinuxHelp": "On Linux the cancel shortcut does not stop a dictation, because shortcuts registered during a dictation are unreliable there. Use the X on the overlay, Cancel in the tray menu, or run handy --cancel."
     },
     "modelSettings": {
       "title": "{{model}} Settings"
@@ -776,14 +782,6 @@
         "noCleanupModel": "No post-processing model",
         "s1Description": "Uses styling, structure and context controls.",
         "plainDescription": "Uses your selected Handy prompt.",
-        "size": "{{size}} MiB",
-        "downloaded": "Downloaded",
-        "use": "Use",
-        "download": "Download",
-        "downloading": "Downloading {{percent}}%",
-        "delete": "Delete",
-        "deleteConfirm": "Delete {{name}}? It frees {{size}}.",
-        "deleteConfirmAction": "Delete model",
         "status": {
           "title": "Status",
           "description": "The model loads when a post-processing dictation starts and unloads after the model unload timeout.",
@@ -1141,10 +1139,10 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
+    "readAloudBusyPastingTitle": "Read aloud is busy pasting",
     "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
-    "readAloudClipboardUnreadableTitle": "Clipboard Not Readable",
+    "readAloudUnavailableTitle": "Read aloud unavailable",
+    "readAloudClipboardUnreadableTitle": "Clipboard not readable",
     "readAloudClipboardUnreadable": "The clipboard text could not be read.",
     "loadDirectory": "Error loading directory: {{error}}",
     "micPermissionDeniedTitle": "Microphone Access Denied",
@@ -1197,11 +1195,32 @@
       "dark": "Dark"
     }
   },
+  "floating": {
+    "position": {
+      "help": "Where the overlay and the read-aloud window appear on the screen. A top position keeps the bottom of the screen clear, useful when you dictate into a terminal.",
+      "cells": {
+        "top_left": "Top left",
+        "top": "Top centre",
+        "top_right": "Top right",
+        "center_left": "Centre left",
+        "center": "Centre",
+        "center_right": "Centre right",
+        "bottom_left": "Bottom left",
+        "bottom": "Bottom centre",
+        "bottom_right": "Bottom right"
+      }
+    },
+    "style": {
+      "help": "None: no floating window. Errors still appear in the tray and the main window. Minimal: a small pill while you dictate. Live: also shows the words as you speak, with models that support it. On Linux, None is recommended."
+    }
+  },
   "overlay": {
     "transcribing": "Transcribing",
     "processing": "Cleaning up",
     "loadingModel": "Loading model",
-    "cancel": "Cancel dictation"
+    "cancel": "Cancel dictation",
+    "starting": "Starting microphone",
+    "recording": "Recording"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} may be blocking 1 shortcut",
@@ -1215,12 +1234,6 @@
     "dismiss": "Dismiss"
   },
   "tts": {
-    "ratings": {
-      "quality": "Quality",
-      "speed": "Speed",
-      "recommended": "Recommended",
-      "tooltip": "First audio {{firstAudio}} s, {{faster}}x faster than real time, loads in {{load}} s"
-    },
     "devices": {
       "auto": "Auto",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "Preparing for {{device}}: {{graph}}",
     "buffering": "Buffering",
     "title": "Read aloud",
+    "modelVoice": "{{model}}, {{voice}}",
     "textLabel": "Text to read",
     "placeholder": "Paste text to read",
     "play": "Play",
     "pause": "Pause",
-    "stop": "Stop",
     "close": "Close",
     "readClipboard": "Read clipboard",
     "editText": "Edit text",
     "progress": "Progress",
-    "time": "{{elapsed}} s elapsed, {{remaining}} s remaining",
-    "openModels": "Text-to-speech Models",
+    "timeAbout": "{{elapsed}} / about {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Enter",
+      "close": "Esc"
+    },
+    "chooseModel": "Choose a model",
+    "failedLine": "Read aloud failed. {{reason}}",
     "outputFallback": "Using the default output device",
     "states": {
       "waiting": "Waiting",
@@ -1293,25 +1311,10 @@
       "playing": "Playing",
       "paused": "Paused",
       "finished": "Finished",
-      "error": "Error"
+      "error": "Failed"
     },
-    "modelsSubtitle": "Choose a voice model. Speed figures were measured on the developer's computer; yours may differ.",
-    "downloaded": "Downloaded",
-    "availableToDownload": "Available to download",
-    "recommended": "Recommended",
-    "downloading": "Downloading",
     "needsToken": "Needs a Hugging Face token",
     "tokenSet": "Token set",
-    "active": "Active",
-    "use": "Use",
-    "download": "Download",
-    "delete": "Delete",
-    "deleteConfirm": "Delete {{name}}? It frees {{size}}. Your vocabulary and history are kept.",
-    "deleteConfirmSelected": "Read aloud stops working until you choose another model.",
-    "deleteConfirmAction": "Delete model",
-    "cancel": "Cancel",
-    "token": "Hugging Face token",
-    "tokenHelp": "Only needed for Pocket gated voices after accepting the voice terms on Hugging Face. The token stays in memory and is cleared when Handy restarts.",
     "clearToken": "Clear token",
     "showToken": "Show token",
     "hideToken": "Hide token",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "Small Hindi voices, female and male. English words are spelled letter by letter.",
       "indic-tiny-pa": "Small Punjabi (Gurmukhi) voices, female and male. English words are spelled letter by letter."
     },
-    "voiceCount": "{{count}} voices",
-    "downloadProgress": "Model download progress",
     "speedLabel": "Speed",
     "pitchLabel": "Pitch",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "Original transcript",
     "diffNote": "Showing differences from the original transcript.",
     "noCleanup": "No cleanup"
+  },
+  "models": {
+    "tags": {
+      "recommended": "Recommended",
+      "live": "Live",
+      "translates": "Translates",
+      "custom": "Custom",
+      "oldFormat": "Old format",
+      "needsToken": "Needs token",
+      "nativeWords": "Native word list"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "Not measured",
+      "licence": "Licence not listed",
+      "languages": "Not listed",
+      "notListed": "Not listed"
+    },
+    "measured": {
+      "maker": "Maker's figure ({{machine}}, {{backend}}), not this machine",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}, set in Settings, Advanced",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "Native word list",
+      "corrected": "Corrected after recognition",
+      "unknown": "Known once the model has loaded"
+    },
+    "speedFigure": {
+      "dictation": "{{value}} s for 30 seconds of speech"
+    },
+    "search": "Search models",
+    "noMatch": "Nothing matches \"{{query}}\".",
+    "noFilterMatch": "No model matches these filters.",
+    "clearFilters": "Clear filters",
+    "selected": "Selected",
+    "runtime": {
+      "notLoaded": "Not loaded",
+      "loading": "Loading",
+      "ready": "Ready",
+      "failed": "Failed"
+    },
+    "downloading": "Downloading {{percent}}% of {{size}}",
+    "row": {
+      "open": "Show details",
+      "close": "Hide details"
+    },
+    "detail": {
+      "languages": "Languages",
+      "runOn": "Run on",
+      "memory": "Memory",
+      "measuredOn": "Measured on",
+      "voices": "Voices",
+      "licence": "Licence",
+      "modelCard": "Model card",
+      "source": "Source",
+      "revision": "{{repository}} · revision {{revision}}",
+      "customWords": "Custom words"
+    },
+    "delete": {
+      "action": "Delete model",
+      "ask": "Delete {{name}}? It frees {{size}}.",
+      "askUnknownSize": "Delete {{name}}?",
+      "selected": {
+        "dictation": "Dictation stops working until you choose another model.",
+        "readAloud": "Read aloud stops working until you choose another model.",
+        "cleanup": "Cleanup stops working until you choose another model."
+      },
+      "kept": {
+        "dictation": "Your history is kept.",
+        "readAloud": "Your vocabulary and history are kept.",
+        "cleanup": "Your prompts and history are kept."
+      }
+    },
+    "heads": {
+      "score": "Score",
+      "speed": "Speed",
+      "size": "Size"
+    },
+    "legend": {
+      "open": "What the columns mean",
+      "score": {
+        "readAloud": "Listening quality out of 10.",
+        "cleanup": "Cleanup models have no score yet."
+      },
+      "speed": {
+        "readAloud": "Speed score out of 10 on the device the model runs on.",
+        "cleanup": "Cleanup models have no measured speed yet."
+      },
+      "range": "{{low}} to {{high}}",
+      "unmeasured": "? has not been measured.",
+      "measuredOn": "Measured on {{machine}}.",
+      "speedNote": {
+        "accelerated": "How long 30 seconds of speech takes to type out on our test laptop’s graphics chip. Not measured on this computer.",
+        "cpu": "How long 30 seconds of speech takes to type out on our test laptop’s processor. Not measured on this computer."
+      }
+    },
+    "cell": {
+      "value": "{{head}}: {{figure}}",
+      "measured": "{{head}}: {{figure}}, measured on {{provenance}}",
+      "unmeasured": "{{head}}: not measured"
+    },
+    "mark": {
+      "select": "Select {{name}}",
+      "download": "Download {{name}}",
+      "cancel": "Stop downloading {{name}}",
+      "needsToken": "Needs a Hugging Face token. Add it in the details."
+    },
+    "remove": "Delete {{name}}",
+    "chips": {
+      "accelerated": "GPU or NPU"
+    },
+    "busy": "Wait for the current download or delete to finish.",
+    "listen": "Listen to {{voice}}",
+    "voiceCount_one": "{{count}} voice",
+    "voiceCount": "{{count}} voices",
+    "sections": {
+      "available": "Available"
+    },
+    "token": {
+      "label": "Hugging Face token",
+      "help": "Accept the voice terms on Hugging Face first. The token is kept in memory until Handy restarts."
+    }
   }
 }

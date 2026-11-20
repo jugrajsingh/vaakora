@@ -385,11 +385,16 @@
       "loading": "Načítání modelů",
       "empty": {
         "dictation": "Zatím žádný model pro diktování.",
-        "readAloud": "Zatím žádný model pro čtení nahlas."
+        "readAloud": "Zatím žádný model pro čtení nahlas.",
+        "cleanup": "Zatím žádný model pro úpravu textu."
       },
       "help": {
         "dictation": "Vyberte stažený model pro diktování.",
-        "readAloud": "Vyberte stažený model pro čtení nahlas."
+        "readAloud": "Vyberte stažený model pro čtení nahlas.",
+        "cleanup": "Místní model, který upravuje diktáty."
+      },
+      "failed": {
+        "cleanup": "Seznam modelů se nepodařilo načíst."
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "Zrušit",
       "readAloud": "Čtení nahlas",
       "activation": "Aktivace",
-      "activationHelp": "Pro zkratky diktování"
+      "activationHelp": "Pro zkratky diktování",
+      "cancelLinuxHelp": "Na Linuxu zkratka pro zrušení diktování nezastaví, protože zkratky registrované během diktování tam nejsou spolehlivé. Použijte X na překryvu, Zrušit v nabídce oznamovací oblasti nebo spusťte handy --cancel."
     },
     "modelSettings": {
       "title": "Nastavení {{model}}"
@@ -776,14 +782,6 @@
         "noCleanupModel": "Žádný model následného zpracování",
         "s1Description": "Používá ovládání stylu, struktury a kontextu.",
         "plainDescription": "Používá vybraný prompt Handy.",
-        "size": "{{size}} MiB",
-        "downloaded": "Staženo",
-        "use": "Použít",
-        "download": "Stáhnout",
-        "downloading": "Stahování {{percent}}%",
-        "delete": "Smazat",
-        "deleteConfirm": "Smazat {{name}}? Uvolní {{size}}.",
-        "deleteConfirmAction": "Smazat model",
         "status": {
           "title": "Stav",
           "description": "Model se načte při spuštění diktování s následným zpracováním a uvolní se po uplynutí časového limitu uvolnění modelu.",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "Čtení nahlas čeká na dokončení vkládání",
+    "readAloudBusyPasting": "Handy stále vkládá text. Zkuste čtení nahlas znovu po dokončení vkládání.",
+    "readAloudUnavailableTitle": "Čtení nahlas není k dispozici",
     "readAloudClipboardUnreadableTitle": "Schránku nelze přečíst",
     "readAloudClipboardUnreadable": "Text ze schránky se nepodařilo přečíst.",
     "loadDirectory": "Chyba při načítání adresáře: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "Tmavý"
     }
   },
+  "floating": {
+    "position": {
+      "help": "Kde se na obrazovce zobrazí překryv a okno čtení nahlas. Poloha nahoře ponechává spodek obrazovky volný, což se hodí při diktování do terminálu.",
+      "cells": {
+        "top_left": "Vlevo nahoře",
+        "top": "Nahoře uprostřed",
+        "top_right": "Vpravo nahoře",
+        "center_left": "Vlevo uprostřed",
+        "center": "Uprostřed",
+        "center_right": "Vpravo uprostřed",
+        "bottom_left": "Vlevo dole",
+        "bottom": "Dole uprostřed",
+        "bottom_right": "Vpravo dole"
+      }
+    },
+    "style": {
+      "help": "Žádné: žádné plovoucí okno. Chyby se stále zobrazují v oznamovací oblasti a v hlavním okně. Minimální: malá kapsle během diktování. Živě: zobrazuje i slova, jak mluvíte, u modelů, které to podporují. Na Linuxu se doporučuje „Žádné“."
+    }
+  },
   "overlay": {
     "transcribing": "Přepisuji",
     "processing": "Čištění textu",
     "loadingModel": "Načítání modelu",
-    "cancel": "Zrušit diktování"
+    "cancel": "Zrušit diktování",
+    "starting": "Spouštění mikrofonu",
+    "recording": "Nahrávání"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} může blokovat 1 zkratku",
@@ -1215,12 +1234,6 @@
     "dismiss": "Zavřít"
   },
   "tts": {
-    "ratings": {
-      "quality": "Kvalita",
-      "speed": "Rychlost",
-      "recommended": "Doporučeno",
-      "tooltip": "První zvuk za {{firstAudio}} s, {{faster}}x rychleji než v reálném čase, načtení za {{load}} s"
-    },
     "devices": {
       "auto": "Automaticky",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "Příprava pro {{device}}: {{graph}}",
     "buffering": "Ukládání do vyrovnávací paměti",
     "title": "Čtení nahlas",
+    "modelVoice": "{{model}}, {{voice}}",
     "textLabel": "Text ke čtení",
     "placeholder": "Vložte text ke čtení",
     "play": "Přehrát",
     "pause": "Pozastavit",
-    "stop": "Zastavit",
     "close": "Zavřít",
     "readClipboard": "Přečíst schránku",
     "editText": "Upravit text",
     "progress": "Průběh",
-    "time": "Uplynulo {{elapsed}} s, zbývá {{remaining}} s",
-    "openModels": "Modely převodu textu na řeč",
+    "timeAbout": "{{elapsed}} / asi {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Enter",
+      "close": "Esc"
+    },
+    "chooseModel": "Vyberte model",
+    "failedLine": "Čtení nahlas selhalo. {{reason}}",
     "outputFallback": "Používá se výchozí výstupní zařízení",
     "states": {
       "waiting": "Čeká se",
@@ -1293,25 +1311,10 @@
       "playing": "Přehrává se",
       "paused": "Pozastaveno",
       "finished": "Dokončeno",
-      "error": "Chyba"
+      "error": "Selhalo"
     },
-    "modelsSubtitle": "Vyberte hlasový model. Údaje o rychlosti byly změřeny na počítači vývojáře; u vás se mohou lišit.",
-    "downloaded": "Staženo",
-    "availableToDownload": "K dispozici ke stažení",
-    "recommended": "Doporučeno",
-    "downloading": "Stahování",
     "needsToken": "Vyžaduje token Hugging Face",
     "tokenSet": "Token nastaven",
-    "active": "Aktivní",
-    "use": "Použít",
-    "download": "Stáhnout",
-    "delete": "Smazat",
-    "deleteConfirm": "Smazat {{name}}? Uvolní {{size}}. Slovník a historie zůstanou zachovány.",
-    "deleteConfirmSelected": "Čtení nahlas přestane fungovat, dokud nevyberete jiný model.",
-    "deleteConfirmAction": "Smazat model",
-    "cancel": "Zrušit",
-    "token": "Token Hugging Face",
-    "tokenHelp": "Potřeba pouze pro uzamčené hlasy Pocket po přijetí podmínek hlasů na Hugging Face. Token zůstává v paměti a po restartu Handy se vymaže.",
     "clearToken": "Vymazat token",
     "showToken": "Zobrazit token",
     "hideToken": "Skrýt token",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "Malé hlasy v hindštině, ženský a mužský. Anglická slova se čtou písmeno po písmenu.",
       "indic-tiny-pa": "Malé hlasy v paňdžábštině (gurmukhí), ženský a mužský. Anglická slova se čtou písmeno po písmenu."
     },
-    "voiceCount": "Počet hlasů: {{count}}",
-    "downloadProgress": "Průběh stahování modelu",
     "speedLabel": "Rychlost",
     "pitchLabel": "Výška tónu",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "Původní přepis",
     "diffNote": "Zobrazeny rozdíly oproti původnímu přepisu.",
     "noCleanup": "Bez úpravy"
+  },
+  "models": {
+    "tags": {
+      "recommended": "Doporučeno",
+      "live": "Živě",
+      "translates": "Překládá",
+      "custom": "Vlastní",
+      "oldFormat": "Starý formát",
+      "needsToken": "Vyžaduje token",
+      "nativeWords": "Nativní seznam slov"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "Neměřeno",
+      "licence": "Licence neuvedena",
+      "languages": "Neuvedeno",
+      "notListed": "Neuvedeno"
+    },
+    "measured": {
+      "maker": "Údaj výrobce ({{machine}}, {{backend}}), ne tohoto počítače",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}, nastavuje se v Nastavení, Upřesnit",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "Nativní seznam slov",
+      "corrected": "Opraveno po rozpoznání",
+      "unknown": "Známo po načtení modelu"
+    },
+    "speedFigure": {
+      "dictation": "{{value}} s na 30 sekund řeči"
+    },
+    "search": "Hledat modely",
+    "noMatch": "Nic neodpovídá „{{query}}“.",
+    "noFilterMatch": "Těmto filtrům neodpovídá žádný model.",
+    "clearFilters": "Zrušit filtry",
+    "selected": "Vybráno",
+    "runtime": {
+      "notLoaded": "Nenačten",
+      "loading": "Načítá se",
+      "ready": "Připraven",
+      "failed": "Selhalo"
+    },
+    "downloading": "Stahování {{percent}} % z {{size}}",
+    "row": {
+      "open": "Zobrazit podrobnosti",
+      "close": "Skrýt podrobnosti"
+    },
+    "detail": {
+      "languages": "Jazyky",
+      "runOn": "Spustit na",
+      "memory": "Paměť",
+      "measuredOn": "Změřeno na",
+      "voices": "Hlasy",
+      "licence": "Licence",
+      "modelCard": "Karta modelu",
+      "source": "Zdroj",
+      "revision": "{{repository}} · revize {{revision}}",
+      "customWords": "Vlastní slova"
+    },
+    "delete": {
+      "action": "Smazat model",
+      "ask": "Smazat {{name}}? Uvolní se {{size}}.",
+      "askUnknownSize": "Smazat {{name}}?",
+      "selected": {
+        "dictation": "Diktování nebude fungovat, dokud nevyberete jiný model.",
+        "readAloud": "Čtení nahlas nebude fungovat, dokud nevyberete jiný model.",
+        "cleanup": "Úprava textu nebude fungovat, dokud nevyberete jiný model."
+      },
+      "kept": {
+        "dictation": "Vaše historie zůstane zachována.",
+        "readAloud": "Váš slovník a historie zůstanou zachovány.",
+        "cleanup": "Vaše pokyny a historie zůstanou zachovány."
+      }
+    },
+    "heads": {
+      "score": "Skóre",
+      "speed": "Rychlost",
+      "size": "Velikost"
+    },
+    "legend": {
+      "open": "Co znamenají sloupce",
+      "score": {
+        "readAloud": "Kvalita poslechu z 10.",
+        "cleanup": "Modely úprav zatím nemají skóre."
+      },
+      "speed": {
+        "readAloud": "Skóre rychlosti z 10 na zařízení, na kterém model běží.",
+        "cleanup": "Modely úprav zatím nemají změřenou rychlost."
+      },
+      "range": "{{low}} až {{high}}",
+      "unmeasured": "? nebylo změřeno.",
+      "measuredOn": "Změřeno na {{machine}}.",
+      "speedNote": {
+        "accelerated": "Jak dlouho trvá napsat 30 sekund řeči na grafickém čipu našeho testovacího notebooku. Na tomto počítači neměřeno.",
+        "cpu": "Jak dlouho trvá napsat 30 sekund řeči na procesoru našeho testovacího notebooku. Na tomto počítači neměřeno."
+      }
+    },
+    "cell": {
+      "value": "{{head}}: {{figure}}",
+      "measured": "{{head}}: {{figure}}, změřeno na {{provenance}}",
+      "unmeasured": "{{head}}: neměřeno"
+    },
+    "mark": {
+      "select": "Vybrat {{name}}",
+      "download": "Stáhnout {{name}}",
+      "cancel": "Zastavit stahování {{name}}",
+      "needsToken": "Vyžaduje token Hugging Face. Přidejte ho v podrobnostech."
+    },
+    "remove": "Smazat {{name}}",
+    "chips": {
+      "accelerated": "GPU nebo NPU"
+    },
+    "busy": "Počkejte, až skončí probíhající stahování nebo mazání.",
+    "listen": "Poslechnout {{voice}}",
+    "voiceCount_one": "{{count}} hlas",
+    "voiceCount": "Počet hlasů: {{count}}",
+    "sections": {
+      "available": "K dispozici"
+    },
+    "token": {
+      "label": "Token Hugging Face",
+      "help": "Nejprve přijměte podmínky hlasu na Hugging Face. Token se uchovává v paměti, dokud se Handy nerestartuje."
+    }
   }
 }

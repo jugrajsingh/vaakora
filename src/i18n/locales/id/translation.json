@@ -385,11 +385,16 @@
       "loading": "Memuat model",
       "empty": {
         "dictation": "Belum ada model dikte.",
-        "readAloud": "Belum ada model baca nyaring."
+        "readAloud": "Belum ada model baca nyaring.",
+        "cleanup": "Belum ada model pembersihan."
       },
       "help": {
         "dictation": "Pilih model dikte yang sudah diunduh.",
-        "readAloud": "Pilih model baca nyaring yang sudah diunduh."
+        "readAloud": "Pilih model baca nyaring yang sudah diunduh.",
+        "cleanup": "Model lokal yang membersihkan hasil dikte."
+      },
+      "failed": {
+        "cleanup": "Daftar model tidak dapat ditampilkan."
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "Batal",
       "readAloud": "Baca nyaring",
       "activation": "Aktivasi",
-      "activationHelp": "Untuk pintasan dikte"
+      "activationHelp": "Untuk pintasan dikte",
+      "cancelLinuxHelp": "Di Linux, pintasan batal tidak menghentikan dikte, karena pintasan yang didaftarkan selama dikte tidak andal di sana. Gunakan X pada overlay, Batalkan di menu baki, atau jalankan handy --cancel."
     },
     "modelSettings": {
       "title": "Pengaturan {{model}}"
@@ -776,14 +782,6 @@
         "noCleanupModel": "Tidak ada model pascaproses",
         "s1Description": "Menggunakan kontrol gaya, struktur, dan konteks.",
         "plainDescription": "Menggunakan prompt Handy yang Anda pilih.",
-        "size": "{{size}} MiB",
-        "downloaded": "Terunduh",
-        "use": "Gunakan",
-        "download": "Unduh",
-        "downloading": "Mengunduh {{percent}}%",
-        "delete": "Hapus",
-        "deleteConfirm": "Hapus {{name}}? Ini mengosongkan {{size}}.",
-        "deleteConfirmAction": "Hapus model",
         "status": {
           "title": "Status",
           "description": "Model dimuat saat dikte dengan pascaproses dimulai dan dikeluarkan dari memori setelah batas waktu pengeluaran model.",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "Baca nyaring sedang sibuk menempel",
+    "readAloudBusyPasting": "Handy masih menempel. Coba Baca nyaring lagi setelah penempelan selesai.",
+    "readAloudUnavailableTitle": "Baca nyaring tidak tersedia",
     "readAloudClipboardUnreadableTitle": "Papan Klip Tidak Dapat Dibaca",
     "readAloudClipboardUnreadable": "Teks papan klip tidak dapat dibaca.",
     "loadDirectory": "Kesalahan saat memuat direktori: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "Gelap"
     }
   },
+  "floating": {
+    "position": {
+      "help": "Tempat overlay dan jendela baca nyaring muncul di layar. Posisi atas menjaga bagian bawah layar tetap kosong, berguna saat Anda mendikte ke terminal.",
+      "cells": {
+        "top_left": "Kiri atas",
+        "top": "Tengah atas",
+        "top_right": "Kanan atas",
+        "center_left": "Kiri tengah",
+        "center": "Tengah",
+        "center_right": "Kanan tengah",
+        "bottom_left": "Kiri bawah",
+        "bottom": "Tengah bawah",
+        "bottom_right": "Kanan bawah"
+      }
+    },
+    "style": {
+      "help": "Tidak Ada: tidak ada jendela mengambang. Kesalahan tetap muncul di baki sistem dan jendela utama. Minimal: kapsul kecil saat Anda mendikte. Waktu Nyata: juga menampilkan kata-kata saat Anda berbicara, dengan model yang mendukungnya. Di Linux, Tidak Ada direkomendasikan."
+    }
+  },
   "overlay": {
     "transcribing": "Mentranskripsikan",
     "processing": "Merapikan",
     "loadingModel": "Memuat model",
-    "cancel": "Batalkan dikte"
+    "cancel": "Batalkan dikte",
+    "starting": "Memulai mikrofon",
+    "recording": "Merekam"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} mungkin memblokir 1 pintasan",
@@ -1215,12 +1234,6 @@
     "dismiss": "Tutup"
   },
   "tts": {
-    "ratings": {
-      "quality": "Kualitas",
-      "speed": "Kecepatan",
-      "recommended": "Disarankan",
-      "tooltip": "Audio pertama {{firstAudio}} dtk, {{faster}}x lebih cepat dari waktu nyata, dimuat dalam {{load}} dtk"
-    },
     "devices": {
       "auto": "Otomatis",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "Menyiapkan untuk {{device}}: {{graph}}",
     "buffering": "Buffering",
     "title": "Baca nyaring",
+    "modelVoice": "{{model}}, {{voice}}",
     "textLabel": "Teks yang dibaca",
     "placeholder": "Tempel teks untuk dibaca",
     "play": "Putar",
     "pause": "Jeda",
-    "stop": "Berhenti",
     "close": "Tutup",
     "readClipboard": "Baca papan klip",
     "editText": "Edit teks",
     "progress": "Kemajuan",
-    "time": "{{elapsed}} dtk berlalu, {{remaining}} dtk tersisa",
-    "openModels": "Model Teks ke Ucapan",
+    "timeAbout": "{{elapsed}} / sekitar {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Enter",
+      "close": "Esc"
+    },
+    "chooseModel": "Pilih model",
+    "failedLine": "Baca nyaring gagal. {{reason}}",
     "outputFallback": "Menggunakan perangkat keluaran bawaan",
     "states": {
       "waiting": "Menunggu",
@@ -1293,25 +1311,10 @@
       "playing": "Memutar",
       "paused": "Dijeda",
       "finished": "Selesai",
-      "error": "Kesalahan"
+      "error": "Gagal"
     },
-    "modelsSubtitle": "Pilih model suara. Angka kecepatan diukur di komputer pengembang; hasil di komputer Anda mungkin berbeda.",
-    "downloaded": "Terunduh",
-    "availableToDownload": "Tersedia untuk diunduh",
-    "recommended": "Disarankan",
-    "downloading": "Mengunduh",
     "needsToken": "Memerlukan token Hugging Face",
     "tokenSet": "Token diatur",
-    "active": "Aktif",
-    "use": "Gunakan",
-    "download": "Unduh",
-    "delete": "Hapus",
-    "deleteConfirm": "Hapus {{name}}? Ini mengosongkan {{size}}. Kosakata dan riwayat Anda tetap disimpan.",
-    "deleteConfirmSelected": "Baca nyaring tidak berfungsi sampai Anda memilih model lain.",
-    "deleteConfirmAction": "Hapus model",
-    "cancel": "Batal",
-    "token": "Token Hugging Face",
-    "tokenHelp": "Hanya diperlukan untuk suara Pocket terbatas setelah menyetujui ketentuan suara di Hugging Face. Token disimpan di memori dan dihapus saat Handy dimulai ulang.",
     "clearToken": "Hapus token",
     "showToken": "Tampilkan token",
     "hideToken": "Sembunyikan token",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "Suara kecil bahasa Hindi, perempuan dan laki-laki. Kata bahasa Inggris dieja huruf demi huruf.",
       "indic-tiny-pa": "Suara kecil bahasa Punjabi (Gurmukhi), perempuan dan laki-laki. Kata bahasa Inggris dieja huruf demi huruf."
     },
-    "voiceCount": "{{count}} suara",
-    "downloadProgress": "Kemajuan pengunduhan model",
     "speedLabel": "Kecepatan",
     "pitchLabel": "Nada",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "Transkrip asli",
     "diffNote": "Menampilkan perbedaan dari transkrip asli.",
     "noCleanup": "Tanpa pembersihan"
+  },
+  "models": {
+    "tags": {
+      "recommended": "Disarankan",
+      "live": "Langsung",
+      "translates": "Menerjemahkan",
+      "custom": "Kustom",
+      "oldFormat": "Format lama",
+      "needsToken": "Perlu token",
+      "nativeWords": "Daftar kata bawaan"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "Belum diukur",
+      "licence": "Lisensi tidak tercantum",
+      "languages": "Tidak tercantum",
+      "notListed": "Tidak tercantum"
+    },
+    "measured": {
+      "maker": "Angka dari pembuat ({{machine}}, {{backend}}), bukan dari mesin ini",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}, diatur di Pengaturan, Lanjutan",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "Daftar kata bawaan",
+      "corrected": "Dikoreksi setelah pengenalan",
+      "unknown": "Diketahui setelah model dimuat"
+    },
+    "speedFigure": {
+      "dictation": "{{value}} dtk untuk 30 detik ucapan"
+    },
+    "search": "Cari model",
+    "noMatch": "Tidak ada yang cocok dengan \"{{query}}\".",
+    "noFilterMatch": "Tidak ada model yang cocok dengan filter ini.",
+    "clearFilters": "Hapus filter",
+    "selected": "Dipilih",
+    "runtime": {
+      "notLoaded": "Belum dimuat",
+      "loading": "Memuat",
+      "ready": "Siap",
+      "failed": "Gagal"
+    },
+    "downloading": "Mengunduh {{percent}}% dari {{size}}",
+    "row": {
+      "open": "Tampilkan detail",
+      "close": "Sembunyikan detail"
+    },
+    "detail": {
+      "languages": "Bahasa",
+      "runOn": "Jalankan di",
+      "memory": "Memori",
+      "measuredOn": "Diukur pada",
+      "voices": "Suara",
+      "licence": "Lisensi",
+      "modelCard": "Kartu model",
+      "source": "Sumber",
+      "revision": "{{repository}} · revisi {{revision}}",
+      "customWords": "Kata Khusus"
+    },
+    "delete": {
+      "action": "Hapus model",
+      "ask": "Hapus {{name}}? Ini membebaskan {{size}}.",
+      "askUnknownSize": "Hapus {{name}}?",
+      "selected": {
+        "dictation": "Dikte berhenti berfungsi sampai Anda memilih model lain.",
+        "readAloud": "Baca nyaring berhenti berfungsi sampai Anda memilih model lain.",
+        "cleanup": "Pembersihan berhenti berfungsi sampai Anda memilih model lain."
+      },
+      "kept": {
+        "dictation": "Riwayat Anda tetap disimpan.",
+        "readAloud": "Kosakata dan riwayat Anda tetap disimpan.",
+        "cleanup": "Prompt dan riwayat Anda tetap disimpan."
+      }
+    },
+    "heads": {
+      "score": "Skor",
+      "speed": "Kecepatan",
+      "size": "Ukuran"
+    },
+    "legend": {
+      "open": "Arti kolom",
+      "score": {
+        "readAloud": "Kualitas dengar dari 10.",
+        "cleanup": "Model pembersihan belum punya skor."
+      },
+      "speed": {
+        "readAloud": "Skor kecepatan dari 10 pada perangkat tempat model berjalan.",
+        "cleanup": "Model pembersihan belum punya kecepatan terukur."
+      },
+      "range": "{{low}} sampai {{high}}",
+      "unmeasured": "? belum diukur.",
+      "measuredOn": "Diukur pada {{machine}}.",
+      "speedNote": {
+        "accelerated": "Berapa lama 30 detik ucapan diketik di chip grafis laptop uji kami. Tidak diukur di komputer ini.",
+        "cpu": "Berapa lama 30 detik ucapan diketik di prosesor laptop uji kami. Tidak diukur di komputer ini."
+      }
+    },
+    "cell": {
+      "value": "{{head}}: {{figure}}",
+      "measured": "{{head}}: {{figure}}, diukur pada {{provenance}}",
+      "unmeasured": "{{head}}: belum diukur"
+    },
+    "mark": {
+      "select": "Pilih {{name}}",
+      "download": "Unduh {{name}}",
+      "cancel": "Hentikan unduhan {{name}}",
+      "needsToken": "Memerlukan token Hugging Face. Tambahkan di detail."
+    },
+    "remove": "Hapus {{name}}",
+    "chips": {
+      "accelerated": "GPU atau NPU"
+    },
+    "busy": "Tunggu unduhan atau penghapusan yang sedang berjalan selesai.",
+    "listen": "Dengarkan {{voice}}",
+    "voiceCount_one": "{{count}} suara",
+    "voiceCount": "{{count}} suara",
+    "sections": {
+      "available": "Tersedia"
+    },
+    "token": {
+      "label": "Token Hugging Face",
+      "help": "Setujui dulu ketentuan suara di Hugging Face. Token disimpan di memori sampai Handy dimulai ulang."
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import {
   commands,
@@ -7,13 +7,21 @@ import {
   type Result,
 } from "@/bindings";
 import { listen } from "@tauri-apps/api/event";
-import { ModelCard, type DownloadProgress } from "./ModelCard";
 import { useRowConfirm } from "@/components/shared/InlineConfirm";
 import { useSettings } from "@/hooks/useSettings";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { downloadController } from "./actions";
-import { groupModels } from "./token";
-import { tokenCardProps } from "./TokenField";
+import {
+  downloadController,
+  previewVoice,
+  type TtsDownloadProgress,
+} from "./actions";
+import {
+  ReadAloudRows,
+  applyFor,
+  presentFor,
+  type AskedDelete,
+} from "./ReadAloudRows";
+import { openChange, pageActions, pageLife } from "./pageActions";
 import { useToken } from "./useToken";
 export function unwrapTts<T>(result: Result<T, string>): T {
   if (result.status === "error") throw new Error(result.error);
@@ -25,7 +33,7 @@ const downloads = downloadController({
       .filter((model) => model.downloading)
       .map((model) => model.id),
   watch: async (listener) => {
-    await listen<DownloadProgress>("tts-download-progress", ({ payload }) =>
+    await listen<TtsDownloadProgress>("tts-download-progress", ({ payload }) =>
       listener(payload),
     );
   },
@@ -49,105 +57,87 @@ export function ModelsPage() {
   );
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [life] = useState(pageLife);
+  const asked = useRef<AskedDelete | null>(null);
   const token = useToken();
-  const groups = groupModels(models, downloadState.active);
-  const refresh = async () => {
-    setModels(unwrapTts(await commands.getTtsModels()));
-  };
+  const actions = pageActions(life, {
+    models: async () => unwrapTts(await commands.getTtsModels()),
+    devices: async () => unwrapTts(await commands.getTtsDevices()),
+    refreshDownloads: downloads.refresh,
+    refreshSettings: refreshSettingsChecked,
+    setModels,
+    setAvailable,
+    setError,
+    setDeletingId,
+    deleteModel: commands.deleteTtsModel,
+    speak: async (voice) => {
+      unwrapTts(
+        await previewVoice(t, voice, (name, text) =>
+          commands.previewTtsVoice(name, text),
+        ),
+      );
+    },
+  });
   useEffect(() => {
-    let alive = true;
-    const update = async () => {
-      try {
-        const next = unwrapTts(await commands.getTtsModels());
-        if (alive) setModels(next);
-        await downloads.refresh();
-      } catch {
-        if (alive) setError("tts.errors.generic");
-      }
-    };
-    void update();
-    void commands
-      .getTtsDevices()
-      .then(unwrapTts)
-      .then((devices) => {
-        if (alive) setAvailable(devices);
-      })
-      .catch(() => {});
-    const timer = setInterval(() => void update(), 500);
+    life.start();
+    void actions.update();
+    actions.loadDevices();
+    const stopWatching = actions.watchPreviewErrors((listener) =>
+      listen<string>("tts-preview-error", ({ payload }) => listener(payload)),
+    );
+    const timer = setInterval(() => void actions.update(), 500);
     return () => {
-      alive = false;
+      life.dispose();
+      stopWatching();
       clearInterval(timer);
     };
   }, []);
-  const run = async (job: Promise<Result<unknown, string>>) => {
-    try {
-      unwrapTts(await job);
-      await refresh();
-      await refreshSettingsChecked();
-      setError(null);
-      return true;
-    } catch (reason) {
-      setError(
-        reason instanceof Error && reason.message.startsWith("tts.errors.")
-          ? reason.message
-          : "tts.errors.generic",
-      );
-      return false;
-    }
-  };
-  const deletion = useRowConfirm<string, HTMLElement>({
-    apply: (id) => {
-      setDeletingId(id);
-      void run(commands.deleteTtsModel(id)).finally(() => setDeletingId(null));
-    },
-    present: (id) =>
-      models.some((model) => model.id === id && model.downloaded),
+  const view = () => ({
+    asked: asked.current,
+    models,
+    active: downloadState.active,
+    deletingId,
   });
+  const deletion = useRowConfirm<string>({
+    apply: applyFor(view, actions.remove),
+    present: presentFor(view),
+  });
+  const shownError = error ?? downloadState.error;
   return (
-    <section
-      ref={deletion.rowsRef}
-      className="w-full max-w-3xl flex flex-col gap-4"
-    >
-      <p className="text-text/60 text-sm">{t("tts.modelsSubtitle")}</p>
-      {(error || downloadState.error) && (
-        <p role="alert">
-          {t(error ?? downloadState.error ?? "tts.errors.generic")}
+    <div className="w-full max-w-3xl min-w-0">
+      {shownError && (
+        <p role="alert" className="px-[12px] pb-[8px] text-small text-text">
+          {t(shownError)}
         </p>
       )}
-      {([true, false] as const).map((downloaded) => (
-        <div key={String(downloaded)} className="space-y-3">
-          <h2 className="text-sm font-medium text-text/60">
-            {t(downloaded ? "tts.downloaded" : "tts.availableToDownload")}
-          </h2>
-          {(downloaded ? groups.downloaded : groups.available).map((model) => (
-            <ModelCard
-              key={model.id}
-              model={model}
-              downloadProgress={downloadState.progress[model.id]}
-              available={available}
-              state={{
-                selectedId: models.find((row) => row.active)?.id ?? "",
-                downloadId: downloadState.active.includes(model.id)
-                  ? model.id
-                  : (downloadState.active[0] ?? null),
-                deletingId,
-              }}
-              actions={{
-                use: (id) => void run(commands.setTtsModel(id)),
-                download: (id) => void downloads.download(id),
-                delete: deletion.ask,
-              }}
-              confirming={deletion.asking === model.id}
-              confirmDelete={deletion.confirm}
-              cancelDelete={deletion.cancel}
-              runOn={(id, value) => void run(commands.setTtsRunOn(id, value))}
-              cancel={(id) => void downloads.cancel(id)}
-              {...tokenCardProps(token)}
-              downloadError={downloadState.errors[model.id]}
-            />
-          ))}
-        </div>
-      ))}
-    </section>
+      <div ref={deletion.rowsRef}>
+        <ReadAloudRows
+          models={models}
+          available={available}
+          downloads={downloadState}
+          deletingId={deletingId}
+          tokenSet={token.present}
+          tokenState={token.state}
+          tokenActions={token.entry}
+          deletion={deletion}
+          asked={asked.current}
+          openId={openId}
+          onOpenChange={openChange(token.entry.hide, setOpenId)}
+          act={{
+            use: (id) => void actions.run(commands.setTtsModel(id)),
+            download: (id) => void downloads.download(id),
+            cancel: (id) => void downloads.cancel(id),
+            runOn: (id, value) =>
+              void actions.run(commands.setTtsRunOn(id, value)),
+            preview: actions.preview,
+            ask: (next) => {
+              asked.current = next;
+              deletion.ask(next.id);
+            },
+          }}
+        />
+      </div>
+    </div>
   );
 }

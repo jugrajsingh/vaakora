@@ -1,4 +1,4 @@
-import type { Result } from "@/bindings";
+import type { LocalLlmModelInfo, Result } from "@/bindings";
 
 export interface LocalLlmActionDependencies {
   isBusy: () => boolean;
@@ -56,5 +56,27 @@ export function createLocalLlmActions(deps: LocalLlmActionDependencies) {
         deps.setDeletingId(null);
       }
     },
+  };
+}
+
+/** Applies `apply` only when `alive()` holds: a page's own state is not set once the page is gone. */
+export function whileAlive<A extends unknown[]>(
+  alive: () => boolean,
+  apply: (...args: A) => void,
+): (...args: A) => void {
+  return (...args) => {
+    if (alive()) apply(...args);
+  };
+}
+
+/** Reads the registry and sets the list only when the page is alive; a failed read rejects. */
+export function createModelsLoader(deps: {
+  fetch: () => Promise<LocalLlmModelInfo[]>;
+  set: (models: LocalLlmModelInfo[]) => void;
+  alive: () => boolean;
+}): () => Promise<void> {
+  return async () => {
+    const models = await deps.fetch();
+    whileAlive(deps.alive, deps.set)(models);
   };
 }

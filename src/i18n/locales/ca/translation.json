@@ -385,11 +385,16 @@
       "loading": "S'estan carregant els models",
       "empty": {
         "dictation": "Encara no hi ha cap model de dictat.",
-        "readAloud": "Encara no hi ha cap model de lectura en veu alta."
+        "readAloud": "Encara no hi ha cap model de lectura en veu alta.",
+        "cleanup": "Encara no hi ha cap model de neteja."
       },
       "help": {
         "dictation": "Trieu un model de dictat baixat.",
-        "readAloud": "Trieu un model de lectura en veu alta baixat."
+        "readAloud": "Trieu un model de lectura en veu alta baixat.",
+        "cleanup": "El model local que neteja els dictats."
+      },
+      "failed": {
+        "cleanup": "No s'ha pogut mostrar la llista de models."
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "Cancel·la",
       "readAloud": "Lectura en veu alta",
       "activation": "Activació",
-      "activationHelp": "Per a les dreceres de dictat"
+      "activationHelp": "Per a les dreceres de dictat",
+      "cancelLinuxHelp": "Al Linux la drecera de cancel·lació no atura un dictat, perquè les dreceres registrades durant un dictat no són fiables allà. Useu la X de la finestra superposada, Cancel·la al menú de la safata o executeu handy --cancel."
     },
     "modelSettings": {
       "title": "Configuració de {{model}}"
@@ -776,14 +782,6 @@
         "noCleanupModel": "Cap model de postprocessament",
         "s1Description": "Utilitza els controls d'estil, estructura i context.",
         "plainDescription": "Utilitza la indicació del Handy seleccionada.",
-        "size": "{{size}} MiB",
-        "downloaded": "Baixat",
-        "use": "Utilitza",
-        "download": "Baixa",
-        "downloading": "S'està baixant {{percent}}%",
-        "delete": "Suprimeix",
-        "deleteConfirm": "Vols suprimir {{name}}? Allibera {{size}}.",
-        "deleteConfirmAction": "Suprimeix el model",
         "status": {
           "title": "Estat",
           "description": "El model es carrega quan comença un dictat amb postprocessament i s'allibera de la memòria passat el temps d'espera d'alliberament del model.",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "La lectura en veu alta està ocupada enganxant",
+    "readAloudBusyPasting": "Handy encara està enganxant. Torna a provar la lectura en veu alta quan acabi d'enganxar.",
+    "readAloudUnavailableTitle": "Lectura en veu alta no disponible",
     "readAloudClipboardUnreadableTitle": "Porta-retalls illegible",
     "readAloudClipboardUnreadable": "No s'ha pogut llegir el text del porta-retalls.",
     "loadDirectory": "Error en carregar el directori: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "Fosc"
     }
   },
+  "floating": {
+    "position": {
+      "help": "On apareixen a la pantalla la finestra superposada i la finestra de lectura en veu alta. Una posició superior deixa lliure la part inferior de la pantalla, cosa útil quan dicteu en un terminal.",
+      "cells": {
+        "top_left": "A dalt a l'esquerra",
+        "top": "A dalt al centre",
+        "top_right": "A dalt a la dreta",
+        "center_left": "Al mig a l'esquerra",
+        "center": "Al centre",
+        "center_right": "Al mig a la dreta",
+        "bottom_left": "A baix a l'esquerra",
+        "bottom": "A baix al centre",
+        "bottom_right": "A baix a la dreta"
+      }
+    },
+    "style": {
+      "help": "Cap: sense finestra flotant. Els errors encara apareixen a la safata del sistema i a la finestra principal. Mínima: una petita píndola mentre dicteu. En directe: també mostra les paraules mentre parleu, amb els models que ho admeten. Al Linux es recomana Cap."
+    }
+  },
   "overlay": {
     "transcribing": "S'està transcrivint",
     "processing": "S'està netejant",
     "loadingModel": "S'està carregant el model",
-    "cancel": "Cancel·la el dictat"
+    "cancel": "Cancel·la el dictat",
+    "starting": "S'està iniciant el micròfon",
+    "recording": "Enregistrant"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} pot estar blocant 1 drecera",
@@ -1215,12 +1234,6 @@
     "dismiss": "Descarta"
   },
   "tts": {
-    "ratings": {
-      "quality": "Qualitat",
-      "speed": "Velocitat",
-      "recommended": "Recomanat",
-      "tooltip": "Primer àudio en {{firstAudio}} s, {{faster}}x més ràpid que en temps real, es carrega en {{load}} s"
-    },
     "devices": {
       "auto": "Automàtic",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "S'està preparant per a {{device}}: {{graph}}",
     "buffering": "S'està emmagatzemant a la memòria intermèdia",
     "title": "Lectura en veu alta",
+    "modelVoice": "{{model}}, {{voice}}",
     "textLabel": "Text a llegir",
     "placeholder": "Enganxa el text a llegir",
     "play": "Reprodueix",
     "pause": "Pausa",
-    "stop": "Atura",
     "close": "Tanca",
     "readClipboard": "Llegeix el porta-retalls",
     "editText": "Edita el text",
     "progress": "Progrés",
-    "time": "{{elapsed}} s transcorreguts, {{remaining}} s restants",
-    "openModels": "Models de text a veu",
+    "timeAbout": "{{elapsed}} / uns {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Intro",
+      "close": "Esc"
+    },
+    "chooseModel": "Tria un model",
+    "failedLine": "La lectura en veu alta ha fallat. {{reason}}",
     "outputFallback": "S'està utilitzant el dispositiu de sortida predeterminat",
     "states": {
       "waiting": "En espera",
@@ -1293,25 +1311,10 @@
       "playing": "S'està reproduint",
       "paused": "En pausa",
       "finished": "Finalitzat",
-      "error": "Error"
+      "error": "Ha fallat"
     },
-    "modelsSubtitle": "Trieu un model de veu. Les xifres de velocitat s'han mesurat a l'ordinador del desenvolupador; les vostres poden diferir.",
-    "downloaded": "Baixat",
-    "availableToDownload": "Disponible per baixar",
-    "recommended": "Recomanat",
-    "downloading": "S'està baixant",
     "needsToken": "Necessita un testimoni de Hugging Face",
     "tokenSet": "Testimoni definit",
-    "active": "Actiu",
-    "use": "Utilitza",
-    "download": "Baixa",
-    "delete": "Suprimeix",
-    "deleteConfirm": "Vols suprimir {{name}}? Allibera {{size}}. El vocabulari i l'historial es conserven.",
-    "deleteConfirmSelected": "La lectura en veu alta deixa de funcionar fins que triïs un altre model.",
-    "deleteConfirmAction": "Suprimeix el model",
-    "cancel": "Cancel·la",
-    "token": "Testimoni de Hugging Face",
-    "tokenHelp": "Només cal per a les veus restringides de Pocket després d'acceptar les condicions de les veus a Hugging Face. El testimoni es manté a la memòria i s'esborra quan es reinicia el Handy.",
     "clearToken": "Esborra el testimoni",
     "showToken": "Mostra el testimoni",
     "hideToken": "Amaga el testimoni",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "Veus petites d'hindi, femenina i masculina. Les paraules angleses es lletregen lletra per lletra.",
       "indic-tiny-pa": "Veus petites de panjabi (gurmukhi), femenina i masculina. Les paraules angleses es lletregen lletra per lletra."
     },
-    "voiceCount": "{{count}} veus",
-    "downloadProgress": "Progrés de la baixada del model",
     "speedLabel": "Velocitat",
     "pitchLabel": "To",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "Transcripció original",
     "diffNote": "Es mostren les diferències amb la transcripció original.",
     "noCleanup": "Sense neteja"
+  },
+  "models": {
+    "tags": {
+      "recommended": "Recomanat",
+      "live": "En directe",
+      "translates": "Tradueix",
+      "custom": "Personalitzat",
+      "oldFormat": "Format antic",
+      "needsToken": "Cal un token",
+      "nativeWords": "Llista de paraules nativa"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "No mesurat",
+      "licence": "Llicència no indicada",
+      "languages": "No s'indiquen",
+      "notListed": "No s'indica"
+    },
+    "measured": {
+      "maker": "Xifra del fabricant ({{machine}}, {{backend}}), no d'aquesta màquina",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}, es defineix a Configuració, Avançat",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "Llista de paraules nativa",
+      "corrected": "Corregit després del reconeixement",
+      "unknown": "Es sap un cop carregat el model"
+    },
+    "speedFigure": {
+      "dictation": "{{value}} s per a 30 segons de veu"
+    },
+    "search": "Cerca models",
+    "noMatch": "Res coincideix amb «{{query}}».",
+    "noFilterMatch": "Cap model coincideix amb aquests filtres.",
+    "clearFilters": "Esborra els filtres",
+    "selected": "Seleccionat",
+    "runtime": {
+      "notLoaded": "No carregat",
+      "loading": "S'està carregant",
+      "ready": "A punt",
+      "failed": "Ha fallat"
+    },
+    "downloading": "Baixant {{percent}} % de {{size}}",
+    "row": {
+      "open": "Mostra els detalls",
+      "close": "Amaga els detalls"
+    },
+    "detail": {
+      "languages": "Llengües",
+      "runOn": "Executa a",
+      "memory": "Memòria",
+      "measuredOn": "Mesurat en",
+      "voices": "Veus",
+      "licence": "Llicència",
+      "modelCard": "Fitxa del model",
+      "source": "Origen",
+      "revision": "{{repository}} · revisió {{revision}}",
+      "customWords": "Paraules personalitzades"
+    },
+    "delete": {
+      "action": "Suprimeix el model",
+      "ask": "Voleu suprimir {{name}}? S'alliberen {{size}}.",
+      "askUnknownSize": "Voleu suprimir {{name}}?",
+      "selected": {
+        "dictation": "El dictat deixa de funcionar fins que trieu un altre model.",
+        "readAloud": "La lectura en veu alta deixa de funcionar fins que trieu un altre model.",
+        "cleanup": "La neteja deixa de funcionar fins que trieu un altre model."
+      },
+      "kept": {
+        "dictation": "Es conserva el vostre historial.",
+        "readAloud": "Es conserven el vostre vocabulari i historial.",
+        "cleanup": "Es conserven les vostres indicacions i historial."
+      }
+    },
+    "heads": {
+      "score": "Puntuació",
+      "speed": "Velocitat",
+      "size": "Mida"
+    },
+    "legend": {
+      "open": "Què volen dir les columnes",
+      "score": {
+        "readAloud": "Qualitat d'escolta sobre 10.",
+        "cleanup": "Els models de neteja encara no tenen puntuació."
+      },
+      "speed": {
+        "readAloud": "Puntuació de velocitat sobre 10 al dispositiu on s'executa el model.",
+        "cleanup": "Els models de neteja encara no tenen velocitat mesurada."
+      },
+      "range": "{{low}} a {{high}}",
+      "unmeasured": "? no s'ha mesurat.",
+      "measuredOn": "Mesurat en {{machine}}.",
+      "speedNote": {
+        "accelerated": "Quant triguen a escriure's 30 segons de veu amb el xip gràfic del nostre portàtil de prova. No s'ha mesurat en aquest ordinador.",
+        "cpu": "Quant triguen a escriure's 30 segons de veu amb el processador del nostre portàtil de prova. No s'ha mesurat en aquest ordinador."
+      }
+    },
+    "cell": {
+      "value": "{{head}}: {{figure}}",
+      "measured": "{{head}}: {{figure}}, mesurat en {{provenance}}",
+      "unmeasured": "{{head}}: sense mesurar"
+    },
+    "mark": {
+      "select": "Selecciona {{name}}",
+      "download": "Baixa {{name}}",
+      "cancel": "Atura la baixada de {{name}}",
+      "needsToken": "Cal un testimoni de Hugging Face. Afegiu-lo als detalls."
+    },
+    "remove": "Suprimeix {{name}}",
+    "chips": {
+      "accelerated": "GPU o NPU"
+    },
+    "busy": "Espereu que acabi la baixada o l'eliminació en curs.",
+    "listen": "Escolta {{voice}}",
+    "voiceCount_one": "{{count}} veu",
+    "voiceCount": "{{count}} veus",
+    "sections": {
+      "available": "Disponibles"
+    },
+    "token": {
+      "label": "Testimoni de Hugging Face",
+      "help": "Accepta primer les condicions de la veu a Hugging Face. El testimoni es conserva a la memòria fins que Handy es reiniciï."
+    }
   }
 }

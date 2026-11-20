@@ -5,15 +5,28 @@ use super::{
 };
 use handy_tts_core::{
     catalog,
-    device::{ModelRating, Preparation, RunOn},
+    device::{Device, ModelRating, Preparation, RunOn},
     download::{self, HttpTransport},
     selection::{clamp_selection, Selection},
 };
+use std::collections::BTreeMap;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
 use tauri::{AppHandle, State};
+/// A Hugging Face repository pinned to one commit.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, specta::Type)]
+pub struct ModelRevision {
+    pub repository: String,
+    pub revision: String,
+}
+/// The machine and date the shipped ratings of one model were measured on.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, specta::Type)]
+pub struct TtsMeasurement {
+    pub machine: String,
+    pub date: String,
+}
 #[derive(Debug, Clone, serde::Serialize, specta::Type)]
 pub struct TtsModelInfo {
     pub id: String,
@@ -33,6 +46,49 @@ pub struct TtsModelInfo {
     pub npu_driver_too_old: bool,
     pub recommended: bool,
     pub needs_token: bool,
+    pub languages: Vec<String>,
+    pub measured: Option<TtsMeasurement>,
+    pub memory_bytes: BTreeMap<Device, u64>,
+    pub sources: Vec<ModelRevision>,
+}
+/// Text before the first `;` of a ratings metadata value, trimmed; `None` when absent or empty.
+fn leading_part(value: Option<&String>) -> Option<String> {
+    let part = value?.split(';').next()?.trim();
+    (!part.is_empty()).then(|| part.to_string())
+}
+/// Reads the measuring machine and the measurement date of `id` from the ratings metadata.
+fn measurement(metadata: &BTreeMap<String, String>, id: &str) -> Option<TtsMeasurement> {
+    Some(TtsMeasurement {
+        machine: leading_part(metadata.get("machine"))?,
+        date: leading_part(metadata.get(&format!("measured_{id}")))?,
+    })
+}
+/// Resident memory of one reading lane per device: base plus lane, for devices that measured both.
+fn memory_bytes(rating: &ModelRating) -> BTreeMap<Device, u64> {
+    rating
+        .devices
+        .iter()
+        .filter_map(|(device, rating)| {
+            let mib = rating.lanes.base_rss_mib? + rating.lanes.lane_rss_mib?;
+            Some((*device, (mib * 1_048_576.0).round() as u64))
+        })
+        .collect()
+}
+/// Distinct pinned repositories of an entry's files, in file order.
+fn sources(entry: &catalog::ModelEntry) -> Vec<ModelRevision> {
+    let mut sources: Vec<ModelRevision> = Vec::new();
+    for file in &entry.files {
+        if !sources
+            .iter()
+            .any(|s| s.repository == file.repo && s.revision == file.revision)
+        {
+            sources.push(ModelRevision {
+                repository: file.repo.clone(),
+                revision: file.revision.clone(),
+            });
+        }
+    }
+    sources
 }
 pub(super) async fn blocking<T: Send + 'static>(
     job: impl FnOnce() -> Result<T, String> + Send + 'static,
@@ -75,6 +131,10 @@ pub async fn get_tts_models(
                     downloaded: download::is_downloaded(&ready.root, entry),
                     downloading: downloads.contains(entry.id),
                     active: entry.id == settings.tts_model_id,
+                    languages: entry.languages.iter().map(|tag| tag.to_string()).collect(),
+                    measured: measurement(&ready.ratings.metadata, entry.id),
+                    memory_bytes: memory_bytes(&rating),
+                    sources: sources(entry),
                     rating,
                     run_on: settings
                         .tts_run_on
@@ -507,6 +567,102 @@ mod tests {
         assert!(active_downloads(&map).contains("pocket-en"));
         drop(job);
         assert!(active_downloads(&map).is_empty());
+    }
+    #[test]
+    fn measurement_reads_machine_and_date() {
+        let metadata = |pairs: &[(&str, &str)]| -> std::collections::BTreeMap<String, String> {
+            pairs
+                .iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect()
+        };
+        let measured = |machine: &str, date: &str| TtsMeasurement {
+            machine: machine.into(),
+            date: date.into(),
+        };
+        assert_eq!(
+            measurement(
+                &metadata(&[
+                    ("machine", "M"),
+                    ("measured_x", "2026-11-08; max load1 1.5")
+                ]),
+                "x"
+            ),
+            Some(measured("M", "2026-11-08"))
+        );
+        assert_eq!(
+            measurement(
+                &metadata(&[("machine", "CPU X; 8 cores"), ("measured_x", "2026-11-08")]),
+                "x"
+            ),
+            Some(measured("CPU X", "2026-11-08"))
+        );
+        for missing in [
+            metadata(&[("machine", "M")]),
+            metadata(&[("measured_x", "2026-11-08")]),
+            metadata(&[("machine", " ; 8 cores"), ("measured_x", "2026-11-08")]),
+            metadata(&[("machine", "M"), ("measured_x", "; max load1 1.5")]),
+        ] {
+            assert_eq!(measurement(&missing, "x"), None);
+        }
+        let shipped: handy_tts_core::device::Ratings =
+            serde_json::from_str(include_str!("../../resources/tts/ratings.json")).unwrap();
+        for id in catalog::ids().unwrap() {
+            assert_eq!(
+                measurement(&shipped.metadata, id),
+                Some(measured("Intel Core Ultra 7 258V", "2026-11-08")),
+                "{id}"
+            );
+        }
+    }
+    #[test]
+    fn memory_needs_base_and_lane() {
+        let rating: ModelRating = serde_json::from_value(serde_json::json!({
+            "quality": 9,
+            "devices": {
+                "cpu": {"supported": true, "placement": {}, "recommended": true,
+                        "base_rss_mib": 9.640625, "lane_rss_mib": 422.625},
+                "gpu": {"supported": true, "placement": {}, "recommended": false,
+                        "base_rss_mib": 9.703125},
+                "npu": {"supported": false, "placement": {}, "recommended": false,
+                        "lane_rss_mib": 12.0}
+            }
+        }))
+        .unwrap();
+        assert_eq!(
+            memory_bytes(&rating),
+            std::collections::BTreeMap::from([(Device::Cpu, 453_263_360)])
+        );
+    }
+    #[test]
+    fn sources_are_distinct_in_file_order() {
+        let revision = |repository: &str, revision: &str| ModelRevision {
+            repository: repository.into(),
+            revision: revision.into(),
+        };
+        assert_eq!(
+            sources(catalog::entry("pocket-en").unwrap()),
+            [
+                revision(
+                    "KevinAHM/pocket-tts-onnx",
+                    "58a6d00cf13d239b6748cb0769f35c580a8f606c"
+                ),
+                revision(
+                    "kyutai/pocket-tts",
+                    "75cfe24e3142233bb81887fed3482e9652bb4a6e"
+                ),
+            ]
+        );
+        for entry in catalog::entries().unwrap() {
+            let listed = sources(entry);
+            assert!(!listed.is_empty(), "{}", entry.id);
+            assert!(entry.files.iter().all(|file| listed
+                .iter()
+                .any(|s| s.repository == file.repo && s.revision == file.revision)));
+            for (i, source) in listed.iter().enumerate() {
+                assert!(!listed[..i].contains(source), "{}", entry.id);
+            }
+        }
     }
     #[test]
     fn second_download_cannot_steal_cancel_ownership_and_error_drop_releases_it() {

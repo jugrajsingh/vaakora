@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync, readdirSync } from "node:fs";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import i18next from "i18next";
@@ -12,12 +13,22 @@ import {
   formatTime,
   pasteText,
   enterPopupEdit,
+  readerHeading,
+  reasonLine,
   routeTextClick,
+  stateWord,
   textEditable,
+  timeLabel,
   togglePopupPlayback,
 } from "./presentation";
+import { routePopupKey } from "./actions";
 import { ReadAloudPopup } from "./ReadAloudPopup";
-await i18next.init({ lng: "en", resources: { en: { translation: en } } });
+await i18next.init({
+  lng: "en",
+  resources: { en: { translation: en } },
+  interpolation: { escapeValue: false },
+});
+const t = i18next.t.bind(i18next);
 const snapshot: SessionSnapshot = {
   epoch: 0,
   state: "buffering",
@@ -43,18 +54,25 @@ assert.deepEqual(highlightedText("abc", -1, 99), {
   after: "",
 });
 assert.equal(progressPresentation({ ...snapshot, progress: 2 }).percent, 100);
-const render = (state: SessionSnapshot, editing = false) =>
+const render = (
+  state: SessionSnapshot,
+  editing = false,
+  heading: { model: string; voice: string } | null = {
+    model: "Supertonic 3",
+    voice: "alba",
+  },
+  i18n: typeof i18next = i18next,
+) =>
   renderToStaticMarkup(
-    <I18nextProvider i18n={i18next}>
+    <I18nextProvider i18n={i18n}>
       <ReadAloudPopup
         text="A sentence"
-        modelName="Supertonic 3"
+        heading={heading}
         editing={editing}
         enterEdit={() => {}}
         snapshot={state}
         edit={() => {}}
         toggle={() => {}}
-        stop={() => {}}
         close={() => {}}
         readClipboard={() => {}}
         models={() => {}}
@@ -66,18 +84,133 @@ const status = buffering.match(/<span role="status"[^>]*>(.*?)<\/span>/s)?.[1];
 assert.ok(status?.includes("Buffering"), status);
 const mark = buffering.match(/<mark[^>]*>(.*?)<\/mark>/s)?.[1];
 assert.equal(mark, "sente");
-const alert = render({ ...snapshot, error: "tts.errors.notDownloaded" }).match(
-  /<div role="alert"[^>]*>(.*?)<\/div>/s,
-)?.[1];
-assert.ok(alert?.includes(en.tts.openModels), alert);
-const fallback = render({ ...snapshot, output_fallback: true });
-const fallbackNote = fallback.match(
-  /<span[^>]*data-output-fallback[^>]*>(.*?)<\/span>/s,
-)?.[1];
-assert.equal(fallbackNote, en.tts.outputFallback);
-console.log(
-  "popup presentation: UTF-16/highlight/Buffering/error/fallback assertions passed",
-);
+console.log("popup presentation: UTF-16/highlight/Buffering assertions passed");
+
+{
+  // one_reason_line
+  const alertsIn = (html: string) => [
+    ...html.matchAll(/<div role="alert"([^>]*)>(.*?)<\/div>/gs),
+  ];
+  const plain = (html: string) =>
+    html
+      .replace(/<[^>]*>/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  const classes = (attributes: string) =>
+    (attributes.match(/class="([^"]*)"/)?.[1] ?? "").split(/\s+/);
+  const fallbackIn = (html: string) =>
+    html.match(/<div([^>]*data-output-fallback[^>]*)>(.*?)<\/div>/s);
+  const failed = (error: string | null, output_fallback = false) =>
+    render({ ...snapshot, state: "error", error, output_fallback });
+  const above = (html: string, marker: string) =>
+    html.indexOf(marker) !== -1 &&
+    html.indexOf(marker) < html.indexOf('role="progressbar"');
+
+  assert.deepEqual(reasonLine({ ...snapshot, error: "tts.errors.audio" }), {
+    kind: "error",
+    key: "tts.errors.audio",
+    chooseModel: false,
+  });
+  assert.deepEqual(
+    reasonLine({ ...snapshot, error: "tts.errors.notDownloaded" }),
+    { kind: "error", key: "tts.errors.notDownloaded", chooseModel: true },
+  );
+  assert.deepEqual(reasonLine({ ...snapshot, output_fallback: true }), {
+    kind: "fallback",
+  });
+  assert.deepEqual(
+    reasonLine({
+      ...snapshot,
+      error: "tts.errors.audio",
+      output_fallback: true,
+    }),
+    { kind: "error", key: "tts.errors.audio", chooseModel: false },
+    "one_reason_line: the error wins over the fallback",
+  );
+  assert.equal(reasonLine(snapshot), null);
+
+  const audio = failed("tts.errors.audio");
+  const lines = alertsIn(audio);
+  assert.equal(lines.length, 1, "one_reason_line: one alert");
+  const [, lineAttributes, lineInner] = lines[0];
+  assert.equal(
+    plain(lineInner),
+    "Read aloud failed. The output device could not be opened.",
+  );
+  assert.ok(classes(lineAttributes).includes("text-error"), lineAttributes);
+  assert.ok(
+    /<svg[^>]*lucide-circle-alert/.test(lineInner),
+    "one_reason_line: the error line carries the CircleAlert icon",
+  );
+  assert.ok(
+    /<span class="[^"]*\bline-clamp-2\b[^"]*"/.test(lineInner),
+    "one_reason_line: the reason is clamped to two lines",
+  );
+  assert.equal(audio.includes(en.tts.chooseModel), false, "no Choose a model");
+  assert.equal(audio.includes("data-output-fallback"), false);
+  assert.ok(
+    above(audio, 'role="alert"'),
+    "one_reason_line: the line sits above the transport",
+  );
+  assert.equal(
+    audio.includes("text-ink-3"),
+    false,
+    "one_reason_line: no ink-3 in the reader",
+  );
+
+  const missing = failed("tts.errors.notDownloaded");
+  const [, , missingInner] = alertsIn(missing)[0];
+  assert.equal(alertsIn(missing).length, 1);
+  assert.equal(
+    plain(missingInner.replace(/<button.*<\/button>/s, "")),
+    "Read aloud failed. Download this model before reading.",
+  );
+  const chooser = [
+    ...missingInner.matchAll(/<button([^>]*)>(.*?)<\/button>/gs),
+  ];
+  assert.equal(chooser.length, 1, "one_reason_line: one Choose a model button");
+  assert.equal(plain(chooser[0][2]), "Choose a model");
+  for (const token of [
+    "focus-visible:ring-2",
+    "focus-visible:ring-logo-primary",
+  ])
+    assert.ok(classes(chooser[0][1]).includes(token), token);
+
+  const fallback = render({
+    ...snapshot,
+    state: "playing",
+    output_fallback: true,
+  });
+  const note = fallbackIn(fallback);
+  assert.ok(note, "one_reason_line: the fallback line renders");
+  assert.equal(plain(note[2]), "Using the default output device");
+  assert.ok(classes(note[1]).includes("text-ink-2"), note[1]);
+  assert.equal(
+    /text-ink-3/.test(note[1] + note[2]),
+    false,
+    "one_reason_line: the fallback is not ink-3",
+  );
+  assert.ok(
+    /<svg[^>]*lucide-triangle-alert[^>]*text-warning|<svg[^>]*text-warning[^>]*lucide-triangle-alert/.test(
+      note[2],
+    ),
+    "one_reason_line: the fallback carries a warning TriangleAlert",
+  );
+  assert.equal(fallback.includes('role="alert"'), false);
+  assert.ok(above(fallback, "data-output-fallback"));
+
+  const both = failed("tts.errors.audio", true);
+  assert.equal(alertsIn(both).length, 1, "one_reason_line: both -> error only");
+  assert.equal(fallbackIn(both), null);
+
+  const neither = render({ ...snapshot, state: "playing" });
+  assert.equal(alertsIn(neither).length, 0, "one_reason_line: neither");
+  assert.equal(fallbackIn(neither), null);
+
+  assert.equal(en.tts.failedLine, "Read aloud failed. {{reason}}");
+  assert.equal(en.tts.chooseModel, "Choose a model");
+  console.log("popup one reason line: error, Choose a model, fallback passed");
+}
 
 {
   // finished_and_failed_keep_the_reading_view
@@ -249,7 +382,7 @@ for (const state of [
   for (const state of ["playing", "finished"] as const) {
     const html = render({ ...snapshot, state });
     const buttons = [...html.matchAll(/<button([^>]*)>(.*?)<\/button>/gs)];
-    assert.ok(buttons.length >= 5, `${state}: header and transport buttons`);
+    assert.equal(buttons.length, 4, `${state}: header and transport buttons`);
     for (const [, attributes, label] of buttons) {
       const classes = attributes.match(/class="([^"]*)"/)?.[1] ?? "";
       for (const token of ring)
@@ -276,8 +409,8 @@ for (const [seconds, expected] of [
   assert.equal(formatTime(seconds), expected);
 assert.ok(
   buffering.match(/<span class="tabular-nums[^>]*>(.*?)<\/span>/s)?.[1] ===
-    "0:09 / 0:50",
-  "elapsed plus remaining gives total",
+    "0:09 / about 0:50",
+  "time_reads_about_the_total: elapsed plus remaining gives the total",
 );
 const progressBar = buffering.match(/<div[^>]*role="progressbar"[^>]*>/)?.[0];
 assert.ok(
@@ -286,7 +419,13 @@ assert.ok(
     progressBar.includes('aria-valuenow="20"'),
   progressBar,
 );
-for (const state of [
+assert.equal(en.tts.readClipboard, "Read clipboard");
+const header = buffering.match(/<header[^>]*>(.*?)<\/header>/s)?.[1];
+assert.ok(
+  header?.includes("Supertonic 3, alba") &&
+    header.includes('aria-label="Close"'),
+);
+const everyState = [
   "waiting",
   "starting",
   "buffering",
@@ -294,34 +433,425 @@ for (const state of [
   "paused",
   "finished",
   "error",
-] as const) {
-  const controlsRow = render({ ...snapshot, state }).match(
-    /<div class="flex shrink-0 items-center gap-2 border-t[^>]*>(.*?)<div role="progressbar"/s,
-  )?.[1];
-  const buttons = [
-    ...(controlsRow?.matchAll(/<button[^>]*aria-label="([^"]*)"/g) ?? []),
+] as const;
+// Name of every button in document order: aria-label, else its text.
+const buttonNames = (html: string) =>
+  [...html.matchAll(/<button([^>]*)>(.*?)<\/button>/gs)].map(
+    ([, attributes, inner]) =>
+      attributes.match(/aria-label="([^"]*)"/)?.[1] ??
+      inner.replace(/<[^>]*>/g, "").trim(),
+  );
+{
+  // transport_has_no_stop
+  for (const state of everyState) {
+    const html = render({ ...snapshot, state });
+    assert.equal(
+      html.includes('aria-label="Stop"'),
+      false,
+      `transport_has_no_stop: ${state} has no Stop button`,
+    );
+    assert.equal(
+      /Stopped|>Stop</.test(html),
+      false,
+      `transport_has_no_stop: ${state} shows no Stop word`,
+    );
+    assert.deepEqual(
+      buttonNames(html),
+      [
+        en.tts.editText,
+        en.tts.close,
+        state === "playing" || state === "buffering"
+          ? en.tts.pause
+          : en.tts.play,
+        en.tts.readClipboard,
+      ],
+      `transport_has_no_stop: ${state} buttons in order`,
+    );
+    const readButton = html.match(
+      /<button[^>]*>(?:(?!<\/button>).)*Read clipboard<\/button>/s,
+    )?.[0];
+    assert.ok(
+      readButton,
+      `transport_has_no_stop: ${state} Read clipboard text`,
+    );
+    assert.ok(readButton.includes("<svg"), `${state}: Read clipboard icon`);
+    assert.ok(readButton.includes('aria-hidden="true"'), state);
+    assert.equal(/\sdisabled(=|\s|>)/.test(readButton), false, state);
+    assert.ok(
+      /[\s"]bg-wash\s/.test(readButton),
+      `${state}: Read clipboard is the secondary variant: ${readButton.slice(0, 120)}`,
+    );
+  }
+  assert.equal(en.tts.readClipboard, "Read clipboard");
+  assert.equal("stop" in en.tts, false, "the unused tts.stop key is gone");
+  assert.equal("time" in en.tts, false, "the unused tts.time key is gone");
+}
+{
+  // time_reads_about_the_total
+  const timeSpan = (html: string) =>
+    html.match(/<span class="tabular-nums[^>]*>(.*?)<\/span>/s)?.[1];
+  const statusSpan = (html: string) =>
+    html.match(/<span role="status"[^>]*>(.*?)<\/span>/s)?.[1];
+  const buffering78 = {
+    ...snapshot,
+    state: "buffering" as const,
+    elapsed_seconds: 78,
+    remaining_seconds: 11,
+  };
+  assert.equal(timeSpan(render(buffering78)), "1:18 / about 1:29");
+  assert.equal(timeLabel(buffering78, t), "1:18 / about 1:29");
+  const finished89 = {
+    ...snapshot,
+    state: "finished" as const,
+    elapsed_seconds: 89,
+    remaining_seconds: 0,
+    progress: 1,
+  };
+  assert.equal(
+    timeSpan(render(finished89)),
+    "1:29 / about 1:29",
+    "one format in every state",
+  );
+  const waiting = {
+    ...snapshot,
+    state: "waiting" as const,
+    elapsed_seconds: 0,
+    remaining_seconds: 0,
+    progress: 0,
+  };
+  const waitingHtml = render(waiting);
+  assert.equal(timeLabel(waiting, t), null);
+  assert.equal(timeSpan(waitingHtml), undefined, "waiting shows no time");
+  assert.equal(statusSpan(waitingHtml), undefined, "waiting shows no word");
+  assert.equal(stateWord("waiting"), null);
+  assert.ok(
+    waitingHtml
+      .match(/<div[^>]*role="progressbar"[^>]*>/)?.[0]
+      .includes('aria-valuenow="0"'),
+    "waiting progress is 0",
+  );
+  for (const state of everyState.filter((state) => state !== "waiting")) {
+    const html = render({ ...snapshot, state });
+    assert.ok(timeSpan(html)?.includes("about"), `${state} shows the time`);
+    assert.equal(statusSpan(html), t(`tts.states.${state}`), `${state} word`);
+    assert.equal(stateWord(state), `tts.states.${state}`);
+  }
+  assert.equal(en.tts.states.error, "Failed");
+  assert.equal(en.tts.timeAbout, "{{elapsed}} / about {{total}}");
+  assert.equal("timeDone" in en.tts, false, "no separate finished format");
+}
+{
+  // header_names_model_and_voice
+  const models = [
+    {
+      id: "pocket-en",
+      display_name: "Pocket (English)",
+      default_voice: "alba",
+    },
+    {
+      id: "phonon-31m-en",
+      display_name: "Phonon 31M (English)",
+      default_voice: "default",
+    },
   ];
   assert.deepEqual(
-    buttons.map((match) => match[1]),
-    [
-      state === "playing" || state === "buffering" ? "Pause" : "Play",
-      en.tts.readClipboard,
-      "Stop",
-    ],
-    `${state}: Read clipboard sits next to Play`,
+    readerHeading(
+      { tts_model_id: "phonon-31m-en", tts_voice: { "phonon-31m-en": "alba" } },
+      models,
+    ),
+    { model: "Phonon 31M (English)", voice: "alba" },
   );
-  const readButton = controlsRow?.match(
-    /<button[^>]*aria-label="Read clipboard"[^>]*>(.*?)<\/button>/s,
+  assert.deepEqual(
+    readerHeading({ tts_model_id: "phonon-31m-en", tts_voice: {} }, models),
+    { model: "Phonon 31M (English)", voice: "default" },
+    "no stored voice shows the model's default voice",
   );
-  assert.ok(readButton, state);
-  assert.equal(/\sdisabled(=|\s|>)/.test(readButton[0]), false, state);
-  assert.ok(readButton?.[1].includes("<svg"), `${state}: Read clipboard icon`);
-  assert.ok(readButton?.[1].includes('aria-hidden="true"'), state);
+  assert.deepEqual(
+    readerHeading({}, models),
+    { model: "Pocket (English)", voice: "alba" },
+    "no stored model reads as pocket-en",
+  );
+  assert.equal(
+    readerHeading({ tts_model_id: "unknown-model", tts_voice: {} }, models),
+    null,
+  );
+  const named = render(
+    snapshot,
+    false,
+    readerHeading(
+      { tts_model_id: "phonon-31m-en", tts_voice: { "phonon-31m-en": "alba" } },
+      models,
+    ),
+  );
+  const head = named.match(/<header[^>]*>(.*?)<\/header>/s)?.[1] ?? "";
+  const title = head.match(/<span class="([^"]*)">Read aloud<\/span>/);
+  const detail = head.match(
+    /<span class="([^"]*)">Phonon 31M \(English\), alba<\/span>/,
+  );
+  assert.ok(title && detail, `title and detail render: ${head.slice(0, 300)}`);
+  assert.ok(head.indexOf("Read aloud") < head.indexOf("Phonon 31M"));
+  assert.ok(title[1].split(/\s+/).includes("font-medium"));
+  assert.equal(
+    title[1].includes("truncate"),
+    false,
+    "the title never truncates",
+  );
+  assert.ok(detail[1].split(/\s+/).includes("truncate"));
+  assert.ok(detail[1].split(/\s+/).includes("min-w-0"));
+  assert.ok(detail[1].split(/\s+/).includes("text-ink-2"));
+  const unnamed = render(snapshot, false, null).match(
+    /<header[^>]*>(.*?)<\/header>/s,
+  )?.[1];
+  assert.ok(unnamed?.includes("Read aloud"), "no model: the title stays");
+  assert.equal(en.tts.modelVoice, "{{model}}, {{voice}}");
 }
-assert.equal(en.tts.readClipboard, "Read clipboard");
-const header = buffering.match(/<header[^>]*>(.*?)<\/header>/s)?.[1];
-assert.ok(
-  header?.includes("Supertonic 3") && header.includes('aria-label="Close"'),
+{
+  // keys_are_named
+  for (const state of everyState) {
+    const html = render({ ...snapshot, state });
+    const buttons = [...html.matchAll(/<button([^>]*)>(.*?)<\/button>/gs)];
+    const play = buttons.find(([, attributes]) =>
+      /aria-label="(Play|Pause)"/.test(attributes),
+    );
+    const close = buttons.find(([, attributes]) =>
+      attributes.includes('aria-label="Close"'),
+    );
+    assert.ok(
+      play?.[1].includes('aria-keyshortcuts="Control+Enter"'),
+      `keys_are_named: ${state} Play or Pause names Ctrl+Enter`,
+    );
+    assert.ok(
+      close?.[1].includes('aria-keyshortcuts="Escape"'),
+      `keys_are_named: ${state} Close names Escape`,
+    );
+  }
+  assert.equal(en.tts.keys.toggle, "Ctrl+Enter");
+  assert.equal(en.tts.keys.close, "Esc");
+}
+{
+  // keys_are_named: the Tooltip is closed in static markup, so its props are read from the source
+  const source = readFileSync(
+    new URL("./ReadAloudPopup.tsx", import.meta.url),
+    "utf8",
+  );
+  const tooltips = [...source.matchAll(/<Tooltip\b[\s\S]*?<\/Tooltip>/g)].map(
+    ([block]) => block,
+  );
+  const tipOf = (key: string) =>
+    tooltips.filter((block) => block.includes(`text={t("${key}")}`));
+  const toggle = tipOf("tts.keys.toggle");
+  assert.equal(toggle.length, 1, "one Tooltip receives tts.keys.toggle");
+  assert.ok(
+    toggle[0].includes('title={t(playing ? "tts.pause" : "tts.play")}') &&
+      toggle[0].includes('aria-keyshortcuts="Control+Enter"') &&
+      toggle[0].includes("onClick={toggle}"),
+    "keys_are_named: the Play/Pause Tooltip wraps the toggle button and names Ctrl+Enter",
+  );
+  const close = tipOf("tts.keys.close");
+  assert.equal(close.length, 1, "one Tooltip receives tts.keys.close");
+  assert.ok(
+    close[0].includes('title={t("tts.close")}') &&
+      close[0].includes('aria-keyshortcuts="Escape"') &&
+      close[0].includes("onClick={close}"),
+    "keys_are_named: the Close Tooltip wraps the close button and names Esc",
+  );
+}
+{
+  // reader_escape_survives_an_open_tooltip
+  const source = readFileSync(
+    new URL("./ReadAloudPopup.tsx", import.meta.url),
+    "utf8",
+  );
+  const tooltipSource = readFileSync(
+    new URL("../components/ui/Tooltip.tsx", import.meta.url),
+    "utf8",
+  );
+  // the injected handler below mirrors this one: it skips a prevented event and, on Escape, stops it
+  assert.ok(
+    /event\.key !== "Escape"[\s\S]*?!open[\s\S]*?event\.defaultPrevented[\s\S]*?event\.preventDefault\(\);\s*event\.stopPropagation\(\);\s*hide\(\);/.test(
+      tooltipSource,
+    ),
+    "the Tooltip Escape handler still prevents and stops the event",
+  );
+  const root = source.match(/<section\b[^>]*>/)?.[0] ?? "";
+  const capturing = root.includes("onKeyDownCapture=");
+  const deliver = (key: string, ctrlKey: boolean) => {
+    const trace = { closes: 0, toggles: 0, tooltipConsumed: 0 };
+    let stopped = false;
+    const event = {
+      key,
+      ctrlKey,
+      defaultPrevented: false,
+      preventDefault() {
+        this.defaultPrevented = true;
+      },
+    };
+    const actions = {
+      close: () => {
+        trace.closes++;
+      },
+      toggle: () => {
+        trace.toggles++;
+      },
+    };
+    const reader = () => routePopupKey(event, actions);
+    const openTooltip = () => {
+      if (key !== "Escape" || event.defaultPrevented) return;
+      trace.tooltipConsumed++;
+      event.preventDefault();
+      stopped = true;
+    };
+    // DOM order: capture on the reader root, the focused button's tooltip, bubble on the root, then the window
+    const phases = capturing ? [reader, openTooltip] : [openTooltip, reader];
+    for (const phase of phases) if (!stopped) phase();
+    if (!stopped) routePopupKey(event, actions);
+    return trace;
+  };
+  assert.deepEqual(
+    deliver("Escape", false),
+    { closes: 1, toggles: 0, tooltipConsumed: 0 },
+    "reader_escape_survives_an_open_tooltip: one Escape closes once and the tooltip does not consume it",
+  );
+  assert.deepEqual(
+    deliver("Enter", true),
+    { closes: 0, toggles: 1, tooltipConsumed: 0 },
+    "reader_escape_survives_an_open_tooltip: Ctrl+Enter with a tooltip open toggles once",
+  );
+  assert.ok(
+    capturing && !/\sonKeyDown=/.test(root),
+    `the reader root routes keys in the capture phase: ${root}`,
+  );
+}
+{
+  // every_locale_renders_the_reader_header
+  const failed: Record<string, string> = {
+    ar: "فشل",
+    bg: "Неуспешно",
+    ca: "Ha fallat",
+    cs: "Selhalo",
+    da: "Mislykkedes",
+    de: "Fehlgeschlagen",
+    en: "Failed",
+    es: "Fallido",
+    fr: "Échec",
+    he: "נכשל",
+    hi: "विफल",
+    id: "Gagal",
+    it: "Non riuscito",
+    ja: "失敗",
+    ko: "실패",
+    ne: "असफल",
+    nl: "Mislukt",
+    pl: "Nie powiodło się",
+    pt: "Falhou",
+    ru: "Не удалось",
+    sv: "Misslyckades",
+    tr: "Başarısız",
+    uk: "Не вдалося",
+    vi: "Thất bại",
+    zh: "失败",
+    "zh-TW": "失敗",
+  };
+  const locales = readdirSync(new URL("../i18n/locales/", import.meta.url));
+  assert.equal(locales.length, 26);
+  for (const locale of locales) {
+    const translation = JSON.parse(
+      readFileSync(
+        new URL(`../i18n/locales/${locale}/translation.json`, import.meta.url),
+        "utf8",
+      ),
+    );
+    const instance = i18next.createInstance();
+    await instance.init({
+      lng: locale,
+      fallbackLng: false,
+      interpolation: { escapeValue: false },
+      resources: { [locale]: { translation } },
+    });
+    const html = render(
+      {
+        ...snapshot,
+        state: "buffering",
+        elapsed_seconds: 78,
+        remaining_seconds: 11,
+      },
+      false,
+      { model: "Phonon 31M (English)", voice: "alba" },
+      instance,
+    );
+    const head = html.match(/<header[^>]*>(.*?)<\/header>/s)?.[1] ?? "";
+    assert.ok(head.includes(translation.tts.title), `${locale} title`);
+    assert.ok(
+      head.includes("Phonon 31M (English)") && head.includes("alba"),
+      `${locale} model and voice render: ${head.slice(0, 200)}`,
+    );
+    assert.equal(/\{\{|tts\./.test(html), false, `${locale}: no raw key`);
+    const time = html.match(
+      /<span class="tabular-nums[^>]*>(.*?)<\/span>/s,
+    )?.[1];
+    assert.ok(
+      time?.includes("1:18") &&
+        time.includes("1:29") &&
+        time.length > "1:18 / 1:29".length,
+      `${locale} time carries its qualifier: ${time}`,
+    );
+    for (const key of ["toggle", "close"])
+      assert.ok(translation.tts.keys[key]?.trim(), `${locale} tts.keys.${key}`);
+    assert.equal("stop" in translation.tts, false, `${locale} tts.stop gone`);
+    assert.equal("time" in translation.tts, false, `${locale} tts.time gone`);
+    const errorHtml = render(
+      { ...snapshot, state: "error" },
+      false,
+      null,
+      instance,
+    );
+    assert.equal(
+      errorHtml.match(/<span role="status"[^>]*>(.*?)<\/span>/s)?.[1],
+      failed[locale],
+      `${locale} Failed word`,
+    );
+  }
+}
+{
+  // edit_text_in_an_editable_state_keeps_the_read
+  const run = (
+    text: string,
+    state: SessionSnapshot["state"],
+    current: string,
+  ) => {
+    const calls: string[] = [];
+    enterPopupEdit(text, state, {
+      current,
+      setEditing: (value) => calls.push(`setEditing:${value}`),
+      edit: (value) => calls.push(`edit:${value}`),
+    });
+    return calls;
+  };
+  for (const state of ["finished", "error", "waiting"] as const)
+    assert.deepEqual(
+      run("read this", state, "read this"),
+      ["setEditing:true"],
+      `${state}: unchanged text keeps the read`,
+    );
+  assert.deepEqual(
+    run("new text", "finished", "read this"),
+    ["setEditing:true", "edit:new text"],
+    "a paste with new text in finished still edits",
+  );
+  assert.deepEqual(
+    run("new text", "error", "read this"),
+    ["setEditing:true", "edit:new text"],
+    "a paste with new text in failed still edits",
+  );
+  for (const state of ["playing", "paused", "buffering", "starting"] as const)
+    assert.deepEqual(
+      run("read this", state, "read this"),
+      ["setEditing:true", "edit:read this"],
+      `${state}: Edit text replaces an active read`,
+    );
+}
+console.log(
+  "popup transport, time, header, keys, locale and Edit text assertions passed",
 );
 assert.ok(
   buffering.match(/<mark[^>]*class="[^"]*bg-logo-primary/),
@@ -331,7 +861,8 @@ assert.equal(pasteText("abcdef", "XY", 2, 4), "abXYef");
 assert.equal(pasteText("abcdef", "new"), "new");
 const edits: string[] = [];
 let editingMode = false;
-enterPopupEdit("keep text", {
+enterPopupEdit("keep text", "playing", {
+  current: "keep text",
   edit: (value) => edits.push(value),
   setEditing: (value) => {
     editingMode = value;
@@ -359,7 +890,6 @@ console.log("popup mode, time, controls and edit/paste seam assertions passed");
 const { registerPopupPaste, restorePopupEditor, routePopupPaste } =
   await import("./presentation");
 const { createPopupAdapter } = await import("./adapter");
-const { routePopupKey } = await import("./actions");
 const listeners = new Set<
   (event: import("./presentation").PopupPasteEvent) => void
 >();
@@ -419,7 +949,8 @@ const detachPaste = registerPopupPaste(pasteWindow, {
   isActive: () => !textEditable(view.state),
   enterEdit: (text, caret) => {
     pendingCaret = caret;
-    enterPopupEdit(text, {
+    enterPopupEdit(text, view.state, {
+      current: view.text,
       setEditing: (value) => {
         explicitEdit = value;
       },

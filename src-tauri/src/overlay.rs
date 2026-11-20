@@ -99,20 +99,89 @@ const OVERLAY_BOTTOM_OFFSET: f64 = 15.0;
 #[cfg(any(target_os = "windows", target_os = "linux"))]
 const OVERLAY_BOTTOM_OFFSET: f64 = 40.0;
 
-/// Configures the edge and offset of a GTK layer surface. gtk-layer-shell
+/// Gap between a Left or Right column window and that monitor edge.
+const OVERLAY_SIDE_OFFSET: f64 = 16.0;
+
+/// Row of the floating-window grid.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Row {
+    Top,
+    Center,
+    Bottom,
+}
+
+/// Column of the floating-window grid.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Column {
+    Left,
+    Center,
+    Right,
+}
+
+/// The grid cell of a stored floating-window position.
+pub(crate) fn cell(position: OverlayPosition) -> (Row, Column) {
+    match position {
+        OverlayPosition::TopLeft => (Row::Top, Column::Left),
+        OverlayPosition::Top => (Row::Top, Column::Center),
+        OverlayPosition::TopRight => (Row::Top, Column::Right),
+        OverlayPosition::CenterLeft => (Row::Center, Column::Left),
+        OverlayPosition::Center => (Row::Center, Column::Center),
+        OverlayPosition::CenterRight => (Row::Center, Column::Right),
+        OverlayPosition::BottomLeft => (Row::Bottom, Column::Left),
+        OverlayPosition::Bottom => (Row::Bottom, Column::Center),
+        OverlayPosition::BottomRight => (Row::Bottom, Column::Right),
+    }
+}
+
+/// Layer-shell edges of a cell: `Some(margin)` anchors that edge with that margin.
+#[cfg(any(target_os = "linux", test))]
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct LayerAnchors {
+    pub top: Option<i32>,
+    pub bottom: Option<i32>,
+    pub left: Option<i32>,
+    pub right: Option<i32>,
+}
+
+/// Anchors a cell's row and column edges; a centre axis anchors neither edge,
+/// so the compositor centres the surface on it.
+#[cfg(any(target_os = "linux", test))]
+pub(crate) fn layer_shell_anchors(cell: (Row, Column)) -> LayerAnchors {
+    let (row, column) = cell;
+    let margin = |offset: f64| Some(offset.round() as i32);
+    let (top, bottom) = match row {
+        Row::Top => (margin(OVERLAY_TOP_OFFSET), None),
+        Row::Center => (None, None),
+        Row::Bottom => (None, margin(OVERLAY_BOTTOM_OFFSET)),
+    };
+    let (left, right) = match column {
+        Column::Left => (margin(OVERLAY_SIDE_OFFSET), None),
+        Column::Center => (None, None),
+        Column::Right => (None, margin(OVERLAY_SIDE_OFFSET)),
+    };
+    LayerAnchors {
+        top,
+        bottom,
+        left,
+        right,
+    }
+}
+
+/// Configures the edges and offsets of a GTK layer surface. gtk-layer-shell
 /// commits anchor and margin changes itself, including while the surface is
 /// mapped, so changing position does not require a manual hide/show cycle.
 #[cfg(target_os = "linux")]
 fn configure_layer_shell_position(gtk_window: &gtk::ApplicationWindow, position: OverlayPosition) {
-    let (edge, opposite_edge, margin) = match position {
-        OverlayPosition::Top => (Edge::Top, Edge::Bottom, OVERLAY_TOP_OFFSET),
-        OverlayPosition::Bottom => (Edge::Bottom, Edge::Top, OVERLAY_BOTTOM_OFFSET),
-    };
-
-    gtk_window.set_anchor(edge, true);
-    gtk_window.set_anchor(opposite_edge, false);
-    gtk_window.set_layer_shell_margin(edge, margin.round() as i32);
-    gtk_window.set_layer_shell_margin(opposite_edge, 0);
+    let anchors = layer_shell_anchors(cell(position));
+    for (edge, margin) in [
+        (Edge::Top, anchors.top),
+        (Edge::Bottom, anchors.bottom),
+        (Edge::Left, anchors.left),
+        (Edge::Right, anchors.right),
+    ] {
+        gtk_window.set_anchor(edge, margin.is_some());
+        gtk_window.set_layer_shell_margin(edge, margin.unwrap_or(0));
+    }
 }
 
 /// Configures a GTK layer surface before it is shown.
@@ -291,7 +360,7 @@ fn calculate_overlay_position(
     let bottom = monitor_y + monitor_height;
 
     Some(floating_origin(
-        settings.overlay_position,
+        cell(settings.overlay_position),
         (monitor_x, monitor_y, monitor_width, monitor_height),
         bottom,
         width,
@@ -299,26 +368,34 @@ fn calculate_overlay_position(
     ))
 }
 
-/// Top-left corner (logical) of a floating window centred on `monitor` (x, y,
-/// width, height), offset from its top or from `bottom`, the platform bottom edge.
+/// Top-left corner (logical) of a floating window in `cell` of `monitor` (x, y,
+/// width, height). The top row is offset from the monitor top, the bottom row
+/// from `bottom`, the platform bottom edge; the centre row centres on the
+/// monitor height. Side columns sit `OVERLAY_SIDE_OFFSET` from the monitor edge.
 fn floating_origin(
-    position: OverlayPosition,
+    cell: (Row, Column),
     monitor: (f64, f64, f64, f64),
     bottom: f64,
     width: f64,
     height: f64,
 ) -> (f64, f64) {
-    let (monitor_x, monitor_y, monitor_width, _) = monitor;
-    let x = monitor_x + (monitor_width - width) / 2.0;
-    let y = match position {
-        OverlayPosition::Top => monitor_y + OVERLAY_TOP_OFFSET,
-        OverlayPosition::Bottom => bottom - height - OVERLAY_BOTTOM_OFFSET,
+    let (row, column) = cell;
+    let (monitor_x, monitor_y, monitor_width, monitor_height) = monitor;
+    let x = match column {
+        Column::Left => monitor_x + OVERLAY_SIDE_OFFSET,
+        Column::Center => monitor_x + (monitor_width - width) / 2.0,
+        Column::Right => monitor_x + monitor_width - width - OVERLAY_SIDE_OFFSET,
+    };
+    let y = match row {
+        Row::Top => monitor_y + OVERLAY_TOP_OFFSET,
+        Row::Center => monitor_y + (monitor_height - height) / 2.0,
+        Row::Bottom => bottom - height - OVERLAY_BOTTOM_OFFSET,
     };
     (x, y)
 }
 
-/// Places a floating window by the overlay's rules: the cursor's monitor,
-/// centred, Top or Bottom from the settings. Main thread only.
+/// Places a floating window in the settings' cell: layer-shell anchors under
+/// layer shell, otherwise an origin on the cursor's monitor. Main thread only.
 pub(crate) fn place_floating_window(
     app_handle: &AppHandle,
     window: &tauri::webview::WebviewWindow,
@@ -375,7 +452,7 @@ fn windows_text_scale_factor() -> f64 {
 
 /// Overlay rectangle in the destination monitor's physical pixels, so nothing
 /// is converted through the window's previous-monitor DPI.
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", test))]
 fn windows_overlay_bounds(
     monitor_position: PhysicalPosition<i32>,
     monitor_size: PhysicalSize<u32>,
@@ -383,26 +460,30 @@ fn windows_overlay_bounds(
     text_scale: f64,
     logical_width: f64,
     logical_height: f64,
-    overlay_position: OverlayPosition,
+    cell: (Row, Column),
 ) -> (i32, i32, i32, i32) {
     // Grow the window with the text scale; offsets stay DPI-only since the
     // card sits flush against the window's screen-edge side.
+    let (row, column) = cell;
     let content_scale = scale * text_scale;
     let width = (logical_width * content_scale).round().max(1.0) as i32;
     let height = (logical_height * content_scale).round().max(1.0) as i32;
-    let x = (monitor_position.x as f64 + (monitor_size.width as f64 - width as f64) / 2.0).round()
-        as i32;
-    let y = match overlay_position {
-        OverlayPosition::Top => {
-            (monitor_position.y as f64 + OVERLAY_TOP_OFFSET * scale).round() as i32
-        }
-        OverlayPosition::Bottom => (monitor_position.y as f64 + monitor_size.height as f64
-            - height as f64
-            - OVERLAY_BOTTOM_OFFSET * scale)
-            .round() as i32,
+    let monitor_x = monitor_position.x as f64;
+    let monitor_y = monitor_position.y as f64;
+    let monitor_width = monitor_size.width as f64;
+    let monitor_height = monitor_size.height as f64;
+    let x = match column {
+        Column::Left => monitor_x + OVERLAY_SIDE_OFFSET * scale,
+        Column::Center => monitor_x + (monitor_width - width as f64) / 2.0,
+        Column::Right => monitor_x + monitor_width - width as f64 - OVERLAY_SIDE_OFFSET * scale,
+    };
+    let y = match row {
+        Row::Top => monitor_y + OVERLAY_TOP_OFFSET * scale,
+        Row::Center => monitor_y + (monitor_height - height as f64) / 2.0,
+        Row::Bottom => monitor_y + monitor_height - height as f64 - OVERLAY_BOTTOM_OFFSET * scale,
     };
 
-    (x, y, width, height)
+    (x.round() as i32, y.round() as i32, width, height)
 }
 
 /// Moves and sizes the overlay in one native SetWindowPos, bypassing tao's
@@ -426,7 +507,7 @@ fn place_windows_overlay(
         text_scale,
         logical_width,
         logical_height,
-        settings::get_settings(app_handle).overlay_position,
+        cell(settings::get_settings(app_handle).overlay_position),
     );
     let hwnd = overlay_window
         .hwnd()
@@ -1011,22 +1092,215 @@ mod tests {
     fn floating_origin_centres_and_uses_the_offsets() {
         let monitor = (0.0, 0.0, 1920.0, 1080.0);
         assert_eq!(
-            floating_origin(OverlayPosition::Top, monitor, 1080.0, 560.0, 200.0),
+            floating_origin(cell(OverlayPosition::Top), monitor, 1080.0, 560.0, 200.0),
             (680.0, OVERLAY_TOP_OFFSET)
         );
         assert_eq!(
-            floating_origin(OverlayPosition::Bottom, monitor, 1080.0, 560.0, 200.0),
+            floating_origin(cell(OverlayPosition::Bottom), monitor, 1080.0, 560.0, 200.0),
             (680.0, 1080.0 - 200.0 - OVERLAY_BOTTOM_OFFSET)
         );
         let second = (1920.0, 0.0, 1920.0, 1080.0);
         assert_eq!(
-            floating_origin(OverlayPosition::Top, second, 1080.0, 560.0, 200.0),
+            floating_origin(cell(OverlayPosition::Top), second, 1080.0, 560.0, 200.0),
             (2600.0, OVERLAY_TOP_OFFSET)
         );
         assert_eq!(
-            floating_origin(OverlayPosition::Bottom, second, 1080.0, 560.0, 200.0),
+            floating_origin(cell(OverlayPosition::Bottom), second, 1080.0, 560.0, 200.0),
             (2600.0, 1080.0 - 200.0 - OVERLAY_BOTTOM_OFFSET)
         );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn top_and_bottom_keep_their_linux_placement() {
+        let monitor = (1920.0, 0.0, 1920.0, 1080.0);
+        assert_eq!(
+            floating_origin(cell(OverlayPosition::Top), monitor, 1080.0, 560.0, 200.0),
+            (2600.0, 4.0)
+        );
+        assert_eq!(
+            floating_origin(cell(OverlayPosition::Bottom), monitor, 1080.0, 560.0, 200.0),
+            (2600.0, 840.0)
+        );
+        assert_eq!(
+            layer_shell_anchors(cell(OverlayPosition::Top)),
+            LayerAnchors {
+                top: Some(4),
+                bottom: None,
+                left: None,
+                right: None
+            }
+        );
+        assert_eq!(
+            layer_shell_anchors(cell(OverlayPosition::Bottom)),
+            LayerAnchors {
+                top: None,
+                bottom: Some(40),
+                left: None,
+                right: None
+            }
+        );
+    }
+
+    #[test]
+    fn every_cell_has_one_origin() {
+        // A second 1920x1080 monitor whose usable bottom is 1040 (a macOS Dock).
+        let monitor = (1920.0, 0.0, 1920.0, 1080.0);
+        let (width, height) = (560.0, 200.0);
+        let columns = [
+            (Column::Left, 1936.0),
+            (Column::Center, 2600.0),
+            (Column::Right, 3264.0),
+        ];
+        let rows = [
+            (Row::Top, OVERLAY_TOP_OFFSET),
+            (Row::Center, 440.0),
+            (Row::Bottom, 1040.0 - 200.0 - OVERLAY_BOTTOM_OFFSET),
+        ];
+        for (row, y) in rows {
+            for (column, x) in columns {
+                let (origin_x, origin_y) =
+                    floating_origin((row, column), monitor, 1040.0, width, height);
+                assert_eq!((origin_x, origin_y), (x, y), "{row:?} {column:?}");
+                assert!(
+                    origin_x >= 1920.0 && origin_x + width <= 3840.0,
+                    "{row:?} {column:?} leaves the monitor horizontally"
+                );
+                assert!(
+                    origin_y >= 0.0 && origin_y + height <= 1080.0,
+                    "{row:?} {column:?} leaves the monitor vertically"
+                );
+            }
+        }
+        assert_eq!(cell(OverlayPosition::Top), (Row::Top, Column::Center));
+        assert_eq!(cell(OverlayPosition::Bottom), (Row::Bottom, Column::Center));
+    }
+
+    #[test]
+    fn layer_shell_anchors_per_cell() {
+        let top = Some(OVERLAY_TOP_OFFSET.round() as i32);
+        let bottom = Some(OVERLAY_BOTTOM_OFFSET.round() as i32);
+        let side = Some(16);
+        let anchors = |top, bottom, left, right| LayerAnchors {
+            top,
+            bottom,
+            left,
+            right,
+        };
+        let expected = [
+            ((Row::Top, Column::Left), anchors(top, None, side, None)),
+            ((Row::Top, Column::Center), anchors(top, None, None, None)),
+            ((Row::Top, Column::Right), anchors(top, None, None, side)),
+            ((Row::Center, Column::Left), anchors(None, None, side, None)),
+            (
+                (Row::Center, Column::Center),
+                anchors(None, None, None, None),
+            ),
+            (
+                (Row::Center, Column::Right),
+                anchors(None, None, None, side),
+            ),
+            (
+                (Row::Bottom, Column::Left),
+                anchors(None, bottom, side, None),
+            ),
+            (
+                (Row::Bottom, Column::Center),
+                anchors(None, bottom, None, None),
+            ),
+            (
+                (Row::Bottom, Column::Right),
+                anchors(None, bottom, None, side),
+            ),
+        ];
+        for (cell, want) in expected {
+            let got = layer_shell_anchors(cell);
+            assert_eq!(got, want, "{cell:?}");
+            assert!(
+                got.top.is_none() || got.bottom.is_none(),
+                "{cell:?} anchors top and bottom"
+            );
+            assert!(
+                got.left.is_none() || got.right.is_none(),
+                "{cell:?} anchors left and right"
+            );
+        }
+    }
+
+    #[test]
+    fn every_position_has_its_own_cell() {
+        let expected = [
+            (OverlayPosition::TopLeft, (Row::Top, Column::Left)),
+            (OverlayPosition::Top, (Row::Top, Column::Center)),
+            (OverlayPosition::TopRight, (Row::Top, Column::Right)),
+            (OverlayPosition::CenterLeft, (Row::Center, Column::Left)),
+            (OverlayPosition::Center, (Row::Center, Column::Center)),
+            (OverlayPosition::CenterRight, (Row::Center, Column::Right)),
+            (OverlayPosition::BottomLeft, (Row::Bottom, Column::Left)),
+            (OverlayPosition::Bottom, (Row::Bottom, Column::Center)),
+            (OverlayPosition::BottomRight, (Row::Bottom, Column::Right)),
+        ];
+        for (position, want) in expected {
+            assert_eq!(cell(position), want, "{position:?}");
+        }
+        let cells = expected.map(|(position, _)| cell(position));
+        for (i, shared) in cells.iter().enumerate() {
+            assert!(
+                !cells[i + 1..].contains(shared),
+                "two positions share {shared:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn windows_bounds_place_every_cell() {
+        let monitor_position = PhysicalPosition::new(-2560, -200);
+        let monitor_size = PhysicalSize::new(2560, 1440);
+        let columns = [
+            (Column::Left, -2560 + 24),
+            (
+                Column::Center,
+                (-2560.0_f64 + (2560.0 - 399.0) / 2.0).round() as i32,
+            ),
+            (Column::Right, -2560 + 2560 - 399 - 24),
+        ];
+        let rows = [
+            (Row::Top, (-200.0 + OVERLAY_TOP_OFFSET * 1.5).round() as i32),
+            (
+                Row::Center,
+                (-200.0_f64 + (1440.0 - 75.0) / 2.0).round() as i32,
+            ),
+            (
+                Row::Bottom,
+                (-200.0 + 1440.0 - 75.0 - OVERLAY_BOTTOM_OFFSET * 1.5).round() as i32,
+            ),
+        ];
+        for (row, y) in rows {
+            for (column, x) in columns {
+                let (bx, by, width, height) = windows_overlay_bounds(
+                    monitor_position,
+                    monitor_size,
+                    1.5,
+                    1.0,
+                    OVERLAY_WIDTH,
+                    OVERLAY_HEIGHT,
+                    (row, column),
+                );
+                assert_eq!(
+                    (bx, by, width, height),
+                    (x, y, 399, 75),
+                    "{row:?} {column:?}"
+                );
+                assert!(
+                    bx >= -2560 && bx + width <= 0,
+                    "{row:?} {column:?} leaves the monitor horizontally"
+                );
+                assert!(
+                    by >= -200 && by + height <= 1240,
+                    "{row:?} {column:?} leaves the monitor vertically"
+                );
+            }
+        }
     }
 
     #[test]
@@ -1067,7 +1341,8 @@ mod tests {
         ));
     }
 
-    #[cfg(target_os = "windows")]
+    // The literal Windows bounds below use the Windows offsets, which Linux shares.
+    #[cfg(not(target_os = "macos"))]
     #[test]
     fn windows_overlay_bounds_use_destination_monitor_scale() {
         let monitor_position = PhysicalPosition::new(1920, 0);
@@ -1081,7 +1356,7 @@ mod tests {
                 1.0,
                 OVERLAY_WIDTH,
                 OVERLAY_HEIGHT,
-                OverlayPosition::Bottom,
+                cell(OverlayPosition::Bottom),
             ),
             (3641, 2025, 399, 75)
         );
@@ -1093,13 +1368,13 @@ mod tests {
                 1.0,
                 OVERLAY_WIDTH,
                 OVERLAY_HEIGHT,
-                OverlayPosition::Top,
+                cell(OverlayPosition::Top),
             ),
             (3641, 6, 399, 75)
         );
     }
 
-    #[cfg(target_os = "windows")]
+    #[cfg(not(target_os = "macos"))]
     #[test]
     fn windows_overlay_bounds_support_negative_monitor_origins() {
         assert_eq!(
@@ -1110,13 +1385,13 @@ mod tests {
                 1.0,
                 OVERLAY_STREAM_WIDTH,
                 OVERLAY_STREAM_HEIGHT,
-                OverlayPosition::Bottom,
+                cell(OverlayPosition::Bottom),
             ),
             (-1530, 1040, 500, 150)
         );
     }
 
-    #[cfg(target_os = "windows")]
+    #[cfg(not(target_os = "macos"))]
     #[test]
     fn windows_overlay_bounds_grow_with_text_scale_without_moving_the_anchored_edge() {
         let monitor_position = PhysicalPosition::new(-2560, -200);
@@ -1129,7 +1404,7 @@ mod tests {
             1.1,
             OVERLAY_STREAM_WIDTH,
             OVERLAY_STREAM_HEIGHT,
-            OverlayPosition::Bottom,
+            cell(OverlayPosition::Bottom),
         );
         // 400x120 logical at 1.25 DPI x 1.1 text, still centered horizontally.
         assert_eq!((x, y, width, height), (-1555, 1025, 550, 165));
@@ -1143,7 +1418,7 @@ mod tests {
             1.1,
             OVERLAY_STREAM_WIDTH,
             OVERLAY_STREAM_HEIGHT,
-            OverlayPosition::Top,
+            cell(OverlayPosition::Top),
         );
         // Top offset rides the DPI scale alone, so the top edge doesn't move.
         assert_eq!(top_y, -195);

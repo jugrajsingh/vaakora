@@ -1,7 +1,7 @@
 export const NAV = {
   dictation: ["history", "settings", "cleanup"],
   readAloud: ["history", "settings", "vocabulary"],
-  models: ["dictation", "readAloud"],
+  models: ["dictation", "readAloud", "cleanup"],
   settings: ["general", "advanced", "about", "debug"],
 } as const;
 
@@ -40,6 +40,7 @@ export const LINKS = {
   cleanup: { destination: "dictation", tab: "cleanup" },
   readAloudModels: { destination: "models", tab: "readAloud" },
   dictationModels: { destination: "models", tab: "dictation" },
+  cleanupModels: { destination: "models", tab: "cleanup" },
   languages: { destination: "dictation", tab: "settings", group: "languages" },
   dictationRetention: {
     destination: "dictation",

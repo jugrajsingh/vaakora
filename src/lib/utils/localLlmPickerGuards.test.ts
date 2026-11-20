@@ -24,6 +24,7 @@ const model: LocalLlmModelInfo = {
   license_note: null,
   size_bytes: 484219808,
   prompt_style: "s1_control_line",
+  source: null,
 };
 let releaseSelection!: () => void;
 const waitSelection = new Promise<void>((resolve) => {

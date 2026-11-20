@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   commands,
@@ -11,10 +11,13 @@ import { Dropdown, SettingContainer } from "@/components/ui";
 import { Alert } from "../../ui/Alert";
 import { useSettings } from "../../../hooks/useSettings";
 import { useLocalLlmStatus } from "../../../hooks/useLocalLlmStatus";
+import { jobModelState, type JobModelState } from "../../shared/JobModelGroup";
 import { LocalLlmAttribution } from "./LocalLlmAttribution";
-import { LocalLlmModelList } from "./LocalLlmModelList";
-import { useRowConfirm } from "@/components/shared/InlineConfirm";
-import { createLocalLlmActions } from "./localLlmActions";
+import {
+  createLocalLlmActions,
+  createModelsLoader,
+  whileAlive,
+} from "./localLlmActions";
 import { isLocalLlmBusy } from "./localLlmRowActions";
 import { promptControls } from "@/lib/utils/localLlmPresentation";
 import {
@@ -33,18 +36,59 @@ const STYLINGS: LocalLlmStyling[] = [
 const STRUCTURES: LocalLlmStructure[] = ["prose", "lists"];
 const CONTEXTS: LocalLlmContext[] = ["general", "email"];
 
+export type ModelsLoadState = "loading" | "loaded" | "failed";
+
+/** The Job Model group's state for the cleanup models: loading before the first read, empty without a downloaded model. */
+export function cleanupJobState(
+  load: ModelsLoadState,
+  models: readonly LocalLlmModelInfo[],
+): JobModelState {
+  if (load === "failed") return "failed";
+  return jobModelState(
+    load === "loading" ? null : models.filter((m) => m.downloaded).length,
+  );
+}
+
+/** Whether the component is still mounted. */
+function useAlive(): () => boolean {
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+  return useCallback(() => alive.current, []);
+}
+
 /** Registry entries with their download state; `reload` re-reads them. */
 export const useLocalLlmModels = () => {
   const [models, setModels] = useState<LocalLlmModelInfo[]>([]);
+  const [loadState, setLoadState] = useState<ModelsLoadState>("loading");
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const alive = useAlive();
   const version = useLocalLlmDownloadStore((state) => state.version);
-  const reloadChecked = useCallback(async () => {
-    setModels(await commands.getLocalLlmModels());
-  }, []);
+  const reloadChecked = useCallback(
+    () =>
+      createModelsLoader({
+        fetch: () => commands.getLocalLlmModels(),
+        set: (next) => {
+          setModels(next);
+          setLoadState("loaded");
+        },
+        alive,
+      })(),
+    [alive],
+  );
   const reload = useCallback(async () => {
     await reloadChecked().catch((error: unknown) => {
       console.error("Failed to load local LLM models:", error);
+      whileAlive(alive, (reason: string) => {
+        setLoadError(reason);
+        setLoadState((state) => (state === "loaded" ? state : "failed"));
+      })(error instanceof Error ? error.message : String(error));
     });
-  }, [reloadChecked]);
+  }, [reloadChecked, alive]);
   useEffect(() => {
     void initializeLocalLlmDownloadProgress().catch((error: unknown) => {
       console.error("Failed to listen for local LLM download progress:", error);
@@ -53,21 +97,52 @@ export const useLocalLlmModels = () => {
   useEffect(() => {
     void reload();
   }, [reload, version]);
-  return { models, reload, reloadChecked };
+  return { models, loadState, loadError, reload, reloadChecked };
 };
 
-export const LocalLlmSettings: React.FC = () => {
+/**
+ * The select, download and delete actions of the cleanup models, with the delete-busy id from the
+ * download store (one source for every page) and this page's error. Its error is not set after unmount.
+ */
+export function useLocalLlmActions(reloadChecked: () => Promise<void>): {
+  actions: ReturnType<typeof createLocalLlmActions>;
+  deletingId: string | null;
+  error: string | null;
+} {
+  const { refreshSettingsChecked } = useSettings();
+  const deletingId = useLocalLlmDownloadStore((state) => state.deletingId);
+  const [error, setError] = useState<string | null>(null);
+  const alive = useAlive();
+  const store = useLocalLlmDownloadStore;
+  const actions = createLocalLlmActions({
+    isBusy: () =>
+      isLocalLlmBusy({
+        downloadId: store.getState().modelId,
+        deletingId: store.getState().deletingId,
+      }),
+    clearError: store.getState().clearError,
+    setError: whileAlive(alive, setError),
+    setDeletingId: store.getState().setDeletingId,
+    setLocalLlmModel: commands.setLocalLlmModel,
+    deleteLocalLlmModel: commands.deleteLocalLlmModel,
+    downloadLocalLlmModel: store.getState().download,
+    refreshSettingsChecked,
+    reloadChecked,
+    modelsChanged: store.getState().modelsChanged,
+  });
+  return { actions, deletingId, error };
+}
+
+/** The cleanup model's status, S1 controls, errors and attribution; the model list is in Models, Cleanup. */
+export const LocalLlmSettings: React.FC<{
+  models: readonly LocalLlmModelInfo[];
+  /** The error of the page's last select, download or delete. */
+  actionError: string | null;
+}> = ({ models, actionError }) => {
   const { t } = useTranslation();
-  const { getSetting, updateSetting, refreshSettingsChecked } = useSettings();
-  const { models, reloadChecked } = useLocalLlmModels();
+  const { getSetting, updateSetting } = useSettings();
   const { status, error: statusError } = useLocalLlmStatus();
-  const downloadModelId = useLocalLlmDownloadStore((state) => state.modelId);
-  const percentage = useLocalLlmDownloadStore((state) => state.percentage);
   const downloadError = useLocalLlmDownloadStore((state) => state.error);
-  const clearError = useLocalLlmDownloadStore((state) => state.clearError);
-  const download = useLocalLlmDownloadStore((state) => state.download);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
 
   const selectedId = getSetting("local_llm_model_id") ?? null;
   const selected = models.find((m) => m.id === selectedId) ?? null;
@@ -78,29 +153,6 @@ export const LocalLlmSettings: React.FC = () => {
     getSetting("post_process_prompts") ?? [],
     getSetting("post_process_selected_prompt_id") ?? null,
   );
-
-  const actions = createLocalLlmActions({
-    isBusy: () =>
-      isLocalLlmBusy({
-        downloadId: useLocalLlmDownloadStore.getState().modelId,
-        deletingId,
-      }),
-    clearError,
-    setError: setActionError,
-    setDeletingId,
-    setLocalLlmModel: commands.setLocalLlmModel,
-    deleteLocalLlmModel: commands.deleteLocalLlmModel,
-    downloadLocalLlmModel: download,
-    refreshSettingsChecked,
-    reloadChecked,
-    modelsChanged: useLocalLlmDownloadStore.getState().modelsChanged,
-  });
-
-  const deletion = useRowConfirm<string>({
-    apply: (id) => void actions.delete(id),
-    present: (id) =>
-      models.some((model) => model.id === id && model.downloaded),
-  });
 
   const statusLabel = (() => {
     if (status?.state === "ready")
@@ -116,22 +168,6 @@ export const LocalLlmSettings: React.FC = () => {
 
   return (
     <>
-      <div ref={deletion.rowsRef}>
-        <LocalLlmModelList
-          models={models}
-          selectedId={selectedId}
-          downloadId={downloadModelId}
-          percentage={percentage}
-          deletingId={deletingId}
-          askingId={deletion.asking}
-          onDownload={(id) => void actions.download(id)}
-          onDelete={deletion.ask}
-          onConfirmDelete={deletion.confirm}
-          onCancelDelete={deletion.cancel}
-          onSelect={(id) => void actions.select(id)}
-        />
-      </div>
-
       <SettingContainer
         title={t("settings.postProcessing.localLlm.status.title")}
         description={t("settings.postProcessing.localLlm.status.description")}

@@ -4,6 +4,7 @@ use super::registry::{self, PromptStyle};
 use super::{download, LocalLlmManager, LocalLlmStatus};
 use crate::managers::model::DownloadProgress;
 use crate::settings::{self, AppSettings, LocalLlmContext, LocalLlmStructure, LocalLlmStyling};
+use crate::tts::commands::ModelRevision;
 use serde::Serialize;
 use specta::Type;
 use std::sync::Arc;
@@ -22,6 +23,22 @@ pub struct LocalLlmModelInfo {
     pub size_bytes: u64,
     pub prompt_style: PromptStyle,
     pub downloaded: bool,
+    pub source: Option<ModelRevision>,
+}
+
+/// The repository and commit of a `https://huggingface.co/<owner>/<name>/resolve/<40-hex>/<file>` URL.
+fn source_of(url: &str) -> Option<ModelRevision> {
+    let (repository, rest) = url
+        .strip_prefix("https://huggingface.co/")?
+        .split_once("/resolve/")?;
+    let (revision, file) = rest.split_once('/')?;
+    let (owner, name) = repository.split_once('/')?;
+    let pinned = revision.len() == 40 && revision.bytes().all(|c| c.is_ascii_hexdigit());
+    (pinned && !owner.is_empty() && !name.is_empty() && !name.contains('/') && !file.is_empty())
+        .then(|| ModelRevision {
+            repository: repository.to_string(),
+            revision: revision.to_string(),
+        })
 }
 
 fn models_root(manager: &LocalLlmManager) -> Result<std::path::PathBuf, String> {
@@ -54,6 +71,7 @@ pub fn get_local_llm_models(manager: State<'_, Arc<LocalLlmManager>>) -> Vec<Loc
                 .models_root()
                 .map(|root| download::is_downloaded(root, m))
                 .unwrap_or(false),
+            source: source_of(m.url),
         })
         .collect()
 }
@@ -247,6 +265,37 @@ mod tests {
             .set_len(entry.size_bytes)
             .unwrap();
         path
+    }
+
+    #[test]
+    fn source_parses_pinned_urls() {
+        for m in registry::MODELS {
+            let source = source_of(m.url).unwrap_or_else(|| panic!("{}: no source", m.id));
+            assert_eq!(source.revision.len(), 40, "{}", m.id);
+            assert!(source.revision.bytes().all(|c| c.is_ascii_hexdigit()));
+            assert_eq!(
+                m.url,
+                format!(
+                    "https://huggingface.co/{}/resolve/{}/{}",
+                    source.repository, source.revision, m.file_name
+                )
+            );
+        }
+        assert_eq!(
+            source_of(registry::find("s1-mini-q4km").unwrap().url),
+            Some(crate::tts::commands::ModelRevision {
+                repository: "superwhisper/s1-mini-GGUF".into(),
+                revision: "34add00a48a2e5d24e5a4ee5405a99620a3a240c".into(),
+            })
+        );
+        for url in [
+            "https://example.com/x",
+            "https://huggingface.co/owner/name/resolve/main/file.gguf",
+            "https://huggingface.co/name/resolve/34add00a48a2e5d24e5a4ee5405a99620a3a240c/f.gguf",
+            "https://huggingface.co/owner/name/blob/34add00a48a2e5d24e5a4ee5405a99620a3a240c/f.gguf",
+        ] {
+            assert_eq!(source_of(url), None, "{url}");
+        }
     }
 
     #[tokio::test]

@@ -385,11 +385,16 @@
       "loading": "正在加载模型",
       "empty": {
         "dictation": "还没有听写模型。",
-        "readAloud": "还没有朗读模型。"
+        "readAloud": "还没有朗读模型。",
+        "cleanup": "还没有清理模型。"
       },
       "help": {
         "dictation": "选择已下载的听写模型。",
-        "readAloud": "选择已下载的朗读模型。"
+        "readAloud": "选择已下载的朗读模型。",
+        "cleanup": "清理听写内容的本地模型。"
+      },
+      "failed": {
+        "cleanup": "无法列出模型。"
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "取消",
       "readAloud": "朗读",
       "activation": "触发方式",
-      "activationHelp": "用于听写快捷键"
+      "activationHelp": "用于听写快捷键",
+      "cancelLinuxHelp": "在 Linux 上，取消快捷键无法停止听写，因为听写期间注册的快捷键在那里不可靠。请使用悬浮窗上的 X、托盘菜单中的「取消」，或运行 handy --cancel。"
     },
     "modelSettings": {
       "title": "{{model}} 设置"
@@ -776,14 +782,6 @@
         "noCleanupModel": "无后处理模型",
         "s1Description": "使用风格、结构和场景控制。",
         "plainDescription": "使用你所选的 Handy 提示词。",
-        "size": "{{size}} MiB",
-        "downloaded": "已下载",
-        "use": "使用",
-        "download": "下载",
-        "downloading": "下载中 {{percent}}%",
-        "delete": "删除",
-        "deleteConfirm": "要删除 {{name}} 吗？将释放 {{size}}。",
-        "deleteConfirmAction": "删除模型",
         "status": {
           "title": "状态",
           "description": "模型在后处理听写开始时加载,并在模型卸载超时后卸载。",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "朗读正忙于粘贴",
+    "readAloudBusyPasting": "Handy 仍在粘贴。粘贴完成后请再次尝试朗读。",
+    "readAloudUnavailableTitle": "朗读不可用",
     "readAloudClipboardUnreadableTitle": "无法读取剪贴板",
     "readAloudClipboardUnreadable": "无法读取剪贴板中的文本。",
     "loadDirectory": "加载目录时出错: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "深色"
     }
   },
+  "floating": {
+    "position": {
+      "help": "悬浮窗和朗读窗口在屏幕上出现的位置。选择顶部位置可让屏幕底部保持空闲，在向终端听写时很有用。",
+      "cells": {
+        "top_left": "左上",
+        "top": "上中",
+        "top_right": "右上",
+        "center_left": "左中",
+        "center": "中央",
+        "center_right": "右中",
+        "bottom_left": "左下",
+        "bottom": "下中",
+        "bottom_right": "右下"
+      }
+    },
+    "style": {
+      "help": "无：不显示悬浮窗。错误仍会显示在托盘和主窗口中。精简：听写时显示一个小胶囊。实时：在支持的模型上，说话时还会显示文字。在 Linux 上建议选择「无」。"
+    }
+  },
   "overlay": {
     "transcribing": "正在转录",
     "processing": "正在整理",
     "loadingModel": "正在加载模型",
-    "cancel": "取消听写"
+    "cancel": "取消听写",
+    "starting": "正在启动麦克风",
+    "recording": "正在录音"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 可能正在阻止 1 个快捷键",
@@ -1215,12 +1234,6 @@
     "dismiss": "关闭"
   },
   "tts": {
-    "ratings": {
-      "quality": "质量",
-      "speed": "速度",
-      "recommended": "推荐",
-      "tooltip": "首次出声 {{firstAudio}} 秒,比实时快 {{faster}} 倍,加载用时 {{load}} 秒"
-    },
     "devices": {
       "auto": "自动",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "正在为 {{device}} 准备:{{graph}}",
     "buffering": "缓冲中",
     "title": "朗读",
+    "modelVoice": "{{model}}，{{voice}}",
     "textLabel": "待朗读文本",
     "placeholder": "粘贴要朗读的文本",
     "play": "播放",
     "pause": "暂停",
-    "stop": "停止",
     "close": "关闭",
     "readClipboard": "朗读剪贴板",
     "editText": "编辑文本",
     "progress": "进度",
-    "time": "已用 {{elapsed}} 秒,剩余 {{remaining}} 秒",
-    "openModels": "文本转语音模型",
+    "timeAbout": "{{elapsed}} / 约 {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Enter",
+      "close": "Esc"
+    },
+    "chooseModel": "选择模型",
+    "failedLine": "朗读失败。{{reason}}",
     "outputFallback": "使用默认输出设备",
     "states": {
       "waiting": "等待中",
@@ -1293,25 +1311,10 @@
       "playing": "播放中",
       "paused": "已暂停",
       "finished": "已完成",
-      "error": "错误"
+      "error": "失败"
     },
-    "modelsSubtitle": "选择语音模型。速度数据是在开发者的电脑上测得的，你的电脑上可能有所不同。",
-    "downloaded": "已下载",
-    "availableToDownload": "可下载",
-    "recommended": "推荐",
-    "downloading": "下载中",
     "needsToken": "需要 Hugging Face 令牌",
     "tokenSet": "令牌已设置",
-    "active": "使用中",
-    "use": "使用",
-    "download": "下载",
-    "delete": "删除",
-    "deleteConfirm": "要删除 {{name}} 吗？将释放 {{size}}。你的词汇和历史记录会保留。",
-    "deleteConfirmSelected": "在你选择其他模型之前，朗读将无法使用。",
-    "deleteConfirmAction": "删除模型",
-    "cancel": "取消",
-    "token": "Hugging Face 令牌",
-    "tokenHelp": "仅在接受 Hugging Face 上的语音条款后下载 Pocket 受限语音时需要。令牌仅保存在内存中,Handy 重启时会被清除。",
     "clearToken": "清除令牌",
     "showToken": "显示令牌",
     "hideToken": "隐藏令牌",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "小巧的印地语语音 (女声和男声)。英文单词会逐个字母拼读。",
       "indic-tiny-pa": "小巧的旁遮普语 (古木基文) 语音 (女声和男声)。英文单词会逐个字母拼读。"
     },
-    "voiceCount": "{{count}} 种语音",
-    "downloadProgress": "模型下载进度",
     "speedLabel": "速度",
     "pitchLabel": "音高",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "原始转录",
     "diffNote": "显示与原始转录的差异。",
     "noCleanup": "未清理"
+  },
+  "models": {
+    "tags": {
+      "recommended": "推荐",
+      "live": "实时",
+      "translates": "可翻译",
+      "custom": "自定义",
+      "oldFormat": "旧格式",
+      "needsToken": "需要令牌",
+      "nativeWords": "原生词表"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "未测量",
+      "licence": "未标明许可证",
+      "languages": "未标明",
+      "notListed": "未标明"
+    },
+    "measured": {
+      "maker": "厂商数据（{{machine}}，{{backend}}），非本机",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}，在“设置”“高级”中设定",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "原生词表",
+      "corrected": "识别后纠正",
+      "unknown": "模型加载后才知道"
+    },
+    "speedFigure": {
+      "dictation": "30 秒语音需 {{value}} 秒"
+    },
+    "search": "搜索模型",
+    "noMatch": "没有与“{{query}}”匹配的内容。",
+    "noFilterMatch": "没有符合这些筛选条件的模型。",
+    "clearFilters": "清除筛选",
+    "selected": "已选择",
+    "runtime": {
+      "notLoaded": "未加载",
+      "loading": "加载中",
+      "ready": "就绪",
+      "failed": "失败"
+    },
+    "downloading": "正在下载 {{size}} 的 {{percent}}%",
+    "row": {
+      "open": "显示详情",
+      "close": "隐藏详情"
+    },
+    "detail": {
+      "languages": "语言",
+      "runOn": "运行设备",
+      "memory": "内存",
+      "measuredOn": "测量环境",
+      "voices": "语音",
+      "licence": "许可证",
+      "modelCard": "模型卡",
+      "source": "来源",
+      "revision": "{{repository}} · 修订版 {{revision}}",
+      "customWords": "自定义词汇"
+    },
+    "delete": {
+      "action": "删除模型",
+      "ask": "删除{{name}}？这将释放 {{size}}。",
+      "askUnknownSize": "删除{{name}}？",
+      "selected": {
+        "dictation": "在你选择其他模型之前，听写将无法使用。",
+        "readAloud": "在你选择其他模型之前，朗读将无法使用。",
+        "cleanup": "在你选择其他模型之前，清理将无法使用。"
+      },
+      "kept": {
+        "dictation": "你的历史记录会保留。",
+        "readAloud": "你的词汇和历史记录会保留。",
+        "cleanup": "你的提示词和历史记录会保留。"
+      }
+    },
+    "heads": {
+      "score": "评分",
+      "speed": "速度",
+      "size": "大小"
+    },
+    "legend": {
+      "open": "各列的含义",
+      "score": {
+        "readAloud": "满分 10 分的听感质量。",
+        "cleanup": "清理模型还没有评分。"
+      },
+      "speed": {
+        "readAloud": "模型所运行设备上的速度评分，满分 10 分。",
+        "cleanup": "清理模型还没有测量过速度。"
+      },
+      "range": "{{low}} 到 {{high}}",
+      "unmeasured": "? 表示尚未测量。",
+      "measuredOn": "测量于 {{machine}}。",
+      "speedNote": {
+        "accelerated": "在我们的测试笔记本电脑的显卡上，输出 30 秒语音所需的时间。未在这台电脑上测量。",
+        "cpu": "在我们的测试笔记本电脑的处理器上，输出 30 秒语音所需的时间。未在这台电脑上测量。"
+      }
+    },
+    "cell": {
+      "value": "{{head}}：{{figure}}",
+      "measured": "{{head}}：{{figure}}，测量于 {{provenance}}",
+      "unmeasured": "{{head}}：未测量"
+    },
+    "mark": {
+      "select": "选择{{name}}",
+      "download": "下载{{name}}",
+      "cancel": "停止下载{{name}}",
+      "needsToken": "需要 Hugging Face 令牌。请在详情中添加。"
+    },
+    "remove": "删除{{name}}",
+    "chips": {
+      "accelerated": "GPU 或 NPU"
+    },
+    "busy": "请等待当前的下载或删除完成。",
+    "listen": "试听{{voice}}",
+    "voiceCount_one": "{{count}} 种语音",
+    "voiceCount": "{{count}} 种语音",
+    "sections": {
+      "available": "可用"
+    },
+    "token": {
+      "label": "Hugging Face 令牌",
+      "help": "请先在 Hugging Face 上接受语音条款。令牌会保存在内存中，直到 Handy 重新启动。"
+    }
   }
 }

@@ -30,6 +30,7 @@ const readyAlternative: LocalLlmModelInfo = {
   license_note: null,
   size_bytes: 1,
   prompt_style: "s1_control_line",
+  source: null,
 };
 const guardedRow = createLocalLlmRowActions(
   readyAlternative,

@@ -25,6 +25,7 @@ const model: LocalLlmModelInfo = {
   license_note: null,
   size_bytes: 484219808,
   prompt_style: "s1_control_line",
+  source: null,
 };
 assert.equal(
   selectedDownloadedModel([model], model.id)?.display_name,
@@ -363,7 +364,7 @@ const onlyRow = row.match(/<button\b[\s\S]*?<\/button>/u)?.[0];
 assert.ok(onlyRow);
 assert.ok(onlyRow.includes(longName));
 assert.ok(onlyRow.includes("Uses styling, structure and context controls."));
-assert.ok(onlyRow.includes("2382 MiB"));
+assert.ok(onlyRow.includes("2.5 GB"));
 assert.ok(onlyRow.includes(">Active</span>"));
 const missingRows = renderToStaticMarkup(
   React.createElement(LocalLlmDropdown, {
@@ -395,7 +396,7 @@ const plainButton = plainRow.match(/<button\b[\s\S]*?<\/button>/u)?.[0];
 assert.ok(plainButton);
 assert.ok(plainButton.includes("Uses your selected Handy prompt."));
 assert.ok(plainButton.includes("Quill 0.8B"));
-assert.ok(plainButton.includes("505 MiB"));
+assert.ok(plainButton.includes("529 MB"));
 assert.ok(plainButton.includes(">Active</span>"));
 assert.ok(plainButton.includes('disabled=""'));
 
@@ -477,6 +478,7 @@ const transcriptionModel: ModelInfo = {
   is_custom: false,
   supports_streaming: false,
   supports_language_detection: false,
+  supports_vocabulary: null,
 };
 const transcriptionRowsMarkup = renderToStaticMarkup(
   React.createElement(ModelDropdown, {
@@ -505,14 +507,14 @@ const transcriptionSizeLine = transcriptionRow.match(
   /<div class="text-xs text-ink-3">([^<]*)<\/div>/u,
 );
 assert.ok(transcriptionSizeLine, "transcription row has its own size line");
-assert.equal(transcriptionSizeLine[1], "1235 MiB");
+assert.equal(transcriptionSizeLine[1], "1.3 GB");
 assert.ok(
   transcriptionRow.includes(
     `<div class="text-xs text-ink-3 italic pe-4">${transcriptionModel.description}</div>${transcriptionSizeLine[0]}`,
   ),
   "transcription size immediately follows its description",
 );
-console.log("transcription row rounded MiB size: all assertions passed");
+console.log("transcription row decimal size: all assertions passed");
 
 const downloadedRows = [
   model,

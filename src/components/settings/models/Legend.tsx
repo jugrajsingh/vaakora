@@ -59,7 +59,7 @@ export const Legend: React.FC<{ tier: "accelerated" | "cpu" }> = ({ tier }) => {
             {t("modelTable.speed")}
           </p>
           <p className="mt-[2px] text-ink-2">
-            {t(`settings.models.legend.speedNote.${tier}`)}
+            {t(`models.legend.speedNote.${tier}`)}
           </p>
           <ul className="mt-[8px] grid grid-cols-[auto_1fr_auto_1fr] items-center gap-x-[8px] gap-y-[5px]">
             {[4, 3, 2, 1].map((level) => (

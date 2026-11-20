@@ -30,9 +30,6 @@ const keyOf = (reason: unknown) =>
 export function controls(snapshot: PopupSnapshot) {
   return {
     canPlay: snapshot.text.trim().length > 0 && snapshot.state !== "starting",
-    canStop: ["starting", "buffering", "playing", "paused", "error"].includes(
-      snapshot.state,
-    ),
     isPlaying: snapshot.state === "playing" || snapshot.state === "buffering",
   };
 }
@@ -93,12 +90,13 @@ export function createPopupActions(
       localStopped = true;
       replacementReady = false;
       const stopped = dependencies.stop().then(
-        () => true,
-        () => false,
+        () => null,
+        (reason: unknown) => ({ reason }),
       );
       writes = writes
         .then(async () => {
-          if (!(await stopped)) throw new Error("Stop failed");
+          const failure = await stopped;
+          if (failure) throw failure.reason;
           if (sequence !== editSequence || closed) return;
           await dependencies.replaceText(text);
           if (sequence === editSequence && !closed) replacementReady = true;
@@ -115,11 +113,6 @@ export function createPopupActions(
     async play() {
       if (pending || closed || !controls(snapshot()).canPlay) return;
       await playback(false);
-    },
-    async stop() {
-      cancelIntent();
-      if (closed || !controls(snapshot()).canStop) return;
-      await attempt(dependencies.stop);
     },
     async readClipboard() {
       if (closed) return;

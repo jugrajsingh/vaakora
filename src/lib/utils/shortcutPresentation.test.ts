@@ -50,8 +50,26 @@ assert.deepEqual(generalShortcutRows(true, false), [
   "cancel",
   "read_aloud",
 ]);
-assert.equal(generalShortcutRows(true, true).includes("cancel"), false);
-assert.equal(generalShortcutRows(false, true).includes("cancel"), false);
+assert.deepEqual(generalShortcutRows(true, true), [
+  "transcribe",
+  "transcribe_with_post_process",
+  "activation",
+  "cancelHelp",
+  "read_aloud",
+]);
+assert.deepEqual(generalShortcutRows(false, true), [
+  "transcribe",
+  "activation",
+  "cancelHelp",
+  "read_aloud",
+]);
+for (const cleanup of [false, true]) {
+  assert.equal(generalShortcutRows(cleanup, true).includes("cancel"), false);
+  assert.equal(
+    generalShortcutRows(cleanup, false).includes("cancelHelp"),
+    false,
+  );
+}
 
 // clear_rules_per_binding
 for (const enabled of [false, true]) {
@@ -118,7 +136,15 @@ for (const dir of others) {
   assert.equal(typeof text, "string", dir);
   assert.notEqual(text, "", dir);
   assert.notEqual(text, CFCE1B85_CLEANUP_DESCRIPTION[dir], dir);
+  const help = locale.settings.shortcuts.cancelLinuxHelp;
+  assert.equal(typeof help, "string", dir);
+  assert.notEqual(help, en.settings.shortcuts.cancelLinuxHelp, dir);
+  assert.ok(help.includes("handy --cancel"), `${dir} names the command`);
 }
+assert.equal(
+  en.settings.shortcuts.cancelLinuxHelp,
+  "On Linux the cancel shortcut does not stop a dictation, because shortcuts registered during a dictation are unreliable there. Use the X on the overlay, Cancel in the tray menu, or run handy --cancel.",
+);
 assert.deepEqual(
   Object.keys(CFCE1B85_CLEANUP_DESCRIPTION).sort(),
   others.slice().sort(),

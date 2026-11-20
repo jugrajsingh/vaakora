@@ -3,6 +3,7 @@ export type ShortcutRow =
   | "transcribe_with_post_process"
   | "activation"
   | "cancel"
+  | "cancelHelp"
   | "read_aloud";
 
 export function generalShortcutRows(
@@ -12,7 +13,7 @@ export function generalShortcutRows(
   const rows: ShortcutRow[] = ["transcribe"];
   if (cleanup) rows.push("transcribe_with_post_process");
   rows.push("activation");
-  if (!linux) rows.push("cancel");
+  rows.push(linux ? "cancelHelp" : "cancel");
   rows.push("read_aloud");
   return rows;
 }

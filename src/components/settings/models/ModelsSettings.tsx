@@ -1,18 +1,41 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshCw } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useModelStore } from "@/stores/modelStore";
 import {
-  ModelTable,
-  Note,
-  useModelFilters,
-  type TableSection,
-} from "@/components/shared/modelTable/ModelTable";
+  areModelsLocked,
+  useModelsLocked,
+} from "@/stores/transcriptionJobsStore";
+import { useSettings } from "@/hooks/useSettings";
+import { useRowConfirm } from "@/components/shared/InlineConfirm";
+import { Codes } from "@/components/shared/modelTable/columns";
+import { Note } from "@/components/shared/modelTable/ModelTable";
+import {
+  ManagerTable,
+  type ManagerSection,
+} from "@/components/shared/modelTable/ManagerTable";
+import {
+  applyChips,
+  dictationModel,
+  matchesQuery,
+  type Chip,
+  type ManagerModel,
+} from "@/components/shared/modelTable/roles";
+import { languageName } from "@/lib/constants/languages";
+import { formatBytes } from "@/lib/utils/format";
 import RetiredModelsNotice from "./RetiredModelsNotice";
 import { ModelRow } from "./ModelRow";
 import { Legend } from "./Legend";
-import { useModelEntries } from "./modelEntries";
+import { deleteChecks, deleteMessage, type DeleteAsk } from "./managerRows";
+import {
+  placeNow,
+  placeOf,
+  useModelEntries,
+  useSwitching,
+  type Entry,
+} from "./modelEntries";
 
 /** Past this many models on disk, the rest fold under "Show N more". */
 const YOURS_LIMIT = 5;
@@ -39,33 +62,113 @@ const Rescan: React.FC = () => {
   );
 };
 
+/** The label of each value of the dictation acceleration setting. */
+const DEVICE_KEYS = {
+  auto: "settings.advanced.acceleration.gpuDevice.auto",
+  cpu: "models.runOn.cpu",
+  gpu: "models.runOn.gpu",
+} as const;
+
+const CHIP_TAGS = ["live", "translates", "nativeWords"] as const;
+
 interface ModelsSettingsProps {
   /** Where the languages are changed (General). */
   onChangeLanguages?: () => void;
 }
 
-/** The Models page: onboarding's model table, filling the window. */
+/** Models, Dictation: the manager table over the app's models, graded for your languages. */
 export const ModelsSettings: React.FC<ModelsSettingsProps> = ({
   onChangeLanguages,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const loading = useModelStore((s) => s.loading);
   const { facts, lists } = useModelEntries();
-  const { filters, setFilters, searching, matches } = useModelFilters();
+  const { getSetting } = useSettings();
+  const switching = useSwitching();
+  // A file transcription starting re-renders the page, so the question prunes.
+  useModelsLocked();
+  const sources = useModelStore(
+    useShallow((s) => ({
+      models: s.models,
+      downloadingModels: s.downloadingModels,
+      verifyingModels: s.verifyingModels,
+      downloadProgress: s.downloadProgress,
+      currentModel: s.currentModel,
+    })),
+  );
+  const [query, setQuery] = useState("");
+  const [pressed, setPressed] = useState<ReadonlySet<string>>(new Set());
+  const [openId, setOpenId] = useState<string | null>(null);
   const [more, setMore] = useState(false);
+
+  // The question as asked: its model, whether it was selected, and its words.
+  const asked = useRef<(DeleteAsk & { message: string }) | null>(null);
+  const question = useRowConfirm<string>(
+    deleteChecks({
+      asked: () => asked.current,
+      now: (id) => ({
+        place: placeNow(id),
+        selected: useModelStore.getState().currentModel === id,
+        locked: areModelsLocked(),
+      }),
+      remove: (id) => void useModelStore.getState().deleteModel(id),
+    }),
+  );
 
   if (loading) {
     return (
-      <div className="max-w-3xl w-full mx-auto">
-        <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-2 border-logo-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
+      <p
+        role="status"
+        className="px-[12px] py-16 text-center text-small text-ink-3"
+      >
+        {t("settings.jobModel.loading")}
+      </p>
     );
   }
 
-  const keep = (xs: typeof lists.yours) => xs.filter(matches);
-  const moreButton = !searching && lists.yours.length > YOURS_LIMIT && (
+  const runOnText = t("models.runOn.dictation", {
+    device: t(DEVICE_KEYS[getSetting("transcribe_accelerator") ?? "auto"]),
+  });
+  const infoById = new Map(sources.models.map((info) => [info.id, info]));
+  const modelOf = (e: Entry): ManagerModel =>
+    dictationModel(e, infoById.get(e.id), {
+      place: placeOf(e.id, { ...sources, switching }),
+      percent: sources.downloadProgress[e.id]?.percentage ?? 0,
+      tier: facts.tier,
+      runOnText,
+      t,
+    });
+  const shown = {
+    yours: lists.yours.map(modelOf),
+    fits: lists.fits.map(modelOf),
+    partial: lists.partial.map(modelOf),
+    untested: lists.untested.map(modelOf),
+  };
+  const entryById = new Map(
+    [...lists.yours, ...lists.fits, ...lists.partial, ...lists.untested].map(
+      (e) => [e.id, e],
+    ),
+  );
+
+  const chips: Chip[] = CHIP_TAGS.map((tag) => ({
+    key: tag,
+    label: t(`models.tags.${tag}`),
+    test: (m: ManagerModel) => m.tags.includes(tag),
+  }));
+  const toggleChip = (key: string) =>
+    setPressed((on) => {
+      const next = new Set(on);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
+  const searched = query.trim() !== "";
+  const searching = searched || pressed.size > 0;
+  const keep = (models: ManagerModel[]) =>
+    applyChips(models, pressed, chips).filter((m) =>
+      matchesQuery(m, query, { t, language: i18n.language, languageName }),
+    );
+
+  const moreButton = !searching && shown.yours.length > YOURS_LIMIT && (
     <button
       type="button"
       onClick={() => setMore((m) => !m)}
@@ -74,7 +177,7 @@ export const ModelsSettings: React.FC<ModelsSettingsProps> = ({
       {more
         ? t("settings.models.showFewer")
         : t("settings.models.showMore", {
-            count: lists.yours.length - YOURS_LIMIT,
+            count: shown.yours.length - YOURS_LIMIT,
           })}
       <span
         aria-hidden="true"
@@ -83,28 +186,28 @@ export const ModelsSettings: React.FC<ModelsSettingsProps> = ({
     </button>
   );
 
-  const sections: TableSection[] = searching
+  const sections: ManagerSection[] = searching
     ? [
         {
           key: "yours",
           label: t("settings.models.sections.yours"),
-          rows: keep(lists.yours),
+          rows: keep(shown.yours),
         },
         {
           key: "fits",
           label: t("settings.models.sections.fits"),
-          rows: keep(lists.fits),
+          rows: keep(shown.fits),
         },
         {
           key: "partial",
           label: t("modelTable.missingLanguage"),
-          rows: keep(lists.partial),
+          rows: keep(shown.partial),
         },
         {
           key: "untested",
           label: t("settings.models.sections.untested"),
-          rows: filters.query.trim() ? keep(lists.untested) : [],
-          note: t("settings.models.untestedNote"),
+          rows: searched ? keep(shown.untested) : [],
+          after: <Note>{t("settings.models.untestedNote")}</Note>,
         },
       ]
     : [
@@ -116,8 +219,8 @@ export const ModelsSettings: React.FC<ModelsSettingsProps> = ({
               <Rescan />
             </>
           ),
-          rows: more ? lists.yours : lists.yours.slice(0, YOURS_LIMIT),
-          after: lists.yours.length ? (
+          rows: more ? shown.yours : shown.yours.slice(0, YOURS_LIMIT),
+          after: shown.yours.length ? (
             moreButton
           ) : (
             <Note>{t("settings.models.emptyYours")}</Note>
@@ -126,54 +229,104 @@ export const ModelsSettings: React.FC<ModelsSettingsProps> = ({
         {
           key: "fits",
           label: t("settings.models.sections.fits"),
-          rows: lists.fits,
+          rows: shown.fits,
         },
         {
           key: "partial",
           label: t("modelTable.missingLanguage"),
-          rows: lists.partial,
+          rows: shown.partial,
         },
       ];
+  // "Yours" always shows at rest; a search hides empty sections.
+  const listed = sections.filter(
+    (s) => s.rows.length || (s.key === "yours" && !searching),
+  );
+  const lastIndex = listed.length - 1;
+  if (lastIndex >= 0 && !searching && shown.untested.length > 0) {
+    const last = listed[lastIndex];
+    listed[lastIndex] = {
+      ...last,
+      after: (
+        <>
+          {last.after}
+          <Note>
+            {t("settings.models.untestedHidden", {
+              count: shown.untested.length,
+            })}
+          </Note>
+        </>
+      ),
+    };
+  }
+
+  const ask = (m: ManagerModel) => {
+    const selected = useModelStore.getState().currentModel === m.id;
+    asked.current = {
+      id: m.id,
+      selected,
+      message: deleteMessage(t, {
+        name: m.name,
+        size: m.sizeBytes === null ? null : formatBytes(m.sizeBytes),
+        selected,
+        role: "dictation",
+      }),
+    };
+    question.ask(m.id);
+  };
 
   return (
-    <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col">
-      {/* Where to change the languages the grades are for. */}
-      <div className="mb-[16px] flex flex-none items-center justify-end gap-[12px] px-[12px]">
-        {onChangeLanguages && (
-          <button
-            type="button"
-            onClick={onChangeLanguages}
-            className="shrink-0 cursor-pointer text-sm text-text underline decoration-line-strong underline-offset-[3px] hover:decoration-text focus:outline-none focus-visible:ring-1 focus-visible:ring-logo-primary"
-          >
-            {t("settings.models.changeLanguages")}
-          </button>
-        )}
-      </div>
-      <div className="mx-[12px] mb-[16px] flex-none empty:hidden">
+    <div className="w-full max-w-3xl min-w-0">
+      <div className="mx-[12px] mb-[16px] empty:hidden">
         <RetiredModelsNotice />
       </div>
-      <ModelTable
-        grading={facts}
-        filters={filters}
-        setFilters={setFilters}
-        // "Yours" always shows at rest; a search hides empty sections.
-        sections={sections.filter(
-          (s) => s.rows.length || (s.key === "yours" && !searching),
-        )}
-        renderRow={(e) => <ModelRow key={e.id} entry={e} />}
-        actionsHead={<Legend tier={facts.tier} />}
-        footer={
-          !searching &&
-          lists.untested.length > 0 && (
-            <Note>
-              {t("settings.models.untestedHidden", {
-                count: lists.untested.length,
-              })}
-            </Note>
-          )
-        }
-        thinEdge
-      />
+      <div ref={question.rowsRef}>
+        <ManagerTable
+          role="dictation"
+          sections={listed}
+          query={query}
+          setQuery={setQuery}
+          chips={chips}
+          pressed={pressed}
+          toggleChip={toggleChip}
+          heads={<Codes langs={facts.langs} />}
+          legend={<Legend tier={facts.tier} />}
+          aside={
+            onChangeLanguages && (
+              <button
+                type="button"
+                onClick={onChangeLanguages}
+                className="shrink-0 cursor-pointer text-sm text-text underline decoration-line-strong underline-offset-[3px] hover:decoration-text focus:outline-none focus-visible:ring-1 focus-visible:ring-logo-primary"
+              >
+                {t("settings.models.changeLanguages")}
+              </button>
+            )
+          }
+          openId={openId}
+          onOpenChange={setOpenId}
+          renderRow={(m, open, toggle) => {
+            const entry = entryById.get(m.id);
+            return (
+              entry && (
+                <ModelRow
+                  model={m}
+                  entry={entry}
+                  grading={facts}
+                  open={open}
+                  toggle={toggle}
+                  asking={
+                    question.asking === m.id && asked.current
+                      ? asked.current.message
+                      : null
+                  }
+                  ask={() => ask(m)}
+                  cancel={question.cancel}
+                  confirm={question.confirm}
+                />
+              )
+            );
+          }}
+        />
+      </div>
     </div>
   );
 };

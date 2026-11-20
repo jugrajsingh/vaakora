@@ -127,16 +127,35 @@ export type Place =
   | "checking"
   | "remote";
 
-export const usePlace = (id: string): Place => {
-  const switching = usePageState((s) => s.switching === id);
-  const state = useModelStore((s) => downloadStateOf(s, id).state);
-  const current = useModelStore((s) => s.currentModel === id);
-  if (switching) return "loading";
+/** What a model's place is read from: the model store and the model being switched to. */
+export type PlaceSources = Parameters<typeof downloadStateOf>[0] & {
+  currentModel: string;
+  switching: string | null;
+};
+
+export const placeOf = (id: string, s: PlaceSources): Place => {
+  if (s.switching === id) return "loading";
+  const { state } = downloadStateOf(s, id);
   if (state === "checking" || state === "downloading") return state;
   // A stale selection must never make a missing model look in use.
   if (state !== "ready") return "remote";
-  return current ? "active" : "ready";
+  return s.currentModel === id ? "active" : "ready";
 };
+
+export const usePlace = (id: string): Place => {
+  const switching = usePageState((s) => s.switching);
+  return useModelStore((s) => placeOf(id, { ...s, switching }));
+};
+
+/** The model being switched to, for a page that places every model. */
+export const useSwitching = () => usePageState((s) => s.switching);
+
+/** A model's place as the stores hold it now, outside render. */
+export const placeNow = (id: string): Place =>
+  placeOf(id, {
+    ...useModelStore.getState(),
+    switching: usePageState.getState().switching,
+  });
 
 export const useIsTarget = (id: string) => usePageState((s) => s.target === id);
 

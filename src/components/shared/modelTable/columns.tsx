@@ -154,9 +154,11 @@ export const SpeedTip: React.FC<{
   model: CatalogModel | undefined;
   /** It previews your words while you talk. */
   streaming: boolean;
+  /** A measured figure with its provenance, under the band's words. */
+  note?: string | null;
   className?: string;
   children: React.ReactElement;
-}> = ({ grading, model, streaming, className, children }) => {
+}> = ({ grading, model, streaming, note, className, children }) => {
   const { t } = useTranslation();
   const key = (k: string) => `modelTable.rubric.${k}`;
   const wait = grading.wait(model);
@@ -170,13 +172,16 @@ export const SpeedTip: React.FC<{
           : t(key("speedTitle"), { speed: t(key(`speedName.${level}`)) })
       }
       text={
-        wait == null
-          ? t(key("untimed"))
-          : streaming
-            ? t(key("speedPreview"), {
-                meaning: t(key(`speedMeaning.${level}`)),
-              })
-            : t(key(`speedMeaning.${level}`))
+        <>
+          {wait == null
+            ? t(key("untimed"))
+            : streaming
+              ? t(key("speedPreview"), {
+                  meaning: t(key(`speedMeaning.${level}`)),
+                })
+              : t(key(`speedMeaning.${level}`))}
+          {note && <span className="mt-[6px] block">{note}</span>}
+        </>
       }
     >
       {children}
@@ -190,9 +195,24 @@ export const Values: React.FC<{
   model: CatalogModel | undefined;
   streaming: boolean;
   sizeMb: number;
+  /** The model's measured speed: its figure and provenance name the speed cell and join its tooltip. */
+  speed?: { figure: string | null; provenance: string | null };
   vt?: VtName;
-}> = ({ grading, model, streaming, sizeMb, vt }) => {
+}> = ({ grading, model, streaming, sizeMb, speed, vt }) => {
+  const { t } = useTranslation();
   const { langs } = grading;
+  const note =
+    speed?.figure == null
+      ? null
+      : speed.provenance === null
+        ? speed.figure
+        : `${speed.figure}, ${speed.provenance}`;
+  const head = t("models.heads.speed");
+  const speedName =
+    speed &&
+    (note === null
+      ? t("models.cell.unmeasured", { head })
+      : t("models.cell.value", { head, figure: note }));
   return (
     <span
       {...vt?.("g")}
@@ -224,8 +244,17 @@ export const Values: React.FC<{
           </span>
         </GradeTip>
       )}
-      <SpeedTip grading={grading} model={model} streaming={streaming}>
-        <span className="inline-grid h-[22px] w-[36px] place-items-center">
+      <SpeedTip
+        grading={grading}
+        model={model}
+        streaming={streaming}
+        note={note}
+      >
+        <span
+          role={speedName ? "img" : undefined}
+          aria-label={speedName}
+          className="inline-grid h-[22px] w-[36px] place-items-center"
+        >
           <SpeedBars
             level={speedLevel(grading.wait(model))}
             className="h-[12px]!"

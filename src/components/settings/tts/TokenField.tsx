@@ -1,37 +1,46 @@
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import type { tokenEntry, TokenEntryState } from "./token";
+import type { TokenActions, TokenEntryState } from "./token";
+
+/** The Hugging Face token field of a gated model's details; `present` is the session presence line. */
 export function TokenField({
   state,
   actions,
+  present,
 }: {
   state: TokenEntryState;
-  actions: ReturnType<typeof tokenEntry>;
+  actions: TokenActions;
+  present: boolean;
 }) {
   const { t } = useTranslation();
   return (
     <form
       data-tts-token-field
-      className="w-full text-xs text-text/50 space-y-2"
+      className="flex w-full min-w-0 flex-col gap-[8px] text-small text-ink-2"
       onSubmit={(event) => {
         event.preventDefault();
         void actions.save();
       }}
     >
-      <label className="flex items-center gap-2">
-        {t("tts.token")}
+      <label className="flex min-w-0 flex-col gap-[4px]">
+        {t("models.token.label")}
         <Input
+          className="w-full min-w-0"
           type={state.visible ? "text" : "password"}
           autoComplete="off"
+          spellCheck={false}
           value={state.draft}
           disabled={state.pending}
           onChange={(event) => actions.edit(event.target.value)}
         />
       </label>
-      <p>{t("tts.tokenHelp")}</p>
+      <p>{t("models.token.help")}</p>
+      <p data-token-presence={present ? "set" : "required"}>
+        {t(present ? "tts.tokenSet" : "tts.needsToken")}
+      </p>
       {state.error && <p role="alert">{t(state.error)}</p>}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           variant="primary-soft"
           size="sm"
@@ -61,18 +70,4 @@ export function TokenField({
       </div>
     </form>
   );
-}
-
-export function tokenCardProps(token: {
-  entry: ReturnType<typeof tokenEntry>;
-  state: TokenEntryState;
-  present: boolean;
-}) {
-  return {
-    tokenSet: token.present,
-    setToken: token.entry.toggle,
-    tokenEntry: token.state.expanded && (
-      <TokenField state={token.state} actions={token.entry} />
-    ),
-  };
 }

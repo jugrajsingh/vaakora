@@ -385,11 +385,16 @@
       "loading": "मॉडल लोड हो रहे हैं",
       "empty": {
         "dictation": "अभी तक कोई डिक्टेशन मॉडल नहीं है।",
-        "readAloud": "अभी तक कोई जोर से पढ़ने वाला मॉडल नहीं है।"
+        "readAloud": "अभी तक कोई जोर से पढ़ने वाला मॉडल नहीं है।",
+        "cleanup": "अभी तक कोई सफ़ाई मॉडल नहीं है।"
       },
       "help": {
         "dictation": "डाउनलोड किया हुआ डिक्टेशन मॉडल चुनें।",
-        "readAloud": "डाउनलोड किया हुआ जोर से पढ़ने वाला मॉडल चुनें।"
+        "readAloud": "डाउनलोड किया हुआ जोर से पढ़ने वाला मॉडल चुनें।",
+        "cleanup": "वह स्थानीय मॉडल जो डिक्टेशन की सफ़ाई करता है।"
+      },
+      "failed": {
+        "cleanup": "मॉडलों की सूची नहीं दिखाई जा सकी।"
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "रद्द करें",
       "readAloud": "जोर से पढ़ें",
       "activation": "सक्रियण",
-      "activationHelp": "डिक्टेशन शॉर्टकट के लिए"
+      "activationHelp": "डिक्टेशन शॉर्टकट के लिए",
+      "cancelLinuxHelp": "Linux पर रद्द करने का शॉर्टकट डिक्टेशन को नहीं रोकता, क्योंकि डिक्टेशन के दौरान पंजीकृत शॉर्टकट वहाँ भरोसेमंद नहीं होते। ओवरले पर X, ट्रे मेनू में रद्द करें इस्तेमाल करें, या handy --cancel चलाएँ।"
     },
     "modelSettings": {
       "title": "{{model}} सेटिंग"
@@ -776,14 +782,6 @@
         "noCleanupModel": "कोई पोस्ट प्रोसेस मॉडल नहीं",
         "s1Description": "शैली, संरचना और संदर्भ नियंत्रणों का उपयोग करता है।",
         "plainDescription": "आपके चुने हुए Handy प्रॉम्प्ट का उपयोग करता है।",
-        "size": "{{size}} MiB",
-        "downloaded": "डाउनलोड हो गया",
-        "use": "उपयोग करें",
-        "download": "डाउनलोड करें",
-        "downloading": "{{percent}}% डाउनलोड हो रहा है",
-        "delete": "हटाएं",
-        "deleteConfirm": "क्या {{name}} हटाएँ? इससे {{size}} खाली होगा।",
-        "deleteConfirmAction": "मॉडल हटाएँ",
         "status": {
           "title": "स्थिति",
           "description": "पोस्ट प्रोसेस के साथ डिक्टेशन शुरू होने पर मॉडल लोड होता है और मॉडल अनलोड टाइमआउट के बाद अनलोड हो जाता है।",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "जोर से पढ़ना अभी चिपकाने में व्यस्त है",
+    "readAloudBusyPasting": "Handy अभी चिपका रहा है। चिपकाना पूरा होने के बाद जोर से पढ़ें फिर से आज़माएँ।",
+    "readAloudUnavailableTitle": "जोर से पढ़ना उपलब्ध नहीं है",
     "readAloudClipboardUnreadableTitle": "क्लिपबोर्ड पढ़ा नहीं जा सका",
     "readAloudClipboardUnreadable": "क्लिपबोर्ड का टेक्स्ट पढ़ा नहीं जा सका।",
     "loadDirectory": "फ़ोल्डर लोड करने में गड़बड़ी: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "डार्क"
     }
   },
+  "floating": {
+    "position": {
+      "help": "ओवरले और जोर से पढ़ने की विंडो स्क्रीन पर कहाँ दिखती हैं। ऊपर की स्थिति स्क्रीन के निचले हिस्से को खाली रखती है, जो टर्मिनल में डिक्टेट करते समय उपयोगी है।",
+      "cells": {
+        "top_left": "ऊपर बाएँ",
+        "top": "ऊपर बीच में",
+        "top_right": "ऊपर दाएँ",
+        "center_left": "बीच में बाएँ",
+        "center": "बीच में",
+        "center_right": "बीच में दाएँ",
+        "bottom_left": "नीचे बाएँ",
+        "bottom": "नीचे बीच में",
+        "bottom_right": "नीचे दाएँ"
+      }
+    },
+    "style": {
+      "help": "कोई नहीं: कोई फ़्लोटिंग विंडो नहीं। त्रुटियाँ फिर भी सिस्टम ट्रे और मुख्य विंडो में दिखती हैं। मिनिमल: डिक्टेट करते समय एक छोटी पिल। लाइव: बोलते समय शब्द भी दिखाता है, उन मॉडलों के साथ जो इसे सपोर्ट करते हैं। Linux पर 'कोई नहीं' चुनने का सुझाव दिया जाता है।"
+    }
+  },
   "overlay": {
     "transcribing": "ट्रांसक्राइब हो रहा है",
     "processing": "साफ़ किया जा रहा है",
     "loadingModel": "मॉडल लोड हो रहा है",
-    "cancel": "डिक्टेशन रद्द करें"
+    "cancel": "डिक्टेशन रद्द करें",
+    "starting": "माइक्रोफ़ोन शुरू हो रहा है",
+    "recording": "रिकॉर्डिंग हो रही है"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} शायद 1 शॉर्टकट को ब्लॉक कर रहा है",
@@ -1215,12 +1234,6 @@
     "dismiss": "खारिज करें"
   },
   "tts": {
-    "ratings": {
-      "quality": "गुणवत्ता",
-      "speed": "गति",
-      "recommended": "अनुशंसित",
-      "tooltip": "पहला ऑडियो {{firstAudio}} सेकंड, रियल टाइम से {{faster}}x तेज, {{load}} सेकंड में लोड"
-    },
     "devices": {
       "auto": "स्वचालित",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "{{device}} के लिए तैयारी: {{graph}}",
     "buffering": "बफर हो रहा है",
     "title": "जोर से पढ़ें",
+    "modelVoice": "{{model}}, {{voice}}",
     "textLabel": "पढ़ने के लिए टेक्स्ट",
     "placeholder": "पढ़ने के लिए टेक्स्ट पेस्ट करें",
     "play": "चलाएं",
     "pause": "रोकें",
-    "stop": "बंद करें",
     "close": "बंद करें",
     "readClipboard": "क्लिपबोर्ड पढ़ें",
     "editText": "टेक्स्ट संपादित करें",
     "progress": "प्रगति",
-    "time": "{{elapsed}} सेकंड बीते, {{remaining}} सेकंड शेष",
-    "openModels": "टेक्स्ट-टू-स्पीच मॉडल",
+    "timeAbout": "{{elapsed}} / लगभग {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Enter",
+      "close": "Esc"
+    },
+    "chooseModel": "मॉडल चुनें",
+    "failedLine": "जोर से पढ़ना विफल रहा। {{reason}}",
     "outputFallback": "डिफ़ॉल्ट आउटपुट डिवाइस का उपयोग हो रहा है",
     "states": {
       "waiting": "प्रतीक्षा में",
@@ -1293,25 +1311,10 @@
       "playing": "चल रहा है",
       "paused": "रुका हुआ",
       "finished": "पूरा हुआ",
-      "error": "त्रुटि"
+      "error": "विफल"
     },
-    "modelsSubtitle": "कोई आवाज मॉडल चुनें। गति के आँकड़े डेवलपर के कंप्यूटर पर मापे गए थे; आपके कंप्यूटर पर अलग हो सकते हैं।",
-    "downloaded": "डाउनलोड हो गया",
-    "availableToDownload": "डाउनलोड के लिए उपलब्ध",
-    "recommended": "अनुशंसित",
-    "downloading": "डाउनलोड हो रहा है",
     "needsToken": "Hugging Face टोकन चाहिए",
     "tokenSet": "टोकन सेट है",
-    "active": "सक्रिय",
-    "use": "उपयोग करें",
-    "download": "डाउनलोड करें",
-    "delete": "हटाएं",
-    "deleteConfirm": "क्या {{name}} हटाएँ? इससे {{size}} खाली होगा। आपकी शब्दावली और इतिहास बने रहेंगे।",
-    "deleteConfirmSelected": "जब तक आप कोई दूसरा मॉडल नहीं चुनते, जोर से पढ़ना काम नहीं करेगा।",
-    "deleteConfirmAction": "मॉडल हटाएँ",
-    "cancel": "रद्द करें",
-    "token": "Hugging Face टोकन",
-    "tokenHelp": "केवल Pocket की गेटेड आवाजों के लिए चाहिए, Hugging Face पर आवाज की शर्तें स्वीकार करने के बाद। टोकन मेमोरी में रहता है और Handy के रीस्टार्ट होने पर साफ हो जाता है।",
     "clearToken": "टोकन साफ करें",
     "showToken": "टोकन दिखाएं",
     "hideToken": "टोकन छिपाएं",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "छोटी हिंदी आवाजें, महिला और पुरुष। अंग्रेजी शब्द अक्षर-अक्षर करके बोले जाते हैं।",
       "indic-tiny-pa": "छोटी पंजाबी (गुरमुखी) आवाजें, महिला और पुरुष। अंग्रेजी शब्द अक्षर-अक्षर करके बोले जाते हैं।"
     },
-    "voiceCount": "{{count}} आवाजें",
-    "downloadProgress": "मॉडल डाउनलोड की प्रगति",
     "speedLabel": "गति",
     "pitchLabel": "पिच",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "मूल ट्रांसक्रिप्शन",
     "diffNote": "मूल ट्रांसक्रिप्शन से अंतर दिखाए जा रहे हैं।",
     "noCleanup": "कोई सफ़ाई नहीं"
+  },
+  "models": {
+    "tags": {
+      "recommended": "अनुशंसित",
+      "live": "लाइव",
+      "translates": "अनुवाद करता है",
+      "custom": "कस्टम",
+      "oldFormat": "पुराना फ़ॉर्मैट",
+      "needsToken": "टोकन चाहिए",
+      "nativeWords": "मूल शब्द सूची"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "मापा नहीं गया",
+      "licence": "लाइसेंस सूचीबद्ध नहीं",
+      "languages": "सूचीबद्ध नहीं",
+      "notListed": "सूचीबद्ध नहीं"
+    },
+    "measured": {
+      "maker": "निर्माता का आँकड़ा ({{machine}}, {{backend}}), इस मशीन का नहीं",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}, सेटिंग्स, उन्नत में तय",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "मूल शब्द सूची",
+      "corrected": "पहचान के बाद सुधारा गया",
+      "unknown": "मॉडल लोड होने पर पता चलता है"
+    },
+    "speedFigure": {
+      "dictation": "30 सेकंड की बोली के लिए {{value}} से"
+    },
+    "search": "मॉडल खोजें",
+    "noMatch": "\"{{query}}\" से कुछ भी मेल नहीं खाता।",
+    "noFilterMatch": "इन फ़िल्टरों से कोई मॉडल मेल नहीं खाता।",
+    "clearFilters": "फ़िल्टर साफ़ करें",
+    "selected": "चुना गया",
+    "runtime": {
+      "notLoaded": "लोड नहीं हुआ",
+      "loading": "लोड हो रहा है",
+      "ready": "तैयार",
+      "failed": "विफल"
+    },
+    "downloading": "डाउनलोड हो रहा है: {{size}} में से {{percent}}%",
+    "row": {
+      "open": "विवरण दिखाएँ",
+      "close": "विवरण छिपाएँ"
+    },
+    "detail": {
+      "languages": "भाषाएं",
+      "runOn": "इस पर चलाएं",
+      "memory": "मेमोरी",
+      "measuredOn": "किस पर मापा गया",
+      "voices": "आवाज़ें",
+      "licence": "लाइसेंस",
+      "modelCard": "मॉडल कार्ड",
+      "source": "स्रोत",
+      "revision": "{{repository}} · संशोधन {{revision}}",
+      "customWords": "कस्टम शब्द"
+    },
+    "delete": {
+      "action": "मॉडल हटाएँ",
+      "ask": "{{name}} हटाएं? इससे {{size}} जगह खाली होगी.",
+      "askUnknownSize": "{{name}} हटाएं?",
+      "selected": {
+        "dictation": "जब तक आप कोई दूसरा मॉडल नहीं चुनते, डिक्टेशन काम नहीं करेगा.",
+        "readAloud": "जब तक आप कोई दूसरा मॉडल नहीं चुनते, जोर से पढ़ना काम नहीं करेगा.",
+        "cleanup": "जब तक आप कोई दूसरा मॉडल नहीं चुनते, सफ़ाई काम नहीं करेगी."
+      },
+      "kept": {
+        "dictation": "आपका इतिहास रखा रहेगा.",
+        "readAloud": "आपकी शब्दावली और इतिहास रखे रहेंगे.",
+        "cleanup": "आपके प्रॉम्प्ट और इतिहास रखे रहेंगे."
+      }
+    },
+    "heads": {
+      "score": "स्कोर",
+      "speed": "गति",
+      "size": "आकार"
+    },
+    "legend": {
+      "open": "कॉलम का अर्थ",
+      "score": {
+        "readAloud": "10 में से सुनने की गुणवत्ता।",
+        "cleanup": "सफ़ाई मॉडलों का अभी कोई स्कोर नहीं है।"
+      },
+      "speed": {
+        "readAloud": "जिस डिवाइस पर मॉडल चलता है उस पर 10 में से गति स्कोर।",
+        "cleanup": "सफ़ाई मॉडलों की गति अभी मापी नहीं गई है।"
+      },
+      "range": "{{low}} से {{high}}",
+      "unmeasured": "? मापा नहीं गया है।",
+      "measuredOn": "{{machine}} पर मापा गया।",
+      "speedNote": {
+        "accelerated": "हमारे टेस्ट लैपटॉप की ग्राफ़िक्स चिप पर 30 सेकंड की बोली टाइप होने में कितना समय लगता है. इस कंप्यूटर पर नहीं मापा गया.",
+        "cpu": "हमारे टेस्ट लैपटॉप के प्रोसेसर पर 30 सेकंड की बोली टाइप होने में कितना समय लगता है. इस कंप्यूटर पर नहीं मापा गया."
+      }
+    },
+    "cell": {
+      "value": "{{head}}: {{figure}}",
+      "measured": "{{head}}: {{figure}}, {{provenance}} पर मापा गया",
+      "unmeasured": "{{head}}: मापा नहीं गया"
+    },
+    "mark": {
+      "select": "{{name}} चुनें",
+      "download": "{{name}} डाउनलोड करें",
+      "cancel": "{{name}} का डाउनलोड रोकें",
+      "needsToken": "Hugging Face टोकन चाहिए. इसे विवरण में जोड़ें."
+    },
+    "remove": "{{name}} हटाएं",
+    "chips": {
+      "accelerated": "GPU या NPU"
+    },
+    "busy": "मौजूदा डाउनलोड या हटाना पूरा होने तक प्रतीक्षा करें.",
+    "listen": "{{voice}} सुनें",
+    "voiceCount_one": "{{count}} आवाज़",
+    "voiceCount": "{{count}} आवाजें",
+    "sections": {
+      "available": "उपलब्ध"
+    },
+    "token": {
+      "label": "Hugging Face टोकन",
+      "help": "पहले Hugging Face पर आवाज़ की शर्तें स्वीकार करें। टोकन Handy के दोबारा शुरू होने तक मेमोरी में रहता है।"
+    }
   }
 }

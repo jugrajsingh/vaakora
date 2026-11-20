@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import type { ModelInfo } from "@/bindings";
+import { formatModelSize } from "@/lib/utils/format";
 import {
   getTranslatedModelName,
   getTranslatedModelDescription,
@@ -79,9 +80,7 @@ const ModelDropdown: React.FC<ModelDropdownProps> = ({
                     {getTranslatedModelDescription(model, t)}
                   </div>
                   <div className="text-xs text-ink-3">
-                    {t("modelSelector.size", {
-                      size: model.size_mb.toFixed(0),
-                    })}
+                    {formatModelSize(model.size_mb)}
                   </div>
                 </div>
                 {currentModelId === model.id && (

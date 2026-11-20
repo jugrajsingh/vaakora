@@ -385,11 +385,16 @@
       "loading": "正在載入模型",
       "empty": {
         "dictation": "尚無聽寫模型。",
-        "readAloud": "尚無朗讀模型。"
+        "readAloud": "尚無朗讀模型。",
+        "cleanup": "尚無清理模型。"
       },
       "help": {
         "dictation": "選擇已下載的聽寫模型。",
-        "readAloud": "選擇已下載的朗讀模型。"
+        "readAloud": "選擇已下載的朗讀模型。",
+        "cleanup": "清理聽寫內容的本機模型。"
+      },
+      "failed": {
+        "cleanup": "無法列出模型。"
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "取消",
       "readAloud": "朗讀",
       "activation": "觸發方式",
-      "activationHelp": "用於聽寫快捷鍵"
+      "activationHelp": "用於聽寫快捷鍵",
+      "cancelLinuxHelp": "在 Linux 上，取消快捷鍵無法停止聽寫，因為聽寫期間註冊的快捷鍵在那裡不可靠。請使用懸浮窗上的 X、系統匣選單中的「取消」，或執行 handy --cancel。"
     },
     "modelSettings": {
       "title": "{{model}} 設定"
@@ -776,14 +782,6 @@
         "noCleanupModel": "無後處理模型",
         "s1Description": "使用風格、結構和情境控制。",
         "plainDescription": "使用你所選的 Handy 提示詞。",
-        "size": "{{size}} MiB",
-        "downloaded": "已下載",
-        "use": "使用",
-        "download": "下載",
-        "downloading": "下載中 {{percent}}%",
-        "delete": "刪除",
-        "deleteConfirm": "要刪除 {{name}} 嗎？將釋放 {{size}}。",
-        "deleteConfirmAction": "刪除模型",
         "status": {
           "title": "狀態",
           "description": "模型會在後處理聽寫開始時載入,並在模型卸載逾時後卸載。",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "朗讀正忙於貼上",
+    "readAloudBusyPasting": "Handy 仍在貼上。貼上完成後請再次嘗試朗讀。",
+    "readAloudUnavailableTitle": "朗讀無法使用",
     "readAloudClipboardUnreadableTitle": "無法讀取剪貼簿",
     "readAloudClipboardUnreadable": "無法讀取剪貼簿中的文字。",
     "loadDirectory": "載入目錄時發生錯誤: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "深色"
     }
   },
+  "floating": {
+    "position": {
+      "help": "懸浮窗和朗讀視窗在螢幕上出現的位置。選擇頂部位置可讓螢幕底部保持空閒，在向終端機聽寫時很有用。",
+      "cells": {
+        "top_left": "左上",
+        "top": "上中",
+        "top_right": "右上",
+        "center_left": "左中",
+        "center": "中央",
+        "center_right": "右中",
+        "bottom_left": "左下",
+        "bottom": "下中",
+        "bottom_right": "右下"
+      }
+    },
+    "style": {
+      "help": "無：不顯示懸浮窗。錯誤仍會顯示在系統匣和主視窗中。精簡：聽寫時顯示一個小膠囊。即時：在支援的模型上，說話時還會顯示文字。在 Linux 上建議選擇「無」。"
+    }
+  },
   "overlay": {
     "transcribing": "正在轉錄",
     "processing": "正在整理",
     "loadingModel": "正在載入模型",
-    "cancel": "取消聽寫"
+    "cancel": "取消聽寫",
+    "starting": "正在啟動麥克風",
+    "recording": "正在錄音"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 可能正在阻擋 1 個快捷鍵",
@@ -1215,12 +1234,6 @@
     "dismiss": "關閉"
   },
   "tts": {
-    "ratings": {
-      "quality": "品質",
-      "speed": "速度",
-      "recommended": "推薦",
-      "tooltip": "首次出聲 {{firstAudio}} 秒,比即時快 {{faster}} 倍,載入耗時 {{load}} 秒"
-    },
     "devices": {
       "auto": "自動",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "正在為 {{device}} 準備:{{graph}}",
     "buffering": "緩衝中",
     "title": "朗讀",
+    "modelVoice": "{{model}}，{{voice}}",
     "textLabel": "要朗讀的文字",
     "placeholder": "貼上要朗讀的文字",
     "play": "播放",
     "pause": "暫停",
-    "stop": "停止",
     "close": "關閉",
     "readClipboard": "朗讀剪貼簿",
     "editText": "編輯文字",
     "progress": "進度",
-    "time": "已經過 {{elapsed}} 秒,剩餘 {{remaining}} 秒",
-    "openModels": "文字轉語音模型",
+    "timeAbout": "{{elapsed}} / 約 {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Enter",
+      "close": "Esc"
+    },
+    "chooseModel": "選擇模型",
+    "failedLine": "朗讀失敗。{{reason}}",
     "outputFallback": "使用預設輸出裝置",
     "states": {
       "waiting": "等待中",
@@ -1293,25 +1311,10 @@
       "playing": "播放中",
       "paused": "已暫停",
       "finished": "已完成",
-      "error": "錯誤"
+      "error": "失敗"
     },
-    "modelsSubtitle": "選擇語音模型。速度數據是在開發者的電腦上測得，你的電腦上可能有所不同。",
-    "downloaded": "已下載",
-    "availableToDownload": "可下載",
-    "recommended": "推薦",
-    "downloading": "下載中",
     "needsToken": "需要 Hugging Face 權杖",
     "tokenSet": "權杖已設定",
-    "active": "使用中",
-    "use": "使用",
-    "download": "下載",
-    "delete": "刪除",
-    "deleteConfirm": "要刪除 {{name}} 嗎？將釋放 {{size}}。你的詞彙與歷史記錄會保留。",
-    "deleteConfirmSelected": "在你選擇其他模型之前，朗讀將無法使用。",
-    "deleteConfirmAction": "刪除模型",
-    "cancel": "取消",
-    "token": "Hugging Face 權杖",
-    "tokenHelp": "僅在接受 Hugging Face 上的語音條款後下載 Pocket 受限語音時需要。權杖只保存在記憶體中,Handy 重新啟動時會被清除。",
     "clearToken": "清除權杖",
     "showToken": "顯示權杖",
     "hideToken": "隱藏權杖",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "小巧的印地語語音 (女聲和男聲)。英文單字會逐個字母拼讀。",
       "indic-tiny-pa": "小巧的旁遮普語 (古木基文) 語音 (女聲和男聲)。英文單字會逐個字母拼讀。"
     },
-    "voiceCount": "{{count}} 種語音",
-    "downloadProgress": "模型下載進度",
     "speedLabel": "速度",
     "pitchLabel": "音高",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "原始轉錄",
     "diffNote": "顯示與原始轉錄的差異。",
     "noCleanup": "未清理"
+  },
+  "models": {
+    "tags": {
+      "recommended": "推薦",
+      "live": "即時",
+      "translates": "可翻譯",
+      "custom": "自訂",
+      "oldFormat": "舊格式",
+      "needsToken": "需要權杖",
+      "nativeWords": "原生詞表"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "未測量",
+      "licence": "未標明授權",
+      "languages": "未標明",
+      "notListed": "未標明"
+    },
+    "measured": {
+      "maker": "廠商數據（{{machine}}，{{backend}}），非本機",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}，在「設定」「進階」中設定",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "原生詞表",
+      "corrected": "辨識後修正",
+      "unknown": "模型載入後才知道"
+    },
+    "speedFigure": {
+      "dictation": "30 秒語音需 {{value}} 秒"
+    },
+    "search": "搜尋模型",
+    "noMatch": "沒有符合「{{query}}」的內容。",
+    "noFilterMatch": "沒有符合這些篩選條件的模型。",
+    "clearFilters": "清除篩選",
+    "selected": "已選取",
+    "runtime": {
+      "notLoaded": "未載入",
+      "loading": "載入中",
+      "ready": "就緒",
+      "failed": "失敗"
+    },
+    "downloading": "正在下載 {{size}} 的 {{percent}}%",
+    "row": {
+      "open": "顯示詳細資料",
+      "close": "隱藏詳細資料"
+    },
+    "detail": {
+      "languages": "語言",
+      "runOn": "執行裝置",
+      "memory": "記憶體",
+      "measuredOn": "測量環境",
+      "voices": "語音",
+      "licence": "授權",
+      "modelCard": "模型卡",
+      "source": "來源",
+      "revision": "{{repository}} · 修訂版 {{revision}}",
+      "customWords": "自訂詞彙"
+    },
+    "delete": {
+      "action": "刪除模型",
+      "ask": "要刪除 {{name}} 嗎？這會釋出 {{size}} 的空間。",
+      "askUnknownSize": "要刪除 {{name}} 嗎？",
+      "selected": {
+        "dictation": "在你選擇其他模型之前，聽寫將無法使用。",
+        "readAloud": "在你選擇其他模型之前，朗讀將無法使用。",
+        "cleanup": "在你選擇其他模型之前，清理將無法使用。"
+      },
+      "kept": {
+        "dictation": "你的歷史紀錄會保留。",
+        "readAloud": "你的詞彙和歷史紀錄會保留。",
+        "cleanup": "你的提示詞和歷史紀錄會保留。"
+      }
+    },
+    "heads": {
+      "score": "評分",
+      "speed": "速度",
+      "size": "大小"
+    },
+    "legend": {
+      "open": "各欄的意義",
+      "score": {
+        "readAloud": "滿分 10 分的聆聽品質。",
+        "cleanup": "清理模型還沒有評分。"
+      },
+      "speed": {
+        "readAloud": "模型所執行裝置上的速度評分，滿分 10 分。",
+        "cleanup": "清理模型還沒有測量過速度。"
+      },
+      "range": "{{low}} 到 {{high}}",
+      "unmeasured": "? 表示尚未測量。",
+      "measuredOn": "測量於 {{machine}}。",
+      "speedNote": {
+        "accelerated": "在我們的測試筆電的顯示晶片上，輸入 30 秒語音所需的時間。未在這台電腦上測量。",
+        "cpu": "在我們的測試筆電的處理器上，輸入 30 秒語音所需的時間。未在這台電腦上測量。"
+      }
+    },
+    "cell": {
+      "value": "{{head}}：{{figure}}",
+      "measured": "{{head}}：{{figure}}，測量於 {{provenance}}",
+      "unmeasured": "{{head}}：未測量"
+    },
+    "mark": {
+      "select": "選擇 {{name}}",
+      "download": "下載 {{name}}",
+      "cancel": "停止下載 {{name}}",
+      "needsToken": "需要 Hugging Face 權杖。請在詳細資料中新增。"
+    },
+    "remove": "刪除 {{name}}",
+    "chips": {
+      "accelerated": "GPU 或 NPU"
+    },
+    "busy": "請等待目前的下載或刪除完成。",
+    "listen": "試聽 {{voice}}",
+    "voiceCount_one": "{{count}} 種語音",
+    "voiceCount": "{{count}} 種語音",
+    "sections": {
+      "available": "可用"
+    },
+    "token": {
+      "label": "Hugging Face 權杖",
+      "help": "請先在 Hugging Face 上接受語音條款。權杖會保存在記憶體中，直到 Handy 重新啟動。"
+    }
   }
 }

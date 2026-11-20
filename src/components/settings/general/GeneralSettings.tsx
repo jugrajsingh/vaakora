@@ -23,23 +23,35 @@ export const GeneralSettings: React.FC = () => {
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
       <SettingsGroup title={t("settings.groups.shortcuts")}>
-        {/* Cancel is left out on Linux because of dynamic shortcut instability. */}
+        {/* Linux shows how to cancel instead of the Cancel shortcut, which is unreliable there. */}
         {generalShortcutRows(
           getSetting("post_process_enabled") ?? false,
           isLinux,
-        ).map((row) =>
-          row === "activation" ? (
-            <ShortcutActivationSetting
-              key={row}
-              title={t("settings.shortcuts.activation")}
-              description={t("settings.shortcuts.activationHelp")}
-              descriptionMode="inline"
-              grouped={true}
-            />
-          ) : (
-            <ShortcutInput key={row} shortcutId={row} grouped={true} />
-          ),
-        )}
+        ).map((row) => {
+          if (row === "activation") {
+            return (
+              <ShortcutActivationSetting
+                key={row}
+                title={t("settings.shortcuts.activation")}
+                description={t("settings.shortcuts.activationHelp")}
+                descriptionMode="inline"
+                grouped={true}
+              />
+            );
+          }
+          if (row === "cancelHelp") {
+            return (
+              <p
+                key={row}
+                data-row="cancel-help"
+                className="px-4 py-2 text-sm text-ink-2"
+              >
+                {t("settings.shortcuts.cancelLinuxHelp")}
+              </p>
+            );
+          }
+          return <ShortcutInput key={row} shortcutId={row} grouped={true} />;
+        })}
       </SettingsGroup>
       <SettingsGroup title={t("settings.groups.sound")}>
         <AudioFeedback descriptionMode="tooltip" grouped={true} />

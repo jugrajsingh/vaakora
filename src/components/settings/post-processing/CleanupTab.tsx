@@ -4,7 +4,8 @@ import { SettingsGroup } from "../../ui/SettingsGroup";
 import { PostProcessingToggle } from "../PostProcessingToggle";
 import { PostProcessingSettings } from "./PostProcessingSettings";
 
-export const CleanupTab: React.FC = () => {
+/** Dictation, Cleanup; `manage` opens Models, Cleanup. */
+export const CleanupTab: React.FC<{ manage: () => void }> = ({ manage }) => {
   const { getSetting } = useSettings();
 
   return (
@@ -12,7 +13,9 @@ export const CleanupTab: React.FC = () => {
       <SettingsGroup>
         <PostProcessingToggle descriptionMode="tooltip" grouped />
       </SettingsGroup>
-      {getSetting("post_process_enabled") && <PostProcessingSettings />}
+      {getSetting("post_process_enabled") && (
+        <PostProcessingSettings manage={manage} />
+      )}
     </div>
   );
 };

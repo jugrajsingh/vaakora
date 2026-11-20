@@ -16,6 +16,11 @@ import { noticeDisplay } from "@/lib/notices";
 import type { ModelStateEvent } from "@/lib/types/events";
 import { getLanguageDirection } from "@/lib/utils/rtl";
 import { subscribeAsync } from "@/lib/utils/subscribeAsync";
+import {
+  listeningStatusKey,
+  stagePlacement,
+  type StagePlacement,
+} from "./placement";
 
 type OverlayState =
   | "recording"
@@ -74,9 +79,11 @@ const RecordingOverlay: React.FC = () => {
   // Bumped on each new streaming session so the Live card remounts fresh (replays
   // the pop-in, and never animates in from the previous panel's open size).
   const [session, setSession] = useState(0);
-  // Overlay placement (top vs bottom of the screen). The Live panel grows downward
-  // from a top overlay (oldest line under the pill) and upward from a bottom one.
-  const [position, setPosition] = useState<"top" | "bottom">("bottom");
+  // Overlay placement: the edge the card is flush to (the Live panel grows downward
+  // from the top row, upward from the others) and the side of the window it sits on.
+  const [placement, setPlacement] = useState<StagePlacement>(() =>
+    stagePlacement(undefined),
+  );
   // True once live text overflows the cap. A top overlay fades its top edge only
   // while overflowing, so the resting first line stays crisp flush under the pill.
   const [overflowing, setOverflowing] = useState(false);
@@ -115,14 +122,11 @@ const RecordingOverlay: React.FC = () => {
         }
 
         await syncLanguageFromSettings();
-        // The Live panel flows downward from a top overlay and upward from a
-        // bottom one; read the placement so the layout can flip to match.
+        // Read the stored cell so the card flows and sits to match it.
         try {
           const settings = await commands.getAppSettings();
           if (settings.status === "ok") {
-            setPosition(
-              settings.data.overlay_position === "top" ? "top" : "bottom",
-            );
+            setPlacement(stagePlacement(settings.data.overlay_position));
           }
         } catch {
           // Keep the previous/default placement if settings can't be read.
@@ -318,6 +322,9 @@ const RecordingOverlay: React.FC = () => {
     <div className="sbase">
       <div className="sbase-l">
         <span className={`sdot ${captureReady ? "ready" : "arming"}`} />
+        <span className="ssr" role="status">
+          {t(listeningStatusKey(captureReady))}
+        </span>
       </div>
       {waveform}
       <div className="sbase-r">
@@ -334,7 +341,9 @@ const RecordingOverlay: React.FC = () => {
       <div className="sbase-l">
         <span className="sspinner" />
       </div>
-      <span className="swork-label">{label}</span>
+      <span className="swork-label" role="status">
+        {label}
+      </span>
       <div className="sbase-r">{showCancel && cancelBtn}</div>
     </div>
   );
@@ -379,7 +388,10 @@ const RecordingOverlay: React.FC = () => {
     const collapsed = working && !hasText;
 
     return (
-      <div dir={direction} className={`ov-stage ${position}`}>
+      <div
+        dir={direction}
+        className={`ov-stage ${placement.edge} col-${placement.column}`}
+      >
         {noticeProbe}
         <div
           key={session}
@@ -445,7 +457,7 @@ const RecordingOverlay: React.FC = () => {
   return (
     <div
       dir={direction}
-      className={`ov-stage ${position} ov-fade ${isVisible ? "show" : ""}`}
+      className={`ov-stage ${placement.edge} col-${placement.column} ov-fade ${isVisible ? "show" : ""}`}
     >
       {noticeProbe}
       <div

@@ -385,11 +385,16 @@
       "loading": "Đang tải các mô hình",
       "empty": {
         "dictation": "Chưa có mô hình đọc chính tả.",
-        "readAloud": "Chưa có mô hình đọc to."
+        "readAloud": "Chưa có mô hình đọc to.",
+        "cleanup": "Chưa có mô hình làm sạch."
       },
       "help": {
         "dictation": "Chọn một mô hình đọc chính tả đã tải xuống.",
-        "readAloud": "Chọn một mô hình đọc to đã tải xuống."
+        "readAloud": "Chọn một mô hình đọc to đã tải xuống.",
+        "cleanup": "Mô hình cục bộ làm sạch các bản đọc chính tả."
+      },
+      "failed": {
+        "cleanup": "Không thể liệt kê các mô hình."
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "Hủy",
       "readAloud": "Đọc to",
       "activation": "Kích hoạt",
-      "activationHelp": "Cho phím tắt đọc chính tả"
+      "activationHelp": "Cho phím tắt đọc chính tả",
+      "cancelLinuxHelp": "Trên Linux, phím tắt hủy không dừng được việc đọc chính tả, vì các phím tắt đăng ký trong lúc đọc chính tả không đáng tin ở đó. Hãy dùng nút X trên lớp phủ, Hủy trong menu khay, hoặc chạy handy --cancel."
     },
     "modelSettings": {
       "title": "Cài đặt {{model}}"
@@ -776,14 +782,6 @@
         "noCleanupModel": "Không có mô hình xử lý sau",
         "s1Description": "Dùng các tùy chọn phong cách, cấu trúc và ngữ cảnh.",
         "plainDescription": "Dùng câu lệnh Handy bạn đã chọn.",
-        "size": "{{size}} MiB",
-        "downloaded": "Đã tải xuống",
-        "use": "Dùng",
-        "download": "Tải xuống",
-        "downloading": "Đang tải xuống {{percent}}%",
-        "delete": "Xóa",
-        "deleteConfirm": "Xóa {{name}}? Thao tác này giải phóng {{size}}.",
-        "deleteConfirmAction": "Xóa mô hình",
         "status": {
           "title": "Trạng thái",
           "description": "Mô hình được tải khi một lần đọc chính tả có xử lý sau bắt đầu và được dỡ sau thời gian chờ dỡ mô hình.",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "Đọc to đang bận dán",
+    "readAloudBusyPasting": "Handy vẫn đang dán. Hãy thử lại Đọc to sau khi dán xong.",
+    "readAloudUnavailableTitle": "Đọc to không khả dụng",
     "readAloudClipboardUnreadableTitle": "Không thể đọc Clipboard",
     "readAloudClipboardUnreadable": "Không thể đọc văn bản trong Clipboard.",
     "loadDirectory": "Lỗi khi tải thư mục: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "Tối"
     }
   },
+  "floating": {
+    "position": {
+      "help": "Nơi lớp phủ và cửa sổ đọc to xuất hiện trên màn hình. Vị trí phía trên giữ phần dưới màn hình trống, hữu ích khi bạn đọc chính tả vào terminal.",
+      "cells": {
+        "top_left": "Trên cùng bên trái",
+        "top": "Trên cùng ở giữa",
+        "top_right": "Trên cùng bên phải",
+        "center_left": "Giữa bên trái",
+        "center": "Chính giữa",
+        "center_right": "Giữa bên phải",
+        "bottom_left": "Dưới cùng bên trái",
+        "bottom": "Dưới cùng ở giữa",
+        "bottom_right": "Dưới cùng bên phải"
+      }
+    },
+    "style": {
+      "help": "Không có: không có cửa sổ nổi. Lỗi vẫn hiện trong khay hệ thống và cửa sổ chính. Tối giản: một thanh nhỏ khi bạn đọc chính tả. Trực tiếp: hiện cả từ khi bạn nói, với các mô hình hỗ trợ. Trên Linux, nên chọn Không có."
+    }
+  },
   "overlay": {
     "transcribing": "Đang chuyển đổi",
     "processing": "Đang dọn dẹp",
     "loadingModel": "Đang tải mô hình",
-    "cancel": "Hủy đọc chính tả"
+    "cancel": "Hủy đọc chính tả",
+    "starting": "Đang khởi động micrô",
+    "recording": "Đang ghi âm"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} có thể đang chặn 1 phím tắt",
@@ -1215,12 +1234,6 @@
     "dismiss": "Bỏ qua"
   },
   "tts": {
-    "ratings": {
-      "quality": "Chất lượng",
-      "speed": "Tốc độ",
-      "recommended": "Được đề xuất",
-      "tooltip": "Âm thanh đầu tiên sau {{firstAudio}} giây, nhanh hơn thời gian thực {{faster}}x, tải trong {{load}} giây"
-    },
     "devices": {
       "auto": "Tự động",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "Đang chuẩn bị cho {{device}}: {{graph}}",
     "buffering": "Đang đệm",
     "title": "Đọc to",
+    "modelVoice": "{{model}}, {{voice}}",
     "textLabel": "Văn bản cần đọc",
     "placeholder": "Dán văn bản cần đọc",
     "play": "Phát",
     "pause": "Tạm dừng",
-    "stop": "Dừng",
     "close": "Đóng",
     "readClipboard": "Đọc khay nhớ tạm",
     "editText": "Sửa văn bản",
     "progress": "Tiến độ",
-    "time": "Đã qua {{elapsed}} giây, còn {{remaining}} giây",
-    "openModels": "Mô hình chuyển văn bản thành giọng nói",
+    "timeAbout": "{{elapsed}} / khoảng {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Enter",
+      "close": "Esc"
+    },
+    "chooseModel": "Chọn một mô hình",
+    "failedLine": "Đọc to không thành công. {{reason}}",
     "outputFallback": "Đang dùng thiết bị đầu ra mặc định",
     "states": {
       "waiting": "Đang chờ",
@@ -1293,25 +1311,10 @@
       "playing": "Đang phát",
       "paused": "Đã tạm dừng",
       "finished": "Đã xong",
-      "error": "Lỗi"
+      "error": "Thất bại"
     },
-    "modelsSubtitle": "Chọn một mô hình giọng nói. Các số liệu tốc độ được đo trên máy tính của nhà phát triển; máy của bạn có thể khác.",
-    "downloaded": "Đã tải xuống",
-    "availableToDownload": "Có thể tải xuống",
-    "recommended": "Được đề xuất",
-    "downloading": "Đang tải xuống",
     "needsToken": "Cần token Hugging Face",
     "tokenSet": "Đã đặt token",
-    "active": "Đang dùng",
-    "use": "Dùng",
-    "download": "Tải xuống",
-    "delete": "Xóa",
-    "deleteConfirm": "Xóa {{name}}? Thao tác này giải phóng {{size}}. Từ vựng và lịch sử của bạn được giữ lại.",
-    "deleteConfirmSelected": "Đọc to sẽ ngừng hoạt động cho đến khi bạn chọn mô hình khác.",
-    "deleteConfirmAction": "Xóa mô hình",
-    "cancel": "Hủy",
-    "token": "Token Hugging Face",
-    "tokenHelp": "Chỉ cần cho các giọng Pocket bị hạn chế sau khi chấp nhận điều khoản giọng nói trên Hugging Face. Token được giữ trong bộ nhớ và bị xóa khi Handy khởi động lại.",
     "clearToken": "Xóa token",
     "showToken": "Hiện token",
     "hideToken": "Ẩn token",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "Giọng tiếng Hindi nhỏ gọn, nữ và nam. Từ tiếng Anh được đánh vần từng chữ cái.",
       "indic-tiny-pa": "Giọng tiếng Punjabi (Gurmukhi) nhỏ gọn, nữ và nam. Từ tiếng Anh được đánh vần từng chữ cái."
     },
-    "voiceCount": "{{count}} giọng",
-    "downloadProgress": "Tiến độ tải xuống mô hình",
     "speedLabel": "Tốc độ",
     "pitchLabel": "Cao độ",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "Bản phiên âm gốc",
     "diffNote": "Đang hiển thị khác biệt so với bản phiên âm gốc.",
     "noCleanup": "Không làm sạch"
+  },
+  "models": {
+    "tags": {
+      "recommended": "Được đề xuất",
+      "live": "Trực tiếp",
+      "translates": "Dịch",
+      "custom": "Tùy chỉnh",
+      "oldFormat": "Định dạng cũ",
+      "needsToken": "Cần token",
+      "nativeWords": "Danh sách từ gốc"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "Chưa đo",
+      "licence": "Chưa ghi giấy phép",
+      "languages": "Chưa ghi",
+      "notListed": "Chưa ghi"
+    },
+    "measured": {
+      "maker": "Số liệu của nhà sản xuất ({{machine}}, {{backend}}), không phải máy này",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}, đặt trong Cài đặt, Nâng cao",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "Danh sách từ gốc",
+      "corrected": "Được sửa sau khi nhận dạng",
+      "unknown": "Biết sau khi mô hình được tải"
+    },
+    "speedFigure": {
+      "dictation": "{{value}} giây cho 30 giây lời nói"
+    },
+    "search": "Tìm kiếm mô hình",
+    "noMatch": "Không có gì khớp với \"{{query}}\".",
+    "noFilterMatch": "Không có mô hình nào khớp với các bộ lọc này.",
+    "clearFilters": "Xóa bộ lọc",
+    "selected": "Đã chọn",
+    "runtime": {
+      "notLoaded": "Chưa tải",
+      "loading": "Đang tải",
+      "ready": "Sẵn sàng",
+      "failed": "Thất bại"
+    },
+    "downloading": "Đang tải xuống {{percent}}% của {{size}}",
+    "row": {
+      "open": "Hiện chi tiết",
+      "close": "Ẩn chi tiết"
+    },
+    "detail": {
+      "languages": "Ngôn ngữ",
+      "runOn": "Chạy trên",
+      "memory": "Bộ nhớ",
+      "measuredOn": "Đo trên",
+      "voices": "Giọng",
+      "licence": "Giấy phép",
+      "modelCard": "Thẻ mô hình",
+      "source": "Nguồn",
+      "revision": "{{repository}} · bản sửa đổi {{revision}}",
+      "customWords": "Từ tùy chỉnh"
+    },
+    "delete": {
+      "action": "Xóa mô hình",
+      "ask": "Xóa {{name}}? Việc này giải phóng {{size}}.",
+      "askUnknownSize": "Xóa {{name}}?",
+      "selected": {
+        "dictation": "Đọc chính tả ngừng hoạt động cho đến khi bạn chọn mô hình khác.",
+        "readAloud": "Đọc to ngừng hoạt động cho đến khi bạn chọn mô hình khác.",
+        "cleanup": "Làm sạch ngừng hoạt động cho đến khi bạn chọn mô hình khác."
+      },
+      "kept": {
+        "dictation": "Lịch sử của bạn được giữ lại.",
+        "readAloud": "Từ vựng và lịch sử của bạn được giữ lại.",
+        "cleanup": "Lời nhắc và lịch sử của bạn được giữ lại."
+      }
+    },
+    "heads": {
+      "score": "Điểm",
+      "speed": "Tốc độ",
+      "size": "Dung lượng"
+    },
+    "legend": {
+      "open": "Ý nghĩa các cột",
+      "score": {
+        "readAloud": "Chất lượng nghe trên thang 10.",
+        "cleanup": "Các mô hình dọn dẹp chưa có điểm."
+      },
+      "speed": {
+        "readAloud": "Điểm tốc độ trên thang 10 trên thiết bị chạy mô hình.",
+        "cleanup": "Các mô hình dọn dẹp chưa có tốc độ đo được."
+      },
+      "range": "{{low}} đến {{high}}",
+      "unmeasured": "? chưa được đo.",
+      "measuredOn": "Đo trên {{machine}}.",
+      "speedNote": {
+        "accelerated": "Thời gian để gõ ra 30 giây lời nói trên chip đồ họa của laptop kiểm thử của chúng tôi. Chưa đo trên máy tính này.",
+        "cpu": "Thời gian để gõ ra 30 giây lời nói trên bộ xử lý của laptop kiểm thử của chúng tôi. Chưa đo trên máy tính này."
+      }
+    },
+    "cell": {
+      "value": "{{head}}: {{figure}}",
+      "measured": "{{head}}: {{figure}}, đo trên {{provenance}}",
+      "unmeasured": "{{head}}: chưa đo"
+    },
+    "mark": {
+      "select": "Chọn {{name}}",
+      "download": "Tải xuống {{name}}",
+      "cancel": "Dừng tải xuống {{name}}",
+      "needsToken": "Cần token Hugging Face. Thêm token trong phần chi tiết."
+    },
+    "remove": "Xóa {{name}}",
+    "chips": {
+      "accelerated": "GPU hoặc NPU"
+    },
+    "busy": "Hãy đợi lượt tải xuống hoặc xóa đang chạy hoàn tất.",
+    "listen": "Nghe {{voice}}",
+    "voiceCount_one": "{{count}} giọng",
+    "voiceCount": "{{count}} giọng",
+    "sections": {
+      "available": "Có sẵn"
+    },
+    "token": {
+      "label": "Token Hugging Face",
+      "help": "Hãy chấp nhận điều khoản giọng nói trên Hugging Face trước. Mã thông báo được giữ trong bộ nhớ cho đến khi Handy khởi động lại."
+    }
   }
 }

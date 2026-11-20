@@ -30,9 +30,10 @@ const i18n = i18next.createInstance();
 await i18n.init({ lng: "en", resources: { en: { translation: en } } });
 
 function render(
-  role: "dictation" | "readAloud",
+  role: "dictation" | "readAloud" | "cleanup",
   state: "loading" | "empty" | "ready" | "failed",
   manage: () => void = () => {},
+  title?: string,
 ): string {
   buttons.length = 0;
   return renderToStaticMarkup(
@@ -41,6 +42,7 @@ function render(
         role={role}
         state={state}
         manage={manage}
+        title={title}
         select={<i data-marker="select" />}
       >
         <i data-marker="children" />
@@ -106,6 +108,60 @@ describe("JobModelGroup", () => {
     assert.ok(
       html.indexOf('data-marker="select"') <
         html.indexOf('data-marker="children"'),
+    );
+  });
+
+  it("cleanup_role_has_its_empty_and_help", () => {
+    let calls = 0;
+    const empty = render("cleanup", "empty", () => (calls += 1));
+    assert.ok(empty.includes("No cleanup model yet."));
+    assert.equal(empty.includes("No dictation model yet."), false);
+    assert.deepEqual(
+      buttons.map((button) => button.children),
+      ["Choose a model"],
+    );
+    buttons[0].onClick?.({} as never);
+    assert.equal(calls, 1);
+    assert.equal(empty.includes("data-marker"), false);
+
+    const ready = render("cleanup", "ready", () => (calls += 1));
+    assert.equal(
+      i18n.t("settings.jobModel.help.cleanup"),
+      "The local model that cleans up dictations.",
+      "the help text is a tooltip, so its key is checked, not the markup",
+    );
+    assert.ok(ready.includes("More information"), "the help trigger renders");
+    assert.ok(ready.includes('data-marker="select"'));
+    assert.deepEqual(
+      buttons.map((button) => button.children),
+      ["Manage models"],
+    );
+    buttons[0].onClick?.({} as never);
+    assert.equal(calls, 2);
+    assert.equal(
+      (ready.match(/<h2/g) ?? []).length,
+      1,
+      "one group, no group inside another",
+    );
+  });
+
+  it("title_replaces_the_group_heading_in_every_state", () => {
+    for (const state of ["empty", "ready", "failed"] as const) {
+      const html = render("cleanup", state, () => {}, "Local model");
+      assert.ok(html.includes("Local model</h2>"), state);
+      assert.equal(html.includes("Model</h2>"), false, state);
+    }
+  });
+
+  it("cleanup_failed_has_its_own_neutral_load_error", () => {
+    const html = render("cleanup", "failed", () => {}, "Local model");
+    const alert = html.match(/<div role="alert">(.*?)<\/div>/s)?.[1];
+    assert.ok(alert?.includes("The models could not be listed."), html);
+    assert.equal(html.includes(en.tts.errors.generic), false, "no TTS wording");
+    assert.ok(html.includes("Local model</h2>"));
+    assert.ok(
+      render("readAloud", "failed").includes(en.tts.errors.generic),
+      "read aloud keeps its wording",
     );
   });
 

@@ -385,11 +385,16 @@
       "loading": "Modeller yükleniyor",
       "empty": {
         "dictation": "Henüz dikte modeli yok.",
-        "readAloud": "Henüz sesli okuma modeli yok."
+        "readAloud": "Henüz sesli okuma modeli yok.",
+        "cleanup": "Henüz temizleme modeli yok."
       },
       "help": {
         "dictation": "İndirilmiş bir dikte modeli seçin.",
-        "readAloud": "İndirilmiş bir sesli okuma modeli seçin."
+        "readAloud": "İndirilmiş bir sesli okuma modeli seçin.",
+        "cleanup": "Dikteleri temizleyen yerel model."
+      },
+      "failed": {
+        "cleanup": "Modeller listelenemedi."
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "İptal",
       "readAloud": "Sesli okuma",
       "activation": "Etkinleştirme",
-      "activationHelp": "Dikte kısayolları için"
+      "activationHelp": "Dikte kısayolları için",
+      "cancelLinuxHelp": "Linux'ta iptal kısayolu bir dikteyi durdurmaz, çünkü dikte sırasında kaydedilen kısayollar orada güvenilir değildir. Ekran katmanındaki X'i, tepsi menüsündeki İptal'i kullanın veya handy --cancel komutunu çalıştırın."
     },
     "modelSettings": {
       "title": "{{model}} Ayarları"
@@ -776,14 +782,6 @@
         "noCleanupModel": "Son işlem modeli yok",
         "s1Description": "Stil, yapı ve bağlam denetimlerini kullanır.",
         "plainDescription": "Seçtiğiniz Handy promptunu kullanır.",
-        "size": "{{size}} MiB",
-        "downloaded": "İndirildi",
-        "use": "Kullan",
-        "download": "İndir",
-        "downloading": "%{{percent}} indiriliyor",
-        "delete": "Sil",
-        "deleteConfirm": "{{name}} silinsin mi? {{size}} yer açılır.",
-        "deleteConfirmAction": "Modeli sil",
         "status": {
           "title": "Durum",
           "description": "Model, son işlemli bir dikte başladığında yüklenir ve model kaldırma zaman aşımından sonra kaldırılır.",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "Sesli okuma yapıştırmayla meşgul",
+    "readAloudBusyPasting": "Handy hâlâ yapıştırıyor. Yapıştırma bittikten sonra Sesli okumayı yeniden deneyin.",
+    "readAloudUnavailableTitle": "Sesli okuma kullanılamıyor",
     "readAloudClipboardUnreadableTitle": "Pano okunamadı",
     "readAloudClipboardUnreadable": "Panodaki metin okunamadı.",
     "loadDirectory": "Dizin yüklenirken hata oluştu: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "Koyu"
     }
   },
+  "floating": {
+    "position": {
+      "help": "Ekran katmanının ve sesli okuma penceresinin ekranda nerede görüneceği. Üst konum, ekranın alt kısmını boş bırakır; terminale dikte ederken işe yarar.",
+      "cells": {
+        "top_left": "Sol üst",
+        "top": "Üst orta",
+        "top_right": "Sağ üst",
+        "center_left": "Sol orta",
+        "center": "Orta",
+        "center_right": "Sağ orta",
+        "bottom_left": "Sol alt",
+        "bottom": "Alt orta",
+        "bottom_right": "Sağ alt"
+      }
+    },
+    "style": {
+      "help": "Yok: kayan pencere yok. Hatalar yine sistem tepsisinde ve ana pencerede görünür. Sade: dikte ederken küçük bir hap. Canlı: bunu destekleyen modellerde konuştukça sözcükleri de gösterir. Linux'ta Yok önerilir."
+    }
+  },
   "overlay": {
     "transcribing": "Transkribe ediliyor",
     "processing": "Temizleniyor",
     "loadingModel": "Model yükleniyor",
-    "cancel": "Dikteyi iptal et"
+    "cancel": "Dikteyi iptal et",
+    "starting": "Mikrofon başlatılıyor",
+    "recording": "Kaydediliyor"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 1 kısayolu engelliyor olabilir",
@@ -1215,12 +1234,6 @@
     "dismiss": "Kapat"
   },
   "tts": {
-    "ratings": {
-      "quality": "Kalite",
-      "speed": "Hız",
-      "recommended": "Önerilen",
-      "tooltip": "İlk ses {{firstAudio}} sn, gerçek zamandan {{faster}} kat hızlı, {{load}} sn'de yüklenir"
-    },
     "devices": {
       "auto": "Otomatik",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "{{device}} için hazırlanıyor: {{graph}}",
     "buffering": "Arabelleğe alınıyor",
     "title": "Sesli okuma",
+    "modelVoice": "{{model}}, {{voice}}",
     "textLabel": "Okunacak metin",
     "placeholder": "Okunacak metni yapıştırın",
     "play": "Oynat",
     "pause": "Duraklat",
-    "stop": "Durdur",
     "close": "Kapat",
     "readClipboard": "Panoyu oku",
     "editText": "Metni düzenle",
     "progress": "İlerleme",
-    "time": "{{elapsed}} sn geçti, {{remaining}} sn kaldı",
-    "openModels": "Metin Okuma Modelleri",
+    "timeAbout": "{{elapsed}} / yaklaşık {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Enter",
+      "close": "Esc"
+    },
+    "chooseModel": "Model seç",
+    "failedLine": "Sesli okuma başarısız oldu. {{reason}}",
     "outputFallback": "Varsayılan çıkış cihazı kullanılıyor",
     "states": {
       "waiting": "Bekleniyor",
@@ -1293,25 +1311,10 @@
       "playing": "Oynatılıyor",
       "paused": "Duraklatıldı",
       "finished": "Bitti",
-      "error": "Hata"
+      "error": "Başarısız"
     },
-    "modelsSubtitle": "Bir ses modeli seçin. Hız değerleri geliştiricinin bilgisayarında ölçüldü; sizin bilgisayarınızda farklı olabilir.",
-    "downloaded": "İndirildi",
-    "availableToDownload": "İndirilebilir",
-    "recommended": "Önerilen",
-    "downloading": "İndiriliyor",
     "needsToken": "Hugging Face belirteci gerekir",
     "tokenSet": "Belirteç ayarlandı",
-    "active": "Etkin",
-    "use": "Kullan",
-    "download": "İndir",
-    "delete": "Sil",
-    "deleteConfirm": "{{name}} silinsin mi? {{size}} yer açılır. Sözlüğünüz ve geçmişiniz korunur.",
-    "deleteConfirmSelected": "Başka bir model seçene kadar sesli okuma çalışmaz.",
-    "deleteConfirmAction": "Modeli sil",
-    "cancel": "İptal",
-    "token": "Hugging Face belirteci",
-    "tokenHelp": "Yalnızca Hugging Face'te ses koşulları kabul edildikten sonra Pocket'in kısıtlı sesleri için gerekir. Belirteç bellekte tutulur ve Handy yeniden başladığında silinir.",
     "clearToken": "Belirteci temizle",
     "showToken": "Belirteci göster",
     "hideToken": "Belirteci gizle",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "Küçük Hintçe sesler, kadın ve erkek. İngilizce sözcükler harf harf okunur.",
       "indic-tiny-pa": "Küçük Pencapça (Gurmukhi) sesler, kadın ve erkek. İngilizce sözcükler harf harf okunur."
     },
-    "voiceCount": "{{count}} ses",
-    "downloadProgress": "Model indirme ilerlemesi",
     "speedLabel": "Hız",
     "pitchLabel": "Perde",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "Orijinal transkripsiyon",
     "diffNote": "Orijinal transkripsiyondan farklar gösteriliyor.",
     "noCleanup": "Temizleme yok"
+  },
+  "models": {
+    "tags": {
+      "recommended": "Önerilen",
+      "live": "Canlı",
+      "translates": "Çeviri yapar",
+      "custom": "Özel",
+      "oldFormat": "Eski biçim",
+      "needsToken": "Jeton gerekir",
+      "nativeWords": "Yerel sözcük listesi"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "Ölçülmedi",
+      "licence": "Lisans belirtilmedi",
+      "languages": "Belirtilmedi",
+      "notListed": "Belirtilmedi"
+    },
+    "measured": {
+      "maker": "Üreticinin değeri ({{machine}}, {{backend}}), bu makineye ait değil",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}, Ayarlar, Gelişmiş'te belirlenir",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "Yerel sözcük listesi",
+      "corrected": "Tanımadan sonra düzeltilir",
+      "unknown": "Model yüklenince bilinir"
+    },
+    "speedFigure": {
+      "dictation": "30 saniyelik konuşma için {{value}} sn"
+    },
+    "search": "Model ara",
+    "noMatch": "\"{{query}}\" ile eşleşen bir şey yok.",
+    "noFilterMatch": "Bu filtrelerle eşleşen model yok.",
+    "clearFilters": "Filtreleri temizle",
+    "selected": "Seçili",
+    "runtime": {
+      "notLoaded": "Yüklenmedi",
+      "loading": "Yükleniyor",
+      "ready": "Hazır",
+      "failed": "Başarısız"
+    },
+    "downloading": "İndiriliyor: {{size}} içinden %{{percent}}",
+    "row": {
+      "open": "Ayrıntıları göster",
+      "close": "Ayrıntıları gizle"
+    },
+    "detail": {
+      "languages": "Diller",
+      "runOn": "Çalıştırılacak cihaz",
+      "memory": "Bellek",
+      "measuredOn": "Ölçüldüğü yer",
+      "voices": "Sesler",
+      "licence": "Lisans",
+      "modelCard": "Model kartı",
+      "source": "Kaynak",
+      "revision": "{{repository}} · revizyon {{revision}}",
+      "customWords": "Özel Kelimeler"
+    },
+    "delete": {
+      "action": "Modeli sil",
+      "ask": "{{name}} silinsin mi? {{size}} yer açılır.",
+      "askUnknownSize": "{{name}} silinsin mi?",
+      "selected": {
+        "dictation": "Başka bir model seçene kadar dikte çalışmaz.",
+        "readAloud": "Başka bir model seçene kadar sesli okuma çalışmaz.",
+        "cleanup": "Başka bir model seçene kadar temizleme çalışmaz."
+      },
+      "kept": {
+        "dictation": "Geçmişiniz korunur.",
+        "readAloud": "Sözlüğünüz ve geçmişiniz korunur.",
+        "cleanup": "İstemleriniz ve geçmişiniz korunur."
+      }
+    },
+    "heads": {
+      "score": "Puan",
+      "speed": "Hız",
+      "size": "Boyut"
+    },
+    "legend": {
+      "open": "Sütunların anlamı",
+      "score": {
+        "readAloud": "10 üzerinden dinleme kalitesi.",
+        "cleanup": "Temizleme modellerinin henüz puanı yok."
+      },
+      "speed": {
+        "readAloud": "Modelin çalıştığı cihazda 10 üzerinden hız puanı.",
+        "cleanup": "Temizleme modellerinin henüz ölçülmüş hızı yok."
+      },
+      "range": "{{low}} ile {{high}} arası",
+      "unmeasured": "? ölçülmedi.",
+      "measuredOn": "{{machine}} üzerinde ölçüldü.",
+      "speedNote": {
+        "accelerated": "30 saniyelik konuşmanın test dizüstü bilgisayarımızın grafik yongasında yazıya dökülmesinin ne kadar sürdüğü. Bu bilgisayarda ölçülmedi.",
+        "cpu": "30 saniyelik konuşmanın test dizüstü bilgisayarımızın işlemcisinde yazıya dökülmesinin ne kadar sürdüğü. Bu bilgisayarda ölçülmedi."
+      }
+    },
+    "cell": {
+      "value": "{{head}}: {{figure}}",
+      "measured": "{{head}}: {{figure}}, {{provenance}} üzerinde ölçüldü",
+      "unmeasured": "{{head}}: ölçülmedi"
+    },
+    "mark": {
+      "select": "{{name}} modelini seç",
+      "download": "{{name}} modelini indir",
+      "cancel": "{{name}} indirmesini durdur",
+      "needsToken": "Hugging Face belirteci gerekir. Ayrıntılarda ekleyin."
+    },
+    "remove": "{{name}} modelini sil",
+    "chips": {
+      "accelerated": "GPU veya NPU"
+    },
+    "busy": "Süren indirmenin veya silmenin bitmesini bekleyin.",
+    "listen": "{{voice}} sesini dinle",
+    "voiceCount_one": "{{count}} ses",
+    "voiceCount": "{{count}} ses",
+    "sections": {
+      "available": "Kullanılabilir"
+    },
+    "token": {
+      "label": "Hugging Face belirteci",
+      "help": "Önce Hugging Face üzerinde ses koşullarını kabul edin. Jeton, Handy yeniden başlatılana kadar bellekte tutulur."
+    }
   }
 }

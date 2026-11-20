@@ -382,15 +382,7 @@ function App() {
               id={PANEL_ID}
               aria-labelledby={tabId(shown.tab)}
             >
-              {/* Models, Dictation fills the window: its table scrolls, not the page. */}
-              <div
-                className={
-                  "flex flex-col gap-4 p-4" +
-                  (shown.destination === "models" && shown.tab === "dictation"
-                    ? " h-full"
-                    : "")
-                }
-              >
+              <div className="flex flex-col gap-4 p-4">
                 <SecureInputWarning />
                 <div className="mx-auto flex min-h-0 w-full min-w-0 max-w-3xl flex-1 flex-col">
                   <MainPage

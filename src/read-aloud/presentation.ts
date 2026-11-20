@@ -1,4 +1,5 @@
-import type { SessionSnapshot } from "@/bindings";
+import type { TFunction } from "i18next";
+import type { AppSettings, SessionSnapshot, TtsModelInfo } from "@/bindings";
 export function highlightedText(text: string, start: number, end: number) {
   const from = Math.max(0, Math.min(text.length, start));
   const to = Math.max(from, Math.min(text.length, end));
@@ -13,7 +14,6 @@ export function progressPresentation(snapshot: SessionSnapshot) {
     percent: Math.max(0, Math.min(100, snapshot.progress * 100)),
     elapsed: Math.round(snapshot.elapsed_seconds),
     remaining: Math.round(snapshot.remaining_seconds),
-    stateKey: `tts.states.${snapshot.state}`,
   };
 }
 
@@ -38,6 +38,56 @@ export function formatTime(seconds: number) {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 
+/** "1:18 / about 1:29"; `null` when nothing is read yet. */
+export function timeLabel(
+  snapshot: SessionSnapshot,
+  t: TFunction,
+): string | null {
+  if (snapshot.state === "waiting") return null;
+  return t("tts.timeAbout", {
+    elapsed: formatTime(snapshot.elapsed_seconds),
+    total: formatTime(snapshot.elapsed_seconds + snapshot.remaining_seconds),
+  });
+}
+
+/** The key of the state word; `null` when nothing is read yet. */
+export function stateWord(state: SessionSnapshot["state"]) {
+  return state === "waiting" ? null : `tts.states.${state}`;
+}
+
+/** The one line above the transport: the error wins over the output fallback; `null` when neither. */
+export function reasonLine(
+  snapshot: SessionSnapshot,
+):
+  | { kind: "error"; key: string; chooseModel: boolean }
+  | { kind: "fallback" }
+  | null {
+  if (snapshot.error)
+    return {
+      kind: "error",
+      key: snapshot.error,
+      chooseModel: snapshot.error === "tts.errors.notDownloaded",
+    };
+  return snapshot.output_fallback ? { kind: "fallback" } : null;
+}
+
+/** The model and voice the next read uses, or `null` when the model is not in the catalog. */
+export function readerHeading(
+  settings: Pick<AppSettings, "tts_model_id" | "tts_voice">,
+  models: readonly Pick<
+    TtsModelInfo,
+    "id" | "display_name" | "default_voice"
+  >[],
+): { model: string; voice: string } | null {
+  const id = settings.tts_model_id ?? "pocket-en";
+  const model = models.find((candidate) => candidate.id === id);
+  if (!model) return null;
+  return {
+    model: model.display_name,
+    voice: settings.tts_voice?.[id] ?? model.default_voice,
+  };
+}
+
 export function pasteText(
   text: string,
   pasted: string,
@@ -47,14 +97,18 @@ export function pasteText(
   return text.slice(0, start) + pasted + text.slice(end);
 }
 
+/** `current` is the text being read; an editable read given that same text is kept as it is. */
 export function enterPopupEdit(
   text: string,
+  state: SessionSnapshot["state"],
   actions: {
+    current: string;
     edit: (text: string) => void;
     setEditing: (value: boolean) => void;
   },
 ) {
   actions.setEditing(true);
+  if (textEditable(state) && text === actions.current) return;
   actions.edit(text);
 }
 

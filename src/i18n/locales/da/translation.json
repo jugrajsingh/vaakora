@@ -385,11 +385,16 @@
       "loading": "Indlæser modeller",
       "empty": {
         "dictation": "Der er ingen model til diktering endnu.",
-        "readAloud": "Der er ingen model til oplæsning endnu."
+        "readAloud": "Der er ingen model til oplæsning endnu.",
+        "cleanup": "Der er ingen oprydningsmodel endnu."
       },
       "help": {
         "dictation": "Vælg en downloadet model til diktering.",
-        "readAloud": "Vælg en downloadet model til oplæsning."
+        "readAloud": "Vælg en downloadet model til oplæsning.",
+        "cleanup": "Den lokale model, der rydder op i dikteringer."
+      },
+      "failed": {
+        "cleanup": "Modellerne kunne ikke vises."
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "Annuller",
       "readAloud": "Oplæsning",
       "activation": "Aktivering",
-      "activationHelp": "Til diktergenveje"
+      "activationHelp": "Til diktergenveje",
+      "cancelLinuxHelp": "På Linux stopper genvejen til at annullere ikke en diktering, fordi genveje, der registreres under en diktering, ikke er pålidelige dér. Brug X på overlayet, Annuller i bakkemenuen, eller kør handy --cancel."
     },
     "modelSettings": {
       "title": "{{model}}-indstillinger"
@@ -776,14 +782,6 @@
         "noCleanupModel": "Ingen efterbehandlingsmodel",
         "s1Description": "Bruger indstillinger for stil, struktur og kontekst.",
         "plainDescription": "Bruger din valgte Handy-prompt.",
-        "size": "{{size}} MiB",
-        "downloaded": "Downloadet",
-        "use": "Brug",
-        "download": "Download",
-        "downloading": "Downloader {{percent}}%",
-        "delete": "Slet",
-        "deleteConfirm": "Slet {{name}}? Det frigør {{size}}.",
-        "deleteConfirmAction": "Slet model",
         "status": {
           "title": "Status",
           "description": "Modellen indlæses, når en diktering med efterbehandling starter, og frigøres efter tidsgrænsen for modelfrigørelse.",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "Oplæsning er optaget af indsættelse",
+    "readAloudBusyPasting": "Handy er stadig i gang med at indsætte. Prøv oplæsning igen, når indsættelsen er færdig.",
+    "readAloudUnavailableTitle": "Oplæsning er ikke tilgængelig",
     "readAloudClipboardUnreadableTitle": "Udklipsholder kan ikke læses",
     "readAloudClipboardUnreadable": "Teksten i udklipsholderen kunne ikke læses.",
     "loadDirectory": "Fejl ved indlæsning af mappe: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "Mørk"
     }
   },
+  "floating": {
+    "position": {
+      "help": "Hvor overlayet og oplæsningsvinduet vises på skærmen. En placering øverst holder bunden af skærmen fri, hvilket er nyttigt, når du dikterer i en terminal.",
+      "cells": {
+        "top_left": "Øverst til venstre",
+        "top": "Øverst i midten",
+        "top_right": "Øverst til højre",
+        "center_left": "Midt til venstre",
+        "center": "Midten",
+        "center_right": "Midt til højre",
+        "bottom_left": "Nederst til venstre",
+        "bottom": "Nederst i midten",
+        "bottom_right": "Nederst til højre"
+      }
+    },
+    "style": {
+      "help": "Ingen: intet flydende vindue. Fejl vises stadig i bakken og i hovedvinduet. Minimal: en lille pille, mens du dikterer. Live: viser også ordene, mens du taler, med modeller, der understøtter det. På Linux anbefales Ingen."
+    }
+  },
   "overlay": {
     "transcribing": "Transskriberer",
     "processing": "Rydder op",
     "loadingModel": "Indlæser model",
-    "cancel": "Annuller diktering"
+    "cancel": "Annuller diktering",
+    "starting": "Starter mikrofon",
+    "recording": "Optager"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} blokerer muligvis 1 genvej",
@@ -1215,12 +1234,6 @@
     "dismiss": "Afvis"
   },
   "tts": {
-    "ratings": {
-      "quality": "Kvalitet",
-      "speed": "Hastighed",
-      "recommended": "Anbefalet",
-      "tooltip": "Første lyd efter {{firstAudio}} s, {{faster}}x hurtigere end realtid, indlæses på {{load}} s"
-    },
     "devices": {
       "auto": "Auto",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "Forbereder til {{device}}: {{graph}}",
     "buffering": "Buffer",
     "title": "Oplæsning",
+    "modelVoice": "{{model}}, {{voice}}",
     "textLabel": "Tekst, der skal læses op",
     "placeholder": "Indsæt tekst, der skal læses op",
     "play": "Afspil",
     "pause": "Pause",
-    "stop": "Stop",
     "close": "Luk",
     "readClipboard": "Læs udklipsholder",
     "editText": "Rediger tekst",
     "progress": "Fremdrift",
-    "time": "{{elapsed}} s gået, {{remaining}} s tilbage",
-    "openModels": "Tekst-til-tale-modeller",
+    "timeAbout": "{{elapsed}} / ca. {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Enter",
+      "close": "Esc"
+    },
+    "chooseModel": "Vælg en model",
+    "failedLine": "Oplæsningen mislykkedes. {{reason}}",
     "outputFallback": "Bruger standardudgangsenheden",
     "states": {
       "waiting": "Venter",
@@ -1293,25 +1311,10 @@
       "playing": "Afspiller",
       "paused": "På pause",
       "finished": "Færdig",
-      "error": "Fejl"
+      "error": "Mislykkedes"
     },
-    "modelsSubtitle": "Vælg en stemmemodel. Hastighedstallene er målt på udviklerens computer; dine kan afvige.",
-    "downloaded": "Downloadet",
-    "availableToDownload": "Tilgængelig til download",
-    "recommended": "Anbefalet",
-    "downloading": "Downloader",
     "needsToken": "Kræver et Hugging Face-token",
     "tokenSet": "Token angivet",
-    "active": "Aktiv",
-    "use": "Brug",
-    "download": "Download",
-    "delete": "Slet",
-    "deleteConfirm": "Slet {{name}}? Det frigør {{size}}. Dit ordforråd og din historik bevares.",
-    "deleteConfirmSelected": "Oplæsning virker ikke, før du vælger en anden model.",
-    "deleteConfirmAction": "Slet model",
-    "cancel": "Annuller",
-    "token": "Hugging Face-token",
-    "tokenHelp": "Kun nødvendigt til låste Pocket-stemmer efter accept af stemmevilkårene på Hugging Face. Tokenet bliver i hukommelsen og ryddes, når Handy genstartes.",
     "clearToken": "Ryd token",
     "showToken": "Vis token",
     "hideToken": "Skjul token",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "Små hindi-stemmer, kvindelig og mandlig. Engelske ord staves bogstav for bogstav.",
       "indic-tiny-pa": "Små punjabi-stemmer (gurmukhi), kvindelig og mandlig. Engelske ord staves bogstav for bogstav."
     },
-    "voiceCount": "{{count}} stemmer",
-    "downloadProgress": "Fremdrift for modeldownload",
     "speedLabel": "Hastighed",
     "pitchLabel": "Tonehøjde",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "Oprindelig transskription",
     "diffNote": "Viser forskelle fra den oprindelige transskription.",
     "noCleanup": "Ingen oprydning"
+  },
+  "models": {
+    "tags": {
+      "recommended": "Anbefalet",
+      "live": "Live",
+      "translates": "Oversætter",
+      "custom": "Brugerdefineret",
+      "oldFormat": "Gammelt format",
+      "needsToken": "Kræver token",
+      "nativeWords": "Indbygget ordliste"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "Ikke målt",
+      "licence": "Licens ikke angivet",
+      "languages": "Ikke angivet",
+      "notListed": "Ikke angivet"
+    },
+    "measured": {
+      "maker": "Producentens tal ({{machine}}, {{backend}}), ikke fra denne maskine",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}, indstilles i Indstillinger, Avanceret",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "Indbygget ordliste",
+      "corrected": "Rettet efter genkendelse",
+      "unknown": "Kendes, når modellen er indlæst"
+    },
+    "speedFigure": {
+      "dictation": "{{value}} s til 30 sekunders tale"
+    },
+    "search": "Søg efter modeller",
+    "noMatch": "Intet matcher \"{{query}}\".",
+    "noFilterMatch": "Ingen model matcher disse filtre.",
+    "clearFilters": "Ryd filtre",
+    "selected": "Valgt",
+    "runtime": {
+      "notLoaded": "Ikke indlæst",
+      "loading": "Indlæser",
+      "ready": "Klar",
+      "failed": "Mislykkedes"
+    },
+    "downloading": "Downloader {{percent}} % af {{size}}",
+    "row": {
+      "open": "Vis detaljer",
+      "close": "Skjul detaljer"
+    },
+    "detail": {
+      "languages": "Sprog",
+      "runOn": "Kør på",
+      "memory": "Hukommelse",
+      "measuredOn": "Målt på",
+      "voices": "Stemmer",
+      "licence": "Licens",
+      "modelCard": "Modelkort",
+      "source": "Kilde",
+      "revision": "{{repository}} · revision {{revision}}",
+      "customWords": "Brugerdefinerede ord"
+    },
+    "delete": {
+      "action": "Slet model",
+      "ask": "Slet {{name}}? Det frigør {{size}}.",
+      "askUnknownSize": "Slet {{name}}?",
+      "selected": {
+        "dictation": "Diktering virker ikke, før du vælger en anden model.",
+        "readAloud": "Oplæsning virker ikke, før du vælger en anden model.",
+        "cleanup": "Oprydning virker ikke, før du vælger en anden model."
+      },
+      "kept": {
+        "dictation": "Din historik bevares.",
+        "readAloud": "Dit ordforråd og din historik bevares.",
+        "cleanup": "Dine prompter og din historik bevares."
+      }
+    },
+    "heads": {
+      "score": "Score",
+      "speed": "Hastighed",
+      "size": "Størrelse"
+    },
+    "legend": {
+      "open": "Hvad kolonnerne betyder",
+      "score": {
+        "readAloud": "Lyttekvalitet ud af 10.",
+        "cleanup": "Oprydningsmodeller har endnu ingen score."
+      },
+      "speed": {
+        "readAloud": "Hastighedsscore ud af 10 på den enhed, modellen kører på.",
+        "cleanup": "Oprydningsmodeller har endnu ingen målt hastighed."
+      },
+      "range": "{{low}} til {{high}}",
+      "unmeasured": "? er ikke målt.",
+      "measuredOn": "Målt på {{machine}}.",
+      "speedNote": {
+        "accelerated": "Hvor lang tid 30 sekunders tale tager at skrive ud på vores testcomputers grafikchip. Ikke målt på denne computer.",
+        "cpu": "Hvor lang tid 30 sekunders tale tager at skrive ud på vores testcomputers processor. Ikke målt på denne computer."
+      }
+    },
+    "cell": {
+      "value": "{{head}}: {{figure}}",
+      "measured": "{{head}}: {{figure}}, målt på {{provenance}}",
+      "unmeasured": "{{head}}: ikke målt"
+    },
+    "mark": {
+      "select": "Vælg {{name}}",
+      "download": "Download {{name}}",
+      "cancel": "Stop download af {{name}}",
+      "needsToken": "Kræver et Hugging Face-token. Tilføj det i detaljerne."
+    },
+    "remove": "Slet {{name}}",
+    "chips": {
+      "accelerated": "GPU eller NPU"
+    },
+    "busy": "Vent til den igangværende download eller sletning er færdig.",
+    "listen": "Lyt til {{voice}}",
+    "voiceCount_one": "{{count}} stemme",
+    "voiceCount": "{{count}} stemmer",
+    "sections": {
+      "available": "Tilgængelige"
+    },
+    "token": {
+      "label": "Hugging Face-token",
+      "help": "Accepter først stemmevilkårene på Hugging Face. Tokenet gemmes i hukommelsen, indtil Handy genstartes."
+    }
   }
 }

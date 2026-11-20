@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import type { LocalLlmModelInfo } from "@/bindings";
+import { UNKNOWN_SIZE, formatBytes } from "@/lib/utils/format";
 
 export function LocalLlmDropdown({
   models,
@@ -40,9 +41,7 @@ export function LocalLlmDropdown({
                   )}
                 </div>
                 <div className="text-xs text-ink-3">
-                  {t("settings.postProcessing.localLlm.size", {
-                    size: (model.size_bytes / 1024 / 1024).toFixed(0),
-                  })}
+                  {formatBytes(model.size_bytes) ?? UNKNOWN_SIZE}
                 </div>
               </div>
               {model.id === selectedId && (

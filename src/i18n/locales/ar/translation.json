@@ -385,11 +385,16 @@
       "loading": "جارٍ تحميل النماذج",
       "empty": {
         "dictation": "لا يوجد نموذج إملاء بعد.",
-        "readAloud": "لا يوجد نموذج قراءة بصوت عالٍ بعد."
+        "readAloud": "لا يوجد نموذج قراءة بصوت عالٍ بعد.",
+        "cleanup": "لا يوجد نموذج تنظيف بعد."
       },
       "help": {
         "dictation": "اختر نموذج إملاء منزّلًا.",
-        "readAloud": "اختر نموذج قراءة بصوت عالٍ منزّلًا."
+        "readAloud": "اختر نموذج قراءة بصوت عالٍ منزّلًا.",
+        "cleanup": "النموذج المحلي الذي ينظّف نصوص الإملاء."
+      },
+      "failed": {
+        "cleanup": "تعذّر عرض قائمة النماذج."
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "إلغاء",
       "readAloud": "القراءة بصوت عالٍ",
       "activation": "التفعيل",
-      "activationHelp": "لاختصارات الإملاء"
+      "activationHelp": "لاختصارات الإملاء",
+      "cancelLinuxHelp": "على Linux لا يوقف اختصار الإلغاء الإملاء، لأن الاختصارات المسجَّلة أثناء الإملاء غير موثوقة هناك. استخدم الزر X على التراكب، أو «إلغاء» في قائمة صينية النظام، أو شغّل handy --cancel."
     },
     "modelSettings": {
       "title": "إعدادات {{model}}"
@@ -776,14 +782,6 @@
         "noCleanupModel": "لا يوجد نموذج معالجة لاحقة",
         "s1Description": "يستخدم عناصر التحكم في الأسلوب والبنية والسياق.",
         "plainDescription": "يستخدم مطالبة Handy التي اخترتها.",
-        "size": "{{size}} MiB",
-        "downloaded": "تم التنزيل",
-        "use": "استخدام",
-        "download": "تنزيل",
-        "downloading": "جاري التنزيل {{percent}}%",
-        "delete": "حذف",
-        "deleteConfirm": "هل تريد حذف {{name}}؟ سيُحرّر {{size}}.",
-        "deleteConfirmAction": "حذف النموذج",
         "status": {
           "title": "الحالة",
           "description": "يُحمَّل النموذج عند بدء إملاء مع معالجة لاحقة، ويُلغى تحميله بعد انتهاء مهلة إلغاء تحميل النموذج.",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "القراءة بصوت عالٍ مشغولة باللصق",
+    "readAloudBusyPasting": "لا يزال Handy يلصق. جرّب القراءة بصوت عالٍ مرة أخرى بعد انتهاء اللصق.",
+    "readAloudUnavailableTitle": "القراءة بصوت عالٍ غير متاحة",
     "readAloudClipboardUnreadableTitle": "تعذّرت قراءة الحافظة",
     "readAloudClipboardUnreadable": "تعذّرت قراءة النص من الحافظة.",
     "loadDirectory": "خطأ في تحميل المجلد: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "داكن"
     }
   },
+  "floating": {
+    "position": {
+      "help": "المكان الذي يظهر فيه التراكب ونافذة القراءة بصوت عالٍ على الشاشة. الموضع العلوي يُبقي أسفل الشاشة خاليًا، وهذا مفيد عند الإملاء في الطرفية.",
+      "cells": {
+        "top_left": "أعلى اليسار",
+        "top": "أعلى الوسط",
+        "top_right": "أعلى اليمين",
+        "center_left": "وسط اليسار",
+        "center": "الوسط",
+        "center_right": "وسط اليمين",
+        "bottom_left": "أسفل اليسار",
+        "bottom": "أسفل الوسط",
+        "bottom_right": "أسفل اليمين"
+      }
+    },
+    "style": {
+      "help": "بلا: لا توجد نافذة عائمة، وتظل الأخطاء تظهر في صينية النظام والنافذة الرئيسية. مبسط: كبسولة صغيرة أثناء الإملاء. مباشر: يعرض الكلمات أيضًا أثناء حديثك، مع النماذج التي تدعم ذلك. على Linux يُنصح باختيار «بلا»."
+    }
+  },
   "overlay": {
     "transcribing": "جاري التفريغ",
     "processing": "جارٍ تنظيف النص",
     "loadingModel": "جارٍ تحميل النموذج",
-    "cancel": "إلغاء الإملاء"
+    "cancel": "إلغاء الإملاء",
+    "starting": "جارٍ تشغيل الميكروفون",
+    "recording": "جارٍ التسجيل"
   },
   "secureInput": {
     "blockedWithCulprit_one": "قد يحظر {{name}} اختصارًا واحدًا",
@@ -1215,12 +1234,6 @@
     "dismiss": "تجاهل"
   },
   "tts": {
-    "ratings": {
-      "quality": "الجودة",
-      "speed": "السرعة",
-      "recommended": "موصى به",
-      "tooltip": "أول صوت خلال {{firstAudio}} ث، أسرع {{faster}} مرة من الزمن الفعلي، يُحمَّل خلال {{load}} ث"
-    },
     "devices": {
       "auto": "تلقائي",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "جارٍ التجهيز لـ {{device}}: {{graph}}",
     "buffering": "جارٍ التخزين المؤقت",
     "title": "القراءة بصوت عالٍ",
+    "modelVoice": "{{model}}، {{voice}}",
     "textLabel": "النص المراد قراءته",
     "placeholder": "الصق النص المراد قراءته",
     "play": "تشغيل",
     "pause": "إيقاف مؤقت",
-    "stop": "إيقاف",
     "close": "إغلاق",
     "readClipboard": "قراءة الحافظة",
     "editText": "تحرير النص",
     "progress": "التقدم",
-    "time": "مرّت {{elapsed}} ث، تبقّت {{remaining}} ث",
-    "openModels": "نماذج تحويل النص إلى كلام",
+    "timeAbout": "{{elapsed}} / حوالي {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Enter",
+      "close": "Esc"
+    },
+    "chooseModel": "اختر نموذجًا",
+    "failedLine": "فشلت القراءة بصوت عالٍ. {{reason}}",
     "outputFallback": "يُستخدم جهاز الإخراج الافتراضي",
     "states": {
       "waiting": "في الانتظار",
@@ -1293,25 +1311,10 @@
       "playing": "قيد التشغيل",
       "paused": "متوقف مؤقتًا",
       "finished": "انتهى",
-      "error": "خطأ"
+      "error": "فشل"
     },
-    "modelsSubtitle": "اختر نموذج صوت. قِيست أرقام السرعة على جهاز المطوّر، وقد تختلف على جهازك.",
-    "downloaded": "تم التنزيل",
-    "availableToDownload": "متاح للتنزيل",
-    "recommended": "موصى به",
-    "downloading": "جاري التنزيل",
     "needsToken": "يتطلب رمز Hugging Face",
     "tokenSet": "تم تعيين الرمز",
-    "active": "نشط",
-    "use": "استخدام",
-    "download": "تنزيل",
-    "delete": "حذف",
-    "deleteConfirm": "هل تريد حذف {{name}}؟ سيُحرّر {{size}}. تبقى مفرداتك وسجلك.",
-    "deleteConfirmSelected": "تتوقف القراءة بصوت عالٍ حتى تختار نموذجًا آخر.",
-    "deleteConfirmAction": "حذف النموذج",
-    "cancel": "إلغاء",
-    "token": "رمز Hugging Face",
-    "tokenHelp": "مطلوب فقط لأصوات Pocket المقيّدة بعد قبول شروط الأصوات على Hugging Face. يبقى الرمز في الذاكرة ويُمسح عند إعادة تشغيل Handy.",
     "clearToken": "مسح الرمز",
     "showToken": "إظهار الرمز",
     "hideToken": "إخفاء الرمز",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "أصوات هندية صغيرة، أنثوية وذكورية. تُنطق الكلمات الإنجليزية حرفًا حرفًا.",
       "indic-tiny-pa": "أصوات بنجابية (غورمخي) صغيرة، أنثوية وذكورية. تُنطق الكلمات الإنجليزية حرفًا حرفًا."
     },
-    "voiceCount": "الأصوات: {{count}}",
-    "downloadProgress": "تقدم تنزيل النموذج",
     "speedLabel": "السرعة",
     "pitchLabel": "درجة الصوت",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "التفريغ الأصلي",
     "diffNote": "عرض الفروق عن التفريغ الأصلي.",
     "noCleanup": "بلا تنظيف"
+  },
+  "models": {
+    "tags": {
+      "recommended": "موصى به",
+      "live": "مباشر",
+      "translates": "يترجم",
+      "custom": "مخصص",
+      "oldFormat": "تنسيق قديم",
+      "needsToken": "يحتاج رمزًا",
+      "nativeWords": "قائمة كلمات أصلية"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "لم يُقَس",
+      "licence": "الترخيص غير مذكور",
+      "languages": "غير مذكورة",
+      "notListed": "غير مذكور"
+    },
+    "measured": {
+      "maker": "رقم الشركة المصنّعة ({{machine}}، {{backend}})، وليس هذا الجهاز",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}، يُضبط في الإعدادات، متقدم",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "قائمة كلمات أصلية",
+      "corrected": "يُصحَّح بعد التعرف",
+      "unknown": "تُعرف بعد تحميل النموذج"
+    },
+    "speedFigure": {
+      "dictation": "{{value}} ث لـ 30 ثانية من الكلام"
+    },
+    "search": "البحث عن النماذج",
+    "noMatch": "لا شيء يطابق \"{{query}}\".",
+    "noFilterMatch": "لا يطابق أي نموذج هذه الفلاتر.",
+    "clearFilters": "مسح التصفيات",
+    "selected": "محدد",
+    "runtime": {
+      "notLoaded": "غير محمّل",
+      "loading": "جارٍ التحميل",
+      "ready": "جاهز",
+      "failed": "فشل"
+    },
+    "downloading": "جارٍ التنزيل {{percent}}% من {{size}}",
+    "row": {
+      "open": "عرض التفاصيل",
+      "close": "إخفاء التفاصيل"
+    },
+    "detail": {
+      "languages": "اللغات",
+      "runOn": "التشغيل على",
+      "memory": "الذاكرة",
+      "measuredOn": "قيس على",
+      "voices": "الأصوات",
+      "licence": "الترخيص",
+      "modelCard": "بطاقة النموذج",
+      "source": "المصدر",
+      "revision": "{{repository}} · المراجعة {{revision}}",
+      "customWords": "كلمات مخصصة"
+    },
+    "delete": {
+      "action": "حذف النموذج",
+      "ask": "حذف {{name}}؟ سيحرر {{size}}.",
+      "askUnknownSize": "حذف {{name}}؟",
+      "selected": {
+        "dictation": "يتوقف الإملاء عن العمل حتى تختار نموذجًا آخر.",
+        "readAloud": "تتوقف القراءة بصوت عالٍ عن العمل حتى تختار نموذجًا آخر.",
+        "cleanup": "يتوقف التنظيف عن العمل حتى تختار نموذجًا آخر."
+      },
+      "kept": {
+        "dictation": "يُحتفظ بسجلك.",
+        "readAloud": "يُحتفظ بمفرداتك وسجلك.",
+        "cleanup": "يُحتفظ بموجّهاتك وسجلك."
+      }
+    },
+    "heads": {
+      "score": "التقييم",
+      "speed": "السرعة",
+      "size": "الحجم"
+    },
+    "legend": {
+      "open": "معنى الأعمدة",
+      "score": {
+        "readAloud": "جودة الاستماع من 10.",
+        "cleanup": "لا تقييم لنماذج التنظيف بعد."
+      },
+      "speed": {
+        "readAloud": "تقييم السرعة من 10 على الجهاز الذي يعمل عليه النموذج.",
+        "cleanup": "لا سرعة مقيسة لنماذج التنظيف بعد."
+      },
+      "range": "من {{low}} إلى {{high}}",
+      "unmeasured": "? لم يُقَس.",
+      "measuredOn": "قيس على {{machine}}.",
+      "speedNote": {
+        "accelerated": "المدة التي تستغرقها كتابة 30 ثانية من الكلام على معالج الرسوميات في لابتوب الاختبار لدينا. لم يُقَس على هذا الكمبيوتر.",
+        "cpu": "المدة التي تستغرقها كتابة 30 ثانية من الكلام على معالج لابتوب الاختبار لدينا. لم يُقَس على هذا الكمبيوتر."
+      }
+    },
+    "cell": {
+      "value": "{{head}}: {{figure}}",
+      "measured": "{{head}}: {{figure}}، قيس على {{provenance}}",
+      "unmeasured": "{{head}}: لم يُقَس"
+    },
+    "mark": {
+      "select": "اختيار {{name}}",
+      "download": "تنزيل {{name}}",
+      "cancel": "إيقاف تنزيل {{name}}",
+      "needsToken": "يتطلب رمز Hugging Face. أضفه في التفاصيل."
+    },
+    "remove": "حذف {{name}}",
+    "chips": {
+      "accelerated": "GPU أو NPU"
+    },
+    "busy": "انتظر حتى ينتهي التنزيل أو الحذف الجاري.",
+    "listen": "استمع إلى {{voice}}",
+    "voiceCount_one": "{{count}} صوت",
+    "voiceCount": "الأصوات: {{count}}",
+    "sections": {
+      "available": "متاح"
+    },
+    "token": {
+      "label": "رمز Hugging Face",
+      "help": "اقبل أولاً شروط الصوت على Hugging Face. يُحفظ الرمز في الذاكرة حتى يُعاد تشغيل Handy."
+    }
   }
 }

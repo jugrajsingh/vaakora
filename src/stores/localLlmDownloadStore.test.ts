@@ -42,6 +42,7 @@ test("Qwen download remains owned after footer selection changes", async () => {
     license_note: "settings.postProcessing.localLlm.licenseNotes.s1Name",
     size_bytes: 484219808,
     prompt_style: "s1_control_line",
+    source: null,
   };
   const store = useLocalLlmDownloadStore;
   store.setState({ modelId: null, percentage: null, error: null, version: 0 });
@@ -88,4 +89,26 @@ test("Qwen download remains owned after footer selection changes", async () => {
   assert.equal(store.getState().modelId, null);
   assert.equal(store.getState().percentage, null);
   assert.equal(store.getState().version, 1);
+});
+
+test("the deleting id is one source for every reader of the store", () => {
+  const store = useLocalLlmDownloadStore;
+  store.setState({ modelId: null, deletingId: null });
+  // Models, Cleanup and the Cleanup tab's Model row each read the same field.
+  const readers = [() => store.getState(), () => store.getState()];
+  assert.deepEqual(
+    readers.map((read) => read().deletingId),
+    [null, null],
+  );
+  store.getState().setDeletingId("quill-0-8b-q4km");
+  assert.deepEqual(
+    readers.map((read) => read().deletingId),
+    ["quill-0-8b-q4km", "quill-0-8b-q4km"],
+    "one reader's busy delete is every reader's",
+  );
+  store.getState().setDeletingId(null);
+  assert.deepEqual(
+    readers.map((read) => read().deletingId),
+    [null, null],
+  );
 });

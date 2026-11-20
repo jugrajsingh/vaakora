@@ -751,6 +751,7 @@ impl TtsService {
                 }
                 Effect::OpenPopup { text } => {
                     let (overlay_app, reader_app) = (self.app.clone(), self.app.clone());
+                    let focus = window::takes_focus(&text);
                     open_popup_with(
                         || {
                             if let Ok(ready) = self.ready() {
@@ -765,7 +766,7 @@ impl TtsService {
                             let _ = self.app.run_on_main_thread(job);
                         },
                         move || crate::overlay::dismiss_overlay_notice(&overlay_app),
-                        move || window::show(&reader_app),
+                        move || window::show(&reader_app, focus),
                     )
                 }
                 Effect::FinishRecording => {

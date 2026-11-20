@@ -1204,6 +1204,7 @@ mod tests {
             is_custom: false,
             supports_streaming: false,
             supports_language_detection: detects,
+            supports_vocabulary: None,
         }
     }
 

@@ -639,6 +639,7 @@ impl TranscriptionManager {
             caps.supports_streaming,
             caps.supports_translate,
             caps.supports_language_detect,
+            info.supports_vocabulary,
             caps.languages.clone(),
         );
         // The bound backend may differ from the request (e.g. CPU

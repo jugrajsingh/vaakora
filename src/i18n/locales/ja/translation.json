@@ -385,11 +385,16 @@
       "loading": "モデルを読み込み中",
       "empty": {
         "dictation": "音声入力モデルはまだありません。",
-        "readAloud": "読み上げモデルはまだありません。"
+        "readAloud": "読み上げモデルはまだありません。",
+        "cleanup": "整形モデルはまだありません。"
       },
       "help": {
         "dictation": "ダウンロード済みの音声入力モデルを選択します。",
-        "readAloud": "ダウンロード済みの読み上げモデルを選択します。"
+        "readAloud": "ダウンロード済みの読み上げモデルを選択します。",
+        "cleanup": "音声入力の文章を整えるローカルモデルです。"
+      },
+      "failed": {
+        "cleanup": "モデルの一覧を表示できませんでした。"
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "キャンセル",
       "readAloud": "読み上げ",
       "activation": "起動方法",
-      "activationHelp": "音声入力のショートカット用"
+      "activationHelp": "音声入力のショートカット用",
+      "cancelLinuxHelp": "Linux では、音声入力中に登録されたショートカットが不安定なため、キャンセルのショートカットでは音声入力を止められません。オーバーレイの X、トレイメニューの「キャンセル」を使うか、handy --cancel を実行してください。"
     },
     "modelSettings": {
       "title": "{{model}} の設定"
@@ -776,14 +782,6 @@
         "noCleanupModel": "後処理モデルなし",
         "s1Description": "スタイル、構成、コンテキストの設定を使用します。",
         "plainDescription": "選択した Handy のプロンプトを使用します。",
-        "size": "{{size}} MiB",
-        "downloaded": "ダウンロード済み",
-        "use": "使用",
-        "download": "ダウンロード",
-        "downloading": "ダウンロード中 {{percent}}%",
-        "delete": "削除",
-        "deleteConfirm": "{{name}}を削除しますか？{{size}}が解放されます。",
-        "deleteConfirmAction": "モデルを削除",
         "status": {
           "title": "状態",
           "description": "モデルは後処理付きの音声入力が始まると読み込まれ、モデルのアンロードタイムアウト後にアンロードされます。",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "読み上げは貼り付け中のため使えません",
+    "readAloudBusyPasting": "Handy はまだ貼り付け中です。貼り付けが終わってからもう一度読み上げを試してください。",
+    "readAloudUnavailableTitle": "読み上げを利用できません",
     "readAloudClipboardUnreadableTitle": "クリップボードを読み取れません",
     "readAloudClipboardUnreadable": "クリップボードのテキストを読み取れませんでした。",
     "loadDirectory": "ディレクトリの読み込みエラー: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "ダーク"
     }
   },
+  "floating": {
+    "position": {
+      "help": "オーバーレイと読み上げウィンドウが画面のどこに表示されるかを選びます。上の位置にすると画面の下側が空くため、ターミナルに音声入力するときに便利です。",
+      "cells": {
+        "top_left": "左上",
+        "top": "上中央",
+        "top_right": "右上",
+        "center_left": "左中央",
+        "center": "中央",
+        "center_right": "右中央",
+        "bottom_left": "左下",
+        "bottom": "下中央",
+        "bottom_right": "右下"
+      }
+    },
+    "style": {
+      "help": "なし: フローティングウィンドウを表示しません。エラーはトレイとメインウィンドウに引き続き表示されます。ミニマル: 音声入力中に小さなピル型の表示を出します。ライブ: 対応するモデルでは、話している間に言葉も表示します。Linux では「なし」を推奨します。"
+    }
+  },
   "overlay": {
     "transcribing": "文字起こし中",
     "processing": "整形中",
     "loadingModel": "モデルを読み込み中",
-    "cancel": "音声入力をキャンセル"
+    "cancel": "音声入力をキャンセル",
+    "starting": "マイクを起動しています",
+    "recording": "録音中"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} が1個のショートカットをブロックしている可能性があります",
@@ -1215,12 +1234,6 @@
     "dismiss": "閉じる"
   },
   "tts": {
-    "ratings": {
-      "quality": "品質",
-      "speed": "速度",
-      "recommended": "おすすめ",
-      "tooltip": "最初の音声まで {{firstAudio}} 秒、リアルタイムの {{faster}} 倍速、読み込みに {{load}} 秒"
-    },
     "devices": {
       "auto": "自動",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "{{device}} 用に準備中: {{graph}}",
     "buffering": "バッファリング中",
     "title": "読み上げ",
+    "modelVoice": "{{model}}、{{voice}}",
     "textLabel": "読み上げるテキスト",
     "placeholder": "読み上げるテキストを貼り付け",
     "play": "再生",
     "pause": "一時停止",
-    "stop": "停止",
     "close": "閉じる",
     "readClipboard": "クリップボードを読み上げる",
     "editText": "テキストを編集",
     "progress": "進行状況",
-    "time": "経過 {{elapsed}} 秒、残り {{remaining}} 秒",
-    "openModels": "音声合成モデル",
+    "timeAbout": "{{elapsed}} / 約 {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Enter",
+      "close": "Esc"
+    },
+    "chooseModel": "モデルを選択",
+    "failedLine": "読み上げに失敗しました。{{reason}}",
     "outputFallback": "既定の出力デバイスを使用中",
     "states": {
       "waiting": "待機中",
@@ -1293,25 +1311,10 @@
       "playing": "再生中",
       "paused": "一時停止中",
       "finished": "完了",
-      "error": "エラー"
+      "error": "失敗"
     },
-    "modelsSubtitle": "音声モデルを選択します。速度の数値は開発者のコンピューターで計測したもので、お使いの環境では異なる場合があります。",
-    "downloaded": "ダウンロード済み",
-    "availableToDownload": "ダウンロード可能",
-    "recommended": "おすすめ",
-    "downloading": "ダウンロード中",
     "needsToken": "Hugging Face トークンが必要",
     "tokenSet": "トークン設定済み",
-    "active": "使用中",
-    "use": "使用",
-    "download": "ダウンロード",
-    "delete": "削除",
-    "deleteConfirm": "{{name}}を削除しますか？{{size}}が解放されます。語彙と履歴は残ります。",
-    "deleteConfirmSelected": "別のモデルを選ぶまで読み上げは使えなくなります。",
-    "deleteConfirmAction": "モデルを削除",
-    "cancel": "キャンセル",
-    "token": "Hugging Face トークン",
-    "tokenHelp": "Hugging Face で音声利用規約に同意したうえで Pocket の制限付き音声を使う場合にのみ必要です。トークンはメモリ内にのみ保持され、Handy の再起動時に消去されます。",
     "clearToken": "トークンを消去",
     "showToken": "トークンを表示",
     "hideToken": "トークンを非表示",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "小さなヒンディー語の音声 (女性と男性)。英単語は 1 文字ずつ読み上げられます。",
       "indic-tiny-pa": "小さなパンジャーブ語 (グルムキー文字) の音声 (女性と男性)。英単語は 1 文字ずつ読み上げられます。"
     },
-    "voiceCount": "{{count}} 件の音声",
-    "downloadProgress": "モデルのダウンロード進行状況",
     "speedLabel": "速度",
     "pitchLabel": "ピッチ",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "元の文字起こし",
     "diffNote": "元の文字起こしとの差分を表示しています。",
     "noCleanup": "整形なし"
+  },
+  "models": {
+    "tags": {
+      "recommended": "おすすめ",
+      "live": "ライブ",
+      "translates": "翻訳対応",
+      "custom": "カスタム",
+      "oldFormat": "旧形式",
+      "needsToken": "トークンが必要",
+      "nativeWords": "ネイティブ単語リスト"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "未測定",
+      "licence": "ライセンス未記載",
+      "languages": "記載なし",
+      "notListed": "記載なし"
+    },
+    "measured": {
+      "maker": "メーカー値（{{machine}}、{{backend}}）。このマシンの値ではありません",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}、設定の詳細設定で変更",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "ネイティブ単語リスト",
+      "corrected": "認識後に補正",
+      "unknown": "モデルの読み込み後にわかります"
+    },
+    "speedFigure": {
+      "dictation": "30秒の音声に{{value}}秒"
+    },
+    "search": "モデルを検索",
+    "noMatch": "「{{query}}」に一致するものはありません。",
+    "noFilterMatch": "これらのフィルターに一致するモデルはありません。",
+    "clearFilters": "フィルターをクリア",
+    "selected": "選択中",
+    "runtime": {
+      "notLoaded": "未読み込み",
+      "loading": "読み込み中",
+      "ready": "準備完了",
+      "failed": "失敗"
+    },
+    "downloading": "ダウンロード中 {{size}} の {{percent}}%",
+    "row": {
+      "open": "詳細を表示",
+      "close": "詳細を隠す"
+    },
+    "detail": {
+      "languages": "言語",
+      "runOn": "実行デバイス",
+      "memory": "メモリ",
+      "measuredOn": "測定環境",
+      "voices": "音声",
+      "licence": "ライセンス",
+      "modelCard": "モデルカード",
+      "source": "ソース",
+      "revision": "{{repository}} · リビジョン {{revision}}",
+      "customWords": "カスタム単語"
+    },
+    "delete": {
+      "action": "モデルを削除",
+      "ask": "{{name}} を削除しますか? {{size}} の空き容量が増えます。",
+      "askUnknownSize": "{{name}} を削除しますか?",
+      "selected": {
+        "dictation": "別のモデルを選ぶまで音声入力は使えません。",
+        "readAloud": "別のモデルを選ぶまで読み上げは使えません。",
+        "cleanup": "別のモデルを選ぶまで整形は使えません。"
+      },
+      "kept": {
+        "dictation": "履歴は残ります。",
+        "readAloud": "語彙と履歴は残ります。",
+        "cleanup": "プロンプトと履歴は残ります。"
+      }
+    },
+    "heads": {
+      "score": "スコア",
+      "speed": "速度",
+      "size": "サイズ"
+    },
+    "legend": {
+      "open": "列の意味",
+      "score": {
+        "readAloud": "10点満点の聞き取り品質。",
+        "cleanup": "クリーンアップモデルにはまだスコアがありません。"
+      },
+      "speed": {
+        "readAloud": "モデルが動作するデバイスでの10点満点の速度スコア。",
+        "cleanup": "クリーンアップモデルの速度はまだ測定されていません。"
+      },
+      "range": "{{low}}〜{{high}}",
+      "unmeasured": "? は未測定です。",
+      "measuredOn": "{{machine}} で測定。",
+      "speedNote": {
+        "accelerated": "テスト用ノートパソコンのグラフィックチップで、30秒の音声を文字にするまでにかかる時間です。お使いのコンピューターでは測定していません。",
+        "cpu": "テスト用ノートパソコンのプロセッサで、30秒の音声を文字にするまでにかかる時間です。お使いのコンピューターでは測定していません。"
+      }
+    },
+    "cell": {
+      "value": "{{head}}: {{figure}}",
+      "measured": "{{head}}: {{figure}}、{{provenance}} で測定",
+      "unmeasured": "{{head}}: 未測定"
+    },
+    "mark": {
+      "select": "{{name}} を選択",
+      "download": "{{name}} をダウンロード",
+      "cancel": "{{name}} のダウンロードを中止",
+      "needsToken": "Hugging Face のトークンが必要です。詳細で追加してください。"
+    },
+    "remove": "{{name}} を削除",
+    "chips": {
+      "accelerated": "GPU または NPU"
+    },
+    "busy": "実行中のダウンロードまたは削除が終わるまでお待ちください。",
+    "listen": "{{voice}} を聞く",
+    "voiceCount_one": "{{count}} 件の音声",
+    "voiceCount": "{{count}} 件の音声",
+    "sections": {
+      "available": "利用可能"
+    },
+    "token": {
+      "label": "Hugging Face トークン",
+      "help": "先に Hugging Face で音声の利用条件に同意してください。トークンは Handy を再起動するまでメモリに保持されます。"
+    }
   }
 }

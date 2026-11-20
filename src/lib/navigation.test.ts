@@ -58,6 +58,36 @@ describe("navigation model", () => {
     });
   });
 
+  it("models_has_a_cleanup_tab", () => {
+    assert.deepEqual(visibleTabs("models", false), [
+      "dictation",
+      "readAloud",
+      "cleanup",
+    ]);
+    assert.deepEqual(
+      normalizeLocation({ destination: "models", tab: "cleanup" }, false),
+      { destination: "models", tab: "cleanup" },
+    );
+    assert.deepEqual(LINKS.cleanupModels, {
+      destination: "models",
+      tab: "cleanup",
+    });
+    assert.deepEqual(
+      normalizeLocation(LINKS.cleanupModels, false),
+      { destination: "models", tab: "cleanup" },
+      "the link lands on a valid tab",
+    );
+    for (const tab of ["dictation", "readAloud"] as const) {
+      assert.deepEqual(
+        loadLocation({
+          getItem: () => JSON.stringify({ destination: "models", tab }),
+        }),
+        { destination: "models", tab },
+        "a stored Models tab from before still loads",
+      );
+    }
+  });
+
   it("normalize_falls_back_for_unknown_values", () => {
     for (const raw of [
       null,

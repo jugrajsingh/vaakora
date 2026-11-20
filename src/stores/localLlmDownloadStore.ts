@@ -13,8 +13,11 @@ interface LocalLlmDownloadStore {
   modelId: string | null;
   percentage: number | null;
   error: string | null;
+  /** The model a delete is removing; one source for every page that lists the models. */
+  deletingId: string | null;
   version: number;
   modelsChanged: () => void;
+  setDeletingId: (id: string | null) => void;
   clearError: () => void;
   start: (modelId: string) => boolean;
   progress: (modelId: string, percentage: number) => void;
@@ -48,7 +51,10 @@ export const useLocalLlmDownloadStore = create<LocalLlmDownloadStore>(
     modelId: null,
     percentage: null,
     error: null,
+    deletingId: null,
     version: 0,
+
+    setDeletingId: (deletingId) => set({ deletingId }),
 
     modelsChanged: () => set((state) => ({ version: state.version + 1 })),
 

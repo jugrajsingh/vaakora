@@ -385,11 +385,16 @@
       "loading": "Laddar modeller",
       "empty": {
         "dictation": "Ingen modell för diktering än.",
-        "readAloud": "Ingen modell för uppläsning än."
+        "readAloud": "Ingen modell för uppläsning än.",
+        "cleanup": "Ingen modell för rensning än."
       },
       "help": {
         "dictation": "Välj en nedladdad modell för diktering.",
-        "readAloud": "Välj en nedladdad modell för uppläsning."
+        "readAloud": "Välj en nedladdad modell för uppläsning.",
+        "cleanup": "Den lokala modellen som rensar upp dikteringar."
+      },
+      "failed": {
+        "cleanup": "Modellerna kunde inte listas."
       }
     },
     "rows": {
@@ -402,7 +407,8 @@
       "cancel": "Avbryt",
       "readAloud": "Uppläsning",
       "activation": "Aktivering",
-      "activationHelp": "För dikteringskortkommandon"
+      "activationHelp": "För dikteringskortkommandon",
+      "cancelLinuxHelp": "På Linux stoppar inte kortkommandot för avbryt en diktering, eftersom kortkommandon som registreras under en diktering är opålitliga där. Använd X på overlayen, Avbryt i systemfältets meny eller kör handy --cancel."
     },
     "modelSettings": {
       "title": "{{model}}-inställningar"
@@ -776,14 +782,6 @@
         "noCleanupModel": "Ingen efterbearbetningsmodell",
         "s1Description": "Använder kontroller för stil, struktur och sammanhang.",
         "plainDescription": "Använder din valda Handy-prompt.",
-        "size": "{{size}} MiB",
-        "downloaded": "Nedladdad",
-        "use": "Använd",
-        "download": "Ladda ner",
-        "downloading": "Laddar ner {{percent}}%",
-        "delete": "Ta bort",
-        "deleteConfirm": "Ta bort {{name}}? Det frigör {{size}}.",
-        "deleteConfirmAction": "Ta bort modell",
         "status": {
           "title": "Status",
           "description": "Modellen laddas när ett diktamen med efterbearbetning startar och avlastas efter tidsgränsen för modellavlastning.",
@@ -1141,9 +1139,9 @@
     }
   },
   "errors": {
-    "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
-    "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
-    "readAloudUnavailableTitle": "Read Aloud Unavailable",
+    "readAloudBusyPastingTitle": "Uppläsning är upptagen med inklistring",
+    "readAloudBusyPasting": "Handy klistrar fortfarande in. Försök med uppläsning igen när inklistringen är klar.",
+    "readAloudUnavailableTitle": "Uppläsning är inte tillgänglig",
     "readAloudClipboardUnreadableTitle": "Urklipp kan inte läsas",
     "readAloudClipboardUnreadable": "Texten i urklipp kunde inte läsas.",
     "loadDirectory": "Fel vid laddning av mapp: {{error}}",
@@ -1197,11 +1195,32 @@
       "dark": "Mörkt"
     }
   },
+  "floating": {
+    "position": {
+      "help": "Var overlayen och uppläsningsfönstret visas på skärmen. En position högst upp håller nederkanten av skärmen fri, vilket är praktiskt när du dikterar i en terminal.",
+      "cells": {
+        "top_left": "Uppe till vänster",
+        "top": "Uppe i mitten",
+        "top_right": "Uppe till höger",
+        "center_left": "Mitten till vänster",
+        "center": "Mitten",
+        "center_right": "Mitten till höger",
+        "bottom_left": "Nere till vänster",
+        "bottom": "Nere i mitten",
+        "bottom_right": "Nere till höger"
+      }
+    },
+    "style": {
+      "help": "Ingen: inget flytande fönster. Fel visas fortfarande i systemfältet och i huvudfönstret. Minimal: en liten pill medan du dikterar. Live: visar även orden medan du talar, med modeller som stöder det. På Linux rekommenderas Ingen."
+    }
+  },
   "overlay": {
     "transcribing": "Transkriberar",
     "processing": "Rensar upp",
     "loadingModel": "Laddar modell",
-    "cancel": "Avbryt diktering"
+    "cancel": "Avbryt diktering",
+    "starting": "Startar mikrofonen",
+    "recording": "Spelar in"
   },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} kanske blockerar 1 kortkommando",
@@ -1215,12 +1234,6 @@
     "dismiss": "Avfärda"
   },
   "tts": {
-    "ratings": {
-      "quality": "Kvalitet",
-      "speed": "Hastighet",
-      "recommended": "Rekommenderad",
-      "tooltip": "Första ljudet efter {{firstAudio}} s, {{faster}}x snabbare än realtid, laddas på {{load}} s"
-    },
     "devices": {
       "auto": "Auto",
       "cpu": "CPU",
@@ -1274,17 +1287,22 @@
     "preparing": "Förbereder för {{device}}: {{graph}}",
     "buffering": "Buffrar",
     "title": "Uppläsning",
+    "modelVoice": "{{model}}, {{voice}}",
     "textLabel": "Text att läsa upp",
     "placeholder": "Klistra in text att läsa upp",
     "play": "Spela upp",
     "pause": "Pausa",
-    "stop": "Stoppa",
     "close": "Stäng",
     "readClipboard": "Läs upp urklipp",
     "editText": "Redigera text",
     "progress": "Förlopp",
-    "time": "{{elapsed}} s förflutet, {{remaining}} s kvar",
-    "openModels": "Text-till-tal-modeller",
+    "timeAbout": "{{elapsed}} / cirka {{total}}",
+    "keys": {
+      "toggle": "Ctrl+Retur",
+      "close": "Esc"
+    },
+    "chooseModel": "Välj en modell",
+    "failedLine": "Uppläsningen misslyckades. {{reason}}",
     "outputFallback": "Använder standardutenheten",
     "states": {
       "waiting": "Väntar",
@@ -1293,25 +1311,10 @@
       "playing": "Spelar",
       "paused": "Pausad",
       "finished": "Klar",
-      "error": "Fel"
+      "error": "Misslyckades"
     },
-    "modelsSubtitle": "Välj en röstmodell. Hastighetssiffrorna mättes på utvecklarens dator; dina kan skilja sig.",
-    "downloaded": "Nedladdade",
-    "availableToDownload": "Tillgängliga för nedladdning",
-    "recommended": "Rekommenderad",
-    "downloading": "Laddar ner",
     "needsToken": "Kräver en Hugging Face-token",
     "tokenSet": "Token angiven",
-    "active": "Aktiv",
-    "use": "Använd",
-    "download": "Ladda ner",
-    "delete": "Ta bort",
-    "deleteConfirm": "Ta bort {{name}}? Det frigör {{size}}. Din vokabulär och historik behålls.",
-    "deleteConfirmSelected": "Uppläsning slutar fungera tills du väljer en annan modell.",
-    "deleteConfirmAction": "Ta bort modell",
-    "cancel": "Avbryt",
-    "token": "Hugging Face-token",
-    "tokenHelp": "Behövs bara för låsta Pocket-röster efter att du godkänt villkoren för rösterna på Hugging Face. Token finns kvar i minnet och rensas när Handy startas om.",
     "clearToken": "Rensa token",
     "showToken": "Visa token",
     "hideToken": "Dölj token",
@@ -1352,8 +1355,6 @@
       "indic-tiny-hi": "Små hindiröster, kvinnlig och manlig. Engelska ord stavas bokstav för bokstav.",
       "indic-tiny-pa": "Små punjabiröster (gurmukhi), kvinnlig och manlig. Engelska ord stavas bokstav för bokstav."
     },
-    "voiceCount": "{{count}} röster",
-    "downloadProgress": "Förlopp för modellnedladdning",
     "speedLabel": "Hastighet",
     "pitchLabel": "Tonhöjd",
     "help": {
@@ -1595,5 +1596,132 @@
     "original": "Ursprunglig transkription",
     "diffNote": "Visar skillnaderna mot den ursprungliga transkriptionen.",
     "noCleanup": "Ingen rensning"
+  },
+  "models": {
+    "tags": {
+      "recommended": "Rekommenderad",
+      "live": "Live",
+      "translates": "Översätter",
+      "custom": "Egen",
+      "oldFormat": "Gammalt format",
+      "needsToken": "Kräver token",
+      "nativeWords": "Inbyggd ordlista"
+    },
+    "missing": {
+      "unmeasured": "?",
+      "notMeasured": "Inte mätt",
+      "licence": "Licens anges inte",
+      "languages": "Anges inte",
+      "notListed": "Anges inte"
+    },
+    "measured": {
+      "maker": "Tillverkarens värde ({{machine}}, {{backend}}), inte från den här datorn",
+      "at": "{{machine}}, {{date}}"
+    },
+    "runOn": {
+      "dictation": "{{device}}, ställs in i Inställningar, Avancerat",
+      "cpu": "CPU",
+      "gpu": "GPU"
+    },
+    "customWords": {
+      "native": "Inbyggd ordlista",
+      "corrected": "Rättas efter igenkänning",
+      "unknown": "Känt när modellen har laddats"
+    },
+    "speedFigure": {
+      "dictation": "{{value}} s för 30 sekunders tal"
+    },
+    "search": "Sök modeller",
+    "noMatch": "Inget matchar ”{{query}}”.",
+    "noFilterMatch": "Ingen modell matchar de här filtren.",
+    "clearFilters": "Rensa filter",
+    "selected": "Vald",
+    "runtime": {
+      "notLoaded": "Inte laddad",
+      "loading": "Laddar",
+      "ready": "Redo",
+      "failed": "Misslyckades"
+    },
+    "downloading": "Laddar ned {{percent}} % av {{size}}",
+    "row": {
+      "open": "Visa detaljer",
+      "close": "Dölj detaljer"
+    },
+    "detail": {
+      "languages": "Språk",
+      "runOn": "Kör på",
+      "memory": "Minne",
+      "measuredOn": "Mätt på",
+      "voices": "Röster",
+      "licence": "Licens",
+      "modelCard": "Modellkort",
+      "source": "Källa",
+      "revision": "{{repository}} · revision {{revision}}",
+      "customWords": "Anpassade ord"
+    },
+    "delete": {
+      "action": "Ta bort modell",
+      "ask": "Ta bort {{name}}? Det frigör {{size}}.",
+      "askUnknownSize": "Ta bort {{name}}?",
+      "selected": {
+        "dictation": "Diktering slutar fungera tills du väljer en annan modell.",
+        "readAloud": "Uppläsning slutar fungera tills du väljer en annan modell.",
+        "cleanup": "Rensning slutar fungera tills du väljer en annan modell."
+      },
+      "kept": {
+        "dictation": "Din historik sparas.",
+        "readAloud": "Din vokabulär och historik sparas.",
+        "cleanup": "Dina prompter och din historik sparas."
+      }
+    },
+    "heads": {
+      "score": "Poäng",
+      "speed": "Hastighet",
+      "size": "Storlek"
+    },
+    "legend": {
+      "open": "Vad kolumnerna betyder",
+      "score": {
+        "readAloud": "Lyssningskvalitet av 10.",
+        "cleanup": "Rensningsmodeller har ingen poäng än."
+      },
+      "speed": {
+        "readAloud": "Hastighetspoäng av 10 på enheten som modellen körs på.",
+        "cleanup": "Rensningsmodeller har ingen uppmätt hastighet än."
+      },
+      "range": "{{low}} till {{high}}",
+      "unmeasured": "? har inte mätts.",
+      "measuredOn": "Mätt på {{machine}}.",
+      "speedNote": {
+        "accelerated": "Hur lång tid 30 sekunders tal tar att skriva ut på grafikchippet i vår testdator. Inte uppmätt på den här datorn.",
+        "cpu": "Hur lång tid 30 sekunders tal tar att skriva ut på processorn i vår testdator. Inte uppmätt på den här datorn."
+      }
+    },
+    "cell": {
+      "value": "{{head}}: {{figure}}",
+      "measured": "{{head}}: {{figure}}, mätt på {{provenance}}",
+      "unmeasured": "{{head}}: inte mätt"
+    },
+    "mark": {
+      "select": "Välj {{name}}",
+      "download": "Ladda ner {{name}}",
+      "cancel": "Stoppa nedladdningen av {{name}}",
+      "needsToken": "Kräver en Hugging Face-token. Lägg till den i detaljerna."
+    },
+    "remove": "Ta bort {{name}}",
+    "chips": {
+      "accelerated": "GPU eller NPU"
+    },
+    "busy": "Vänta tills den pågående nedladdningen eller borttagningen är klar.",
+    "listen": "Lyssna på {{voice}}",
+    "voiceCount_one": "{{count}} röst",
+    "voiceCount": "{{count}} röster",
+    "sections": {
+      "available": "Tillgängliga"
+    },
+    "token": {
+      "label": "Hugging Face-token",
+      "help": "Godkänn först rösttermerna på Hugging Face. Token sparas i minnet tills Handy startas om."
+    }
   }
 }

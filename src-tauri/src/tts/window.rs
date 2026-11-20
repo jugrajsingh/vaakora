@@ -116,19 +116,26 @@ fn place(app: &tauri::AppHandle, window: &tauri::webview::WebviewWindow) {
         READER_LAYER_SHELL.load(Ordering::SeqCst),
     );
 }
-fn show_with(place: impl FnOnce(), show: impl FnOnce(), focus: impl FnOnce()) {
+/// True when opening the reader asks for keyboard focus: only an empty one does.
+pub(crate) fn takes_focus(text: &str) -> bool {
+    text.trim().is_empty()
+}
+fn show_with(place: impl FnOnce(), show: impl FnOnce(), focus: bool, do_focus: impl FnOnce()) {
     place();
     show();
-    focus();
+    if focus {
+        do_focus();
+    }
 }
-/// Places the reader by the overlay's position rules, then shows and focuses it. Main thread only.
-pub fn show(app: &tauri::AppHandle) {
+/// Places the reader by the overlay's position rules, then shows it, focusing it when `focus`. Main thread only.
+pub fn show(app: &tauri::AppHandle, focus: bool) {
     if let Some(w) = app.get_webview_window("read_aloud") {
         show_with(
             || place(app, &w),
             || {
                 let _ = w.show();
             },
+            focus,
             || {
                 let _ = w.set_focus();
             },
@@ -158,9 +165,27 @@ mod tests {
         show_with(
             || calls.borrow_mut().push("place"),
             || calls.borrow_mut().push("show"),
+            true,
             || calls.borrow_mut().push("focus"),
         );
         assert_eq!(calls.into_inner(), ["place", "show", "focus"]);
+    }
+    #[test]
+    fn reader_focuses_only_when_opened_empty() {
+        for (text, expected) in [
+            ("", vec!["place", "show", "focus"]),
+            ("  \n", vec!["place", "show", "focus"]),
+            ("Plan", vec!["place", "show"]),
+        ] {
+            let calls = std::cell::RefCell::new(Vec::new());
+            show_with(
+                || calls.borrow_mut().push("place"),
+                || calls.borrow_mut().push("show"),
+                takes_focus(text),
+                || calls.borrow_mut().push("focus"),
+            );
+            assert_eq!(calls.into_inner(), expected, "opened with {text:?}");
+        }
     }
     #[test]
     fn popup_is_focusable_and_layer_shell_keyboard_policy_is_on_demand() {

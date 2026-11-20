@@ -8,6 +8,7 @@ import {
   ModelsSettings,
 } from "./settings";
 import { CleanupTab } from "./settings/post-processing/CleanupTab";
+import { CleanupModelsPage } from "./settings/post-processing/CleanupModelsPage";
 import { DictationSettings } from "./settings/dictation/DictationSettings";
 import { SettingsPage as TtsSettingsPage } from "./settings/tts/SettingsPage";
 import { ModelsPage as TtsModelsPage } from "./settings/tts/ModelsPage";
@@ -46,7 +47,7 @@ export function MainPage({
             />
           );
         case "cleanup":
-          return <CleanupTab />;
+          return <CleanupTab manage={() => navigate(LINKS.cleanupModels)} />;
       }
       break;
     case "readAloud":
@@ -72,6 +73,8 @@ export function MainPage({
           );
         case "readAloud":
           return <TtsModelsPage />;
+        case "cleanup":
+          return <CleanupModelsPage />;
       }
       break;
     case "settings":

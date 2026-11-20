@@ -10,9 +10,6 @@ const entry = tokenEntry(presence, async (value) => {
   if (fail) throw new Error("fixture");
   return saveResult;
 });
-assert.equal(entry.snapshot().expanded, false);
-entry.toggle();
-assert.equal(entry.snapshot().expanded, true, "Set token opens the entry");
 entry.edit("fixture-token");
 entry.show();
 assert.equal(entry.snapshot().visible, true);
@@ -24,18 +21,20 @@ assert.equal(
   "successful backend result sets session presence",
 );
 assert.equal(entry.snapshot().draft, "", "save clears the password input");
-assert.equal(entry.snapshot().expanded, false, "save hides the entry");
 assert.equal(entry.snapshot().visible, false);
 const reopened = tokenEntry(presence, async () => true);
 assert.equal(reopened.snapshot().draft, "", "navigation retains no password");
 assert.equal(presence.snapshot(), true);
-entry.toggle();
 entry.edit("rejected-fixture");
 fail = true;
 assert.equal(await entry.save(), false);
 assert.equal(entry.snapshot().error, "tts.errors.generic");
 assert.equal(presence.snapshot(), true, "failed save preserves presence");
-assert.equal(entry.snapshot().expanded, true);
+assert.equal(
+  entry.snapshot().draft,
+  "rejected-fixture",
+  "failure keeps the draft",
+);
 fail = false;
 saveResult = false;
 await entry.clear();
@@ -46,9 +45,8 @@ assert.equal(
   "backend false clears session presence",
 );
 assert.equal(entry.snapshot().draft, "");
-entry.toggle();
 entry.edit("unsaved-fixture");
-entry.toggle();
+entry.hide();
 assert.equal(entry.snapshot().draft, "", "hiding erases an unsaved token");
 assert.equal(
   createTokenPresence().snapshot(),
@@ -104,7 +102,6 @@ const pending = tokenEntry(
       release = resolve;
     }),
 );
-pending.toggle();
 pending.edit("fixture");
 const save = pending.save();
 assert.equal(pending.snapshot().pending, true);
@@ -116,3 +113,86 @@ assert.equal(
 release(true);
 await save;
 assert.equal(ready.snapshot(), true);
+
+// collapse_clears_the_draft: regression, already true before the field moved into the details row.
+{
+  const entry = tokenEntry(createTokenPresence(), async () => true);
+  entry.edit("fixture-draft");
+  entry.show();
+  entry.hide();
+  assert.equal(entry.snapshot().draft, "", "collapse clears the draft");
+  assert.equal(entry.snapshot().visible, false, "collapse hides the value");
+}
+
+// save_after_hide_updates_presence_only: regression, already true before the field moved.
+{
+  const late = createTokenPresence();
+  let settle!: (value: boolean) => void;
+  const entry = tokenEntry(
+    late,
+    () =>
+      new Promise((resolve) => {
+        settle = resolve;
+      }),
+  );
+  entry.edit("fixture-draft");
+  const saving = entry.save();
+  entry.hide();
+  settle(true);
+  assert.equal(await saving, true);
+  assert.equal(late.snapshot(), true, "a late save still sets presence");
+  assert.equal(entry.snapshot().draft, "");
+  assert.equal(entry.snapshot().error, null, "no error on the closed row");
+  assert.equal(entry.snapshot().pending, false);
+}
+
+// late_save_keeps_the_reopened_row_draft: the save lands after collapse, reopen and a new draft.
+{
+  const late = createTokenPresence();
+  let settle!: (value: boolean) => void;
+  const entry = tokenEntry(
+    late,
+    () =>
+      new Promise((resolve) => {
+        settle = resolve;
+      }),
+  );
+  entry.edit("first-fixture");
+  const saving = entry.save();
+  entry.hide();
+  entry.edit("second-fixture");
+  entry.show();
+  settle(true);
+  await saving;
+  assert.equal(late.snapshot(), true, "the late save sets presence");
+  assert.equal(
+    entry.snapshot().draft,
+    "second-fixture",
+    "the new draft survives the late save",
+  );
+  assert.equal(entry.snapshot().visible, true, "so does the Show toggle");
+  assert.equal(entry.snapshot().pending, false);
+}
+
+// late_failure_shows_nothing_on_the_reopened_row
+{
+  const late = createTokenPresence();
+  let refuse!: (reason: Error) => void;
+  const entry = tokenEntry(
+    late,
+    () =>
+      new Promise((_, reject) => {
+        refuse = reject;
+      }),
+  );
+  entry.edit("first-fixture");
+  const saving = entry.save();
+  entry.hide();
+  entry.edit("second-fixture");
+  refuse(new Error("fixture"));
+  assert.equal(await saving, false);
+  assert.equal(entry.snapshot().error, null, "no error on the reopened row");
+  assert.equal(entry.snapshot().draft, "second-fixture");
+  assert.equal(entry.snapshot().pending, false);
+  assert.equal(late.snapshot(), false, "a failed late save leaves presence");
+}

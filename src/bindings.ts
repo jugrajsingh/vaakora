@@ -1854,7 +1854,7 @@ export type LocalLlmContext = "general" | "email"
 /**
  * One registry entry as the UI sees it.
  */
-export type LocalLlmModelInfo = { id: string; display_name: string; attribution: string; card_url: string; license: string; license_url: string; license_note: string | null; size_bytes: number; prompt_style: PromptStyle; downloaded: boolean }
+export type LocalLlmModelInfo = { id: string; display_name: string; attribution: string; card_url: string; license: string; license_url: string; license_note: string | null; size_bytes: number; prompt_style: PromptStyle; downloaded: boolean; source: ModelRevision | null }
 /**
  * State name as sent to the UI.
  */
@@ -1897,9 +1897,13 @@ export type Matching =
  * A whole word or hyphenated piece in any case, or an identifier part in exact case.
  */
 "acronym"
-export type ModelInfo = { id: string; name: string; description: string; filename: string; source: ModelSource; size_mb: number; is_downloaded: boolean; is_downloading: boolean; partial_size: number; accuracy_score: number; speed_score: number; supports_translation: boolean; is_recommended: boolean; supported_languages: string[]; supports_language_selection: boolean; is_custom: boolean; supports_streaming: boolean; supports_language_detection: boolean }
+export type ModelInfo = { id: string; name: string; description: string; filename: string; source: ModelSource; size_mb: number; is_downloaded: boolean; is_downloading: boolean; partial_size: number; accuracy_score: number; speed_score: number; supports_translation: boolean; is_recommended: boolean; supported_languages: string[]; supports_language_selection: boolean; is_custom: boolean; supports_streaming: boolean; supports_language_detection: boolean; supports_vocabulary: boolean | null }
 export type ModelLoadStatus = { is_loaded: boolean; current_model: string | null }
 export type ModelRating = { quality: number; devices: Partial<{ [key in Device]: DeviceRating }> }
+/**
+ * A Hugging Face repository pinned to one commit.
+ */
+export type ModelRevision = { repository: string; revision: string }
 /**
  * Where a model comes from and how Handy obtains it — the routing discriminant
  * for downloading and on-disk resolution.
@@ -1962,7 +1966,12 @@ raised: Notice | null }
  * Which file an entry comes from.
  */
 export type Origin = "builtin" | "owner"
-export type OverlayPosition = "top" | "bottom"
+/**
+ * Cell of the 3x3 floating-window grid shared by the overlay and the reader.
+ * `Top` and `Bottom` are the top-centre and bottom-centre cells; they keep the
+ * stored names `"top"` and `"bottom"` from the two-position setting.
+ */
+export type OverlayPosition = "top_left" | "top" | "top_right" | "center_left" | "center" | "center_right" | "bottom_left" | "bottom" | "bottom_right"
 /**
  * Which recording overlay to display. `Minimal` and `Live` share one base
  * (the pill); `Live` grows into the panel that shows live transcription text.
@@ -2254,7 +2263,11 @@ export type TranscriptionOutcome =
  * Transcribing or pasting failed.
  */
 "failed"
-export type TtsModelInfo = { id: string; display_name: string; license: string; attribution: string; card_url: string; size_bytes: number; voices: string[]; default_voice: string; downloaded: boolean; downloading: boolean; active: boolean; rating: ModelRating; run_on: RunOn; preparation: Preparation; npu_driver_too_old: boolean; recommended: boolean; needs_token: boolean }
+/**
+ * The machine and date the shipped ratings of one model were measured on.
+ */
+export type TtsMeasurement = { machine: string; date: string }
+export type TtsModelInfo = { id: string; display_name: string; license: string; attribution: string; card_url: string; size_bytes: number; voices: string[]; default_voice: string; downloaded: boolean; downloading: boolean; active: boolean; rating: ModelRating; run_on: RunOn; preparation: Preparation; npu_driver_too_old: boolean; recommended: boolean; needs_token: boolean; languages: string[]; measured: TtsMeasurement | null; memory_bytes: Partial<{ [key in Device]: number }>; sources: ModelRevision[] }
 /**
  * The voice model Play all is playing now; `None` once it has finished or stopped.
  */

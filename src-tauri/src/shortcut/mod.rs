@@ -689,21 +689,19 @@ pub fn change_spoken_languages_setting(
 #[specta::specta]
 pub fn change_overlay_position_setting(app: AppHandle, position: String) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
-    let parsed = match position.as_str() {
-        // "none" is retired (visibility is overlay_style now); fold legacy callers
-        // onto Bottom rather than warn.
-        "none" | "bottom" => OverlayPosition::Bottom,
-        "top" => OverlayPosition::Top,
-        other => {
-            warn!("Invalid overlay position '{}', defaulting to bottom", other);
-            OverlayPosition::Bottom
-        }
-    };
+    // "none" is retired (visibility is overlay_style now) and parses as Bottom.
+    let parsed = settings::parse_overlay_position(&position).unwrap_or_else(|_| {
+        warn!(
+            "Invalid overlay position '{}', defaulting to bottom",
+            position
+        );
+        OverlayPosition::Bottom
+    });
     settings.overlay_position = parsed;
     settings::write_settings(&app, settings);
 
     // Whether the overlay shows at all is owned by overlay_style now; position
-    // only ever toggles Top/Bottom, so the enabled cache is untouched here.
+    // only selects the grid cell, so the enabled cache is untouched here.
     // Update overlay position without recreating window
     crate::utils::update_overlay_position(&app);
     let handle = app.clone();

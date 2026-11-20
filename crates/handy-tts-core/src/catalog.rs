@@ -29,6 +29,8 @@ pub struct ModelEntry {
     pub voices: Vec<String>,
     pub bytes: u64,
     pub recommended: bool,
+    /// BCP-47 primary language tags the model reads.
+    pub languages: &'static [&'static str],
 }
 impl ModelEntry {
     /// True when any file needs a Hugging Face token to download.
@@ -80,6 +82,7 @@ pub fn parse_catalog(json: &str) -> Result<Vec<ModelEntry>, CatalogError> {
             "alba",
             4,
             true,
+            &["en"],
         ),
         (
             "supertonic-3",
@@ -90,6 +93,7 @@ pub fn parse_catalog(json: &str) -> Result<Vec<ModelEntry>, CatalogError> {
             "F1",
             2,
             false,
+            &["en"],
         ),
         (
             "kokoro-82m-int8",
@@ -100,6 +104,7 @@ pub fn parse_catalog(json: &str) -> Result<Vec<ModelEntry>, CatalogError> {
             "af_heart",
             4,
             false,
+            &["en"],
         ),
         (
             "paradee-8m-int8",
@@ -110,6 +115,7 @@ pub fn parse_catalog(json: &str) -> Result<Vec<ModelEntry>, CatalogError> {
             "af_heart",
             4,
             false,
+            &["en"],
         ),
         (
             "phonon-31m-en",
@@ -120,6 +126,7 @@ pub fn parse_catalog(json: &str) -> Result<Vec<ModelEntry>, CatalogError> {
             "default",
             4,
             false,
+            &["en"],
         ),
         (
             "indic-tiny-en",
@@ -130,6 +137,7 @@ pub fn parse_catalog(json: &str) -> Result<Vec<ModelEntry>, CatalogError> {
             "female",
             4,
             false,
+            &["en"],
         ),
         (
             "indic-tiny-hi",
@@ -140,6 +148,7 @@ pub fn parse_catalog(json: &str) -> Result<Vec<ModelEntry>, CatalogError> {
             "female",
             4,
             false,
+            &["hi"],
         ),
         (
             "indic-tiny-pa",
@@ -150,6 +159,7 @@ pub fn parse_catalog(json: &str) -> Result<Vec<ModelEntry>, CatalogError> {
             "female",
             4,
             false,
+            &["pa"],
         ),
     ];
     if manifest.native_speed.len() != models.len()
@@ -163,7 +173,9 @@ pub fn parse_catalog(json: &str) -> Result<Vec<ModelEntry>, CatalogError> {
     }
     let files = manifest.files;
     let mut entries = Vec::new();
-    for (id, name, license, attribution, card, default_voice, threads, recommended) in models {
+    for (id, name, license, attribution, card, default_voice, threads, recommended, languages) in
+        models
+    {
         let native_speed = *manifest.native_speed.get(id).ok_or(CatalogError::Invalid)?;
         if !native_speed.valid()
             || (id == "pocket-en"
@@ -233,6 +245,7 @@ pub fn parse_catalog(json: &str) -> Result<Vec<ModelEntry>, CatalogError> {
             voices,
             bytes,
             recommended,
+            languages,
         });
     }
     if files
@@ -355,6 +368,27 @@ mod tests {
         let bad = include_str!("models.json").replacen("README.md", "../README.md", 1);
         assert!(parse_catalog(&bad).is_err());
         assert!(entry("missing").is_err());
+    }
+    #[test]
+    fn every_model_lists_its_languages() {
+        let languages: Vec<_> = entries()
+            .unwrap()
+            .iter()
+            .map(|entry| (entry.id, entry.languages))
+            .collect();
+        assert_eq!(
+            languages,
+            [
+                ("pocket-en", &["en"][..]),
+                ("supertonic-3", &["en"]),
+                ("kokoro-82m-int8", &["en"]),
+                ("paradee-8m-int8", &["en"]),
+                ("phonon-31m-en", &["en"]),
+                ("indic-tiny-en", &["en"]),
+                ("indic-tiny-hi", &["hi"]),
+                ("indic-tiny-pa", &["pa"]),
+            ]
+        );
     }
     #[test]
     fn only_gated_models_need_a_token() {
