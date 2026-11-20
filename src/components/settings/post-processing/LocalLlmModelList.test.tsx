@@ -5,7 +5,7 @@ import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
 import en from "../../../i18n/locales/en/translation.json";
 import type { LocalLlmModelInfo } from "@/bindings";
-import { cleanupDeleteControls, LocalLlmModelList } from "./LocalLlmModelList";
+import { LocalLlmModelList } from "./LocalLlmModelList";
 import {
   createLocalLlmRowActions,
   rowActionState,
@@ -187,32 +187,4 @@ for (const name of ["Downloaded test model", "Alternative B"]) {
   );
 }
 assert.deepEqual(confirmCalls, []);
-// cleanup_settings_delete_asks_and_drops_a_gone_model
-const removed: string[] = [];
-const askedIds: (string | null)[] = [];
-let downloadedIds = ["alternative-a", "alternative-b"];
-const controls = cleanupDeleteControls({
-  remove: (id) => removed.push(id),
-  show: (id) => askedIds.push(id),
-  downloaded: (id) => downloadedIds.includes(id),
-});
-createLocalLlmRowActions(alternatives[1], idle, {
-  onSelect: () => undefined,
-  onDownload: () => undefined,
-  onDelete: controls.props.onDelete,
-}).delete();
-assert.deepEqual(removed, [], "the row's Delete only asks");
-assert.deepEqual(askedIds, ["alternative-a"]);
-controls.props.onConfirmDelete();
-controls.props.onConfirmDelete();
-assert.deepEqual(removed, ["alternative-a"], "confirm removes once");
-controls.props.onDelete("alternative-b");
-controls.props.onCancelDelete();
-controls.props.onConfirmDelete();
-assert.deepEqual(removed, ["alternative-a"], "nothing after Cancel");
-controls.props.onDelete("alternative-b");
-downloadedIds = ["alternative-a"];
-controls.prune();
-controls.props.onConfirmDelete();
-assert.deepEqual(removed, ["alternative-a"], "a gone model's question drops");
 console.log("LocalLlmModelList: render and row-action assertions passed");

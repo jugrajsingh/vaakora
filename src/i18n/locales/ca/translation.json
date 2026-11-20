@@ -36,6 +36,19 @@
     "debug": "Depuració",
     "about": "Quant a"
   },
+  "nav": {
+    "dictation": "Dictat",
+    "readAloud": "Lectura en veu alta",
+    "models": "Models",
+    "settings": "Configuració",
+    "history": "Historial",
+    "cleanup": "Neteja",
+    "vocabulary": "Vocabulari",
+    "general": "General",
+    "advanced": "Avançat",
+    "about": "Quant a",
+    "debug": "Depuració"
+  },
   "onboarding": {
     "customModelDescription": "Sense suport oficial",
     "migration": {
@@ -345,6 +358,52 @@
     "lockedWhileTranscribing": "Podràs canviar de model quan acabi la transcripció a l'Historial."
   },
   "settings": {
+    "groups": {
+      "shortcuts": "Dreceres",
+      "model": "Model",
+      "languages": "Llengües",
+      "microphone": "Micròfon",
+      "output": "Sortida",
+      "text": "Text",
+      "overlay": "Finestra superposada",
+      "history": "Historial",
+      "playback": "Reproducció",
+      "textHandling": "Tractament del text",
+      "sound": "So",
+      "appearance": "Aspecte",
+      "startup": "Inici",
+      "models": "Models",
+      "dictationEngine": "Motor de dictat",
+      "experimental": "Experimental",
+      "provider": "Proveïdor",
+      "instructions": "Instruccions",
+      "localModel": "Model local"
+    },
+    "jobModel": {
+      "manage": "Gestiona els models",
+      "choose": "Tria un model",
+      "loading": "S'estan carregant els models",
+      "empty": {
+        "dictation": "Encara no hi ha cap model de dictat.",
+        "readAloud": "Encara no hi ha cap model de lectura en veu alta."
+      },
+      "help": {
+        "dictation": "Trieu un model de dictat baixat.",
+        "readAloud": "Trieu un model de lectura en veu alta baixat."
+      }
+    },
+    "rows": {
+      "unloadIdle": "Allibera els models inactius",
+      "runOn": "Executa els models de dictat a"
+    },
+    "shortcuts": {
+      "dictate": "Dicta",
+      "dictateWithCleanup": "Dicta amb neteja",
+      "cancel": "Cancel·la",
+      "readAloud": "Lectura en veu alta",
+      "activation": "Activació",
+      "activationHelp": "Per a les dreceres de dictat"
+    },
     "modelSettings": {
       "title": "Configuració de {{model}}"
     },
@@ -363,9 +422,6 @@
             "name": "Drecera de transcripció",
             "description": "La drecera de teclat per enregistrar i transcriure la vostra veu."
           },
-          "transcribe_raw": {
-            "name": "Drecera del text en brut"
-          },
           "cancel": {
             "name": "Drecera de cancel·lació",
             "description": "La drecera de teclat per cancel·lar l'enregistrament actual."
@@ -375,7 +431,6 @@
             "description": "Opcional: una drecera específica que sempre aplica postprocessament amb IA a la transcripció."
           },
           "read_aloud": {
-            "name": "Drecera de lectura en veu alta",
             "description": "Obre la finestra emergent i llegeix en veu alta el text copiat."
           }
         },
@@ -487,11 +542,13 @@
         "title": "Dispositiu de sortida",
         "description": "Selecciona el dispositiu de sortida d'àudio preferit per als avisos sonors",
         "placeholder": "Selecciona un dispositiu de sortida...",
-        "loading": "S'està carregant..."
+        "loading": "S'està carregant...",
+        "offReason": "No s'utilitza quan els avisos sonors estan desactivats."
       },
       "volume": {
         "title": "Volum",
-        "description": "Ajusta el volum dels avisos sonors"
+        "description": "Ajusta el volum dels avisos sonors",
+        "offReason": "No s'utilitza quan els avisos sonors estan desactivats."
       }
     },
     "advanced": {
@@ -657,9 +714,6 @@
       }
     },
     "postProcessing": {
-      "provider": {
-        "title": "Proveïdor"
-      },
       "api": {
         "title": "API",
         "provider": {
@@ -722,7 +776,6 @@
         "noCleanupModel": "Cap model de postprocessament",
         "s1Description": "Utilitza els controls d'estil, estructura i context.",
         "plainDescription": "Utilitza la indicació del Handy seleccionada.",
-        "groupTitle": "Model local",
         "size": "{{size}} MiB",
         "downloaded": "Baixat",
         "use": "Utilitza",
@@ -768,25 +821,37 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 amb una condició addicional: el model s'ha d'anomenar sempre \"S1-mini\" de \"Superwhisper\", amb aquestes majúscules i minúscules exactes."
         },
-        "promptRequired": "Seleccioneu una indicació del Handy no buida al grup Indicacions. Fins aleshores, el postprocessament s'omet i s'utilitza la transcripció en brut.",
+        "promptRequired": "Seleccioneu una indicació del Handy no buida al grup Instruccions. Fins aleshores, el postprocessament s'omet i s'utilitza la transcripció en brut.",
         "promptHidden": "Aquest model utilitza la seva pròpia indicació fixa i els paràmetres d'Estil, Estructura i Context de dalt, de manera que l'editor d'indicacions està amagat."
+      }
+    },
+    "cleanup": {
+      "enable": {
+        "label": "Neteja els dictats",
+        "description": "Afegeix la drecera «Dicta amb neteja». El text dictat amb ella es neteja abans d'enganxar-lo."
+      },
+      "sentTo": "Els dictats s'envien a {{host}} perquè els netegi.",
+      "prompt": {
+        "edit": "Edita",
+        "new": "Indicació nova",
+        "editTitle": "Edita {{name}}",
+        "newTitle": "Indicació nova",
+        "delete": "Suprimeix",
+        "deleteConfirm": "Voleu suprimir {{name}}? Els dictats que ja s'han netejat amb ella no canvien.",
+        "deleteAction": "Suprimeix la indicació",
+        "lastPrompt": "Conserveu almenys una indicació.",
+        "saveFailed": "No s'ha pogut desar la indicació.",
+        "createFirst": "Premeu Indicació nova per escriure les vostres primeres instruccions de neteja."
       }
     },
     "history": {
       "title": "Historial",
-      "cleaned": "Postprocessat",
-      "cleanedWith": "Postprocessat amb {{model}}",
-      "raw": "En brut",
-      "copyRaw": "Copia el text en brut",
-      "copyPostProcessed": "Copia el text postprocessat",
       "compare": {
         "title": "Vista de comparació",
         "diff": "Diferències",
         "side_by_side": "Un al costat de l'altre",
         "stacked": "Apilat"
       },
-      "clearHistory": "Esborra l'historial",
-      "clearConfirmation": "Voleu suprimir {{count}} entrades de l'historial sense destacar i {{recordings}} enregistraments? Les entrades destacades i els seus enregistraments es conservaran.",
       "openFolder": "Obriu la carpeta d'enregistraments",
       "loading": "S'està carregant l'historial...",
       "empty": "Encara no hi ha transcripcions. Comenceu a enregistrar per crear l'historial!",
@@ -799,6 +864,7 @@
       "deleteConfirm": "Vols suprimir aquesta entrada i la seva gravació?",
       "deleteConfirmAction": "Suprimeix l'entrada",
       "retranscribe": "Torneu a transcriure",
+      "retranscribeError": "No s'ha pogut tornar a transcriure aquesta entrada.",
       "cancelTranscription": "Cancel·la la transcripció",
       "transcribing": "S'està transcrivint...",
       "transcriptionFailed": "La transcripció ha fallat. Podeu tornar a transcriure amb la icona de reintent.",
@@ -820,6 +886,38 @@
         "weeks2": "Voleu suprimir les entrades sense estrella de fa més de 2 setmanes i els seus enregistraments? Les entrades amb estrella i els fitxers transcrits es conserven.",
         "months3": "Voleu suprimir les entrades sense estrella de fa més de 3 mesos i els seus enregistraments? Les entrades amb estrella i els fitxers transcrits es conserven.",
         "action": "Suprimeix les entrades"
+      }
+    },
+    "dictationHistory": {
+      "limitTitle": "Conserva els darrers",
+      "limitUnit": "entrades",
+      "limitHelp": "Quantes entrades conserva «Conserva els darrers».",
+      "limitTimeLimit": "No s'utilitza amb un límit de temps.",
+      "autoDeleteTitle": "Supressió automàtica",
+      "autoDeleteHelp": "Les entrades destacades i els fitxers transcrits no se suprimeixen mai automàticament.",
+      "options": {
+        "never": "Desactivat (conserva-ho tot)",
+        "preserveLimit": "Conserva els últims {{count}}",
+        "days3": "Anteriors a 3 dies",
+        "weeks2": "Anteriors a 2 setmanes",
+        "months3": "Anteriors a 3 mesos"
+      },
+      "folderTitle": "Carpeta d'enregistraments",
+      "folderOpen": "Obre"
+    },
+    "readAloudHistory": {
+      "keepTitle": "Conserva l'historial",
+      "keepHelp": "Només text, sense àudio.",
+      "limitTitle": "Conserva els darrers",
+      "limitUnit": "entrades",
+      "limitHelp": "Quantes entrades conserva «Conserva l'historial».",
+      "limitOff": "No s'utilitza quan l'historial està desactivat.",
+      "options": {
+        "keepNothing": "No ho conservis",
+        "keepLimit": "Conserva els darrers {{count}}",
+        "days3": "Conserva els darrers {{count}}, cap d'anterior a 3 dies",
+        "weeks2": "Conserva els darrers {{count}}, cap d'anterior a 2 setmanes",
+        "months3": "Conserva els darrers {{count}}, cap d'anterior a 3 mesos"
       }
     },
     "debug": {
@@ -1034,6 +1132,14 @@
     "noOptionsFound": "No s'ha trobat cap opció",
     "cancel": "Cancel·la"
   },
+  "editor": {
+    "save": "Desa",
+    "discard": {
+      "message": "Voleu descartar els canvis?",
+      "keep": "Continua editant",
+      "action": "Descarta"
+    }
+  },
   "errors": {
     "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
     "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
@@ -1189,7 +1295,6 @@
       "finished": "Finalitzat",
       "error": "Error"
     },
-    "modelsTitle": "Models de text a veu",
     "modelsSubtitle": "Trieu un model de veu. Les xifres de velocitat s'han mesurat a l'ordinador del desenvolupador; les vostres poden diferir.",
     "downloaded": "Baixat",
     "availableToDownload": "Disponible per baixar",
@@ -1213,11 +1318,10 @@
     "saveToken": "Defineix el testimoni",
     "model": "Model",
     "voice": "Veu",
-    "preview": "Escolta la veu",
-    "speed": "Velocitat: {{value}}x",
+    "preview": "Escolta",
     "pitch": "To: {{value}} semitons",
-    "output": "Dispositiu de sortida",
-    "sameAsHandy": "Igual que el Handy",
+    "output": "Dispositiu de sortida de la lectura en veu alta",
+    "sameAsHandy": "Igual que {{device}}",
     "readCode": "Llegeix els blocs de codi",
     "technicalReading": "Lectura tècnica",
     "fullPaths": "Llegeix els camins complets",
@@ -1250,11 +1354,9 @@
     },
     "voiceCount": "{{count}} veus",
     "downloadProgress": "Progrés de la baixada del model",
-    "settingsTitle": "Text a veu",
     "speedLabel": "Velocitat",
     "pitchLabel": "To",
     "help": {
-      "model": "Trieu un model de text a veu baixat.",
       "voice": "Trieu una veu per a aquest model i escolteu-la.",
       "speed": "Ajusteu la velocitat de lectura del text.",
       "pitch": "Ajusteu el to de la veu en semitons.",
@@ -1262,37 +1364,12 @@
       "readCode": "Inclou els blocs de codi delimitats en llegir.",
       "technicalReading": "Pronuncia camins, noms de fitxer, opcions i noms de codi sencers, amb el vostre fitxer de vocabulari.",
       "fullPaths": "Llegeix totes les carpetes d'un camí. Desactivat, només llegeix el nom del fitxer.",
-      "fullLinks": "Llegeix l'adreça web sencera. Desactivat, només diu el nom del lloc."
-    },
-    "tabs": {
-      "settings": "Configuració",
-      "history": "Historial",
-      "vocabulary": "Vocabulari"
+      "fullLinks": "Llegeix l'adreça web sencera. Desactivat, només diu el nom del lloc.",
+      "technicalOff": "No s'utilitza quan la lectura tècnica està desactivada."
     },
     "history": {
-      "title": "Configuració de l'historial",
       "reading": "Paraules escrites amb el que s'ha dit",
-      "hint": "Arrossegueu sobre les paraules per seleccionar un fragment i corregir com s'ha llegit.",
-      "empty": "Encara no s'ha llegit res en veu alta. Les lectures que reproduïu apareixen aquí.",
-      "limit": {
-        "title": "Límit de l'historial",
-        "description": "Màxim de lectures que es conserven a l'historial",
-        "entries": "lectures"
-      },
-      "retention": {
-        "title": "Supressió automàtica",
-        "description": "Suprimeix també automàticament les lectures més antigues",
-        "keepNothing": "No en conservis mai",
-        "keepLimit": "Conserva les {{count}} últimes",
-        "days3": "Al cap de 3 dies",
-        "weeks2": "Al cap de 2 setmanes",
-        "months3": "Al cap de 3 mesos"
-      },
-      "clear": {
-        "title": "Esborra l'historial",
-        "description": "Elimina totes les lectures desades. El vostre vocabulari no canvia.",
-        "confirmation": "Voleu eliminar les {{count}} lectures desades? El vostre vocabulari no canvia."
-      },
+      "readingHint": "El text escrit a dalt i el que s'ha dit a sota. Arrossegueu sobre les paraules per corregir com s'han llegit.",
       "retentionConfirm": {
         "message_one": "Voleu suprimir ara {{count}} lectura desada? El vostre vocabulari no canvia.",
         "message": "Voleu suprimir ara {{count}} lectures desades? El vostre vocabulari no canvia.",
@@ -1304,10 +1381,7 @@
         "written": "Escrit",
         "spoken": "Pronunciat",
         "kind": "Tipus",
-        "voices": "Veus",
-        "match": "Coincidència",
-        "enabled": "Actiu",
-        "actions": "Accions"
+        "match": "Coincidència"
       },
       "kinds": {
         "symbol": "Símbol",
@@ -1315,10 +1389,9 @@
         "term": "Terme",
         "acronym": "Acrònim"
       },
-      "voices": {
-        "all": "Totes les veus",
-        "except": "excepte {{names}}",
-        "add": "+ veu"
+      "models": {
+        "all": "Tots els models",
+        "except": "excepte {{names}}"
       },
       "origins": {
         "builtin": "Integrat",
@@ -1331,7 +1404,6 @@
         "listen": "Escolta",
         "delete": "Suprimeix",
         "reset": "Restableix el valor per defecte",
-        "save": "Desa",
         "cancel": "Cancel·la"
       },
       "match": {
@@ -1347,13 +1419,13 @@
       },
       "filter": "Cerca en el text escrit o el parlat",
       "toggle": "Usa {{written}}",
-      "editTitle": "Edita l'entrada",
       "fields": {
         "skip": "Omet",
         "appliesTo": "S'aplica a"
       },
-      "empty": "Cap entrada coincideix amb el filtre.",
-      "deleteConfirmation": "Vols suprimir {{written}} del vocabulari? No es pot desfer.",
+      "emptyQuery": "Cap resultat per a «{{query}}».",
+      "emptyFilters": "Cap resultat per a aquests filtres.",
+      "clearFilters": "Esborra els filtres",
       "resetConfirm": "Vols restablir {{written}} a la lectura integrada? La teva entrada se suprimeix.",
       "errors": {
         "changed": "El fitxer de vocabulari ha canviat al disc. S'ha tornat a carregar la taula; torna a fer el canvi.",
@@ -1361,7 +1433,7 @@
         "invalidEdit": "No s'ha pogut desar aquesta entrada: {{message}}",
         "tooLarge": "El fitxer de vocabulari superaria 1 MiB, així que no s'ha desat res.",
         "io": "No s'ha pogut escriure el fitxer de vocabulari: {{message}}",
-        "voicesChanged": "El vocabulari ha canviat mentre esperava, de manera que el canvi de veus no s'ha aplicat. Torna a triar les veus."
+        "voicesChanged": "El vocabulari ha canviat mentre esperava, de manera que el canvi no s'ha aplicat."
       },
       "problems": {
         "shadowed": "Mai s'aplica: sempre guanya una entrada de prioritat més alta",
@@ -1382,35 +1454,50 @@
         "invalid": "No es pot desar: {{detail}}"
       },
       "check": {
-        "title": "Comprova amb totes les veus",
+        "title": "Comprova amb tots els models",
         "playAll": "Reprodueix-ho tot",
         "playing": "S'està reproduint {{model}}",
-        "checking": "S'està comprovant cada veu...",
+        "checking": "S'està comprovant cada model...",
         "heardRight": "s'ha entès bé",
         "missed": "no s'ha entès: {{heard}}",
         "failed": "no s'ha pogut comprovar: {{error}}",
         "row": "{{model}}: {{outcome}}",
-        "advisory": "Algunes veus no ho han llegit bé. Encara ho pots desar.",
-        "saveAllAnyway": "Desa per a totes les veus igualment",
-        "savePassedOnly": "Desa només per a les veus que han passat",
-        "pickOne": "Tria una veu",
+        "advisory": "Alguns models no ho han llegit bé. Encara ho pots desar.",
+        "saveAllAnyway": "Desa per a tots els models igualment",
+        "savePassedOnly": "Desa només per als models que han passat",
+        "pickOne": "Tria un model",
         "dictating": "Hi ha un dictat en curs. Torna a comprovar-ho quan acabi.",
         "transcribeFailed": "La transcripció de veu no ha pogut transcriure la veu."
       },
       "filters": {
-        "voice": "Veu",
+        "model": "Model",
         "kind": "Tipus",
         "source": "Origen",
         "all": "Tots",
         "changed": "Canviat per tu",
-        "onlyProblems": "Només problemes"
+        "problems": "Problemes"
       },
       "defaultLabel": "per defecte:",
-      "defaultLabelFor": "per defecte per a {{voices}}:"
+      "defaultLabelFor": "per defecte per a {{voices}}:",
+      "dialog": {
+        "editTitle": "Edita {{written}}",
+        "context": "{{written}}, ara es pronuncia {{spoken}}.",
+        "overrides": "La teva entrada substitueix la lectura integrada {{default}}.",
+        "builtinDelete": "Les entrades integrades es poden desactivar, però no suprimir.",
+        "deleteConfirm": "Vols suprimir {{written}}? Les altres entrades teves es conserven.",
+        "deleteAction": "Suprimeix l'entrada",
+        "conflict": "El fitxer de vocabulari ha canviat al disc i s'ha tornat a carregar. Comprova l'entrada i torna a desar.",
+        "refused": "El vocabulari ha canviat i aquesta entrada ja no es pot desar tal com està. Comprova «S'aplica a», o cancel·la i torna-la a afegir.",
+        "scopeRefused": "Aquests models no es poden canviar per a aquesta entrada."
+      },
+      "acronymStylePerModel": "Estil de sigles per model",
+      "invalid": {
+        "builtinUsed": "S'usen les lectures integrades fins que es corregeixi.",
+        "reload": "Torna a carregar",
+        "openFolder": "Obre la carpeta"
+      }
     },
     "correction": {
-      "add": "Afegeix una correcció",
-      "start": "Afegeix una correcció",
       "writtenText": "Text escrit",
       "next": "Següent",
       "title": "Corregeix una lectura",
@@ -1421,12 +1508,11 @@
       "deriving": "Calculant la regla...",
       "exactOnly": "Només aquest text exacte",
       "chooseScope": "Tria on s'aplica",
-      "scopeRequired": "Tria Totes les veus o una veu abans de desar.",
-      "acronymStyle": "Estil de sigles per veu",
+      "scopeRequiredModels": "Tria Tots els models o un model abans de desar.",
       "style": {
         "spaced": "Lletres separades (C L I)",
         "capitals": "Majúscules (CLI)",
-        "inherit": "Igual que totes les veus"
+        "inheritModels": "Igual que tots els models"
       },
       "reach": {
         "extension": "afecta tots els fitxers {{extension}}",
@@ -1447,5 +1533,67 @@
         "transcribeFailed": "La conversió de veu a text no ha pogut transcriure el que has dit."
       }
     }
+  },
+  "history": {
+    "change": "Canvia",
+    "changeLabel": "Canvia com es conserva l'historial",
+    "transcribeFile": "Transcriu un fitxer",
+    "notKept": "L'historial no es conserva.",
+    "empty": {
+      "dictation": "Encara no hi ha dictats.",
+      "dictationHint": "Premeu <dictate/> per dictar o <cleanup/> per dictar amb neteja.",
+      "dictationHintDictate": "Premeu <keys/> per dictar.",
+      "dictationHintCleanup": "Premeu <keys/> per dictar amb neteja.",
+      "read": "Encara no s'ha llegit res.",
+      "readHint": "Copieu text i premeu <keys/>."
+    },
+    "summary": {
+      "dictation": {
+        "never": "Es conserven totes les entrades. Les entrades destacades es conserven.",
+        "none": "No es conserva cap entrada. Les entrades destacades i els fitxers transcrits es conserven.",
+        "latest_one": "Es conserva l'última entrada. Les entrades destacades es conserven.",
+        "latest": "Es conserven les últimes {{count}} entrades. Les entrades destacades es conserven.",
+        "days3": "S'eliminen les entrades anteriors a 3 dies. Les entrades destacades es conserven.",
+        "weeks2": "S'eliminen les entrades anteriors a 2 setmanes. Les entrades destacades es conserven.",
+        "months3": "S'eliminen les entrades anteriors a 3 mesos. Les entrades destacades es conserven."
+      },
+      "read": {
+        "latest_one": "Es conserva l'última entrada.",
+        "latest": "Es conserven les últimes {{count}} entrades.",
+        "days3_one": "Es conserva l'última entrada, cap d'anterior a 3 dies.",
+        "days3": "Es conserven les últimes {{count}} entrades, cap d'anterior a 3 dies.",
+        "weeks2_one": "Es conserva l'última entrada, cap d'anterior a 2 setmanes.",
+        "weeks2": "Es conserven les últimes {{count}} entrades, cap d'anterior a 2 setmanes.",
+        "months3_one": "Es conserva l'última entrada, cap d'anterior a 3 mesos.",
+        "months3": "Es conserven les últimes {{count}} entrades, cap d'anterior a 3 mesos."
+      }
+    },
+    "clear": {
+      "action": "Esborra l'historial",
+      "dictationConfirm_one": "Voleu suprimir {{count}} entrada i {{recordings}}? Les entrades destacades es conserven.",
+      "dictationConfirm": "Voleu suprimir {{count}} entrades i {{recordings}}? Les entrades destacades es conserven.",
+      "recordings_one": "{{count}} enregistrament",
+      "recordings": "{{count}} enregistraments",
+      "readConfirm_one": "Voleu suprimir {{count}} entrada? El vostre vocabulari no canvia.",
+      "readConfirm": "Voleu suprimir {{count}} entrades? El vostre vocabulari no canvia.",
+      "nothing": "No hi ha res per esborrar."
+    },
+    "row": {
+      "open": "Mostra l'entrada",
+      "close": "Amaga l'entrada"
+    },
+    "copy": "Copia el text",
+    "copyCleaned": "Copia el text net",
+    "copyOriginal": "Copia l'original",
+    "star": "Marca amb estrella",
+    "unstar": "Treu l'estrella",
+    "retranscribe": "Torneu a transcriure",
+    "cancelTranscription": "Cancel·la la transcripció",
+    "delete": "Suprimeix",
+    "cleanedWith": "Netejat amb {{model}}.",
+    "cleaned": "Text net",
+    "original": "Transcripció original",
+    "diffNote": "Es mostren les diferències amb la transcripció original.",
+    "noCleanup": "Sense neteja"
   }
 }

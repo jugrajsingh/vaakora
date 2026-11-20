@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
-import { ask } from "@tauri-apps/plugin-dialog";
 import {
   commands,
   type TtsModelInfo,
@@ -11,14 +10,18 @@ import { Alert } from "@/components/ui/Alert";
 import { unwrapTts } from "../ModelsPage";
 import { createVocabularyActions, type Failure } from "./actions";
 import { NO_FILTERS, type Filters } from "./filter";
-import { VocabularyView, type Correction, type Draft } from "./VocabularyView";
+import {
+  VocabularyView,
+  type Correction,
+  type EntryOpen,
+} from "./VocabularyView";
 
 export function VocabularyTab({ models }: { models: readonly TtsModelInfo[] }) {
   const { t } = useTranslation();
   const [table, setTable] = useState<VocabularyData | null>(null);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const [editing, setEditing] = useState<EntryOpen | null>(null);
   const [correction, setCorrection] = useState<Correction | "starting" | null>(
     null,
   );
@@ -35,23 +38,7 @@ export function VocabularyTab({ models }: { models: readonly TtsModelInfo[] }) {
         },
         speak: async (written, model) =>
           unwrapTts(await commands.speakTtsText(written, model)),
-        confirmDelete: (row) =>
-          ask(
-            t("tts.vocabulary.deleteConfirmation", {
-              written: row.id.entry.key,
-            }),
-            {
-              title: t("tts.vocabulary.buttons.delete"),
-              kind: "warning",
-              okLabel: t("tts.vocabulary.buttons.delete"),
-              cancelLabel: t("tts.vocabulary.buttons.cancel"),
-            },
-          ),
         setTable,
-        discard: () => {
-          setDraft(null);
-          setCorrection(null);
-        },
         onPreviewError: (listener) =>
           listen<string>("tts-preview-error", ({ payload }) =>
             listener(payload),
@@ -59,7 +46,7 @@ export function VocabularyTab({ models }: { models: readonly TtsModelInfo[] }) {
         setError: (key, message) =>
           setFailure(key === null ? null : { key, message }),
       }),
-    [t],
+    [],
   );
   useEffect(() => {
     void actions.load();
@@ -75,12 +62,14 @@ export function VocabularyTab({ models }: { models: readonly TtsModelInfo[] }) {
       failure={failure}
       filters={filters}
       setFilters={setFilters}
-      draft={draft}
-      setDraft={setDraft}
+      editing={editing}
+      setEditing={setEditing}
       correction={correction}
       setCorrection={setCorrection}
       readingModel={models.find((model) => model.active)?.id ?? ""}
       actions={actions}
+      reload={() => void actions.load()}
+      openFolder={() => void commands.openAppDataDir()}
     />
   );
 }

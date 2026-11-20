@@ -11,18 +11,24 @@ import type {
 } from "@/bindings";
 import {
   applyCapture,
+  attemptSave,
   canSave,
   chosenRule,
+  correctionDirty,
+  correctionNotice,
   correctionRequest,
   createCapture,
   createCorrectionActions,
   deriveFailure,
   initialCorrection,
   savesAs,
+  settleNext,
+  settleSave,
   type CaptureDependencies,
   type CorrectionDependencies,
   type CorrectionState,
   type Derived,
+  type SaveOutcome,
   voicesAfter,
 } from "./correction";
 import { createVoiceCheck } from "./voiceCheck";
@@ -453,6 +459,282 @@ describe("the correction actions", () => {
       await actions.derive(correctionRequest("a", "pocket-en", chosen)),
       { status: "error", key: "tts.vocabulary.derive.unchanged" },
     );
+  });
+});
+
+describe("the correction dialog", () => {
+  it("correction_dirty_follows_the_state", () => {
+    const spokenAs = "README dot markdown";
+    const start = initialCorrection(spokenAs);
+    assert.equal(correctionDirty(start, spokenAs), false);
+    assert.equal(
+      correctionDirty({ ...start, shouldSay: "README dot M D" }, spokenAs),
+      true,
+    );
+    assert.equal(
+      correctionDirty({ ...start, scope: { kind: "all" } }, spokenAs),
+      true,
+    );
+    assert.equal(correctionDirty({ ...start, exact: true }, spokenAs), true);
+    assert.equal(
+      correctionDirty({ ...start, matching: "anywhere" }, spokenAs),
+      true,
+    );
+    assert.equal(
+      correctionDirty({ ...start, caseSensitive: false }, spokenAs),
+      true,
+    );
+    assert.equal(
+      correctionDirty({ ...start, passed: ["pocket-en"] }, spokenAs),
+      true,
+    );
+    assert.equal(
+      correctionDirty(
+        { ...start, scope: { kind: "model", id: "pocket-en" } },
+        spokenAs,
+      ),
+      true,
+    );
+    const typedBack = { ...start, shouldSay: "x" };
+    assert.equal(
+      correctionDirty({ ...typedBack, shouldSay: spokenAs }, spokenAs),
+      false,
+    );
+  });
+
+  it("a_conflict_shows_the_dialog_line", () => {
+    const conflict: SaveOutcome = {
+      saved: false,
+      failure: { key: "tts.vocabulary.errors.changed" },
+      reload: true,
+    };
+    assert.deepEqual(correctionNotice(conflict), {
+      key: "tts.vocabulary.dialog.conflict",
+    });
+    const invalid: SaveOutcome = {
+      saved: false,
+      failure: { key: "tts.vocabulary.errors.invalidEdit", message: "bad" },
+      reload: false,
+    };
+    assert.deepEqual(correctionNotice(invalid), invalid.failure);
+    const io: SaveOutcome = {
+      saved: false,
+      failure: { key: "tts.vocabulary.errors.io", message: "disk" },
+      reload: false,
+    };
+    assert.deepEqual(correctionNotice(io), io.failure);
+  });
+
+  it("a_conflict_retry_keeps_the_passed_voices", async () => {
+    const { calls, actions } = dependencies({ rules: { kind: "changed" } });
+    const passed = ["pocket-en", "supertonic-3"];
+    const rescoped = (model: string): DerivedRule => ({
+      ...acronym,
+      entry: { ...acronym.entry, model },
+    });
+    const first = await actions.submit("r0", acronym, passed);
+    assert.equal(first.saved, false);
+    const second = await actions.submit("r1", acronym, passed);
+    assert.equal(second.saved, false);
+    const both = [rescoped("pocket-en"), rescoped("supertonic-3")];
+    assert.deepEqual(calls, [
+      ["saveRules", "r0", both],
+      ["saveRules", "r1", both],
+    ]);
+    await actions.submit("r1", acronym, null);
+    assert.deepEqual(calls[2], ["saveRules", "r1", [acronym]]);
+  });
+});
+
+describe("attemptSave", () => {
+  const asked = (state: CorrectionState, derived: Derived = ready) => ({
+    table: table("r0"),
+    rule: extension,
+    state,
+    derived,
+  });
+
+  it("a_save_with_the_scope_unset_writes_nothing", async () => {
+    const { calls, actions } = dependencies();
+    const unset = initialCorrection("README dot M D");
+    assert.equal(await attemptSave(actions, asked(unset), null), null);
+    assert.equal(await attemptSave(actions, asked(unset), ["pocket-en"]), null);
+    assert.deepEqual(calls, [], "no write without a chosen scope");
+    const outcome = await attemptSave(actions, asked(chosen), null);
+    assert.deepEqual(outcome, { saved: true, table: table("r1") });
+    assert.deepEqual(calls, [["saveRules", "r0", [extension]]]);
+  });
+
+  it("a_save_waits_for_a_rule_for_the_chosen_scope_and_a_loaded_table", async () => {
+    const { calls, actions } = dependencies();
+    assert.equal(
+      await attemptSave(actions, asked(chosen, { status: "pending" }), null),
+      null,
+    );
+    const forPocket = { ...chosen, scope: { kind: "model", id: "pocket-en" } };
+    assert.equal(
+      await attemptSave(actions, asked(forPocket as CorrectionState), null),
+      null,
+      "the rule shown was derived for another scope",
+    );
+    assert.equal(
+      await attemptSave(actions, { ...asked(chosen), table: null }, null),
+      null,
+    );
+    assert.deepEqual(calls, []);
+  });
+});
+
+/** A promise the test resolves by hand, so a result can arrive after the dialog closed. */
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+/** One dialog instance's lifetime: `live` until its own close. */
+const lifetime = () => {
+  let open = true;
+  return { live: () => open, end: () => (open = false) };
+};
+
+describe("a correction dialog that has closed", () => {
+  type Shown = { written: string; spokenAs: string } | "starting" | null;
+
+  it("next_after_close_opens_nothing", async () => {
+    let shown: Shown = "starting";
+    const first = lifetime();
+    const speak = deferred<string | null>();
+    const next = settleNext(() => speak.promise, "README.md", {
+      live: first.live,
+      open: (written, spokenAs) => {
+        shown = { written, spokenAs };
+      },
+    });
+    first.end();
+    shown = null;
+    speak.resolve("README dot markdown");
+    await next;
+    assert.equal(shown, null, "the discarded text is not reopened");
+  });
+
+  it("next_after_close_and_reopen_keeps_the_new_dialog", async () => {
+    let shown: Shown = "starting";
+    const first = lifetime();
+    const speak = deferred<string | null>();
+    const next = settleNext(() => speak.promise, "README.md", {
+      live: first.live,
+      open: (written, spokenAs) => {
+        shown = { written, spokenAs };
+      },
+    });
+    first.end();
+    shown = "starting";
+    speak.resolve("README dot markdown");
+    await next;
+    assert.equal(shown, "starting", "the newer text prompt stays");
+  });
+
+  it("next_when_open_opens_the_box_and_a_refusal_opens_nothing", async () => {
+    let shown: Shown = "starting";
+    const open = (written: string, spokenAs: string) => {
+      shown = { written, spokenAs };
+    };
+    await settleNext(async () => "README dot markdown", "README.md", {
+      live: () => true,
+      open,
+    });
+    assert.deepEqual(shown, {
+      written: "README.md",
+      spokenAs: "README dot markdown",
+    });
+    shown = "starting";
+    await settleNext(async () => null, "README.md", { live: () => true, open });
+    assert.equal(shown, "starting");
+  });
+
+  // Each host keeps what its dialog shows in one variable and clears it on close; the Vocabulary
+  // tab adopts a saved table, Read aloud, History has nothing to refresh.
+  const hosts = [
+    { name: "Vocabulary tab", shown: "correction A", adopts: true },
+    { name: "Read aloud history", shown: "selection A", adopts: false },
+  ];
+  const success: SaveOutcome = { saved: true, table: table("r1") };
+  const failure: SaveOutcome = {
+    saved: false,
+    failure: { key: "tts.vocabulary.errors.io", message: "disk" },
+    reload: false,
+  };
+
+  hosts.forEach(({ name, shown, adopts }) => {
+    it(`save_after_close_does_not_close_what_replaced_it_in_${name.replace(/ /g, "_")}`, async () => {
+      const host = { shown: shown as string | null };
+      const shared: unknown[] = [];
+      const first = lifetime();
+      const settleWith = (outcome: SaveOutcome) =>
+        settleSave(outcome, {
+          live: first.live,
+          saved: (saved) => adopts && shared.push(saved),
+          close: () => {
+            host.shown = null;
+          },
+          failed: () => shared.push("failed"),
+        });
+
+      // (a) the dialog closes with its save pending and nothing replaces it.
+      const pending = deferred<SaveOutcome>();
+      const settled = pending.promise.then(settleWith);
+      first.end();
+      host.shown = null;
+      pending.resolve(success);
+      await settled;
+      assert.equal(host.shown, null, "(a) nothing reopens or closes");
+      assert.deepEqual(
+        shared,
+        adopts ? [table("r1")] : [],
+        "the written table is still shared with the host that adopts it",
+      );
+
+      // (b) it closes, the owner opens another and types; the old results arrive.
+      const late = deferred<SaveOutcome>();
+      const lateSettled = late.promise.then(settleWith);
+      host.shown = "correction B with typed text";
+      late.resolve(success);
+      await lateSettled;
+      assert.equal(
+        host.shown,
+        "correction B with typed text",
+        "(b) the new dialog is not closed by the old save",
+      );
+      const failed = deferred<SaveOutcome>();
+      const failedSettled = failed.promise.then(settleWith);
+      failed.resolve(failure);
+      await failedSettled;
+      assert.deepEqual(
+        shared,
+        adopts ? [table("r1"), table("r1")] : [],
+        "a late failure shows nowhere",
+      );
+    });
+  });
+
+  it("save_when_open_closes_the_dialog_and_shows_a_failure", () => {
+    const seen: string[] = [];
+    const on = {
+      live: () => true,
+      saved: () => seen.push("saved"),
+      close: () => seen.push("close"),
+      failed: (outcome: Extract<SaveOutcome, { saved: false }>) =>
+        seen.push(`failed:${outcome.failure.key}`),
+    };
+    settleSave(success, on);
+    settleSave(failure, on);
+    assert.deepEqual(seen, [
+      "saved",
+      "close",
+      "failed:tts.vocabulary.errors.io",
+    ]);
   });
 });
 

@@ -15,12 +15,7 @@ const models = [
 const render = (rows: TtsModelInfo[], value: string) =>
   renderToStaticMarkup(
     <I18nextProvider i18n={i18n}>
-      <ModelSelect
-        models={rows}
-        value={value}
-        change={() => {}}
-        openModels={() => {}}
-      />
+      <ModelSelect models={rows} value={value} change={() => {}} />
     </I18nextProvider>,
   );
 const html = render(models, "pocket-en");
@@ -36,9 +31,14 @@ assert.ok(
   !trigger?.includes("Supertonic"),
   "downloaded model is not shown as saved before selection",
 );
+assert.equal(
+  html.match(/<button\b/g)?.length,
+  1,
+  "a missing selection renders only the dropdown trigger",
+);
 assert.ok(
-  html.match(/<button[^>]*>Text-to-speech Models<\/button>/),
-  "missing model has navigation action",
+  !html.includes("Text-to-speech Models"),
+  "missing model has no navigation action",
 );
 const empty = render(
   models.filter((model) => !model.downloaded),
@@ -49,9 +49,10 @@ assert.ok(
   "no downloaded model disables dropdown",
 );
 const ready = render(models, "supertonic-3");
-assert.ok(
-  !ready.includes(english.tts.openModels),
-  "downloaded selection needs no download link",
+assert.equal(
+  ready.match(/<button\b/g)?.length,
+  1,
+  "downloaded selection renders only the dropdown trigger",
 );
 const changes: string[] = [];
 selectDownloadedModel(models, "pocket-en", (model) => changes.push(model.id));
@@ -61,6 +62,4 @@ selectDownloadedModel(models, "supertonic-3", (model) =>
   changes.push(model.id),
 );
 assert.deepEqual(changes, ["supertonic-3"]);
-console.log(
-  "model selector preserves missing selection, navigation and download guards",
-);
+console.log("model selector preserves missing selection and download guards");

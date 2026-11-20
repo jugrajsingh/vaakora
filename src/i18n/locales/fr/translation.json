@@ -36,6 +36,19 @@
     "debug": "Débogage",
     "about": "À propos"
   },
+  "nav": {
+    "dictation": "Dictée",
+    "readAloud": "Lecture à voix haute",
+    "models": "Modèles",
+    "settings": "Réglages",
+    "history": "Historique",
+    "cleanup": "Nettoyage",
+    "vocabulary": "Vocabulaire",
+    "general": "Général",
+    "advanced": "Avancé",
+    "about": "À propos",
+    "debug": "Débogage"
+  },
   "onboarding": {
     "customModelDescription": "Non officiellement pris en charge",
     "migration": {
@@ -345,6 +358,52 @@
     "lockedWhileTranscribing": "Vous pourrez changer de modèle une fois la transcription terminée dans l'Historique."
   },
   "settings": {
+    "groups": {
+      "shortcuts": "Raccourcis",
+      "model": "Modèle",
+      "languages": "Langues",
+      "microphone": "Microphone",
+      "output": "Sortie",
+      "text": "Texte",
+      "overlay": "Overlay",
+      "history": "Historique",
+      "playback": "Lecture",
+      "textHandling": "Traitement du texte",
+      "sound": "Son",
+      "appearance": "Apparence",
+      "startup": "Démarrage",
+      "models": "Modèles",
+      "dictationEngine": "Moteur de dictée",
+      "experimental": "Expérimental",
+      "provider": "Fournisseur",
+      "instructions": "Instructions",
+      "localModel": "Modèle local"
+    },
+    "jobModel": {
+      "manage": "Gérer les modèles",
+      "choose": "Choisissez un modèle",
+      "loading": "Chargement des modèles",
+      "empty": {
+        "dictation": "Aucun modèle de dictée pour l'instant.",
+        "readAloud": "Aucun modèle de lecture à voix haute pour l'instant."
+      },
+      "help": {
+        "dictation": "Choisissez un modèle de dictée téléchargé.",
+        "readAloud": "Choisissez un modèle de lecture à voix haute téléchargé."
+      }
+    },
+    "rows": {
+      "unloadIdle": "Décharger les modèles inactifs",
+      "runOn": "Exécuter les modèles de dictée sur"
+    },
+    "shortcuts": {
+      "dictate": "Dicter",
+      "dictateWithCleanup": "Dicter avec nettoyage",
+      "cancel": "Annuler",
+      "readAloud": "Lecture à voix haute",
+      "activation": "Activation",
+      "activationHelp": "Pour les raccourcis de dictée"
+    },
     "modelSettings": {
       "title": "Paramètres de {{model}}"
     },
@@ -363,9 +422,6 @@
             "name": "Raccourci de Transcription",
             "description": "Le raccourci clavier pour enregistrer et transcrire votre voix."
           },
-          "transcribe_raw": {
-            "name": "Raccourci du texte brut"
-          },
           "cancel": {
             "name": "Raccourci d'Annulation",
             "description": "Le raccourci clavier pour annuler l'enregistrement en cours."
@@ -375,7 +431,6 @@
             "description": "Facultatif : Un raccourci dédié qui applique toujours le post-traitement IA à votre transcription."
           },
           "read_aloud": {
-            "name": "Raccourci de lecture à voix haute",
             "description": "Ouvre la fenêtre et lit à voix haute le texte copié."
           }
         },
@@ -487,11 +542,13 @@
         "title": "Périphérique de sortie",
         "description": "Sélectionnez votre périphérique de sortie audio pour le signal sonore",
         "placeholder": "Sélectionner un périphérique de sortie...",
-        "loading": "Chargement..."
+        "loading": "Chargement...",
+        "offReason": "Inutilisé lorsque le signal sonore est désactivé."
       },
       "volume": {
         "title": "Volume",
-        "description": "Ajuster le volume du signal sonore"
+        "description": "Ajuster le volume du signal sonore",
+        "offReason": "Inutilisé lorsque le signal sonore est désactivé."
       }
     },
     "advanced": {
@@ -657,9 +714,6 @@
       }
     },
     "postProcessing": {
-      "provider": {
-        "title": "Fournisseur"
-      },
       "api": {
         "title": "API",
         "provider": {
@@ -722,7 +776,6 @@
         "noCleanupModel": "Aucun modèle de post-traitement",
         "s1Description": "Utilise les réglages de style, de structure et de contexte.",
         "plainDescription": "Utilise le prompt Handy sélectionné.",
-        "groupTitle": "Modèle local",
         "size": "{{size}} MiB",
         "downloaded": "Téléchargé",
         "use": "Utiliser",
@@ -768,25 +821,37 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 avec une condition supplémentaire : le modèle doit toujours être nommé \"S1-mini\" de \"Superwhisper\", avec exactement ces majuscules et minuscules."
         },
-        "promptRequired": "Sélectionnez un prompt Handy non vide dans le groupe Prompts. Tant que ce n'est pas fait, le post-traitement est ignoré et la transcription brute est utilisée.",
+        "promptRequired": "Sélectionnez un prompt Handy non vide dans le groupe Instructions. Tant que ce n'est pas fait, le post-traitement est ignoré et la transcription brute est utilisée.",
         "promptHidden": "Ce modèle utilise son propre prompt fixe et les réglages de style, de structure et de contexte ci-dessus, donc l'éditeur de prompt est masqué."
+      }
+    },
+    "cleanup": {
+      "enable": {
+        "label": "Nettoyer les dictées",
+        "description": "Ajoute le raccourci « Dicter avec nettoyage ». Le texte dicté avec lui est nettoyé avant d'être collé."
+      },
+      "sentTo": "Les dictées sont envoyées à {{host}} pour être nettoyées.",
+      "prompt": {
+        "edit": "Modifier",
+        "new": "Nouveau prompt",
+        "editTitle": "Modifier {{name}}",
+        "newTitle": "Nouveau prompt",
+        "delete": "Supprimer",
+        "deleteConfirm": "Supprimer {{name}} ? Les dictées déjà nettoyées avec lui ne sont pas modifiées.",
+        "deleteAction": "Supprimer le prompt",
+        "lastPrompt": "Conservez au moins un prompt.",
+        "saveFailed": "Le prompt n'a pas pu être enregistré.",
+        "createFirst": "Appuyez sur Nouveau prompt pour écrire vos premières instructions de nettoyage."
       }
     },
     "history": {
       "title": "Historique",
-      "cleaned": "Post-traité",
-      "cleanedWith": "Post-traité avec {{model}}",
-      "raw": "Brut",
-      "copyRaw": "Copier le texte brut",
-      "copyPostProcessed": "Copier le texte post-traité",
       "compare": {
         "title": "Vue de comparaison",
         "diff": "Différences",
         "side_by_side": "Côte à côte",
         "stacked": "Empilé"
       },
-      "clearHistory": "Effacer l'historique",
-      "clearConfirmation": "Supprimer {{count}} entrées d'historique non favorites et {{recordings}} enregistrements ? Les entrées favorites et leurs enregistrements seront conservés.",
       "openFolder": "Ouvrir le dossier des enregistrements",
       "loading": "Chargement de l'historique...",
       "empty": "Pas encore de transcriptions. Commencez à enregistrer pour créer votre historique !",
@@ -799,6 +864,7 @@
       "deleteConfirm": "Supprimer cette entrée et son enregistrement ?",
       "deleteConfirmAction": "Supprimer l'entrée",
       "retranscribe": "Re-transcrire",
+      "retranscribeError": "Impossible de re-transcrire cette entrée.",
       "cancelTranscription": "Annuler la transcription",
       "transcribing": "Transcription en cours...",
       "transcriptionFailed": "La transcription a échoué. Vous pouvez re-transcrire en utilisant l'icône de réessai.",
@@ -820,6 +886,38 @@
         "weeks2": "Supprimer les entrées sans étoile de plus de 2 semaines, ainsi que leurs enregistrements ? Les entrées avec étoile et les fichiers transcrits sont conservés.",
         "months3": "Supprimer les entrées sans étoile de plus de 3 mois, ainsi que leurs enregistrements ? Les entrées avec étoile et les fichiers transcrits sont conservés.",
         "action": "Supprimer les entrées"
+      }
+    },
+    "dictationHistory": {
+      "limitTitle": "Garder les dernières",
+      "limitUnit": "entrées",
+      "limitHelp": "Combien d'entrées « Garder les dernières » conserve.",
+      "limitTimeLimit": "Inutilisé avec une limite de durée.",
+      "autoDeleteTitle": "Suppression automatique",
+      "autoDeleteHelp": "Les entrées favorites et les fichiers transcrits ne sont jamais supprimés automatiquement.",
+      "options": {
+        "never": "Désactivé (tout garder)",
+        "preserveLimit": "Conserver les {{count}} plus récents",
+        "days3": "Plus anciennes que 3 jours",
+        "weeks2": "Plus anciennes que 2 semaines",
+        "months3": "Plus anciennes que 3 mois"
+      },
+      "folderTitle": "Dossier des enregistrements",
+      "folderOpen": "Ouvrir"
+    },
+    "readAloudHistory": {
+      "keepTitle": "Garder l'historique",
+      "keepHelp": "Texte seulement, sans audio.",
+      "limitTitle": "Garder les dernières",
+      "limitUnit": "entrées",
+      "limitHelp": "Combien d'entrées « Garder l'historique » conserve.",
+      "limitOff": "Inutilisé lorsque l'historique est désactivé.",
+      "options": {
+        "keepNothing": "Ne pas garder",
+        "keepLimit": "Garder les {{count}} dernières",
+        "days3": "Garder les {{count}} dernières, aucune de plus de 3 jours",
+        "weeks2": "Garder les {{count}} dernières, aucune de plus de 2 semaines",
+        "months3": "Garder les {{count}} dernières, aucune de plus de 3 mois"
       }
     },
     "debug": {
@@ -1034,6 +1132,14 @@
     "noOptionsFound": "Aucune option trouvée",
     "cancel": "Annuler"
   },
+  "editor": {
+    "save": "Enregistrer",
+    "discard": {
+      "message": "Abandonner vos modifications ?",
+      "keep": "Continuer la modification",
+      "action": "Abandonner"
+    }
+  },
   "errors": {
     "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
     "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
@@ -1189,7 +1295,6 @@
       "finished": "Terminé",
       "error": "Erreur"
     },
-    "modelsTitle": "Modèles de synthèse vocale",
     "modelsSubtitle": "Choisissez un modèle de voix. Les vitesses indiquées ont été mesurées sur l'ordinateur du développeur ; les vôtres peuvent différer.",
     "downloaded": "Téléchargé",
     "availableToDownload": "Disponible au téléchargement",
@@ -1213,11 +1318,10 @@
     "saveToken": "Définir le jeton",
     "model": "Modèle",
     "voice": "Voix",
-    "preview": "Écouter la voix",
-    "speed": "Vitesse : {{value}}x",
+    "preview": "Écouter",
     "pitch": "Hauteur : {{value}} demi-tons",
-    "output": "Périphérique de sortie",
-    "sameAsHandy": "Identique à Handy",
+    "output": "Périphérique de sortie de la lecture à voix haute",
+    "sameAsHandy": "Identique à {{device}}",
     "readCode": "Lire les blocs de code",
     "technicalReading": "Lecture technique",
     "fullPaths": "Lire les chemins complets",
@@ -1250,11 +1354,9 @@
     },
     "voiceCount": "{{count}} voix",
     "downloadProgress": "Progression du téléchargement du modèle",
-    "settingsTitle": "Synthèse vocale",
     "speedLabel": "Vitesse",
     "pitchLabel": "Hauteur",
     "help": {
-      "model": "Choisissez un modèle de synthèse vocale téléchargé.",
       "voice": "Choisissez une voix pour ce modèle et écoutez-la.",
       "speed": "Réglez la vitesse de lecture du texte.",
       "pitch": "Réglez la hauteur de la voix en demi-tons.",
@@ -1262,37 +1364,12 @@
       "readCode": "Inclure les blocs de code délimités lors de la lecture.",
       "technicalReading": "Prononce en entier les chemins, noms de fichiers, options et noms de code, avec votre fichier de vocabulaire.",
       "fullPaths": "Lit chaque dossier d'un chemin. Désactivé, seul le nom du fichier est lu.",
-      "fullLinks": "Lit l'adresse web complète. Désactivé, seul le nom du site est dit."
-    },
-    "tabs": {
-      "settings": "Réglages",
-      "history": "Historique",
-      "vocabulary": "Vocabulaire"
+      "fullLinks": "Lit l'adresse web complète. Désactivé, seul le nom du site est dit.",
+      "technicalOff": "Inutilisé lorsque la lecture technique est désactivée."
     },
     "history": {
-      "title": "Paramètres de l'historique",
       "reading": "Mots écrits avec ce qui a été dit",
-      "hint": "Faites glisser sur les mots pour sélectionner un passage et corriger sa lecture.",
-      "empty": "Rien n'a encore été lu à voix haute. Les lectures que vous lancez apparaissent ici.",
-      "limit": {
-        "title": "Limite de l'historique",
-        "description": "Nombre maximal de lectures conservées dans l'historique",
-        "entries": "lectures"
-      },
-      "retention": {
-        "title": "Suppression automatique",
-        "description": "Supprimer aussi automatiquement les lectures plus anciennes",
-        "keepNothing": "Ne jamais conserver",
-        "keepLimit": "Garder les {{count}} dernières",
-        "days3": "Après 3 jours",
-        "weeks2": "Après 2 semaines",
-        "months3": "Après 3 mois"
-      },
-      "clear": {
-        "title": "Effacer l'historique",
-        "description": "Supprime toutes les lectures enregistrées. Votre vocabulaire n'est pas modifié.",
-        "confirmation": "Supprimer les {{count}} lectures enregistrées ? Votre vocabulaire n'est pas modifié."
-      },
+      "readingHint": "Le texte écrit au-dessus, ce qui a été dit en dessous. Faites glisser sur les mots pour corriger leur lecture.",
       "retentionConfirm": {
         "message_one": "Supprimer {{count}} lecture enregistrée maintenant ? Votre vocabulaire n'est pas modifié.",
         "message": "Supprimer {{count}} lectures enregistrées maintenant ? Votre vocabulaire n'est pas modifié.",
@@ -1304,10 +1381,7 @@
         "written": "Écrit",
         "spoken": "Prononcé",
         "kind": "Type",
-        "voices": "Voix",
-        "match": "Correspondance",
-        "enabled": "Actif",
-        "actions": "Actions"
+        "match": "Correspondance"
       },
       "kinds": {
         "symbol": "Symbole",
@@ -1315,10 +1389,9 @@
         "term": "Terme",
         "acronym": "Acronyme"
       },
-      "voices": {
-        "all": "Toutes les voix",
-        "except": "sauf {{names}}",
-        "add": "+ voix"
+      "models": {
+        "all": "Tous les modèles",
+        "except": "sauf {{names}}"
       },
       "origins": {
         "builtin": "Intégré",
@@ -1331,7 +1404,6 @@
         "listen": "Écouter",
         "delete": "Supprimer",
         "reset": "Rétablir par défaut",
-        "save": "Enregistrer",
         "cancel": "Annuler"
       },
       "match": {
@@ -1347,13 +1419,13 @@
       },
       "filter": "Rechercher dans l'écrit ou le prononcé",
       "toggle": "Utiliser {{written}}",
-      "editTitle": "Modifier l'entrée",
       "fields": {
         "skip": "Ignorer",
         "appliesTo": "S'applique à"
       },
-      "empty": "Aucune entrée ne correspond à votre filtre.",
-      "deleteConfirmation": "Supprimer {{written}} de votre vocabulaire ? Cette action est irréversible.",
+      "emptyQuery": "Rien ne correspond à « {{query}} ».",
+      "emptyFilters": "Rien ne correspond à ces filtres.",
+      "clearFilters": "Effacer les filtres",
       "resetConfirm": "Rétablir la lecture intégrée de {{written}} ? Votre entrée est supprimée.",
       "errors": {
         "changed": "Le fichier de vocabulaire a changé sur le disque. Le tableau a été rechargé ; refaites votre modification.",
@@ -1361,7 +1433,7 @@
         "invalidEdit": "Cette entrée n'a pas pu être enregistrée : {{message}}",
         "tooLarge": "Le fichier de vocabulaire dépasserait 1 Mio, rien n'a donc été enregistré.",
         "io": "Le fichier de vocabulaire n'a pas pu être écrit : {{message}}",
-        "voicesChanged": "Le vocabulaire a changé pendant l'attente, le changement de voix n'a donc pas été appliqué. Choisissez de nouveau les voix."
+        "voicesChanged": "Le vocabulaire a changé pendant l'attente, le changement n'a donc pas été appliqué."
       },
       "problems": {
         "shadowed": "Ne s'applique jamais : une entrée de priorité supérieure l'emporte toujours",
@@ -1382,35 +1454,50 @@
         "invalid": "Impossible d'enregistrer : {{detail}}"
       },
       "check": {
-        "title": "Vérifier sur toutes les voix",
+        "title": "Vérifier sur tous les modèles",
         "playAll": "Tout lire",
         "playing": "Lecture de {{model}}",
-        "checking": "Vérification de chaque voix...",
+        "checking": "Vérification de chaque modèle...",
         "heardRight": "bien entendu",
         "missed": "mal entendu : {{heard}}",
         "failed": "vérification impossible : {{error}}",
         "row": "{{model}} : {{outcome}}",
-        "advisory": "Certaines voix n'ont pas lu ceci correctement. Vous pouvez quand même l'enregistrer.",
-        "saveAllAnyway": "Enregistrer pour toutes les voix quand même",
-        "savePassedOnly": "Enregistrer seulement pour les voix réussies",
-        "pickOne": "Choisir une voix",
+        "advisory": "Certains modèles n'ont pas lu ceci correctement. Vous pouvez quand même l'enregistrer.",
+        "saveAllAnyway": "Enregistrer pour tous les modèles quand même",
+        "savePassedOnly": "Enregistrer seulement pour les modèles réussis",
+        "pickOne": "Choisir un modèle",
         "dictating": "Une dictée est en cours. Vérifiez à nouveau quand elle se termine.",
         "transcribeFailed": "La reconnaissance vocale n'a pas pu transcrire la voix."
       },
       "filters": {
-        "voice": "Voix",
+        "model": "Modèle",
         "kind": "Type",
         "source": "Source",
         "all": "Tous",
         "changed": "Modifié par vous",
-        "onlyProblems": "Problèmes uniquement"
+        "problems": "Problèmes"
       },
       "defaultLabel": "par défaut :",
-      "defaultLabelFor": "par défaut pour {{voices}} :"
+      "defaultLabelFor": "par défaut pour {{voices}} :",
+      "dialog": {
+        "editTitle": "Modifier {{written}}",
+        "context": "{{written}}, désormais prononcé {{spoken}}.",
+        "overrides": "Votre entrée remplace la lecture intégrée {{default}}.",
+        "builtinDelete": "Les entrées intégrées peuvent être désactivées, pas supprimées.",
+        "deleteConfirm": "Supprimer {{written}} ? Vos autres entrées sont conservées.",
+        "deleteAction": "Supprimer l'entrée",
+        "conflict": "Le fichier de vocabulaire a changé sur le disque et a été rechargé. Vérifiez l'entrée, puis enregistrez à nouveau.",
+        "refused": "Le vocabulaire a changé et cette entrée ne peut plus être enregistrée telle quelle. Vérifiez « S'applique à », ou annulez et ajoutez-la à nouveau.",
+        "scopeRefused": "Ces modèles ne peuvent pas être modifiés pour cette entrée."
+      },
+      "acronymStylePerModel": "Style des acronymes par modèle",
+      "invalid": {
+        "builtinUsed": "Les lectures intégrées sont utilisées tant que le fichier n'est pas corrigé.",
+        "reload": "Recharger",
+        "openFolder": "Ouvrir le dossier"
+      }
     },
     "correction": {
-      "add": "Ajouter une correction",
-      "start": "Ajouter une correction",
       "writtenText": "Texte écrit",
       "next": "Suivant",
       "title": "Corriger une lecture",
@@ -1421,12 +1508,11 @@
       "deriving": "Recherche de la règle...",
       "exactOnly": "Uniquement ce texte exact",
       "chooseScope": "Choisir où cela s'applique",
-      "scopeRequired": "Choisissez Toutes les voix ou une voix avant d'enregistrer.",
-      "acronymStyle": "Style des acronymes par voix",
+      "scopeRequiredModels": "Choisissez Tous les modèles ou un modèle avant d'enregistrer.",
       "style": {
         "spaced": "Lettres séparées (C L I)",
         "capitals": "Majuscules (CLI)",
-        "inherit": "Comme pour toutes les voix"
+        "inheritModels": "Comme pour tous les modèles"
       },
       "reach": {
         "extension": "concerne chaque fichier {{extension}}",
@@ -1447,5 +1533,67 @@
         "transcribeFailed": "La reconnaissance vocale n'a pas pu transcrire ce que vous avez dit."
       }
     }
+  },
+  "history": {
+    "change": "Modifier",
+    "changeLabel": "Modifier la façon dont l'historique est conservé",
+    "transcribeFile": "Transcrire un fichier",
+    "notKept": "L'historique n'est pas conservé.",
+    "empty": {
+      "dictation": "Aucune dictée pour l'instant.",
+      "dictationHint": "Appuyez sur <dictate/> pour dicter ou sur <cleanup/> pour dicter avec nettoyage.",
+      "dictationHintDictate": "Appuyez sur <keys/> pour dicter.",
+      "dictationHintCleanup": "Appuyez sur <keys/> pour dicter avec nettoyage.",
+      "read": "Rien n'a encore été lu.",
+      "readHint": "Copiez du texte et appuyez sur <keys/>."
+    },
+    "summary": {
+      "dictation": {
+        "never": "Toutes les entrées sont conservées. Les entrées favorites sont conservées.",
+        "none": "Aucune entrée n'est conservée. Les entrées favorites et les fichiers transcrits sont conservés.",
+        "latest_one": "La dernière entrée est conservée. Les entrées favorites sont conservées.",
+        "latest": "Les {{count}} dernières entrées sont conservées. Les entrées favorites sont conservées.",
+        "days3": "Les entrées plus anciennes que 3 jours sont supprimées. Les entrées favorites sont conservées.",
+        "weeks2": "Les entrées plus anciennes que 2 semaines sont supprimées. Les entrées favorites sont conservées.",
+        "months3": "Les entrées plus anciennes que 3 mois sont supprimées. Les entrées favorites sont conservées."
+      },
+      "read": {
+        "latest_one": "La dernière entrée est conservée.",
+        "latest": "Les {{count}} dernières entrées sont conservées.",
+        "days3_one": "La dernière entrée est conservée, aucune plus ancienne que 3 jours.",
+        "days3": "Les {{count}} dernières entrées sont conservées, aucune plus ancienne que 3 jours.",
+        "weeks2_one": "La dernière entrée est conservée, aucune plus ancienne que 2 semaines.",
+        "weeks2": "Les {{count}} dernières entrées sont conservées, aucune plus ancienne que 2 semaines.",
+        "months3_one": "La dernière entrée est conservée, aucune plus ancienne que 3 mois.",
+        "months3": "Les {{count}} dernières entrées sont conservées, aucune plus ancienne que 3 mois."
+      }
+    },
+    "clear": {
+      "action": "Effacer l'historique",
+      "dictationConfirm_one": "Supprimer {{count}} entrée et {{recordings}} ? Les entrées favorites sont conservées.",
+      "dictationConfirm": "Supprimer {{count}} entrées et {{recordings}} ? Les entrées favorites sont conservées.",
+      "recordings_one": "{{count}} enregistrement",
+      "recordings": "{{count}} enregistrements",
+      "readConfirm_one": "Supprimer {{count}} entrée ? Votre vocabulaire n'est pas modifié.",
+      "readConfirm": "Supprimer {{count}} entrées ? Votre vocabulaire n'est pas modifié.",
+      "nothing": "Rien à effacer."
+    },
+    "row": {
+      "open": "Afficher l'entrée",
+      "close": "Masquer l'entrée"
+    },
+    "copy": "Copier le texte",
+    "copyCleaned": "Copier le texte nettoyé",
+    "copyOriginal": "Copier l'original",
+    "star": "Ajouter une étoile",
+    "unstar": "Retirer l'étoile",
+    "retranscribe": "Re-transcrire",
+    "cancelTranscription": "Annuler la transcription",
+    "delete": "Supprimer",
+    "cleanedWith": "Nettoyé avec {{model}}.",
+    "cleaned": "Texte nettoyé",
+    "original": "Transcription originale",
+    "diffNote": "Affiche les différences avec la transcription originale.",
+    "noCleanup": "Aucun nettoyage"
   }
 }

@@ -36,6 +36,19 @@
     "debug": "デバッグ",
     "about": "概要"
   },
+  "nav": {
+    "dictation": "音声入力",
+    "readAloud": "読み上げ",
+    "models": "モデル",
+    "settings": "設定",
+    "history": "履歴",
+    "cleanup": "整形",
+    "vocabulary": "語彙",
+    "general": "一般",
+    "advanced": "詳細設定",
+    "about": "概要",
+    "debug": "デバッグ"
+  },
   "onboarding": {
     "customModelDescription": "公式サポート対象外",
     "migration": {
@@ -345,6 +358,52 @@
     "lockedWhileTranscribing": "履歴の文字起こしが終わるとモデルを変更できます。"
   },
   "settings": {
+    "groups": {
+      "shortcuts": "ショートカット",
+      "model": "モデル",
+      "languages": "言語",
+      "microphone": "マイク",
+      "output": "出力",
+      "text": "テキスト",
+      "overlay": "オーバーレイ",
+      "history": "履歴",
+      "playback": "再生",
+      "textHandling": "テキストの扱い",
+      "sound": "サウンド",
+      "appearance": "外観",
+      "startup": "起動",
+      "models": "モデル",
+      "dictationEngine": "音声入力エンジン",
+      "experimental": "実験的",
+      "provider": "プロバイダー",
+      "instructions": "指示",
+      "localModel": "ローカルモデル"
+    },
+    "jobModel": {
+      "manage": "モデルを管理",
+      "choose": "モデルを選択",
+      "loading": "モデルを読み込み中",
+      "empty": {
+        "dictation": "音声入力モデルはまだありません。",
+        "readAloud": "読み上げモデルはまだありません。"
+      },
+      "help": {
+        "dictation": "ダウンロード済みの音声入力モデルを選択します。",
+        "readAloud": "ダウンロード済みの読み上げモデルを選択します。"
+      }
+    },
+    "rows": {
+      "unloadIdle": "使用していないモデルをアンロード",
+      "runOn": "音声入力モデルの実行先"
+    },
+    "shortcuts": {
+      "dictate": "音声入力",
+      "dictateWithCleanup": "整形して音声入力",
+      "cancel": "キャンセル",
+      "readAloud": "読み上げ",
+      "activation": "起動方法",
+      "activationHelp": "音声入力のショートカット用"
+    },
     "modelSettings": {
       "title": "{{model}} の設定"
     },
@@ -363,9 +422,6 @@
             "name": "文字起こしのショートカット",
             "description": "音声を録音して文字起こしするためのキーボードショートカット。"
           },
-          "transcribe_raw": {
-            "name": "未加工のショートカット"
-          },
           "cancel": {
             "name": "キャンセルのショートカット",
             "description": "現在の録音をキャンセルするためのキーボードショートカット。"
@@ -375,7 +431,6 @@
             "description": "文字起こしに常に AI 後処理を適用するキーボードショートカット。 (任意)"
           },
           "read_aloud": {
-            "name": "読み上げのショートカット",
             "description": "ポップアップを開き、コピーしたテキストを読み上げます。"
           }
         },
@@ -487,11 +542,13 @@
         "title": "出力デバイス",
         "description": "フィードバック用の音声出力デバイスを選択",
         "placeholder": "出力デバイスを選択…",
-        "loading": "読み込み中…"
+        "loading": "読み込み中…",
+        "offReason": "オーディオフィードバックがオフのときは使用されません。"
       },
       "volume": {
         "title": "音量",
-        "description": "オーディオフィードバックの音量を調整"
+        "description": "オーディオフィードバックの音量を調整",
+        "offReason": "オーディオフィードバックがオフのときは使用されません。"
       }
     },
     "advanced": {
@@ -657,9 +714,6 @@
       }
     },
     "postProcessing": {
-      "provider": {
-        "title": "プロバイダー"
-      },
       "api": {
         "title": "API",
         "provider": {
@@ -722,7 +776,6 @@
         "noCleanupModel": "後処理モデルなし",
         "s1Description": "スタイル、構成、コンテキストの設定を使用します。",
         "plainDescription": "選択した Handy のプロンプトを使用します。",
-        "groupTitle": "ローカルモデル",
         "size": "{{size}} MiB",
         "downloaded": "ダウンロード済み",
         "use": "使用",
@@ -768,25 +821,37 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 に 1 つの条件が追加されています: このモデルは常に \"Superwhisper\" の \"S1-mini\" と、この大文字と小文字のとおりに表記する必要があります。"
         },
-        "promptRequired": "「プロンプト」グループで空でない Handy のプロンプトを選択してください。選択するまで後処理はスキップされ、未加工の文字起こしが使われます。",
+        "promptRequired": "「指示」グループで空でない Handy のプロンプトを選択してください。選択するまで後処理はスキップされ、未加工の文字起こしが使われます。",
         "promptHidden": "このモデルは独自の固定プロンプトと上記のスタイル、構成、コンテキストの設定を使用するため、プロンプトエディターは非表示です。"
+      }
+    },
+    "cleanup": {
+      "enable": {
+        "label": "音声入力を整形",
+        "description": "「整形して音声入力」のショートカットを追加します。これで音声入力したテキストは、貼り付ける前に整形されます。"
+      },
+      "sentTo": "ディクテーションは整形のために {{host}} に送信されます。",
+      "prompt": {
+        "edit": "編集",
+        "new": "新しいプロンプト",
+        "editTitle": "{{name}} を編集",
+        "newTitle": "新しいプロンプト",
+        "delete": "削除",
+        "deleteConfirm": "{{name}} を削除しますか？これまでにこのプロンプトで整形したディクテーションは変更されません。",
+        "deleteAction": "プロンプトを削除",
+        "lastPrompt": "プロンプトは少なくとも1つ残してください。",
+        "saveFailed": "プロンプトを保存できませんでした。",
+        "createFirst": "「新しいプロンプト」を押して、最初の整形指示を書きましょう。"
       }
     },
     "history": {
       "title": "履歴",
-      "cleaned": "後処理済み",
-      "cleanedWith": "{{model}} で後処理済み",
-      "raw": "未加工",
-      "copyRaw": "未加工のテキストをコピー",
-      "copyPostProcessed": "後処理済みのテキストをコピー",
       "compare": {
         "title": "比較表示",
         "diff": "差分",
         "side_by_side": "左右に並べる",
         "stacked": "縦に並べる"
       },
-      "clearHistory": "履歴を消去",
-      "clearConfirmation": "スターなしの履歴 {{count}} 件と録音 {{recordings}} 件を削除しますか? スター付きの項目とその録音は保持されます。",
       "openFolder": "録音フォルダを開く",
       "loading": "履歴を読み込み中…",
       "empty": "まだ文字起こしがありません。録音を開始して履歴を作成しましょう!",
@@ -799,6 +864,7 @@
       "deleteConfirm": "このエントリーと録音を削除しますか？",
       "deleteConfirmAction": "エントリーを削除",
       "retranscribe": "再文字起こし",
+      "retranscribeError": "このエントリーを再文字起こしできませんでした。",
       "cancelTranscription": "文字起こしをキャンセル",
       "transcribing": "文字起こし中…",
       "transcriptionFailed": "文字起こしに失敗しました。リトライアイコンを使用して再文字起こしできます。",
@@ -820,6 +886,38 @@
         "weeks2": "2週間より前のスターなしのエントリーと録音を削除しますか？スター付きのエントリーと文字起こししたファイルは残ります。",
         "months3": "3か月より前のスターなしのエントリーと録音を削除しますか？スター付きのエントリーと文字起こししたファイルは残ります。",
         "action": "エントリーを削除"
+      }
+    },
+    "dictationHistory": {
+      "limitTitle": "最新を保持",
+      "limitUnit": "件",
+      "limitHelp": "「最新を保持」が残すエントリ数です。",
+      "limitTimeLimit": "期間の指定があるときは使われません。",
+      "autoDeleteTitle": "自動削除",
+      "autoDeleteHelp": "スター付きのエントリと文字起こししたファイルは自動削除されません。",
+      "options": {
+        "never": "オフ（すべて保持）",
+        "preserveLimit": "最新{{count}}件を保持",
+        "days3": "3日より前",
+        "weeks2": "2週間より前",
+        "months3": "3か月より前"
+      },
+      "folderTitle": "録音フォルダ",
+      "folderOpen": "開く"
+    },
+    "readAloudHistory": {
+      "keepTitle": "履歴を保持",
+      "keepHelp": "テキストのみ、音声なし。",
+      "limitTitle": "最新を保持",
+      "limitUnit": "件",
+      "limitHelp": "「履歴を保持」が残すエントリ数です。",
+      "limitOff": "履歴がオフのときは使われません。",
+      "options": {
+        "keepNothing": "保持しない",
+        "keepLimit": "最新の{{count}}件を保持",
+        "days3": "最新の{{count}}件を保持、3日より古いものは残さない",
+        "weeks2": "最新の{{count}}件を保持、2週間より古いものは残さない",
+        "months3": "最新の{{count}}件を保持、3か月より古いものは残さない"
       }
     },
     "debug": {
@@ -1034,6 +1132,14 @@
     "noOptionsFound": "オプションが見つかりません",
     "cancel": "キャンセル"
   },
+  "editor": {
+    "save": "保存",
+    "discard": {
+      "message": "変更を破棄しますか？",
+      "keep": "編集を続ける",
+      "action": "破棄"
+    }
+  },
   "errors": {
     "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
     "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
@@ -1189,7 +1295,6 @@
       "finished": "完了",
       "error": "エラー"
     },
-    "modelsTitle": "音声合成モデル",
     "modelsSubtitle": "音声モデルを選択します。速度の数値は開発者のコンピューターで計測したもので、お使いの環境では異なる場合があります。",
     "downloaded": "ダウンロード済み",
     "availableToDownload": "ダウンロード可能",
@@ -1213,11 +1318,10 @@
     "saveToken": "トークンを設定",
     "model": "モデル",
     "voice": "音声",
-    "preview": "音声を試聴",
-    "speed": "速度: {{value}}x",
+    "preview": "聞く",
     "pitch": "ピッチ: {{value}} 半音",
-    "output": "出力デバイス",
-    "sameAsHandy": "Handy と同じ",
+    "output": "読み上げの出力デバイス",
+    "sameAsHandy": "{{device}} と同じ",
     "readCode": "コードブロックを読み上げ",
     "technicalReading": "技術的な読み上げ",
     "fullPaths": "パスを全体で読み上げ",
@@ -1250,49 +1354,22 @@
     },
     "voiceCount": "{{count}} 件の音声",
     "downloadProgress": "モデルのダウンロード進行状況",
-    "settingsTitle": "音声合成",
     "speedLabel": "速度",
     "pitchLabel": "ピッチ",
     "help": {
-      "model": "ダウンロード済みの音声合成モデルを選択します。",
-      "voice": "このモデルの音声を選択して試聴します。",
+      "voice": "このモデルの音声を選択して聞きます。",
       "speed": "テキストを読み上げる速さを調整します。",
       "pitch": "音声のピッチを半音単位で調整します。",
       "output": "読み上げ音声の再生先を選択します。",
       "readCode": "読み上げ時にコードブロックを含めます。",
       "technicalReading": "パス、ファイル名、フラグ、コード名を、語彙ファイルを使って省略せずに読み上げます。",
       "fullPaths": "パス内のすべてのフォルダを読み上げます。オフの場合はファイル名だけを読み上げます。",
-      "fullLinks": "Webアドレス全体を読み上げます。オフの場合はサイト名だけを読み上げます。"
-    },
-    "tabs": {
-      "settings": "設定",
-      "history": "履歴",
-      "vocabulary": "語彙"
+      "fullLinks": "Webアドレス全体を読み上げます。オフの場合はサイト名だけを読み上げます。",
+      "technicalOff": "技術的な読み上げがオフのときは使われません。"
     },
     "history": {
-      "title": "履歴の設定",
       "reading": "書かれた単語と読み上げた内容",
-      "hint": "単語の上をドラッグして一部を選択し、読み方を修正します。",
-      "empty": "まだ何も読み上げられていません。再生した読み上げがここに表示されます。",
-      "limit": {
-        "title": "履歴の上限",
-        "description": "履歴に残す読み上げの最大数",
-        "entries": "件"
-      },
-      "retention": {
-        "title": "自動削除",
-        "description": "古い読み上げも自動的に削除する",
-        "keepNothing": "保存しない",
-        "keepLimit": "最新の{{count}}件を保持",
-        "days3": "3日後",
-        "weeks2": "2週間後",
-        "months3": "3か月後"
-      },
-      "clear": {
-        "title": "履歴を消去",
-        "description": "保存されたすべての読み上げを削除します。語彙は変更されません。",
-        "confirmation": "保存された{{count}}件の読み上げをすべて削除しますか？語彙は変更されません。"
-      },
+      "readingHint": "上に書かれたテキスト、下に読み上げられた内容を表示します。単語の上をドラッグして、読み方を修正します。",
       "retentionConfirm": {
         "message_one": "保存された読み上げ{{count}}件を今すぐ削除しますか？語彙は変更されません。",
         "message": "保存された読み上げ{{count}}件を今すぐ削除しますか？語彙は変更されません。",
@@ -1304,10 +1381,7 @@
         "written": "表記",
         "spoken": "読み",
         "kind": "種類",
-        "voices": "音声",
-        "match": "一致",
-        "enabled": "オン",
-        "actions": "操作"
+        "match": "一致"
       },
       "kinds": {
         "symbol": "記号",
@@ -1315,10 +1389,9 @@
         "term": "用語",
         "acronym": "略語"
       },
-      "voices": {
-        "all": "すべての音声",
-        "except": "{{names}}を除く",
-        "add": "+ 音声"
+      "models": {
+        "all": "すべてのモデル",
+        "except": "{{names}}を除く"
       },
       "origins": {
         "builtin": "組み込み",
@@ -1331,7 +1404,6 @@
         "listen": "聞く",
         "delete": "削除",
         "reset": "既定に戻す",
-        "save": "保存",
         "cancel": "キャンセル"
       },
       "match": {
@@ -1347,13 +1419,13 @@
       },
       "filter": "表記または読みを検索",
       "toggle": "{{written}}を使う",
-      "editTitle": "項目を編集",
       "fields": {
         "skip": "読み飛ばす",
         "appliesTo": "適用先"
       },
-      "empty": "フィルターに一致する項目はありません。",
-      "deleteConfirmation": "{{written}}をあなたの語彙から削除しますか？この操作は取り消せません。",
+      "emptyQuery": "「{{query}}」に一致するものはありません。",
+      "emptyFilters": "この条件に一致するものはありません。",
+      "clearFilters": "フィルターをクリア",
       "resetConfirm": "{{written}}を組み込みの読み方に戻しますか？あなたのエントリーは削除されます。",
       "errors": {
         "changed": "語彙ファイルがディスク上で変更されました。表を再読み込みしたので、もう一度編集してください。",
@@ -1361,7 +1433,7 @@
         "invalidEdit": "この項目を保存できませんでした: {{message}}",
         "tooLarge": "語彙ファイルが1 MiBを超えるため、何も保存されませんでした。",
         "io": "語彙ファイルを書き込めませんでした: {{message}}",
-        "voicesChanged": "待機中に語彙が変更されたため、音声の変更は適用されませんでした。もう一度音声を選んでください。"
+        "voicesChanged": "待機中に語彙が変更されたため、変更は適用されませんでした。"
       },
       "problems": {
         "shadowed": "適用されません: 優先度の高い項目が常に優先されます",
@@ -1382,35 +1454,50 @@
         "invalid": "保存できません: {{detail}}"
       },
       "check": {
-        "title": "全音声で確認",
+        "title": "全モデルで確認",
         "playAll": "すべて再生",
         "playing": "{{model}} を再生中",
-        "checking": "各音声を確認中...",
+        "checking": "各モデルを確認中...",
         "heardRight": "正しく聞き取れました",
         "missed": "聞き取り違い: {{heard}}",
         "failed": "確認できません: {{error}}",
         "row": "{{model}}: {{outcome}}",
-        "advisory": "一部の音声が正しく読み上げませんでした。それでも保存できます。",
-        "saveAllAnyway": "それでもすべての音声に保存",
-        "savePassedOnly": "合格した音声だけに保存",
-        "pickOne": "音声を1つ選ぶ",
+        "advisory": "一部のモデルが正しく読み上げませんでした。それでも保存できます。",
+        "saveAllAnyway": "それでもすべてのモデルに保存",
+        "savePassedOnly": "合格したモデルだけに保存",
+        "pickOne": "モデルを1つ選ぶ",
         "dictating": "音声入力中です。終了後にもう一度確認してください。",
         "transcribeFailed": "音声認識で音声を文字起こしできませんでした。"
       },
       "filters": {
-        "voice": "音声",
+        "model": "モデル",
         "kind": "種類",
         "source": "提供元",
         "all": "すべて",
         "changed": "自分で変更",
-        "onlyProblems": "問題のあるものだけ"
+        "problems": "問題"
       },
       "defaultLabel": "既定:",
-      "defaultLabelFor": "{{voices}}の既定:"
+      "defaultLabelFor": "{{voices}}の既定:",
+      "dialog": {
+        "editTitle": "{{written}}を編集",
+        "context": "{{written}}は現在{{spoken}}と読まれます。",
+        "overrides": "あなたのエントリーが組み込みの読み方 {{default}} より優先されます。",
+        "builtinDelete": "組み込みのエントリーはオフにできますが、削除はできません。",
+        "deleteConfirm": "{{written}}を削除しますか？ほかのエントリーは残ります。",
+        "deleteAction": "エントリーを削除",
+        "conflict": "語彙ファイルがディスク上で変更されたため再読み込みしました。エントリーを確認してから、もう一度保存してください。",
+        "refused": "語彙が変更されたため、このエントリーはこのままでは保存できません。適用先を確認するか、キャンセルして追加し直してください。",
+        "scopeRefused": "このエントリーではこれらのモデルを変更できません。"
+      },
+      "acronymStylePerModel": "モデルごとの略語のスタイル",
+      "invalid": {
+        "builtinUsed": "修正されるまで、組み込みの読み方が使われます。",
+        "reload": "再読み込み",
+        "openFolder": "フォルダを開く"
+      }
     },
     "correction": {
-      "add": "修正を追加",
-      "start": "修正を追加",
       "writtenText": "書かれたテキスト",
       "next": "次へ",
       "title": "読み方を修正",
@@ -1421,12 +1508,11 @@
       "deriving": "ルールを判定中...",
       "exactOnly": "このテキストそのものだけ",
       "chooseScope": "適用先を選択",
-      "scopeRequired": "保存する前に「すべての音声」か1つの音声を選んでください。",
-      "acronymStyle": "音声ごとの略語のスタイル",
+      "scopeRequiredModels": "保存する前に「すべてのモデル」か1つのモデルを選んでください。",
       "style": {
         "spaced": "1文字ずつ (C L I)",
         "capitals": "大文字 (CLI)",
-        "inherit": "すべての音声と同じ"
+        "inheritModels": "すべてのモデルと同じ"
       },
       "reach": {
         "extension": "すべての {{extension}} ファイルに適用",
@@ -1447,5 +1533,67 @@
         "transcribeFailed": "音声認識で話した内容を文字起こしできませんでした。"
       }
     }
+  },
+  "history": {
+    "change": "変更",
+    "changeLabel": "履歴の保持方法を変更",
+    "transcribeFile": "ファイルを文字起こし",
+    "notKept": "履歴は保持されていません。",
+    "empty": {
+      "dictation": "音声入力の履歴はまだありません。",
+      "dictationHint": "<dictate/> を押すと音声入力、<cleanup/> を押すと整形して音声入力できます。",
+      "dictationHintDictate": "<keys/> を押すと音声入力できます。",
+      "dictationHintCleanup": "<keys/> を押すと整形して音声入力できます。",
+      "read": "読み上げの履歴はまだありません。",
+      "readHint": "テキストをコピーして <keys/> を押してください。"
+    },
+    "summary": {
+      "dictation": {
+        "never": "すべての項目を保持します。スター付きの項目は保持されます。",
+        "none": "項目を保持しません。スター付きの項目と文字起こししたファイルは保持されます。",
+        "latest_one": "最新の項目を保持します。スター付きの項目は保持されます。",
+        "latest": "最新の{{count}}件を保持します。スター付きの項目は保持されます。",
+        "days3": "3日より古い項目を削除します。スター付きの項目は保持されます。",
+        "weeks2": "2週間より古い項目を削除します。スター付きの項目は保持されます。",
+        "months3": "3か月より古い項目を削除します。スター付きの項目は保持されます。"
+      },
+      "read": {
+        "latest_one": "最新の項目を保持します。",
+        "latest": "最新の{{count}}件を保持します。",
+        "days3_one": "最新の項目を保持します。3日より古い項目は保持されません。",
+        "days3": "最新の{{count}}件を保持します。3日より古い項目は保持されません。",
+        "weeks2_one": "最新の項目を保持します。2週間より古い項目は保持されません。",
+        "weeks2": "最新の{{count}}件を保持します。2週間より古い項目は保持されません。",
+        "months3_one": "最新の項目を保持します。3か月より古い項目は保持されません。",
+        "months3": "最新の{{count}}件を保持します。3か月より古い項目は保持されません。"
+      }
+    },
+    "clear": {
+      "action": "履歴を消去",
+      "dictationConfirm_one": "{{count}}件の項目と{{recordings}}を削除しますか？スター付きの項目は保持されます。",
+      "dictationConfirm": "{{count}}件の項目と{{recordings}}を削除しますか？スター付きの項目は保持されます。",
+      "recordings_one": "{{count}}件の録音",
+      "recordings": "{{count}}件の録音",
+      "readConfirm_one": "{{count}}件の項目を削除しますか？語彙は変更されません。",
+      "readConfirm": "{{count}}件の項目を削除しますか？語彙は変更されません。",
+      "nothing": "消去するものはありません。"
+    },
+    "row": {
+      "open": "エントリーを表示",
+      "close": "エントリーを隠す"
+    },
+    "copy": "テキストをコピー",
+    "copyCleaned": "整形済みテキストをコピー",
+    "copyOriginal": "元のテキストをコピー",
+    "star": "スターを付ける",
+    "unstar": "スターを外す",
+    "retranscribe": "再文字起こし",
+    "cancelTranscription": "文字起こしをキャンセル",
+    "delete": "削除",
+    "cleanedWith": "{{model}} で整形済み。",
+    "cleaned": "整形済みテキスト",
+    "original": "元の文字起こし",
+    "diffNote": "元の文字起こしとの差分を表示しています。",
+    "noCleanup": "整形なし"
   }
 }

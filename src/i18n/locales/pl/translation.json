@@ -36,6 +36,19 @@
     "debug": "Debugowanie",
     "about": "O programie"
   },
+  "nav": {
+    "dictation": "Dyktowanie",
+    "readAloud": "Czytanie na głos",
+    "models": "Modele",
+    "settings": "Ustawienia",
+    "history": "Historia",
+    "cleanup": "Porządkowanie",
+    "vocabulary": "Słownik",
+    "general": "Ogólne",
+    "advanced": "Zaawansowane",
+    "about": "O programie",
+    "debug": "Debugowanie"
+  },
   "onboarding": {
     "customModelDescription": "Nieoficjalnie wspierane",
     "migration": {
@@ -345,6 +358,52 @@
     "lockedWhileTranscribing": "Model będzie można zmienić po zakończeniu transkrypcji w Historii."
   },
   "settings": {
+    "groups": {
+      "shortcuts": "Skróty",
+      "model": "Model",
+      "languages": "Języki",
+      "microphone": "Mikrofon",
+      "output": "Wyjście",
+      "text": "Tekst",
+      "overlay": "Nakładka",
+      "history": "Historia",
+      "playback": "Odtwarzanie",
+      "textHandling": "Obsługa tekstu",
+      "sound": "Dźwięk",
+      "appearance": "Wygląd",
+      "startup": "Uruchamianie",
+      "models": "Modele",
+      "dictationEngine": "Silnik dyktowania",
+      "experimental": "Eksperymentalne",
+      "provider": "Dostawca",
+      "instructions": "Instrukcje",
+      "localModel": "Model lokalny"
+    },
+    "jobModel": {
+      "manage": "Zarządzaj modelami",
+      "choose": "Wybierz model",
+      "loading": "Ładowanie modeli",
+      "empty": {
+        "dictation": "Nie ma jeszcze modelu do dyktowania.",
+        "readAloud": "Nie ma jeszcze modelu do czytania na głos."
+      },
+      "help": {
+        "dictation": "Wybierz pobrany model do dyktowania.",
+        "readAloud": "Wybierz pobrany model do czytania na głos."
+      }
+    },
+    "rows": {
+      "unloadIdle": "Wyładuj nieużywane modele",
+      "runOn": "Uruchamiaj modele dyktowania na"
+    },
+    "shortcuts": {
+      "dictate": "Dyktuj",
+      "dictateWithCleanup": "Dyktuj z porządkowaniem",
+      "cancel": "Anuluj",
+      "readAloud": "Czytanie na głos",
+      "activation": "Aktywacja",
+      "activationHelp": "Dla skrótów dyktowania"
+    },
     "modelSettings": {
       "title": "Ustawienia {{model}}"
     },
@@ -363,9 +422,6 @@
             "name": "Skrót transkrypcji",
             "description": "Skrót klawiaturowy do nagrywania i transkrypcji głosu."
           },
-          "transcribe_raw": {
-            "name": "Skrót surowej transkrypcji"
-          },
           "cancel": {
             "name": "Skrót anulowania",
             "description": "Skrót klawiaturowy do anulowania bieżącego nagrywania."
@@ -375,7 +431,6 @@
             "description": "Opcjonalnie: Dedykowany skrót klawiszowy, który zawsze stosuje postprocessing AI do transkrypcji."
           },
           "read_aloud": {
-            "name": "Skrót czytania na głos",
             "description": "Otwiera okno i czyta skopiowany tekst na głos."
           }
         },
@@ -487,11 +542,13 @@
         "title": "Urządzenie wyjściowe",
         "description": "Wybierz preferowane urządzenie audio do odtwarzania dźwięków",
         "placeholder": "Wybierz urządzenie wyjściowe...",
-        "loading": "Wczytywanie..."
+        "loading": "Wczytywanie...",
+        "offReason": "Nieużywane, gdy informacja dźwiękowa jest wyłączona."
       },
       "volume": {
         "title": "Głośność",
-        "description": "Dostosuj głośność dźwięków informacyjnych"
+        "description": "Dostosuj głośność dźwięków informacyjnych",
+        "offReason": "Nieużywane, gdy informacja dźwiękowa jest wyłączona."
       }
     },
     "advanced": {
@@ -657,9 +714,6 @@
       }
     },
     "postProcessing": {
-      "provider": {
-        "title": "Dostawca"
-      },
       "api": {
         "title": "API",
         "provider": {
@@ -722,7 +776,6 @@
         "noCleanupModel": "Brak modelu postprocesu",
         "s1Description": "Używa ustawień stylu, struktury i kontekstu.",
         "plainDescription": "Używa wybranego promptu Handy.",
-        "groupTitle": "Model lokalny",
         "size": "{{size}} MiB",
         "downloaded": "Pobrano",
         "use": "Użyj",
@@ -768,25 +821,37 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 z jednym dodatkowym warunkiem: model musi być zawsze nazywany \"S1-mini\" od \"Superwhisper\", dokładnie z taką pisownią wielkich i małych liter."
         },
-        "promptRequired": "Wybierz niepusty prompt Handy w grupie Prompty. Do tego czasu postproces jest pomijany i używana jest surowa transkrypcja.",
+        "promptRequired": "Wybierz niepusty prompt Handy w grupie Instrukcje. Do tego czasu postproces jest pomijany i używana jest surowa transkrypcja.",
         "promptHidden": "Ten model używa własnego stałego promptu oraz powyższych ustawień Styl, Struktura i Kontekst, dlatego edytor promptów jest ukryty."
+      }
+    },
+    "cleanup": {
+      "enable": {
+        "label": "Porządkuj dyktowany tekst",
+        "description": "Dodaje skrót „Dyktuj z porządkowaniem”. Tekst podyktowany za jego pomocą jest porządkowany przed wklejeniem."
+      },
+      "sentTo": "Dyktowane teksty są wysyłane do {{host}} w celu oczyszczenia.",
+      "prompt": {
+        "edit": "Edytuj",
+        "new": "Nowy prompt",
+        "editTitle": "Edytuj {{name}}",
+        "newTitle": "Nowy prompt",
+        "delete": "Usuń",
+        "deleteConfirm": "Usunąć {{name}}? Dyktowane teksty już nim oczyszczone nie zmienią się.",
+        "deleteAction": "Usuń prompt",
+        "lastPrompt": "Zostaw co najmniej jeden prompt.",
+        "saveFailed": "Nie udało się zapisać promptu.",
+        "createFirst": "Naciśnij Nowy prompt, aby napisać pierwsze instrukcje czyszczenia."
       }
     },
     "history": {
       "title": "Historia",
-      "cleaned": "Po postprocesie",
-      "cleanedWith": "Przetworzono modelem {{model}}",
-      "raw": "Surowy",
-      "copyRaw": "Kopiuj surowy tekst",
-      "copyPostProcessed": "Kopiuj tekst po postprocesie",
       "compare": {
         "title": "Widok porównania",
         "diff": "Różnice",
         "side_by_side": "Obok siebie",
         "stacked": "Jeden pod drugim"
       },
-      "clearHistory": "Wyczyść historię",
-      "clearConfirmation": "Usunąć wpisy historii bez gwiazdki (liczba: {{count}}) i nagrania (liczba: {{recordings}})? Wpisy z gwiazdką i ich nagrania zostaną zachowane.",
       "openFolder": "Otwórz folder nagrań",
       "loading": "Wczytywanie historii...",
       "empty": "Brak transkrypcji. Rozpocznij nagrywanie, aby zbudować historię!",
@@ -799,6 +864,7 @@
       "deleteConfirm": "Usunąć ten wpis i jego nagranie?",
       "deleteConfirmAction": "Usuń wpis",
       "retranscribe": "Transkrybuj ponownie",
+      "retranscribeError": "Nie udało się ponownie transkrybować tego wpisu.",
       "cancelTranscription": "Anuluj transkrypcję",
       "transcribing": "Transkrybuję...",
       "transcriptionFailed": "Transkrypcja nie powiodła się. Możesz transkrybować ponownie za pomocą ikony ponowienia.",
@@ -820,6 +886,38 @@
         "weeks2": "Usunąć wpisy bez gwiazdki starsze niż 2 tygodnie wraz z ich nagraniami? Wpisy z gwiazdką i transkrybowane pliki zostaną zachowane.",
         "months3": "Usunąć wpisy bez gwiazdki starsze niż 3 miesiące wraz z ich nagraniami? Wpisy z gwiazdką i transkrybowane pliki zostaną zachowane.",
         "action": "Usuń wpisy"
+      }
+    },
+    "dictationHistory": {
+      "limitTitle": "Zachowaj najnowsze",
+      "limitUnit": "wpisy",
+      "limitHelp": "Ile wpisów zachowuje „Zachowaj najnowsze”.",
+      "limitTimeLimit": "Nieużywane z limitem czasu.",
+      "autoDeleteTitle": "Automatyczne usuwanie",
+      "autoDeleteHelp": "Wpisy z gwiazdką i przepisane pliki nigdy nie są usuwane automatycznie.",
+      "options": {
+        "never": "Wyłączone (zachowaj wszystko)",
+        "preserveLimit": "Zachowaj ostatnie {{count}}",
+        "days3": "Starsze niż 3 dni",
+        "weeks2": "Starsze niż 2 tygodnie",
+        "months3": "Starsze niż 3 miesiące"
+      },
+      "folderTitle": "Folder nagrań",
+      "folderOpen": "Otwórz"
+    },
+    "readAloudHistory": {
+      "keepTitle": "Zachowaj historię",
+      "keepHelp": "Tylko tekst, bez dźwięku.",
+      "limitTitle": "Zachowaj najnowsze",
+      "limitUnit": "wpisy",
+      "limitHelp": "Ile wpisów zachowuje „Zachowaj historię”.",
+      "limitOff": "Nieużywane, gdy historia jest wyłączona.",
+      "options": {
+        "keepNothing": "Nie zachowuj",
+        "keepLimit": "Zachowaj najnowsze {{count}}",
+        "days3": "Zachowaj najnowsze {{count}}, żadnych starszych niż 3 dni",
+        "weeks2": "Zachowaj najnowsze {{count}}, żadnych starszych niż 2 tygodnie",
+        "months3": "Zachowaj najnowsze {{count}}, żadnych starszych niż 3 miesiące"
       }
     },
     "debug": {
@@ -1034,6 +1132,14 @@
     "noOptionsFound": "Nie znaleziono opcji",
     "cancel": "Anuluj"
   },
+  "editor": {
+    "save": "Zapisz",
+    "discard": {
+      "message": "Odrzucić zmiany?",
+      "keep": "Kontynuuj edycję",
+      "action": "Odrzuć"
+    }
+  },
   "errors": {
     "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
     "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
@@ -1189,7 +1295,6 @@
       "finished": "Zakończono",
       "error": "Błąd"
     },
-    "modelsTitle": "Modele zamiany tekstu na mowę",
     "modelsSubtitle": "Wybierz model głosu. Wartości szybkości zmierzono na komputerze dewelopera; na Twoim mogą się różnić.",
     "downloaded": "Pobrane",
     "availableToDownload": "Dostępne do pobrania",
@@ -1213,11 +1318,10 @@
     "saveToken": "Ustaw token",
     "model": "Model",
     "voice": "Głos",
-    "preview": "Posłuchaj próbki głosu",
-    "speed": "Szybkość: {{value}}x",
+    "preview": "Odsłuchaj",
     "pitch": "Wysokość tonu: {{value}} półtonów",
-    "output": "Urządzenie wyjściowe",
-    "sameAsHandy": "Takie samo jak w Handy",
+    "output": "Urządzenie wyjściowe czytania na głos",
+    "sameAsHandy": "Takie samo jak {{device}}",
     "readCode": "Czytaj bloki kodu",
     "technicalReading": "Czytanie techniczne",
     "fullPaths": "Czytaj pełne ścieżki",
@@ -1250,49 +1354,22 @@
     },
     "voiceCount": "Liczba głosów: {{count}}",
     "downloadProgress": "Postęp pobierania modelu",
-    "settingsTitle": "Zamiana tekstu na mowę",
     "speedLabel": "Szybkość",
     "pitchLabel": "Wysokość tonu",
     "help": {
-      "model": "Wybierz pobrany model zamiany tekstu na mowę.",
-      "voice": "Wybierz głos dla tego modelu i posłuchaj próbki.",
+      "voice": "Wybierz głos dla tego modelu i posłuchaj go.",
       "speed": "Dostosuj szybkość czytania tekstu.",
       "pitch": "Dostosuj wysokość głosu w półtonach.",
       "output": "Wybierz, gdzie odtwarzany jest dźwięk czytania na głos.",
       "readCode": "Uwzględniaj bloki kodu w ogrodzeniu podczas czytania.",
       "technicalReading": "Wymawia w całości ścieżki, nazwy plików, flagi i nazwy w kodzie, korzystając z Twojego pliku słownika.",
       "fullPaths": "Czyta każdy folder w ścieżce. Po wyłączeniu czyta tylko nazwę pliku.",
-      "fullLinks": "Czyta cały adres internetowy. Po wyłączeniu mówi tylko nazwę witryny."
-    },
-    "tabs": {
-      "settings": "Ustawienia",
-      "history": "Historia",
-      "vocabulary": "Słownik"
+      "fullLinks": "Czyta cały adres internetowy. Po wyłączeniu mówi tylko nazwę witryny.",
+      "technicalOff": "Nieużywane, gdy czytanie techniczne jest wyłączone."
     },
     "history": {
-      "title": "Ustawienia historii",
       "reading": "Zapisane słowa z tym, co zostało powiedziane",
-      "hint": "Przeciągnij po słowach, aby zaznaczyć fragment i poprawić sposób jego czytania.",
-      "empty": "Nic jeszcze nie zostało przeczytane na głos. Odtworzone odczyty pojawią się tutaj.",
-      "limit": {
-        "title": "Limit historii",
-        "description": "Największa liczba odczytów przechowywanych w historii",
-        "entries": "odczytów"
-      },
-      "retention": {
-        "title": "Automatyczne usuwanie",
-        "description": "Automatycznie usuwaj też starsze odczyty",
-        "keepNothing": "Nigdy nie zapisuj",
-        "keepLimit": "Zachowaj ostatnie {{count}}",
-        "days3": "Po 3 dniach",
-        "weeks2": "Po 2 tygodniach",
-        "months3": "Po 3 miesiącach"
-      },
-      "clear": {
-        "title": "Wyczyść historię",
-        "description": "Usuwa wszystkie zapisane odczyty. Twój słownik się nie zmieni.",
-        "confirmation": "Usunąć wszystkie zapisane odczyty ({{count}})? Twój słownik się nie zmieni."
-      },
+      "readingHint": "Na górze tekst pisany, pod nim to, co zostało powiedziane. Przeciągnij po słowach, aby poprawić sposób ich odczytania.",
       "retentionConfirm": {
         "message_one": "Usunąć teraz {{count}} zapisany odczyt? Twój słownik się nie zmieni.",
         "message": "Usunąć teraz zapisane odczyty ({{count}})? Twój słownik się nie zmieni.",
@@ -1304,10 +1381,7 @@
         "written": "Zapis",
         "spoken": "Wymowa",
         "kind": "Rodzaj",
-        "voices": "Głosy",
-        "match": "Dopasowanie",
-        "enabled": "Włączony",
-        "actions": "Akcje"
+        "match": "Dopasowanie"
       },
       "kinds": {
         "symbol": "Symbol",
@@ -1315,10 +1389,9 @@
         "term": "Termin",
         "acronym": "Akronim"
       },
-      "voices": {
-        "all": "Wszystkie głosy",
-        "except": "oprócz {{names}}",
-        "add": "+ głos"
+      "models": {
+        "all": "Wszystkie modele",
+        "except": "oprócz {{names}}"
       },
       "origins": {
         "builtin": "Wbudowany",
@@ -1331,7 +1404,6 @@
         "listen": "Odsłuchaj",
         "delete": "Usuń",
         "reset": "Przywróć domyślne",
-        "save": "Zapisz",
         "cancel": "Anuluj"
       },
       "match": {
@@ -1347,13 +1419,13 @@
       },
       "filter": "Szukaj w zapisie lub wymowie",
       "toggle": "Użyj {{written}}",
-      "editTitle": "Edytuj wpis",
       "fields": {
         "skip": "Pomiń",
         "appliesTo": "Dotyczy"
       },
-      "empty": "Żaden wpis nie pasuje do filtra.",
-      "deleteConfirmation": "Usunąć {{written}} z Twojego słownika? Tej operacji nie można cofnąć.",
+      "emptyQuery": "Nic nie pasuje do „{{query}}”.",
+      "emptyFilters": "Nic nie pasuje do tych filtrów.",
+      "clearFilters": "Wyczyść filtry",
       "resetConfirm": "Przywrócić wbudowane czytanie {{written}}? Twój wpis zostanie usunięty.",
       "errors": {
         "changed": "Plik słownika zmienił się na dysku. Tabela została wczytana ponownie; powtórz zmianę.",
@@ -1361,7 +1433,7 @@
         "invalidEdit": "Nie udało się zapisać wpisu: {{message}}",
         "tooLarge": "Plik słownika przekroczyłby 1 MiB, więc nic nie zapisano.",
         "io": "Nie udało się zapisać pliku słownika: {{message}}",
-        "voicesChanged": "Słownik zmienił się w trakcie oczekiwania, więc zmiana głosów nie została zastosowana. Wybierz głosy ponownie."
+        "voicesChanged": "Słownik zmienił się w trakcie oczekiwania, więc zmiana nie została zastosowana."
       },
       "problems": {
         "shadowed": "Nigdy nie działa: zawsze wygrywa wpis o wyższym priorytecie",
@@ -1382,35 +1454,50 @@
         "invalid": "Nie można zapisać: {{detail}}"
       },
       "check": {
-        "title": "Sprawdzenie we wszystkich głosach",
+        "title": "Sprawdzenie we wszystkich modelach",
         "playAll": "Odtwórz wszystkie",
         "playing": "Odtwarzanie: {{model}}",
-        "checking": "Sprawdzanie każdego głosu...",
+        "checking": "Sprawdzanie każdego modelu...",
         "heardRight": "usłyszano poprawnie",
         "missed": "usłyszano błędnie: {{heard}}",
         "failed": "nie można sprawdzić: {{error}}",
         "row": "{{model}}: {{outcome}}",
-        "advisory": "Niektóre głosy nie przeczytały tego poprawnie. Nadal możesz to zapisać.",
-        "saveAllAnyway": "Mimo to zapisz dla wszystkich głosów",
-        "savePassedOnly": "Zapisz tylko dla głosów, które przeszły",
-        "pickOne": "Wybierz jeden głos",
+        "advisory": "Niektóre modele nie przeczytały tego poprawnie. Nadal możesz to zapisać.",
+        "saveAllAnyway": "Mimo to zapisz dla wszystkich modeli",
+        "savePassedOnly": "Zapisz tylko dla modeli, które przeszły",
+        "pickOne": "Wybierz jeden model",
         "dictating": "Trwa dyktowanie. Sprawdź ponownie, gdy się zakończy.",
         "transcribeFailed": "Rozpoznawanie mowy nie zdołało przepisać głosu."
       },
       "filters": {
-        "voice": "Głos",
+        "model": "Model",
         "kind": "Rodzaj",
         "source": "Źródło",
         "all": "Wszystkie",
         "changed": "Zmienione przez Ciebie",
-        "onlyProblems": "Tylko problemy"
+        "problems": "Problemy"
       },
       "defaultLabel": "domyślnie:",
-      "defaultLabelFor": "domyślnie dla {{voices}}:"
+      "defaultLabelFor": "domyślnie dla {{voices}}:",
+      "dialog": {
+        "editTitle": "Edytuj {{written}}",
+        "context": "{{written}}, teraz wymawiane jako {{spoken}}.",
+        "overrides": "Twój wpis zastępuje wbudowaną wymowę {{default}}.",
+        "builtinDelete": "Wbudowane wpisy można wyłączyć, ale nie usunąć.",
+        "deleteConfirm": "Usunąć {{written}}? Pozostałe twoje wpisy zostaną zachowane.",
+        "deleteAction": "Usuń wpis",
+        "conflict": "Plik słownika zmienił się na dysku i został wczytany ponownie. Sprawdź wpis, a potem zapisz ponownie.",
+        "refused": "Słownik się zmienił i tego wpisu nie można już zapisać w obecnej postaci. Sprawdź Dotyczy albo anuluj i dodaj go ponownie.",
+        "scopeRefused": "Tych modeli nie można zmienić dla tego wpisu."
+      },
+      "acronymStylePerModel": "Styl akronimów dla każdego modelu",
+      "invalid": {
+        "builtinUsed": "Do czasu naprawy używane są wbudowane odczyty.",
+        "reload": "Wczytaj ponownie",
+        "openFolder": "Otwórz folder"
+      }
     },
     "correction": {
-      "add": "Dodaj poprawkę",
-      "start": "Dodaj poprawkę",
       "writtenText": "Tekst pisany",
       "next": "Dalej",
       "title": "Popraw odczyt",
@@ -1421,12 +1508,11 @@
       "deriving": "Ustalanie reguły...",
       "exactOnly": "Tylko dokładnie ten tekst",
       "chooseScope": "Wybierz, gdzie obowiązuje",
-      "scopeRequired": "Przed zapisem wybierz Wszystkie głosy lub jeden głos.",
-      "acronymStyle": "Styl akronimów dla każdego głosu",
+      "scopeRequiredModels": "Przed zapisem wybierz Wszystkie modele lub jeden model.",
       "style": {
         "spaced": "Osobne litery (C L I)",
         "capitals": "Wielkie litery (CLI)",
-        "inherit": "Tak samo jak dla wszystkich głosów"
+        "inheritModels": "Tak samo jak dla wszystkich modeli"
       },
       "reach": {
         "extension": "dotyczy każdego pliku {{extension}}",
@@ -1447,5 +1533,67 @@
         "transcribeFailed": "Zamiana mowy na tekst nie zdołała przepisać tego, co powiedziano."
       }
     }
+  },
+  "history": {
+    "change": "Zmień",
+    "changeLabel": "Zmień sposób przechowywania historii",
+    "transcribeFile": "Transkrybuj plik",
+    "notKept": "Historia nie jest przechowywana.",
+    "empty": {
+      "dictation": "Brak jeszcze dyktowań.",
+      "dictationHint": "Naciśnij <dictate/>, aby dyktować, lub <cleanup/>, aby dyktować z porządkowaniem.",
+      "dictationHintDictate": "Naciśnij <keys/>, aby dyktować.",
+      "dictationHintCleanup": "Naciśnij <keys/>, aby dyktować z porządkowaniem.",
+      "read": "Nic jeszcze nie przeczytano.",
+      "readHint": "Skopiuj tekst i naciśnij <keys/>."
+    },
+    "summary": {
+      "dictation": {
+        "never": "Wszystkie wpisy są przechowywane. Wpisy z gwiazdką zostają zachowane.",
+        "none": "Żadne wpisy nie są przechowywane. Wpisy z gwiazdką i transkrybowane pliki zostają zachowane.",
+        "latest_one": "Przechowywany jest ostatni wpis. Wpisy z gwiazdką zostają zachowane.",
+        "latest": "Przechowywane wpisy: ostatnie {{count}}. Wpisy z gwiazdką zostają zachowane.",
+        "days3": "Wpisy starsze niż 3 dni są usuwane. Wpisy z gwiazdką zostają zachowane.",
+        "weeks2": "Wpisy starsze niż 2 tygodnie są usuwane. Wpisy z gwiazdką zostają zachowane.",
+        "months3": "Wpisy starsze niż 3 miesiące są usuwane. Wpisy z gwiazdką zostają zachowane."
+      },
+      "read": {
+        "latest_one": "Przechowywany jest ostatni wpis.",
+        "latest": "Przechowywane wpisy: ostatnie {{count}}.",
+        "days3_one": "Przechowywany jest ostatni wpis, żaden starszy niż 3 dni.",
+        "days3": "Przechowywane wpisy: ostatnie {{count}}, żaden starszy niż 3 dni.",
+        "weeks2_one": "Przechowywany jest ostatni wpis, żaden starszy niż 2 tygodnie.",
+        "weeks2": "Przechowywane wpisy: ostatnie {{count}}, żaden starszy niż 2 tygodnie.",
+        "months3_one": "Przechowywany jest ostatni wpis, żaden starszy niż 3 miesiące.",
+        "months3": "Przechowywane wpisy: ostatnie {{count}}, żaden starszy niż 3 miesiące."
+      }
+    },
+    "clear": {
+      "action": "Wyczyść historię",
+      "dictationConfirm_one": "Usunąć {{count}} wpis i {{recordings}}? Wpisy z gwiazdką zostają zachowane.",
+      "dictationConfirm": "Usunąć wpisy ({{count}}) i {{recordings}}? Wpisy z gwiazdką zostają zachowane.",
+      "recordings_one": "{{count}} nagranie",
+      "recordings": "nagrania ({{count}})",
+      "readConfirm_one": "Usunąć {{count}} wpis? Twój słownik się nie zmieni.",
+      "readConfirm": "Usunąć wpisy ({{count}})? Twój słownik się nie zmieni.",
+      "nothing": "Nie ma nic do wyczyszczenia."
+    },
+    "row": {
+      "open": "Pokaż wpis",
+      "close": "Ukryj wpis"
+    },
+    "copy": "Kopiuj tekst",
+    "copyCleaned": "Kopiuj uporządkowany tekst",
+    "copyOriginal": "Kopiuj oryginał",
+    "star": "Oznacz gwiazdką",
+    "unstar": "Usuń gwiazdkę",
+    "retranscribe": "Transkrybuj ponownie",
+    "cancelTranscription": "Anuluj transkrypcję",
+    "delete": "Usuń",
+    "cleanedWith": "Uporządkowano modelem {{model}}.",
+    "cleaned": "Uporządkowany tekst",
+    "original": "Oryginalna transkrypcja",
+    "diffNote": "Pokazano różnice względem oryginalnej transkrypcji.",
+    "noCleanup": "Bez porządkowania"
   }
 }

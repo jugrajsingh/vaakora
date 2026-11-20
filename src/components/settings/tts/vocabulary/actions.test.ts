@@ -8,8 +8,9 @@ import type {
   VocabularyTable,
 } from "@/bindings";
 import { createVocabularyActions, visibleFailures } from "./actions";
+import { deletePlan, entryEdits, resetPlan } from "./entryPlan";
 import { row } from "./fixtures";
-import { groupRows, voiceChangePlan } from "./groups";
+import { groupRows } from "./groups";
 const {
   describe,
   it,
@@ -29,29 +30,40 @@ const flip = (
     () => [{ kind: "set_enabled", id: owner.id, enabled: false }],
     base,
   );
-const table = (revision: string): VocabularyTable => ({
+const table = (
+  revision: string,
+  rows: EntryRow[] = [owner],
+): VocabularyTable => ({
   revision,
   path: "tts-vocabulary.json",
   file_error: null,
-  rows: [owner],
+  rows,
   acronym_styles: [],
 });
+const keyOf = (rows: EntryRow[], pick: (written: string) => boolean) => {
+  const found = groupRows(rows, CATALOG).find((g) => pick(g.written));
+  assert.ok(found);
+  return found.key;
+};
 
 function setup(
   options: {
-    confirm?: boolean | Promise<boolean>;
-    onConfirm?: (row: EntryRow) => void;
     results?: (VocabularyTable | SaveError)[];
     failListen?: Error;
     failSpeak?: Error;
     deferSecondLoad?: boolean;
+    /** The revisions loads return in order; `load-<n>` after them. */
+    revisions?: string[];
+    /** The load with this number fails. */
+    failLoad?: number;
+    /** The rows every load returns. */
+    rows?: EntryRow[];
   } = {},
 ) {
   const saves: { revision: string; edits: Edit[] }[] = [];
   const errors: [string | null, string?][] = [];
   const tables: string[] = [];
   const listens: [ListenText, string | null][] = [];
-  const discards: string[] = [];
   const previewListeners: ((message: string) => void)[] = [];
   const stopped: string[] = [];
   const events: string[] = [];
@@ -66,11 +78,12 @@ function setup(
           releaseLoad = resolve;
         });
       }
-      return table(`load-${n}`);
+      if (n === options.failLoad) throw new Error("tts.errors.localIo");
+      return table(options.revisions?.[n - 1] ?? `load-${n}`, options.rows);
     },
     save: async (revision, edits) => {
       saves.push({ revision, edits });
-      return results.shift() ?? table(`saved-${saves.length}`);
+      return results.shift() ?? table(`saved-${saves.length}`, options.rows);
     },
     listen: async (text, model) => {
       listens.push([text, model]);
@@ -80,18 +93,13 @@ function setup(
       if (options.failSpeak) throw options.failSpeak;
       return `${written} on ${model}`;
     },
-    confirmDelete: async (target) => {
-      options.onConfirm?.(target);
-      return options.confirm ?? true;
-    },
     setTable: (next) => {
       tables.push(next.revision);
       events.push(`setTable:${next.revision}`);
     },
-    setError: (...args) => errors.push(args),
-    discard: () => {
-      discards.push("discard");
-      events.push("discard");
+    setError: (...args) => {
+      errors.push(args);
+      events.push(`setError:${args[0]}`);
     },
     onPreviewError: async (listener) => {
       previewListeners.push(listener);
@@ -104,7 +112,6 @@ function setup(
     errors,
     tables,
     listens,
-    discards,
     events,
     releaseLoad: () => releaseLoad(),
     stopped,
@@ -113,6 +120,42 @@ function setup(
     loads: () => loads,
   };
 }
+
+/** Deletes the group whose written text is `written`, as the dialog's Delete does. */
+const deleteGroup = (
+  actions: ReturnType<typeof createVocabularyActions>,
+  rows: EntryRow[],
+  written: string,
+  base: string,
+) => {
+  const key = keyOf(rows, (found) => found === written);
+  const group = groupRows(rows, CATALOG).find((found) => found.key === key);
+  const opened = group?.members.map((member) => member.id.entry.model) ?? [];
+  return actions.saveEntry(
+    (latest) => deletePlan(latest.rows, CATALOG, key, opened),
+    base,
+  );
+};
+/** Resets the group whose written text is `written`, as the dialog's Reset does. */
+const resetGroup = (
+  actions: ReturnType<typeof createVocabularyActions>,
+  rows: EntryRow[],
+  written: string,
+  base: string,
+) => {
+  const key = keyOf(rows, (found) => found === written);
+  const group = groupRows(rows, CATALOG).find((found) => found.key === key);
+  const opened = group?.members.map((member) => member.id.entry.model) ?? [];
+  return actions.saveEntry(
+    (latest) => resetPlan(latest.rows, CATALOG, key, opened),
+    base,
+  );
+};
+const builtinMd = row("builtin", "extension", "md", { spoken: "markdown" });
+const overriding = row("owner", "extension", "md", {
+  spoken: "M D",
+  replaces_builtin: true,
+});
 
 describe("vocabulary actions", () => {
   it("toggle sends set_enabled with the loaded revision", async () => {
@@ -127,92 +170,111 @@ describe("vocabulary actions", () => {
     ]);
   });
   it("two edits based on one table are saved with the revision each follows", async () => {
-    const { actions, saves } = setup();
+    const rows = [builtinMd, overriding];
+    const { actions, saves } = setup({ rows });
     await actions.load();
     await Promise.all([
       flip(actions, "load-1"),
-      actions.reset([owner], "load-1"),
+      resetGroup(actions, rows, "md", "load-1"),
     ]);
     assert.deepEqual(
       saves.map((save) => save.revision),
       ["load-1", "saved-1"],
     );
   });
-  it("remove deletes the owner entry after confirmation", async () => {
-    const { actions, saves } = setup();
+  it("remove_deletes_owner_rows_without_asking", async () => {
+    const { actions, saves, events } = setup();
     await actions.load();
-    await actions.remove([owner], "load-1");
+    events.length = 0;
+    assert.deepEqual(await deleteGroup(actions, [owner], "md", "load-1"), {
+      status: "saved",
+    });
     assert.deepEqual(saves[0].edits, [
       { kind: "delete", entry: owner.id.entry },
     ]);
+    assert.deepEqual(events, ["setTable:saved-1", "setError:null"]);
   });
-  it("remove sends nothing when the owner declines", async () => {
-    const { actions, saves } = setup({ confirm: false });
+  it("remove_refuses_a_builtin_row", async () => {
+    const json = row("builtin", "extension", "json");
+    const { actions, saves } = setup({ rows: [json] });
     await actions.load();
-    assert.equal(await actions.remove([owner], "load-1"), false);
-    assert.deepEqual(saves, []);
-  });
-  it("remove never deletes a built-in row", async () => {
-    const { actions, saves } = setup();
-    await actions.load();
-    await actions.remove([row("builtin", "extension", "json")], "load-1");
+    assert.deepEqual(await deleteGroup(actions, [json], "json", "load-1"), {
+      status: "refused",
+      reason: "gone",
+    });
     assert.deepEqual(saves, []);
   });
   it("reset sends reset for the row's entry", async () => {
-    const { actions, saves } = setup();
+    const rows = [builtinMd, overriding];
+    const { actions, saves } = setup({ rows });
     await actions.load();
-    await actions.reset([owner], "load-1");
+    await resetGroup(actions, rows, "md", "load-1");
     assert.deepEqual(saves[0].edits, [
-      { kind: "reset", entry: owner.id.entry },
+      { kind: "reset", entry: overriding.id.entry },
     ]);
   });
-  it("put sends the entry, rule and previous key and reports it finished", async () => {
+  it("a new entry is saved at each checked scope in one save", async () => {
     const { actions, saves, tables } = setup();
     await actions.load();
-    const rule = { say: "M D", matching: null, case: null };
-    assert.equal(await actions.put([owner.id.entry], rule, [], "load-1"), true);
+    const rule = {
+      say: "cube control",
+      matching: "whole" as const,
+      case: true,
+    };
+    const draft = {
+      section: "term" as const,
+      written: "kubectl",
+      rule,
+      scopes: ["pocket-en", "supertonic-3"],
+      opened: [],
+    };
+    assert.deepEqual(
+      await actions.saveEntry(
+        (latest) => entryEdits(latest.rows, CATALOG, null, draft),
+        "load-1",
+      ),
+      { status: "saved" },
+    );
+    const entry = (model: string) => ({
+      section: "term",
+      model,
+      key: "kubectl",
+    });
+    assert.equal(saves.length, 1);
     assert.deepEqual(saves[0].edits, [
-      { kind: "put", entry: owner.id.entry, rule, previous: null },
+      { kind: "put", entry: entry("pocket-en"), rule, previous: null },
+      { kind: "put", entry: entry("supertonic-3"), rule, previous: null },
     ]);
     assert.equal(tables[tables.length - 1], "saved-1");
   });
-  it("put saves one rule for several voices in one save, renaming only the first", async () => {
-    const { actions, saves } = setup();
-    await actions.load();
-    const rule = { say: "M D", matching: null, case: null };
-    const pocket = { ...owner.id.entry, model: "pocket-en" };
-    const supertonic = { ...owner.id.entry, model: "supertonic-3" };
-    assert.equal(
-      await actions.put([pocket, supertonic], rule, [owner.id.entry], "load-1"),
-      true,
-    );
-    assert.equal(saves.length, 1);
-    assert.deepEqual(saves[0].edits, [
-      { kind: "put", entry: pocket, rule, previous: owner.id.entry },
-      { kind: "put", entry: supertonic, rule, previous: null },
-    ]);
-  });
-  it("remove deletes every owner row of a grouped row after one confirmation", async () => {
-    const confirmed: string[] = [];
-    const { actions, saves } = setup({
-      onConfirm: (row) => confirmed.push(row.id.entry.key),
-    });
+  it("remove deletes every owner row of a grouped row in one save", async () => {
     const pocket = row("owner", "term", "kubectl", { model: "pocket-en" });
     const phonon = row("owner", "term", "kubectl", { model: "phonon" });
+    const rows = [pocket, phonon];
+    const { actions, saves } = setup({ rows });
     await actions.load();
-    await actions.remove([pocket, phonon], "load-1");
-    assert.deepEqual(confirmed, ["kubectl"]);
+    await deleteGroup(actions, rows, "kubectl", "load-1");
+    assert.equal(saves.length, 1);
     assert.deepEqual(saves[0].edits, [
       { kind: "delete", entry: pocket.id.entry },
       { kind: "delete", entry: phonon.id.entry },
     ]);
   });
   it("reset puts back the built-in default of every row of a grouped row in one save", async () => {
-    const { actions, saves } = setup();
+    const at = (origin: "owner" | "builtin", model: string) =>
+      row(origin, "extension", "md", {
+        model,
+        spoken: origin === "owner" ? "M D" : "markdown",
+        replaces_builtin: origin === "owner",
+      });
+    const pocket = at("owner", "pocket-en");
+    const phonon = at("owner", "phonon");
+    const rows = [at("builtin", "pocket-en"), at("builtin", "phonon")];
+    rows.push(pocket, phonon);
+    const { actions, saves } = setup({ rows });
     await actions.load();
-    const pocket = row("owner", "extension", "md", { model: "pocket-en" });
-    const phonon = row("owner", "extension", "md", { model: "phonon" });
-    await actions.reset([pocket, phonon], "load-1");
+    await resetGroup(actions, rows, "md", "load-1");
+    assert.equal(saves.length, 1);
     assert.deepEqual(saves[0].edits, [
       { kind: "reset", entry: pocket.id.entry },
       { kind: "reset", entry: phonon.id.entry },
@@ -263,7 +325,7 @@ describe("vocabulary actions", () => {
     assert.deepEqual(saves, []);
     assert.deepEqual(errors, [["tts.vocabulary.errors.voicesChanged"]]);
   });
-  it("a second voice change queued behind a first that takes the same voice is refused, keeping the first entry", async () => {
+  it("a second entry save queued behind a first that takes the same model is refused, keeping the first entry", async () => {
     const kubectl = (model: string, spoken: string) =>
       row("owner", "term", "kubectl", { model, spoken });
     let store = [
@@ -271,18 +333,11 @@ describe("vocabulary actions", () => {
       kubectl("phonon", "kube control"),
     ];
     const saved: Edit[][] = [];
-    const errors: (string | null)[] = [];
     let release: () => void = () => {};
     const firstSave = new Promise<void>((resolve) => {
       release = resolve;
     });
-    const tableOf = (revision: string): VocabularyTable => ({
-      revision,
-      path: "tts-vocabulary.json",
-      file_error: null,
-      rows: store,
-      acronym_styles: [],
-    });
+    const tableOf = (revision: string) => table(revision, store);
     const actions = createVocabularyActions({
       load: async () => tableOf("load-1"),
       save: async (_revision, edits) => {
@@ -302,45 +357,40 @@ describe("vocabulary actions", () => {
       },
       listen: async () => {},
       speak: async () => "",
-      confirmDelete: async () => true,
       setTable: () => {},
-      setError: (key) => errors.push(key),
-      discard: () => {},
+      setError: () => {},
       onPreviewError: async () => () => {},
     });
     await actions.load();
-    const keyOf = (spoken: string) => {
-      const found = groupRows(store, CATALOG).find((g) => g.spoken === spoken);
-      assert.ok(found, spoken);
-      return found.key;
-    };
-    const cube = keyOf("cube control");
-    const kube = keyOf("kube control");
-    const addSupertonic = (groupKey: string) =>
-      actions.applyPlan(
-        (latest) =>
-          voiceChangePlan(
-            latest.rows,
-            CATALOG,
-            groupKey,
-            "supertonic-3",
-            false,
-          ),
+    const addSupertonic = (spoken: string, model: string) => {
+      const key = groupRows(store, CATALOG).find(
+        (g) => g.spoken === spoken,
+      )?.key;
+      assert.ok(key, spoken);
+      const draft = {
+        section: "term" as const,
+        written: "kubectl",
+        rule: { say: spoken, matching: "whole" as const, case: true },
+        scopes: [model, "supertonic-3"],
+        opened: [model],
+      };
+      return actions.saveEntry(
+        (latest) => entryEdits(latest.rows, CATALOG, key, draft),
         "load-1",
       );
-    const first = addSupertonic(cube);
-    const second = addSupertonic(kube);
+    };
+    const first = addSupertonic("cube control", "pocket-en");
+    const second = addSupertonic("kube control", "phonon");
     release();
-    assert.deepEqual(await Promise.all([first, second]), [true, false]);
+    assert.deepEqual(await Promise.all([first, second]), [
+      { status: "saved" },
+      { status: "refused", reason: "taken" },
+    ]);
     assert.equal(saved.length, 1);
     const at = (model: string) =>
       store.find((r) => r.id.entry.model === model)?.spoken;
     assert.equal(at("supertonic-3"), "cube control");
     assert.equal(at("phonon"), "kube control");
-    assert.equal(
-      errors[errors.length - 1],
-      "tts.vocabulary.errors.voicesChanged",
-    );
   });
   it("conflict_reloads_and_reports", async () => {
     const { actions, errors, loads, tables } = setup({
@@ -366,17 +416,13 @@ describe("vocabulary actions", () => {
       ["tts.vocabulary.errors.fileInvalid", "bad json"],
     ]);
   });
-  it("an invalid edit keeps the editor open with the reason", async () => {
+  it("an invalid edit reports the reason on the tab", async () => {
     const { actions, errors } = setup({
       results: [{ kind: "invalid_edit", message: "no spaces" }],
     });
     await actions.load();
     errors.length = 0;
-    const rule = { say: "x", matching: null, case: null };
-    assert.equal(
-      await actions.put([owner.id.entry], rule, [], "load-1"),
-      false,
-    );
+    assert.equal(await flip(actions, "load-1"), false);
     assert.deepEqual(errors, [
       ["tts.vocabulary.errors.invalidEdit", "no spaces"],
     ]);
@@ -397,61 +443,58 @@ describe("vocabulary actions", () => {
     await actions.listen(owner);
     assert.deepEqual(errors, [["tts.errors.notDownloaded"]]);
   });
-  it("a second put queued behind a conflict is dropped, not saved on the reloaded revision", async () => {
+  it("a second entry save queued behind a conflict reports the conflict and writes nothing", async () => {
     const { actions, saves, errors } = setup({
       results: [{ kind: "changed" }],
     });
     await actions.load();
     errors.length = 0;
-    const first = { say: "first", matching: null, case: null };
-    const second = { say: "second", matching: null, case: null };
-    await Promise.all([
-      actions.put([owner.id.entry], first, [], "load-1"),
-      actions.put([owner.id.entry], second, [], "load-1"),
-    ]);
+    const edits = (say: string): Edit[] => [
+      {
+        kind: "put",
+        entry: owner.id.entry,
+        rule: { say, matching: null, case: null },
+        previous: owner.id.entry,
+      },
+    ];
+    assert.deepEqual(
+      await Promise.all([
+        actions.saveEntry(() => edits("first"), "load-1"),
+        actions.saveEntry(() => edits("second"), "load-1"),
+      ]),
+      [
+        { status: "conflict", revision: "load-2" },
+        { status: "conflict", revision: "load-2" },
+      ],
+    );
     assert.equal(saves.length, 1);
-    assert.deepEqual(errors, [["tts.vocabulary.errors.changed"]]);
+    assert.deepEqual(errors, []);
   });
-  it("a delete confirmed after a conflict is dropped", async () => {
-    let answer: (yes: boolean) => void = () => {};
-    const { actions, saves } = setup({
-      confirm: new Promise<boolean>((resolve) => {
-        answer = resolve;
-      }),
-      results: [{ kind: "changed" }],
-    });
+  it("a delete queued behind a conflict is a conflict and deletes nothing", async () => {
+    const { actions, saves } = setup({ results: [{ kind: "changed" }] });
     await actions.load();
-    const removing = actions.remove([owner], "load-1");
-    await flip(actions, "load-1");
-    answer(true);
-    assert.equal(await removing, false);
+    const flipping = flip(actions, "load-1");
+    const removing = deleteGroup(actions, [owner], "md", "load-1");
+    await flipping;
+    assert.deepEqual(await removing, {
+      status: "conflict",
+      revision: "load-2",
+    });
     assert.equal(saves.length, 1);
   });
-  it("a conflict discards the open draft", async () => {
-    const { actions, discards } = setup({ results: [{ kind: "changed" }] });
+  it("a_conflict_leaves_the_dialog_to_its_host", async () => {
+    const { actions, events } = setup({ results: [{ kind: "changed" }] });
     await actions.load();
-    discards.length = 0;
-    await flip(actions, "load-1");
-    assert.equal(discards.length, 1);
-  });
-  it("a file with an error discards the open draft", async () => {
-    const { actions, discards } = setup({
-      results: [{ kind: "file_invalid", message: "bad json" }],
+    events.length = 0;
+    assert.deepEqual(await deleteGroup(actions, [owner], "md", "load-1"), {
+      status: "conflict",
+      revision: "load-2",
     });
-    await actions.load();
-    discards.length = 0;
-    await flip(actions, "load-1");
-    assert.equal(discards.length, 1);
-  });
-  it("a saved edit and an invalid edit keep the open draft", async () => {
-    const { actions, discards } = setup({
-      results: [{ kind: "invalid_edit", message: "no spaces" }],
-    });
-    await actions.load();
-    discards.length = 0;
-    await flip(actions, "load-1");
-    await flip(actions, "load-1");
-    assert.equal(discards.length, 0);
+    assert.deepEqual(
+      events,
+      ["setTable:load-2"],
+      "the reload only replaces the table",
+    );
   });
   it("a preview error after Listen is shown on the tab", async () => {
     const { actions, errors, emitPreviewError } = setup();
@@ -492,11 +535,7 @@ describe("vocabulary actions", () => {
     ]);
   });
   it("edits asked on the old table are dropped when a pending reload resolves", async () => {
-    let answer: (yes: boolean) => void = () => {};
     const { actions, saves, errors, releaseLoad } = setup({
-      confirm: new Promise<boolean>((resolve) => {
-        answer = resolve;
-      }),
       results: [{ kind: "changed" }],
       deferSecondLoad: true,
     });
@@ -504,11 +543,12 @@ describe("vocabulary actions", () => {
     errors.length = 0;
     const first = flip(actions, "load-1");
     await new Promise((resolve) => setTimeout(resolve));
-    const removing = actions.remove([owner], "load-1");
+    const removing = deleteGroup(actions, [owner], "md", "load-1");
     const second = flip(actions, "load-1");
     releaseLoad();
-    answer(true);
-    await Promise.all([first, removing, second]);
+    const [, removed, flipped] = await Promise.all([first, removing, second]);
+    assert.deepEqual(removed, { status: "conflict", revision: "load-2" });
+    assert.equal(flipped, false);
     assert.equal(saves.length, 1);
     assert.deepEqual(errors, [["tts.vocabulary.errors.changed"]]);
   });
@@ -516,24 +556,24 @@ describe("vocabulary actions", () => {
     const { actions, saves } = setup();
     await actions.load();
     assert.equal(await flip(actions, "load-0"), false);
+    assert.deepEqual(await deleteGroup(actions, [owner], "md", "load-0"), {
+      status: "conflict",
+      revision: "load-1",
+    });
     assert.deepEqual(saves, []);
   });
   it("an edit based on a revision an earlier save returned is saved with the latest", async () => {
-    const { actions, saves } = setup();
+    const rows = [builtinMd, overriding];
+    const { actions, saves } = setup({ rows });
     await actions.load();
     await flip(actions, "load-1");
-    await actions.reset([owner], "saved-1");
+    assert.deepEqual(await resetGroup(actions, rows, "md", "saved-1"), {
+      status: "saved",
+    });
     assert.deepEqual(
       saves.map((save) => save.revision),
       ["load-1", "saved-1"],
     );
-  });
-  it("the draft is discarded after the reloaded table is shown", async () => {
-    const { actions, events } = setup({ results: [{ kind: "changed" }] });
-    await actions.load();
-    events.length = 0;
-    await flip(actions, "load-1");
-    assert.deepEqual(events, ["setTable:load-2", "discard"]);
   });
   it("sets and clears an acronym style with the loaded revision", async () => {
     const { actions, saves } = setup();
@@ -575,5 +615,124 @@ describe("vocabulary actions", () => {
     const bad = setup({ failSpeak: new Error("tts.errors.text") });
     assert.equal(await bad.actions.speak("a.md", "pocket-en"), null);
     assert.deepEqual(bad.errors, [["tts.errors.text"]]);
+  });
+});
+
+describe("saveEntry", () => {
+  const edits: Edit[] = [{ kind: "delete", entry: owner.id.entry }];
+
+  it("conflict_returns_the_reloaded_revision", async () => {
+    const { actions, errors, tables } = setup({
+      revisions: ["rev-1", "rev-2"],
+      results: [{ kind: "changed" }],
+    });
+    await actions.load();
+    errors.length = 0;
+    assert.deepEqual(await actions.saveEntry(() => edits, "rev-1"), {
+      status: "conflict",
+      revision: "rev-2",
+    });
+    assert.equal(tables[tables.length - 1], "rev-2");
+    assert.deepEqual(errors, []);
+  });
+  it("a_save_based_on_a_replaced_table_is_a_conflict_not_a_drop", async () => {
+    const { actions, saves } = setup({ revisions: ["rev-0", "rev-2"] });
+    await actions.load();
+    await actions.load();
+    let planned = 0;
+    const result = await actions.saveEntry(() => {
+      planned += 1;
+      return edits;
+    }, "rev-0");
+    assert.deepEqual(result, { status: "conflict", revision: "rev-2" });
+    assert.equal(planned, 0);
+    assert.deepEqual(saves, []);
+  });
+  it("the_save_after_a_conflict_uses_the_reloaded_revision", async () => {
+    const { actions, saves } = setup({
+      revisions: ["rev-1", "rev-2"],
+      results: [{ kind: "changed" }],
+    });
+    await actions.load();
+    const first = await actions.saveEntry(() => edits, "rev-1");
+    assert.equal(first.status, "conflict");
+    const seen: string[] = [];
+    const second = await actions.saveEntry(
+      (latest) => {
+        seen.push(latest.revision);
+        return edits;
+      },
+      first.status === "conflict" ? first.revision : "",
+    );
+    assert.deepEqual(second, { status: "saved" });
+    assert.deepEqual(seen, ["rev-2"]);
+    assert.deepEqual(
+      saves.map((save) => save.revision),
+      ["rev-1", "rev-2"],
+    );
+  });
+  it("a_plan_that_no_longer_applies_is_refused", async () => {
+    const { actions, saves, errors } = setup();
+    await actions.load();
+    errors.length = 0;
+    assert.deepEqual(await actions.saveEntry(() => "gone", "load-1"), {
+      status: "refused",
+      reason: "gone",
+    });
+    assert.deepEqual(saves, []);
+    assert.deepEqual(errors, []);
+  });
+  it("a_failed_save_reports_its_failure", async () => {
+    const { actions, errors } = setup({
+      results: [{ kind: "invalid_edit", message: "no spaces" }],
+    });
+    await actions.load();
+    errors.length = 0;
+    assert.deepEqual(await actions.saveEntry(() => edits, "load-1"), {
+      status: "failed",
+      failure: {
+        key: "tts.vocabulary.errors.invalidEdit",
+        message: "no spaces",
+      },
+    });
+    assert.deepEqual(errors, []);
+  });
+  it("an_empty_plan_is_saved_without_writing", async () => {
+    const { actions, saves } = setup();
+    await actions.load();
+    assert.deepEqual(await actions.saveEntry(() => [], "load-1"), {
+      status: "saved",
+    });
+    assert.deepEqual(saves, []);
+  });
+  it("a_saved_plan_shows_the_saved_table", async () => {
+    const { actions, saves, tables } = setup();
+    await actions.load();
+    assert.deepEqual(await actions.saveEntry(() => edits, "load-1"), {
+      status: "saved",
+    });
+    assert.deepEqual(saves, [{ revision: "load-1", edits }]);
+    assert.equal(tables[tables.length - 1], "saved-1");
+  });
+  it("a_conflict_whose_reload_fails_reports_the_reload_failure", async () => {
+    const { actions, errors } = setup({
+      results: [{ kind: "changed" }],
+      failLoad: 2,
+    });
+    await actions.load();
+    errors.length = 0;
+    assert.deepEqual(await actions.saveEntry(() => edits, "load-1"), {
+      status: "failed",
+      failure: { key: "tts.errors.localIo" },
+    });
+    assert.deepEqual(errors, [["tts.errors.localIo"]]);
+  });
+  it("a_save_before_any_table_fails", async () => {
+    const { actions, saves } = setup();
+    assert.deepEqual(await actions.saveEntry(() => edits, "load-1"), {
+      status: "failed",
+      failure: { key: "tts.errors.generic" },
+    });
+    assert.deepEqual(saves, []);
   });
 });

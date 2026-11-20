@@ -18,7 +18,7 @@ const i18n = i18next.createInstance();
 await i18n.init({ lng: "en", resources: { en: { translation: en } } });
 
 describe("AcronymStyles", () => {
-  it("is a collapsed section titled per voice with the same controls inside", () => {
+  it("is a collapsed section titled per model with the same controls inside", () => {
     const html = renderToStaticMarkup(
       <I18nextProvider i18n={i18n}>
         <AcronymStyles
@@ -33,7 +33,7 @@ describe("AcronymStyles", () => {
       </I18nextProvider>,
     );
     assert.match(html, /^<details(?![^>]*\bopen\b)[^>]*>/);
-    assert.match(html, /<summary[^>]*>Acronym style per voice<\/summary>/);
-    assert.ok(html.includes("All voices") && html.includes("Pocket TTS"));
+    assert.match(html, /<summary[^>]*>Acronym style per model<\/summary>/);
+    assert.ok(html.includes("All models") && html.includes("Pocket TTS"));
   });
 });

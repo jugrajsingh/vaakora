@@ -151,24 +151,23 @@ pub(crate) fn clear_binding_with(
     id: &str,
     unregister: impl FnOnce(&ShortcutBinding) -> Result<(), String>,
 ) -> Result<ShortcutBinding, String> {
-    if !settings.post_process_enabled
-        || !matches!(id, "transcribe" | "transcribe_with_post_process")
-    {
-        return Err(
-            "Only dictation shortcuts can be cleared while post-processing is enabled".into(),
-        );
-    }
-    let other = if id == "transcribe" {
-        "transcribe_with_post_process"
-    } else {
-        "transcribe"
-    };
-    if settings
-        .bindings
-        .get(other)
-        .is_none_or(|binding| binding.current_binding.trim().is_empty())
-    {
-        return Err("At least one dictation shortcut must remain assigned".into());
+    match id {
+        "read_aloud" => {}
+        "transcribe" | "transcribe_with_post_process" if settings.post_process_enabled => {
+            let other = if id == "transcribe" {
+                "transcribe_with_post_process"
+            } else {
+                "transcribe"
+            };
+            if settings
+                .bindings
+                .get(other)
+                .is_none_or(|binding| binding.current_binding.trim().is_empty())
+            {
+                return Err("At least one dictation shortcut must remain assigned".into());
+            }
+        }
+        _ => return Err(format!("The '{id}' shortcut cannot be cleared")),
     }
     let mut binding = settings
         .bindings
@@ -254,6 +253,17 @@ mod tests {
         );
         settings.post_process_enabled = false;
         assert!(clear_binding_with(&mut settings, "transcribe", |_| Ok(())).is_err());
+    }
+    #[test]
+    fn read_aloud_clears_with_or_without_cleanup() {
+        for enabled in [false, true] {
+            let mut settings = get_default_settings();
+            settings.post_process_enabled = enabled;
+            assert!(!settings.bindings["read_aloud"].current_binding.is_empty());
+            let cleared = clear_binding_with(&mut settings, "read_aloud", |_| Ok(())).unwrap();
+            assert!(cleared.current_binding.is_empty());
+            assert!(settings.bindings["read_aloud"].current_binding.is_empty());
+        }
     }
     #[test]
     fn clear_does_not_persist_after_unregister_failure() {

@@ -1,13 +1,12 @@
 import type {
   AcronymStyle,
   Edit,
-  EntryKey,
   EntryRow,
   ListenText,
-  Rule,
   SaveError,
   VocabularyTable,
 } from "@/bindings";
+import type { EntryPlan, EntryRefusal } from "./entryPlan";
 
 const ERRORS = "tts.vocabulary.errors";
 
@@ -19,11 +18,8 @@ export interface VocabularyDependencies {
   ) => Promise<VocabularyTable | SaveError>;
   listen: (text: ListenText, model: string | null) => Promise<void>;
   speak: (written: string, model: string) => Promise<string>;
-  confirmDelete: (row: EntryRow) => Promise<boolean>;
   setTable: (table: VocabularyTable) => void;
   setError: (key: string | null, message?: string) => void;
-  /** A table was loaded, first or after a conflict: close any open draft. */
-  discard: () => void;
   /** Failures of a Listen after its command was accepted; resolves to an unsubscribe. */
   onPreviewError: (listener: (message: string) => void) => Promise<() => void>;
 }
@@ -66,6 +62,21 @@ export function saveFailure(error: SaveError): Failure {
   }
 }
 
+/**
+ * What a dialog save did: saved, a conflict (the table was reloaded; `revision` is the one now
+ * shown), refused by its plan, or failed with nothing written.
+ */
+export type SaveResult =
+  | { status: "saved" }
+  | { status: "conflict"; revision: string }
+  | { status: "refused"; reason: EntryRefusal }
+  | { status: "failed"; failure: Failure };
+
+/** What one save did; `unloaded` is a conflict whose reload failed. */
+type Applied =
+  | Exclude<SaveResult, { status: "refused" }>
+  | { status: "unloaded"; failure: Failure };
+
 /** Backend errors arrive as `tts.errors.*` keys; anything else is the generic failure. */
 const keyOf = (message: string) =>
   message.startsWith("tts.errors.") ? message : "tts.errors.generic";
@@ -85,48 +96,70 @@ export function createVocabularyActions(deps: VocabularyDependencies) {
   let lineage: string[] = [];
   let queue: Promise<unknown> = Promise.resolve();
 
-  const reload = async () => {
+  /** Loads and shows the table; a failure is shown on the tab and returned. */
+  const reload = async (): Promise<
+    { loaded: VocabularyTable } | { failure: Failure }
+  > => {
     try {
-      table = await deps.load();
-      deps.setTable(table);
-      lineage = [table.revision];
-      deps.discard();
-      return true;
+      const loaded = await deps.load();
+      table = loaded;
+      deps.setTable(loaded);
+      lineage = [loaded.revision];
+      return { loaded };
     } catch (reason) {
-      deps.setError(errorKey(reason));
-      return false;
+      const failure = { key: errorKey(reason) };
+      deps.setError(failure.key);
+      return { failure };
     }
   };
 
-  /** True when the edit is finished: saved, or the table was reloaded after a conflict. */
-  const apply = async (edits: Edit[]) => {
-    if (!table) return false;
+  /** Sends one save; on the tab it only clears on success or shows a failed reload. */
+  const apply = async (
+    current: VocabularyTable,
+    edits: Edit[],
+  ): Promise<Applied> => {
     try {
-      const result = await deps.save(table.revision, edits);
+      const result = await deps.save(current.revision, edits);
       if (!("kind" in result)) {
         table = result;
         deps.setTable(result);
         lineage.push(result.revision);
         deps.setError(null);
-        return true;
+        return { status: "saved" };
       }
-      const failure = saveFailure(result);
       if (result.kind === "changed") {
-        if (await reload()) deps.setError(failure.key);
-        return true;
+        const reloaded = await reload();
+        return "failure" in reloaded
+          ? { status: "unloaded", failure: reloaded.failure }
+          : { status: "conflict", revision: reloaded.loaded.revision };
       }
       if (result.kind === "file_invalid") await reload();
-      deps.setError(failure.key, failure.message);
-      return false;
+      return { status: "failed", failure: saveFailure(result) };
     } catch (reason) {
-      deps.setError(errorKey(reason));
-      return false;
+      return { status: "failed", failure: { key: errorKey(reason) } };
+    }
+  };
+
+  /** True when the edit is finished: saved, or the table was reloaded after a conflict. */
+  const finish = async (edits: Edit[]) => {
+    if (!table) return false;
+    const applied = await apply(table, edits);
+    switch (applied.status) {
+      case "saved":
+      case "unloaded":
+        return true;
+      case "conflict":
+        deps.setError(`${ERRORS}.changed`);
+        return true;
+      case "failed":
+        deps.setError(applied.failure.key, applied.failure.message);
+        return false;
     }
   };
 
   const run = (edits: Edit[], base: string) => {
     const next = queue.then(() =>
-      lineage.includes(base) ? apply(edits) : false,
+      lineage.includes(base) ? finish(edits) : false,
     );
     queue = next;
     return next;
@@ -134,26 +167,8 @@ export function createVocabularyActions(deps: VocabularyDependencies) {
 
   return {
     load: async () => {
-      if (await reload()) deps.setError(null);
+      if ("loaded" in (await reload())) deps.setError(null);
     },
-    /** Deletes every owner row after one confirmation, in one save. */
-    remove: async (rows: readonly EntryRow[], base: string) => {
-      if (
-        rows.some((row) => row.id.origin !== "owner") ||
-        !(await deps.confirmDelete(rows[0]))
-      ) {
-        return false;
-      }
-      return run(
-        rows.map((row) => ({ kind: "delete", entry: row.id.entry })),
-        base,
-      );
-    },
-    reset: (rows: readonly EntryRow[], base: string) =>
-      run(
-        rows.map((row) => ({ kind: "reset", entry: row.id.entry })),
-        base,
-      ),
     /**
      * Saves the edits `plan` makes from the latest table, in one save. The plan runs when the
      * edit leaves the queue, so an edit queued behind another sees what that one saved; a plan
@@ -170,30 +185,41 @@ export function createVocabularyActions(deps: VocabularyDependencies) {
           deps.setError(`${ERRORS}.voicesChanged`);
           return false;
         }
-        return edits.length === 0 ? false : apply(edits);
+        return edits.length === 0 ? false : finish(edits);
       });
       queue = next;
       return next;
     },
     /**
-     * One save puts the rule at every entry; `previous[i]` is the key entry `i` replaces (a
-     * rename), or none.
+     * Saves the edits `plan` makes from the latest table, queued like `applyPlan`, and reports
+     * the outcome only through its result. A `base` this table no longer has, or a save the
+     * file changed under, is a conflict: nothing is saved and the result names the revision now
+     * shown.
      */
-    put: (
-      entries: readonly EntryKey[],
-      rule: Rule,
-      previous: readonly (EntryKey | null)[],
+    saveEntry: (
+      plan: (latest: VocabularyTable) => EntryPlan,
       base: string,
-    ) =>
-      run(
-        entries.map((entry, index) => ({
-          kind: "put",
-          entry,
-          rule,
-          previous: previous[index] ?? null,
-        })),
-        base,
-      ),
+    ): Promise<SaveResult> => {
+      const next = queue.then(async (): Promise<SaveResult> => {
+        if (!table) {
+          return { status: "failed", failure: { key: "tts.errors.generic" } };
+        }
+        if (!lineage.includes(base)) {
+          return { status: "conflict", revision: table.revision };
+        }
+        const edits = plan(table);
+        if (typeof edits === "string") {
+          return { status: "refused", reason: edits };
+        }
+        if (edits.length === 0) return { status: "saved" };
+        const applied = await apply(table, edits);
+        return applied.status === "unloaded"
+          ? { status: "failed", failure: applied.failure }
+          : applied;
+      });
+      queue = next;
+      return next;
+    },
     /** `null` removes the owner's choice for the voice (every voice when `model` is `null`). */
     setAcronymStyle: (
       model: string | null,

@@ -49,16 +49,8 @@ export interface RowGroup {
   changed: boolean;
 }
 
-/** All voices, or an explicit list of voice models. */
+/** All models, or an explicit list of voice models. */
 export type VoiceTarget = { all: true } | { models: string[] };
-
-export interface VoiceOption {
-  /** `null` is "All voices". */
-  voice: string | null;
-  selected: boolean;
-  /** Whether choosing it changes the row; false when no safe edit makes the change. */
-  enabled: boolean;
-}
 
 const scopeId = (row: EntryRow) =>
   JSON.stringify([row.id.entry.section, row.id.entry.model, row.id.entry.key]);
@@ -209,7 +201,7 @@ export function groupRows(
 }
 
 /** The rule that writes a group's reading back as an owner entry. */
-function ruleOf(group: RowGroup): Rule {
+export function ruleOf(group: RowGroup): Rule {
   const { matching } = group;
   if (typeof matching !== "string") {
     return {
@@ -232,7 +224,7 @@ const entryAt = (group: RowGroup, model: string | null) => ({
 });
 
 /** Members in the order a plan writes them: all voices first, then catalog order. */
-const scopesOf = (group: RowGroup, modelIds: readonly string[]) => {
+export const scopesOf = (group: RowGroup, modelIds: readonly string[]) => {
   const sortModels = byCatalog(modelIds);
   return [
     ...(group.all ? [null] : []),
@@ -309,64 +301,6 @@ export function voicesPlan(
   ];
 }
 
-/** The target after choosing `voice` (`null` is all voices), or `null` when it makes no sense. */
-function toggled(
-  group: RowGroup,
-  voice: string | null,
-  modelIds: readonly string[],
-): VoiceTarget | null {
-  if (voice === null) return group.all ? null : { all: true };
-  if (group.all) {
-    return group.except.includes(voice)
-      ? null
-      : {
-          models: modelIds.filter(
-            (id) => id !== voice && !group.except.includes(id),
-          ),
-        };
-  }
-  const models = group.models.includes(voice)
-    ? group.models.filter((id) => id !== voice)
-    : [...group.models, voice].sort(byCatalog(modelIds));
-  return { models };
-}
-
-/**
- * The edits that choose or drop `voice` (`null` is all voices) on `group`, or `null` when no safe
- * edit does.
- */
-export function voiceEdits(
-  group: RowGroup,
-  voice: string | null,
-  groups: readonly RowGroup[],
-  modelIds: readonly string[],
-): Edit[] | null {
-  const target = toggled(group, voice, modelIds);
-  return target && voicesPlan(group, target, groups, modelIds);
-}
-
-/** Every choice the voices picker offers for `group`: all voices, then each voice model. */
-export function voiceOptions(
-  group: RowGroup,
-  groups: readonly RowGroup[],
-  modelIds: readonly string[],
-): VoiceOption[] {
-  const voices = [
-    ...modelIds,
-    ...group.models.filter((id) => !modelIds.includes(id)),
-  ];
-  return [null, ...voices].map((voice) => ({
-    voice,
-    selected:
-      voice === null
-        ? group.all
-        : group.all
-          ? !group.except.includes(voice)
-          : group.models.includes(voice),
-    enabled: voiceEdits(group, voice, groups, modelIds) !== null,
-  }));
-}
-
 /**
  * The edits that switch `group` off, or back on when it is off, in one save. A built-in row for
  * all voices is switched off by a top-level switch that also turns off the same built-in entry in
@@ -421,26 +355,4 @@ export function switchPlanFor(
   const groups = groupRows(rows, modelIds);
   const group = groups.find((found) => found.key === key);
   return group ? switchPlan(group, groups) : null;
-}
-
-/**
- * The edits that choose or drop `voice` on the group with `key`, planned against the latest
- * `rows`. `null` when the row is gone, `voice` is on the other side than when the choice was
- * offered (`selected`), or no safe edit makes it now (a voice another reading took meanwhile).
- */
-export function voiceChangePlan(
-  rows: readonly EntryRow[],
-  modelIds: readonly string[],
-  key: string,
-  voice: string | null,
-  selected: boolean,
-): Edit[] | null {
-  const groups = groupRows(rows, modelIds);
-  const group = groups.find((found) => found.key === key);
-  if (!group) return null;
-  const option = voiceOptions(group, groups, modelIds).find(
-    (found) => found.voice === voice,
-  );
-  if (!option || option.selected !== selected) return null;
-  return voiceEdits(group, voice, groups, modelIds);
 }

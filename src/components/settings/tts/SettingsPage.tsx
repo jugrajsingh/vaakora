@@ -1,46 +1,83 @@
+import type React from "react";
 import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { listen, emit } from "@tauri-apps/api/event";
-import { commands, type Selection, type TtsModelInfo } from "@/bindings";
+import {
+  commands,
+  type ReadHistoryEntry,
+  type Selection,
+  type TtsModelInfo,
+} from "@/bindings";
 import { useSettings } from "@/hooks/useSettings";
 import { unwrapTts } from "./ModelsPage";
 import { previewVoice, selectionEntries } from "./actions";
+import {
+  createRetentionActions,
+  createSettingSetters,
+} from "./history/actions";
+import { ReadRetentionGroup } from "./history/ReadRetentionGroup";
 import { ModelSelect } from "./ModelSelect";
-import { TtsTabs } from "./TtsTabs";
-import { visibleTabs, type TtsTab } from "./tabs";
 import { ReadHistoryTab } from "./history/ReadHistoryTab";
 import { VocabularyTab } from "./vocabulary/VocabularyTab";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { SettingContainer } from "@/components/ui/SettingContainer";
+import {
+  JobModelGroup,
+  jobModelState,
+} from "@/components/shared/JobModelGroup";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
 import { Slider } from "@/components/ui/Slider";
 import { ToggleSwitch } from "@/components/ui/ToggleSwitch";
+import { groupAnchor, type TabOf } from "@/lib/navigation";
 
-export function SettingsPage() {
+/** Lists the models; a failed listing is reported and never becomes an empty list. */
+export async function loadModels(deps: {
+  load: () => Promise<TtsModelInfo[]>;
+  show: (models: TtsModelInfo[]) => void;
+  fail: () => void;
+}): Promise<void> {
+  try {
+    deps.show(await deps.load());
+  } catch {
+    deps.fail();
+  }
+}
+
+export function SettingsPage({
+  tab,
+  changeRetention,
+}: {
+  tab: TabOf<"readAloud">;
+  changeRetention: () => void;
+}) {
   const { t } = useTranslation();
   const {
     settings,
     outputDevices,
+    refreshSettings,
     refreshSettingsChecked,
     refreshOutputDevices,
   } = useSettings();
-  const [models, setModels] = useState<TtsModelInfo[]>([]);
+  const [models, setModels] = useState<TtsModelInfo[] | null>(null);
+  const [modelsFailed, setModelsFailed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Selection | null>(null);
-  const [tab, setTab] = useState<TtsTab>("settings");
+  const [readEntries, setReadEntries] = useState<ReadHistoryEntry[] | null>(
+    null,
+  );
   useEffect(() => {
     let alive = true;
-    void commands
-      .getTtsModels()
-      .then(unwrapTts)
-      .then((value) => {
+    void loadModels({
+      load: async () => unwrapTts(await commands.getTtsModels()),
+      show: (value) => {
         if (alive) setModels(value);
-      })
-      .catch(() => {
-        if (alive) setError("tts.errors.generic");
-      });
+      },
+      fail: () => {
+        if (alive) setModelsFailed(true);
+      },
+    });
     void refreshOutputDevices();
     let unlisten: (() => void) | undefined;
     void listen<string>("tts-preview-error", ({ payload }) => {
@@ -67,10 +104,28 @@ export function SettingsPage() {
       }),
     [refreshSettingsChecked],
   );
+  const retentionActions = useMemo(
+    () =>
+      createRetentionActions({
+        load: async () => unwrapTts(await commands.getTtsHistory()),
+        ...createSettingSetters({
+          setLimit: (limit) => commands.setTtsHistoryLimit(limit),
+          setRetention: (retention) =>
+            commands.setTtsHistoryRetention(retention),
+          refresh: refreshSettings,
+        }),
+        setEntries: setReadEntries,
+        setError,
+      }),
+    [refreshSettings],
+  );
+  useEffect(() => {
+    if (tab === "settings") void retentionActions.load();
+  }, [tab, retentionActions]);
   const persisted = useMemo<Selection | null>(() => {
     if (!settings) return null;
     const id = settings.tts_model_id ?? "pocket-en";
-    const model = models.find((row) => row.id === id);
+    const model = models?.find((row) => row.id === id);
     return {
       model_id: id,
       voice: settings.tts_voice?.[id] ?? model?.default_voice ?? "alba",
@@ -92,17 +147,18 @@ export function SettingsPage() {
     void choose.edit(patch, selected);
   return (
     <div className="space-y-6 w-full max-w-3xl min-w-0 mx-auto">
-      <div className="max-w-3xl w-full mx-auto">
-        <TtsTabs tabs={visibleTabs(true)} active={tab} select={setTab} />
-      </div>
       {tab === "vocabulary" ? (
-        <VocabularyTab models={models} />
+        <VocabularyTab models={models ?? []} />
       ) : tab === "history" ? (
-        <ReadHistoryTab models={models} />
+        <ReadHistoryTab
+          models={models ?? []}
+          changeRetention={changeRetention}
+        />
       ) : (
         <SettingsControls
           selected={selected}
           models={models}
+          modelsFailed={modelsFailed}
           outputDevices={outputDevices}
           error={error}
           change={change}
@@ -115,6 +171,13 @@ export function SettingsPage() {
               .catch(() => setError("tts.errors.generic"))
           }
           rememberedVoices={settings?.tts_voice}
+          retention={{
+            entries: readEntries,
+            refresh: retentionActions.load,
+            changeLimit: (limit) => void retentionActions.changeLimit(limit),
+            changeRetention: (retention) =>
+              void retentionActions.changeRetention(retention),
+          }}
         />
       )}
     </div>
@@ -124,24 +187,28 @@ export function SettingsPage() {
 export function SettingsControls({
   selected,
   models,
+  modelsFailed,
   outputDevices,
   error,
   change,
   preview,
   openModels,
   rememberedVoices,
+  retention,
 }: {
   selected: Selection;
-  models: readonly TtsModelInfo[];
+  models: readonly TtsModelInfo[] | null;
+  modelsFailed: boolean;
   outputDevices: readonly { name: string; index: string | number }[];
   error: string | null;
   change: (patch: Partial<Selection>) => void;
   preview: () => void;
   openModels: () => void;
   rememberedVoices?: Partial<Record<string, string>>;
+  retention: React.ComponentProps<typeof ReadRetentionGroup>;
 }) {
   const { t } = useTranslation();
-  const model = models.find((row) => row.id === selected.model_id);
+  const model = models?.find((row) => row.id === selected.model_id);
   return (
     <section className="max-w-3xl w-full mx-auto space-y-6">
       {error && (
@@ -149,14 +216,21 @@ export function SettingsControls({
           <Alert>{t(error)}</Alert>
         </div>
       )}
-      <SettingsGroup title={t("tts.settingsTitle")}>
-        <SettingContainer
-          title={t("tts.model")}
-          description={t("tts.help.model")}
-          grouped
-        >
+      <JobModelGroup
+        role="readAloud"
+        state={
+          modelsFailed
+            ? "failed"
+            : jobModelState(
+                models === null
+                  ? null
+                  : models.filter((row) => row.downloaded).length,
+              )
+        }
+        manage={openModels}
+        select={
           <ModelSelect
-            models={models}
+            models={models ?? []}
             value={selected.model_id}
             change={(next) =>
               change({
@@ -164,13 +238,14 @@ export function SettingsControls({
                 voice: rememberedVoices?.[next.id] ?? next.default_voice,
               })
             }
-            openModels={openModels}
           />
-        </SettingContainer>
+        }
+      >
         <SettingContainer
           title={t("tts.voice")}
           description={t("tts.help.voice")}
           grouped
+          layout="stacked"
         >
           <div className="flex items-center gap-2">
             <Dropdown
@@ -192,6 +267,8 @@ export function SettingsControls({
             </Button>
           </div>
         </SettingContainer>
+      </JobModelGroup>
+      <SettingsGroup title={t("settings.groups.playback")}>
         <Slider
           label={t("tts.speedLabel")}
           description={t("tts.help.speed")}
@@ -218,10 +295,16 @@ export function SettingsControls({
           title={t("tts.output")}
           description={t("tts.help.output")}
           grouped
+          layout="stacked"
         >
           <Dropdown
             options={[
-              { value: "", label: t("tts.sameAsHandy") },
+              {
+                value: "",
+                label: t("tts.sameAsHandy", {
+                  device: t("settings.sound.outputDevice.title"),
+                }),
+              },
               ...outputDevices.map((device) => ({
                 value: device.name,
                 label: device.name,
@@ -231,6 +314,8 @@ export function SettingsControls({
             onSelect={(value) => change({ output_device: value || null })}
           />
         </SettingContainer>
+      </SettingsGroup>
+      <SettingsGroup title={t("settings.groups.textHandling")}>
         <ToggleSwitch
           label={t("tts.readCode")}
           description={t("tts.help.readCode")}
@@ -245,23 +330,40 @@ export function SettingsControls({
           checked={selected.technical ?? false}
           onChange={(technical) => change({ technical })}
         />
-        <ToggleSwitch
-          label={t("tts.fullPaths")}
-          description={t("tts.help.fullPaths")}
-          grouped
-          disabled={!selected.technical}
-          checked={selected.full_paths ?? true}
-          onChange={(full_paths) => change({ full_paths })}
-        />
-        <ToggleSwitch
-          label={t("tts.fullLinks")}
-          description={t("tts.help.fullLinks")}
-          grouped
-          disabled={!selected.technical}
-          checked={selected.full_links ?? false}
-          onChange={(full_links) => change({ full_links })}
-        />
+        <div className="ps-6">
+          <ToggleSwitch
+            label={t("tts.fullPaths")}
+            description={
+              selected.technical
+                ? t("tts.help.fullPaths")
+                : t("tts.help.technicalOff")
+            }
+            descriptionMode={selected.technical ? "tooltip" : "inline"}
+            grouped
+            disabled={!selected.technical}
+            checked={selected.full_paths ?? true}
+            onChange={(full_paths) => change({ full_paths })}
+          />
+        </div>
+        <div className="ps-6">
+          <ToggleSwitch
+            label={t("tts.fullLinks")}
+            description={
+              selected.technical
+                ? t("tts.help.fullLinks")
+                : t("tts.help.technicalOff")
+            }
+            descriptionMode={selected.technical ? "tooltip" : "inline"}
+            grouped
+            disabled={!selected.technical}
+            checked={selected.full_links ?? false}
+            onChange={(full_links) => change({ full_links })}
+          />
+        </div>
       </SettingsGroup>
+      <div id={groupAnchor("readAloudHistory")}>
+        <ReadRetentionGroup {...retention} />
+      </div>
     </section>
   );
 }

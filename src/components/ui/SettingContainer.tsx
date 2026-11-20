@@ -25,19 +25,20 @@ export const SettingContainer: React.FC<SettingContainerProps> = ({
   tooltipPosition = "top",
   grow = false,
 }) => {
-  const info = (
+  const hasDescription = description !== "";
+  const info = hasDescription ? (
     <InfoTooltip
       text={description}
       placement={tooltipPosition === "bottom" ? "below" : "above"}
     />
-  );
+  ) : null;
 
   const containerClasses = grouped
     ? "px-4 p-2"
     : "px-4 p-2 rounded-lg border border-line";
 
   if (layout === "stacked") {
-    if (descriptionMode === "tooltip") {
+    if (descriptionMode === "tooltip" || !hasDescription) {
       return (
         <div className={containerClasses}>
           <div className="flex items-center gap-2 mb-2">
@@ -79,7 +80,7 @@ export const SettingContainer: React.FC<SettingContainerProps> = ({
     ? "relative flex min-w-0 flex-1 justify-end"
     : "relative";
 
-  if (descriptionMode === "tooltip") {
+  if (descriptionMode === "tooltip" || !hasDescription) {
     return (
       <div className={horizontalContainerClasses}>
         <div className={titleClasses}>

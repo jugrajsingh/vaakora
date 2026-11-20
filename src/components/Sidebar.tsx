@@ -1,151 +1,85 @@
-import React from "react";
+import React, { useRef } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  AudioLines,
-  Cog,
-  Cpu,
-  FlaskConical,
-  History,
-  Info,
-  Sparkles,
-  Volume2,
-} from "lucide-react";
+import { Cog, Cpu, Mic, Volume2, type LucideIcon } from "lucide-react";
 import HandyTextLogo from "./icons/HandyTextLogo";
-import HandyHand from "./icons/HandyHand";
-import { useSettings } from "../hooks/useSettings";
 import {
-  GeneralSettings,
-  AdvancedSettings,
-  HistorySettings,
-  AboutSettings,
-  PostProcessingSettings,
-  ModelsSettings,
-} from "./settings";
-import { SettingsPage as TtsSettingsPage } from "./settings/tts/SettingsPage";
-import { ModelsPage as TtsModelsPage } from "./settings/tts/ModelsPage";
+  DESTINATIONS,
+  labelKey,
+  rovingTarget,
+  type Destination,
+} from "@/lib/navigation";
 
-export type SidebarSection = keyof typeof SECTIONS_CONFIG;
+const ICONS: Record<Destination, LucideIcon> = {
+  dictation: Mic,
+  readAloud: Volume2,
+  models: Cpu,
+  settings: Cog,
+};
 
-interface IconProps {
-  width?: number | string;
-  height?: number | string;
-  size?: number | string;
-  className?: string;
-  [key: string]: any;
+export interface SidebarProps {
+  active: Destination;
+  navigate: (destination: Destination) => void;
 }
 
-interface SectionConfig {
-  labelKey: string;
-  icon: React.ComponentType<IconProps>;
-  /** `null` when App renders the section itself (Debug, with its handlers). */
-  component: React.ComponentType | null;
-  enabled: (settings: any) => boolean;
+/** Moves focus between the destination buttons; Enter and Space stay with the button. */
+export function sidebarKey(
+  key: string,
+  current: number,
+  focus: (index: number) => void,
+): boolean {
+  const target = rovingTarget(
+    DESTINATIONS.length,
+    current,
+    key,
+    "vertical",
+    false,
+  );
+  if (target === null) return false;
+  focus(target);
+  return true;
 }
 
-export const SECTIONS_CONFIG = {
-  general: {
-    labelKey: "sidebar.general",
-    icon: HandyHand,
-    component: GeneralSettings,
-    enabled: () => true,
-  },
-  history: {
-    labelKey: "sidebar.history",
-    icon: History,
-    component: HistorySettings,
-    enabled: () => true,
-  },
-  models: {
-    labelKey: "sidebar.models",
-    icon: Cpu,
-    component: ModelsSettings,
-    enabled: () => true,
-  },
-  advanced: {
-    labelKey: "sidebar.advanced",
-    icon: Cog,
-    component: AdvancedSettings,
-    enabled: () => true,
-  },
-  postprocessing: {
-    labelKey: "sidebar.postProcessing",
-    icon: Sparkles,
-    component: PostProcessingSettings,
-    enabled: (settings) => settings?.post_process_enabled ?? false,
-  },
-  tts: {
-    labelKey: "tts.settingsTitle",
-    icon: Volume2,
-    component: TtsSettingsPage,
-    enabled: () => true,
-  },
-  ttsmodels: {
-    labelKey: "tts.modelsTitle",
-    icon: AudioLines,
-    component: TtsModelsPage,
-    enabled: () => true,
-  },
-  debug: {
-    labelKey: "sidebar.debug",
-    icon: FlaskConical,
-    component: null,
-    enabled: (settings) => settings?.debug_mode ?? false,
-  },
-  about: {
-    labelKey: "sidebar.about",
-    icon: Info,
-    component: AboutSettings,
-    enabled: () => true,
-  },
-} as const satisfies Record<string, SectionConfig>;
-
-interface SidebarProps {
-  activeSection: SidebarSection;
-  onSectionChange: (section: SidebarSection) => void;
-}
-
-export const Sidebar: React.FC<SidebarProps> = ({
-  activeSection,
-  onSectionChange,
-}) => {
+export const Sidebar: React.FC<SidebarProps> = ({ active, navigate }) => {
   const { t } = useTranslation();
-  const { settings } = useSettings();
-
-  const availableSections = Object.entries(SECTIONS_CONFIG)
-    .filter(([_, config]) => config.enabled(settings))
-    .map(([id, config]) => ({ id: id as SidebarSection, ...config }));
+  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
 
   return (
-    <div className="flex flex-col w-60 shrink-0 h-full border-e border-line items-center px-2">
-      <HandyTextLogo width={120} className="m-4" />
-      <div className="flex flex-col w-full items-center gap-1 pt-2 border-t border-line">
-        {availableSections.map((section) => {
-          const Icon = section.icon;
-          const isActive = activeSection === section.id;
-
+    <nav className="flex w-40 shrink-0 flex-col border-e border-line px-2">
+      <HandyTextLogo width={100} className="mx-auto my-4" />
+      <div className="flex flex-col gap-1 border-t border-line pt-2">
+        {DESTINATIONS.map((destination, index) => {
+          const Icon = ICONS[destination];
+          const isActive = active === destination;
           return (
             <button
               type="button"
-              key={section.id}
+              key={destination}
+              ref={(element) => {
+                buttons.current[index] = element;
+              }}
               aria-current={isActive ? "page" : undefined}
-              className={`flex gap-2 items-center p-2 w-full rounded-lg cursor-pointer text-start transition-colors focus-visible:ring-2 focus-visible:ring-logo-primary focus:outline-none ${
-                isActive
-                  ? "bg-logo-primary/80"
-                  : "hover:bg-line hover:opacity-100 opacity-85"
+              className={`flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 py-1 text-sm text-start cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
+                isActive ? "bg-logo-primary/30 font-semibold" : "hover:bg-wash"
               }`}
-              onClick={() => onSectionChange(section.id)}
+              onClick={() => navigate(destination)}
+              onKeyDown={(event) => {
+                if (
+                  sidebarKey(event.key, index, (target) =>
+                    buttons.current[target]?.focus(),
+                  )
+                ) {
+                  event.preventDefault();
+                }
+              }}
             >
-              <Icon width={24} height={24} className="shrink-0" />
-              <p
-                className="text-sm font-medium min-w-0 whitespace-normal break-words"
-                title={t(section.labelKey)}
-              >
-                {t(section.labelKey)}
-              </p>
+              <Icon size={20} aria-hidden="true" className="shrink-0" />
+              <span className="min-w-0 break-words leading-tight">
+                {t(labelKey(destination))}
+              </span>
             </button>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 };

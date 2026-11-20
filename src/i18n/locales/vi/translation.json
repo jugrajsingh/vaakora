@@ -36,6 +36,19 @@
     "debug": "Gỡ lỗi",
     "about": "Giới thiệu"
   },
+  "nav": {
+    "dictation": "Đọc chính tả",
+    "readAloud": "Đọc to",
+    "models": "Mô hình",
+    "settings": "Cài đặt",
+    "history": "Lịch sử",
+    "cleanup": "Làm sạch",
+    "vocabulary": "Từ vựng",
+    "general": "Chung",
+    "advanced": "Nâng cao",
+    "about": "Giới thiệu",
+    "debug": "Gỡ lỗi"
+  },
   "onboarding": {
     "customModelDescription": "Không được hỗ trợ chính thức",
     "migration": {
@@ -345,6 +358,52 @@
     "lockedWhileTranscribing": "Bạn có thể đổi mô hình sau khi việc chép lời trong Lịch sử hoàn tất."
   },
   "settings": {
+    "groups": {
+      "shortcuts": "Phím tắt",
+      "model": "Mô hình",
+      "languages": "Ngôn ngữ",
+      "microphone": "Micrô",
+      "output": "Đầu ra",
+      "text": "Văn bản",
+      "overlay": "Lớp phủ",
+      "history": "Lịch sử",
+      "playback": "Phát lại",
+      "textHandling": "Xử lý văn bản",
+      "sound": "Âm thanh",
+      "appearance": "Giao diện",
+      "startup": "Khởi động",
+      "models": "Mô hình",
+      "dictationEngine": "Công cụ đọc chính tả",
+      "experimental": "Thử nghiệm",
+      "provider": "Nhà cung cấp",
+      "instructions": "Hướng dẫn",
+      "localModel": "Mô hình cục bộ"
+    },
+    "jobModel": {
+      "manage": "Quản lý mô hình",
+      "choose": "Chọn một mô hình",
+      "loading": "Đang tải các mô hình",
+      "empty": {
+        "dictation": "Chưa có mô hình đọc chính tả.",
+        "readAloud": "Chưa có mô hình đọc to."
+      },
+      "help": {
+        "dictation": "Chọn một mô hình đọc chính tả đã tải xuống.",
+        "readAloud": "Chọn một mô hình đọc to đã tải xuống."
+      }
+    },
+    "rows": {
+      "unloadIdle": "Giải phóng các mô hình không dùng",
+      "runOn": "Chạy mô hình đọc chính tả trên"
+    },
+    "shortcuts": {
+      "dictate": "Đọc chính tả",
+      "dictateWithCleanup": "Đọc chính tả và làm sạch",
+      "cancel": "Hủy",
+      "readAloud": "Đọc to",
+      "activation": "Kích hoạt",
+      "activationHelp": "Cho phím tắt đọc chính tả"
+    },
     "modelSettings": {
       "title": "Cài đặt {{model}}"
     },
@@ -363,9 +422,6 @@
             "name": "Phím tắt chuyển đổi",
             "description": "Phím tắt để ghi âm và chuyển đổi giọng nói của bạn."
           },
-          "transcribe_raw": {
-            "name": "Phím tắt bản gốc"
-          },
           "cancel": {
             "name": "Phím tắt hủy",
             "description": "Phím tắt để hủy bản ghi hiện tại."
@@ -375,7 +431,6 @@
             "description": "Tùy chọn: Phím tắt chuyên dụng luôn áp dụng xử lý sau bằng AI cho bản chuyển đổi của bạn."
           },
           "read_aloud": {
-            "name": "Phím tắt đọc to",
             "description": "Mở cửa sổ popup và đọc to văn bản đã sao chép."
           }
         },
@@ -487,11 +542,13 @@
         "title": "Thiết bị đầu ra",
         "description": "Chọn thiết bị đầu ra âm thanh ưa thích của bạn cho âm thanh phản hồi",
         "placeholder": "Chọn thiết bị đầu ra...",
-        "loading": "Đang tải..."
+        "loading": "Đang tải...",
+        "offReason": "Không dùng khi phản hồi âm thanh đang tắt."
       },
       "volume": {
         "title": "Âm lượng",
-        "description": "Điều chỉnh âm lượng của âm thanh phản hồi"
+        "description": "Điều chỉnh âm lượng của âm thanh phản hồi",
+        "offReason": "Không dùng khi phản hồi âm thanh đang tắt."
       }
     },
     "advanced": {
@@ -657,9 +714,6 @@
       }
     },
     "postProcessing": {
-      "provider": {
-        "title": "Nhà cung cấp"
-      },
       "api": {
         "title": "API",
         "provider": {
@@ -722,7 +776,6 @@
         "noCleanupModel": "Không có mô hình xử lý sau",
         "s1Description": "Dùng các tùy chọn phong cách, cấu trúc và ngữ cảnh.",
         "plainDescription": "Dùng câu lệnh Handy bạn đã chọn.",
-        "groupTitle": "Mô hình cục bộ",
         "size": "{{size}} MiB",
         "downloaded": "Đã tải xuống",
         "use": "Dùng",
@@ -768,25 +821,37 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 kèm một điều khoản bổ sung: mô hình phải luôn được gọi là \"S1-mini\" của \"Superwhisper\", đúng chính xác cách viết hoa và viết thường này."
         },
-        "promptRequired": "Chọn một câu lệnh Handy không trống trong nhóm Câu lệnh. Cho đến lúc đó, bước xử lý sau bị bỏ qua và dùng bản ghi gốc.",
+        "promptRequired": "Chọn một câu lệnh Handy không trống trong nhóm Hướng dẫn. Cho đến lúc đó, bước xử lý sau bị bỏ qua và dùng bản ghi gốc.",
         "promptHidden": "Mô hình này dùng câu lệnh cố định riêng cùng các cài đặt Phong cách, Cấu trúc và Ngữ cảnh ở trên, nên trình soạn câu lệnh bị ẩn."
+      }
+    },
+    "cleanup": {
+      "enable": {
+        "label": "Làm sạch văn bản đọc chính tả",
+        "description": "Thêm phím tắt \"Đọc chính tả và làm sạch\". Văn bản đọc chính tả bằng phím này được làm sạch trước khi dán."
+      },
+      "sentTo": "Nội dung đọc chính tả được gửi tới {{host}} để làm sạch.",
+      "prompt": {
+        "edit": "Sửa",
+        "new": "Prompt mới",
+        "editTitle": "Sửa {{name}}",
+        "newTitle": "Prompt mới",
+        "delete": "Xóa",
+        "deleteConfirm": "Xóa {{name}}? Các nội dung đọc chính tả đã được làm sạch bằng nó sẽ không thay đổi.",
+        "deleteAction": "Xóa prompt",
+        "lastPrompt": "Giữ lại ít nhất một prompt.",
+        "saveFailed": "Không thể lưu prompt.",
+        "createFirst": "Nhấn Prompt mới để viết hướng dẫn làm sạch đầu tiên của bạn."
       }
     },
     "history": {
       "title": "Lịch sử",
-      "cleaned": "Đã xử lý sau",
-      "cleanedWith": "Đã xử lý sau bằng {{model}}",
-      "raw": "Bản gốc",
-      "copyRaw": "Sao chép văn bản gốc",
-      "copyPostProcessed": "Sao chép văn bản đã xử lý sau",
       "compare": {
         "title": "Chế độ so sánh",
         "diff": "Khác biệt",
         "side_by_side": "Song song",
         "stacked": "Xếp chồng"
       },
-      "clearHistory": "Xóa lịch sử",
-      "clearConfirmation": "Xóa {{count}} mục lịch sử chưa gắn sao và {{recordings}} bản ghi âm? Các mục gắn sao và bản ghi âm của chúng sẽ được giữ lại.",
       "openFolder": "Mở thư mục ghi âm",
       "loading": "Đang tải lịch sử...",
       "empty": "Chưa có bản ghi nào. Bắt đầu ghi âm để xây dựng lịch sử của bạn!",
@@ -799,6 +864,7 @@
       "deleteConfirm": "Xóa mục này và bản ghi âm của nó?",
       "deleteConfirmAction": "Xóa mục",
       "retranscribe": "Phiên âm lại",
+      "retranscribeError": "Không thể phiên âm lại mục này.",
       "cancelTranscription": "Hủy phiên âm",
       "transcribing": "Đang phiên âm...",
       "transcriptionFailed": "Phiên âm thất bại. Bạn có thể phiên âm lại bằng biểu tượng thử lại.",
@@ -820,6 +886,38 @@
         "weeks2": "Xóa các mục không gắn sao cũ hơn 2 tuần cùng bản ghi âm của chúng? Các mục gắn sao và tệp đã chép lời được giữ lại.",
         "months3": "Xóa các mục không gắn sao cũ hơn 3 tháng cùng bản ghi âm của chúng? Các mục gắn sao và tệp đã chép lời được giữ lại.",
         "action": "Xóa mục"
+      }
+    },
+    "dictationHistory": {
+      "limitTitle": "Giữ các mục mới nhất",
+      "limitUnit": "mục",
+      "limitHelp": "Số mục mà «Giữ các mục mới nhất» giữ lại.",
+      "limitTimeLimit": "Không dùng khi có giới hạn thời gian.",
+      "autoDeleteTitle": "Tự động xóa",
+      "autoDeleteHelp": "Các mục gắn sao và tệp đã phiên âm không bao giờ bị tự động xóa.",
+      "options": {
+        "never": "Tắt (giữ tất cả)",
+        "preserveLimit": "Giữ {{count}} bản mới nhất",
+        "days3": "Cũ hơn 3 ngày",
+        "weeks2": "Cũ hơn 2 tuần",
+        "months3": "Cũ hơn 3 tháng"
+      },
+      "folderTitle": "Thư mục bản ghi âm",
+      "folderOpen": "Mở"
+    },
+    "readAloudHistory": {
+      "keepTitle": "Giữ lịch sử",
+      "keepHelp": "Chỉ văn bản, không có âm thanh.",
+      "limitTitle": "Giữ các mục mới nhất",
+      "limitUnit": "mục",
+      "limitHelp": "Số mục mà «Giữ lịch sử» giữ lại.",
+      "limitOff": "Không dùng khi lịch sử đang tắt.",
+      "options": {
+        "keepNothing": "Không giữ",
+        "keepLimit": "Giữ {{count}} mục mới nhất",
+        "days3": "Giữ {{count}} mục mới nhất, không giữ mục cũ hơn 3 ngày",
+        "weeks2": "Giữ {{count}} mục mới nhất, không giữ mục cũ hơn 2 tuần",
+        "months3": "Giữ {{count}} mục mới nhất, không giữ mục cũ hơn 3 tháng"
       }
     },
     "debug": {
@@ -1034,6 +1132,14 @@
     "noOptionsFound": "Không tìm thấy tùy chọn",
     "cancel": "Hủy"
   },
+  "editor": {
+    "save": "Lưu",
+    "discard": {
+      "message": "Hủy các thay đổi của bạn?",
+      "keep": "Tiếp tục chỉnh sửa",
+      "action": "Bỏ thay đổi"
+    }
+  },
   "errors": {
     "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
     "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
@@ -1189,7 +1295,6 @@
       "finished": "Đã xong",
       "error": "Lỗi"
     },
-    "modelsTitle": "Mô hình chuyển văn bản thành giọng nói",
     "modelsSubtitle": "Chọn một mô hình giọng nói. Các số liệu tốc độ được đo trên máy tính của nhà phát triển; máy của bạn có thể khác.",
     "downloaded": "Đã tải xuống",
     "availableToDownload": "Có thể tải xuống",
@@ -1213,11 +1318,10 @@
     "saveToken": "Đặt token",
     "model": "Mô hình",
     "voice": "Giọng nói",
-    "preview": "Nghe thử giọng",
-    "speed": "Tốc độ: {{value}}x",
+    "preview": "Nghe thử",
     "pitch": "Cao độ: {{value}} nửa cung",
-    "output": "Thiết bị đầu ra",
-    "sameAsHandy": "Giống Handy",
+    "output": "Thiết bị đầu ra khi đọc to",
+    "sameAsHandy": "Giống {{device}}",
     "readCode": "Đọc khối mã",
     "technicalReading": "Đọc kỹ thuật",
     "fullPaths": "Đọc đầy đủ đường dẫn",
@@ -1250,11 +1354,9 @@
     },
     "voiceCount": "{{count}} giọng",
     "downloadProgress": "Tiến độ tải xuống mô hình",
-    "settingsTitle": "Chuyển văn bản thành giọng nói",
     "speedLabel": "Tốc độ",
     "pitchLabel": "Cao độ",
     "help": {
-      "model": "Chọn một mô hình chuyển văn bản thành giọng nói đã tải xuống.",
       "voice": "Chọn một giọng cho mô hình này và nghe thử.",
       "speed": "Điều chỉnh tốc độ đọc văn bản.",
       "pitch": "Điều chỉnh cao độ giọng theo nửa cung.",
@@ -1262,37 +1364,12 @@
       "readCode": "Bao gồm các khối mã khi đọc.",
       "technicalReading": "Đọc đầy đủ đường dẫn, tên tệp, cờ lệnh và tên trong mã, dùng tệp từ vựng của bạn.",
       "fullPaths": "Đọc từng thư mục trong đường dẫn. Khi tắt, chỉ đọc tên tệp.",
-      "fullLinks": "Đọc toàn bộ địa chỉ web. Khi tắt, chỉ nói tên trang web."
-    },
-    "tabs": {
-      "settings": "Cài đặt",
-      "history": "Lịch sử",
-      "vocabulary": "Từ vựng"
+      "fullLinks": "Đọc toàn bộ địa chỉ web. Khi tắt, chỉ nói tên trang web.",
+      "technicalOff": "Không dùng khi đọc kỹ thuật đang tắt."
     },
     "history": {
-      "title": "Cài đặt lịch sử",
       "reading": "Các từ đã viết cùng với những gì đã đọc",
-      "hint": "Kéo qua các từ để chọn một đoạn và sửa cách đọc.",
-      "empty": "Chưa có gì được đọc to. Các lần đọc bạn phát sẽ hiện ở đây.",
-      "limit": {
-        "title": "Giới hạn lịch sử",
-        "description": "Số lần đọc tối đa lưu trong lịch sử",
-        "entries": "lần đọc"
-      },
-      "retention": {
-        "title": "Tự động xóa",
-        "description": "Cũng tự động xóa các lần đọc cũ hơn",
-        "keepNothing": "Không bao giờ lưu",
-        "keepLimit": "Giữ {{count}} lần mới nhất",
-        "days3": "Sau 3 ngày",
-        "weeks2": "Sau 2 tuần",
-        "months3": "Sau 3 tháng"
-      },
-      "clear": {
-        "title": "Xóa lịch sử",
-        "description": "Xóa mọi lần đọc đã lưu. Từ vựng của bạn không thay đổi.",
-        "confirmation": "Xóa tất cả {{count}} lần đọc đã lưu? Từ vựng của bạn không thay đổi."
-      },
+      "readingHint": "Văn bản đã viết ở trên, phần đã đọc thành tiếng ở dưới. Kéo qua các từ để sửa cách chúng được đọc.",
       "retentionConfirm": {
         "message_one": "Xóa {{count}} lần đọc đã lưu ngay bây giờ? Từ vựng của bạn không thay đổi.",
         "message": "Xóa {{count}} lần đọc đã lưu ngay bây giờ? Từ vựng của bạn không thay đổi.",
@@ -1304,10 +1381,7 @@
         "written": "Viết",
         "spoken": "Đọc",
         "kind": "Loại",
-        "voices": "Giọng đọc",
-        "match": "Khớp",
-        "enabled": "Bật",
-        "actions": "Thao tác"
+        "match": "Khớp"
       },
       "kinds": {
         "symbol": "Ký hiệu",
@@ -1315,10 +1389,9 @@
         "term": "Thuật ngữ",
         "acronym": "Từ viết tắt"
       },
-      "voices": {
-        "all": "Tất cả giọng đọc",
-        "except": "trừ {{names}}",
-        "add": "+ giọng đọc"
+      "models": {
+        "all": "Tất cả mô hình",
+        "except": "trừ {{names}}"
       },
       "origins": {
         "builtin": "Có sẵn",
@@ -1331,7 +1404,6 @@
         "listen": "Nghe thử",
         "delete": "Xóa",
         "reset": "Đặt lại về mặc định",
-        "save": "Lưu",
         "cancel": "Hủy"
       },
       "match": {
@@ -1347,13 +1419,13 @@
       },
       "filter": "Tìm trong văn bản viết hoặc cách đọc",
       "toggle": "Dùng {{written}}",
-      "editTitle": "Sửa mục",
       "fields": {
         "skip": "Bỏ qua",
         "appliesTo": "Áp dụng cho"
       },
-      "empty": "Không có mục nào khớp với bộ lọc.",
-      "deleteConfirmation": "Xóa {{written}} khỏi từ vựng của bạn? Không thể hoàn tác.",
+      "emptyQuery": "Không có gì khớp với “{{query}}”.",
+      "emptyFilters": "Không có gì khớp với các bộ lọc này.",
+      "clearFilters": "Xóa bộ lọc",
       "resetConfirm": "Đặt lại {{written}} về cách đọc tích hợp? Mục của bạn sẽ bị xóa.",
       "errors": {
         "changed": "Tệp từ vựng đã thay đổi trên đĩa. Bảng đã được tải lại; hãy sửa lại một lần nữa.",
@@ -1361,7 +1433,7 @@
         "invalidEdit": "Không thể lưu mục này: {{message}}",
         "tooLarge": "Tệp từ vựng sẽ lớn hơn 1 MiB nên chưa lưu gì.",
         "io": "Không thể ghi tệp từ vựng: {{message}}",
-        "voicesChanged": "Từ vựng đã thay đổi trong lúc chờ nên thay đổi giọng đọc chưa được áp dụng. Hãy chọn lại giọng đọc."
+        "voicesChanged": "Từ vựng đã thay đổi trong lúc chờ nên thay đổi chưa được áp dụng."
       },
       "problems": {
         "shadowed": "Không bao giờ áp dụng: mục có mức ưu tiên cao hơn luôn thắng",
@@ -1382,35 +1454,50 @@
         "invalid": "Không thể lưu: {{detail}}"
       },
       "check": {
-        "title": "Kiểm tra trên mọi giọng",
+        "title": "Kiểm tra trên mọi mô hình",
         "playAll": "Phát tất cả",
         "playing": "Đang phát {{model}}",
-        "checking": "Đang kiểm tra từng giọng...",
+        "checking": "Đang kiểm tra từng mô hình...",
         "heardRight": "nghe đúng",
         "missed": "nghe sai: {{heard}}",
         "failed": "không thể kiểm tra: {{error}}",
         "row": "{{model}}: {{outcome}}",
-        "advisory": "Một số giọng đọc chưa đúng. Bạn vẫn có thể lưu.",
-        "saveAllAnyway": "Vẫn lưu cho mọi giọng",
-        "savePassedOnly": "Chỉ lưu cho các giọng đạt",
-        "pickOne": "Chọn một giọng",
+        "advisory": "Một số mô hình đọc chưa đúng. Bạn vẫn có thể lưu.",
+        "saveAllAnyway": "Vẫn lưu cho mọi mô hình",
+        "savePassedOnly": "Chỉ lưu cho các mô hình đạt",
+        "pickOne": "Chọn một mô hình",
         "dictating": "Đang đọc chính tả. Hãy kiểm tra lại khi kết thúc.",
         "transcribeFailed": "Chuyển giọng nói thành văn bản không thể phiên âm giọng."
       },
       "filters": {
-        "voice": "Giọng đọc",
+        "model": "Mô hình",
         "kind": "Loại",
         "source": "Nguồn",
         "all": "Tất cả",
         "changed": "Bạn đã thay đổi",
-        "onlyProblems": "Chỉ các vấn đề"
+        "problems": "Vấn đề"
       },
       "defaultLabel": "mặc định:",
-      "defaultLabelFor": "mặc định cho {{voices}}:"
+      "defaultLabelFor": "mặc định cho {{voices}}:",
+      "dialog": {
+        "editTitle": "Sửa {{written}}",
+        "context": "{{written}}, nay được đọc là {{spoken}}.",
+        "overrides": "Mục của bạn thay thế cách đọc tích hợp {{default}}.",
+        "builtinDelete": "Mục tích hợp có thể tắt, không thể xóa.",
+        "deleteConfirm": "Xóa {{written}}? Các mục khác của bạn được giữ lại.",
+        "deleteAction": "Xóa mục",
+        "conflict": "Tệp từ vựng đã thay đổi trên đĩa và được tải lại. Kiểm tra mục, rồi Lưu lại.",
+        "refused": "Từ vựng đã thay đổi và mục này không thể lưu như hiện tại nữa. Kiểm tra Áp dụng cho, hoặc hủy và thêm lại.",
+        "scopeRefused": "Không thể thay đổi các mô hình này cho mục này."
+      },
+      "acronymStylePerModel": "Kiểu viết tắt theo từng mô hình",
+      "invalid": {
+        "builtinUsed": "Cách đọc có sẵn được dùng cho đến khi lỗi được sửa.",
+        "reload": "Tải lại",
+        "openFolder": "Mở thư mục"
+      }
     },
     "correction": {
-      "add": "Thêm chỉnh sửa",
-      "start": "Thêm một chỉnh sửa",
       "writtenText": "Văn bản viết",
       "next": "Tiếp",
       "title": "Sửa cách đọc",
@@ -1421,12 +1508,11 @@
       "deriving": "Đang xác định quy tắc...",
       "exactOnly": "Chỉ đúng văn bản này",
       "chooseScope": "Chọn phạm vi áp dụng",
-      "scopeRequired": "Chọn Tất cả giọng đọc hoặc một giọng trước khi lưu.",
-      "acronymStyle": "Kiểu viết tắt theo từng giọng đọc",
+      "scopeRequiredModels": "Chọn Tất cả mô hình hoặc một mô hình trước khi lưu.",
       "style": {
         "spaced": "Chữ cái tách rời (C L I)",
         "capitals": "Chữ hoa (CLI)",
-        "inherit": "Giống tất cả giọng đọc"
+        "inheritModels": "Giống tất cả mô hình"
       },
       "reach": {
         "extension": "áp dụng cho mọi tệp {{extension}}",
@@ -1447,5 +1533,67 @@
         "transcribeFailed": "Chuyển giọng nói thành văn bản không thể chép lại những gì bạn nói."
       }
     }
+  },
+  "history": {
+    "change": "Thay đổi",
+    "changeLabel": "Thay đổi cách lưu lịch sử",
+    "transcribeFile": "Chép lời tệp",
+    "notKept": "Lịch sử không được lưu.",
+    "empty": {
+      "dictation": "Chưa có bản đọc chính tả nào.",
+      "dictationHint": "Nhấn <dictate/> để đọc chính tả hoặc <cleanup/> để đọc chính tả và làm sạch.",
+      "dictationHintDictate": "Nhấn <keys/> để đọc chính tả.",
+      "dictationHintCleanup": "Nhấn <keys/> để đọc chính tả và làm sạch.",
+      "read": "Chưa có gì được đọc.",
+      "readHint": "Sao chép một đoạn văn bản rồi nhấn <keys/>."
+    },
+    "summary": {
+      "dictation": {
+        "never": "Mọi mục đều được giữ lại. Các mục gắn sao được giữ lại.",
+        "none": "Không có mục nào được giữ lại. Các mục gắn sao và tệp đã chép lời được giữ lại.",
+        "latest_one": "Giữ lại mục mới nhất. Các mục gắn sao được giữ lại.",
+        "latest": "Giữ lại {{count}} mục mới nhất. Các mục gắn sao được giữ lại.",
+        "days3": "Xóa các mục cũ hơn 3 ngày. Các mục gắn sao được giữ lại.",
+        "weeks2": "Xóa các mục cũ hơn 2 tuần. Các mục gắn sao được giữ lại.",
+        "months3": "Xóa các mục cũ hơn 3 tháng. Các mục gắn sao được giữ lại."
+      },
+      "read": {
+        "latest_one": "Giữ lại mục mới nhất.",
+        "latest": "Giữ lại {{count}} mục mới nhất.",
+        "days3_one": "Giữ lại mục mới nhất, không mục nào cũ hơn 3 ngày.",
+        "days3": "Giữ lại {{count}} mục mới nhất, không mục nào cũ hơn 3 ngày.",
+        "weeks2_one": "Giữ lại mục mới nhất, không mục nào cũ hơn 2 tuần.",
+        "weeks2": "Giữ lại {{count}} mục mới nhất, không mục nào cũ hơn 2 tuần.",
+        "months3_one": "Giữ lại mục mới nhất, không mục nào cũ hơn 3 tháng.",
+        "months3": "Giữ lại {{count}} mục mới nhất, không mục nào cũ hơn 3 tháng."
+      }
+    },
+    "clear": {
+      "action": "Xóa lịch sử",
+      "dictationConfirm_one": "Xóa {{count}} mục và {{recordings}}? Các mục gắn sao được giữ lại.",
+      "dictationConfirm": "Xóa {{count}} mục và {{recordings}}? Các mục gắn sao được giữ lại.",
+      "recordings_one": "{{count}} bản ghi âm",
+      "recordings": "{{count}} bản ghi âm",
+      "readConfirm_one": "Xóa {{count}} mục? Từ vựng của bạn không thay đổi.",
+      "readConfirm": "Xóa {{count}} mục? Từ vựng của bạn không thay đổi.",
+      "nothing": "Không có gì để xóa."
+    },
+    "row": {
+      "open": "Hiện mục",
+      "close": "Ẩn mục"
+    },
+    "copy": "Sao chép văn bản",
+    "copyCleaned": "Sao chép văn bản đã làm sạch",
+    "copyOriginal": "Sao chép bản gốc",
+    "star": "Gắn sao",
+    "unstar": "Bỏ sao",
+    "retranscribe": "Phiên âm lại",
+    "cancelTranscription": "Hủy phiên âm",
+    "delete": "Xóa",
+    "cleanedWith": "Đã làm sạch bằng {{model}}.",
+    "cleaned": "Văn bản đã làm sạch",
+    "original": "Bản phiên âm gốc",
+    "diffNote": "Đang hiển thị khác biệt so với bản phiên âm gốc.",
+    "noCleanup": "Không làm sạch"
   }
 }

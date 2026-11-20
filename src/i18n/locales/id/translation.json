@@ -36,6 +36,19 @@
     "debug": "Debug",
     "about": "Tentang"
   },
+  "nav": {
+    "dictation": "Dikte",
+    "readAloud": "Baca nyaring",
+    "models": "Model",
+    "settings": "Pengaturan",
+    "history": "Riwayat",
+    "cleanup": "Pembersihan",
+    "vocabulary": "Kosakata",
+    "general": "Umum",
+    "advanced": "Lanjutan",
+    "about": "Tentang",
+    "debug": "Debug"
+  },
   "onboarding": {
     "customModelDescription": "Tidak didukung secara resmi",
     "migration": {
@@ -345,6 +358,52 @@
     "lockedWhileTranscribing": "Anda bisa mengganti model setelah transkripsi di Riwayat selesai."
   },
   "settings": {
+    "groups": {
+      "shortcuts": "Pintasan",
+      "model": "Model",
+      "languages": "Bahasa",
+      "microphone": "Mikrofon",
+      "output": "Keluaran",
+      "text": "Teks",
+      "overlay": "Overlay",
+      "history": "Riwayat",
+      "playback": "Pemutaran",
+      "textHandling": "Penanganan teks",
+      "sound": "Suara",
+      "appearance": "Tampilan",
+      "startup": "Memulai",
+      "models": "Model",
+      "dictationEngine": "Mesin dikte",
+      "experimental": "Eksperimental",
+      "provider": "Penyedia",
+      "instructions": "Instruksi",
+      "localModel": "Model lokal"
+    },
+    "jobModel": {
+      "manage": "Kelola model",
+      "choose": "Pilih model",
+      "loading": "Memuat model",
+      "empty": {
+        "dictation": "Belum ada model dikte.",
+        "readAloud": "Belum ada model baca nyaring."
+      },
+      "help": {
+        "dictation": "Pilih model dikte yang sudah diunduh.",
+        "readAloud": "Pilih model baca nyaring yang sudah diunduh."
+      }
+    },
+    "rows": {
+      "unloadIdle": "Keluarkan model yang tidak aktif dari memori",
+      "runOn": "Jalankan model dikte di"
+    },
+    "shortcuts": {
+      "dictate": "Dikte",
+      "dictateWithCleanup": "Dikte dengan perapian",
+      "cancel": "Batal",
+      "readAloud": "Baca nyaring",
+      "activation": "Aktivasi",
+      "activationHelp": "Untuk pintasan dikte"
+    },
     "modelSettings": {
       "title": "Pengaturan {{model}}"
     },
@@ -363,9 +422,6 @@
             "name": "Pintasan Transkripsi",
             "description": "Pintasan keyboard untuk merekam dan mentranskripsikan suara Anda."
           },
-          "transcribe_raw": {
-            "name": "Pintasan Mentah"
-          },
           "cancel": {
             "name": "Pintasan Batal",
             "description": "Pintasan keyboard untuk membatalkan perekaman saat ini."
@@ -375,7 +431,6 @@
             "description": "Opsional: pintasan khusus yang selalu menerapkan pascaproses AI pada transkripsi Anda."
           },
           "read_aloud": {
-            "name": "Pintasan baca nyaring",
             "description": "Buka popup dan bacakan teks yang disalin dengan suara."
           }
         },
@@ -487,11 +542,13 @@
         "title": "Perangkat Keluaran",
         "description": "Pilih perangkat keluaran audio yang Anda inginkan untuk suara umpan balik",
         "placeholder": "Pilih perangkat keluaran...",
-        "loading": "Memuat..."
+        "loading": "Memuat...",
+        "offReason": "Tidak digunakan saat umpan balik audio mati."
       },
       "volume": {
         "title": "Volume",
-        "description": "Sesuaikan volume suara umpan balik audio"
+        "description": "Sesuaikan volume suara umpan balik audio",
+        "offReason": "Tidak digunakan saat umpan balik audio mati."
       }
     },
     "advanced": {
@@ -657,9 +714,6 @@
       }
     },
     "postProcessing": {
-      "provider": {
-        "title": "Penyedia"
-      },
       "api": {
         "title": "API",
         "provider": {
@@ -722,7 +776,6 @@
         "noCleanupModel": "Tidak ada model pascaproses",
         "s1Description": "Menggunakan kontrol gaya, struktur, dan konteks.",
         "plainDescription": "Menggunakan prompt Handy yang Anda pilih.",
-        "groupTitle": "Model lokal",
         "size": "{{size}} MiB",
         "downloaded": "Terunduh",
         "use": "Gunakan",
@@ -768,25 +821,37 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 dengan satu ketentuan tambahan: model harus selalu disebut \"S1-mini\" dari \"Superwhisper\", dengan huruf besar dan kecil persis seperti itu."
         },
-        "promptRequired": "Pilih prompt Handy yang tidak kosong di grup Prompt. Sampai itu dilakukan, pascaproses dilewati dan transkrip mentah digunakan.",
+        "promptRequired": "Pilih prompt Handy yang tidak kosong di grup Instruksi. Sampai itu dilakukan, pascaproses dilewati dan transkrip mentah digunakan.",
         "promptHidden": "Model ini memakai prompt tetapnya sendiri dan pengaturan Gaya, Struktur, dan Konteks di atas, sehingga editor prompt disembunyikan."
+      }
+    },
+    "cleanup": {
+      "enable": {
+        "label": "Rapikan dikte",
+        "description": "Menambahkan pintasan \"Dikte dengan perapian\". Teks yang didikte dengannya dirapikan sebelum ditempel."
+      },
+      "sentTo": "Dikte dikirim ke {{host}} untuk dirapikan.",
+      "prompt": {
+        "edit": "Edit",
+        "new": "Prompt baru",
+        "editTitle": "Edit {{name}}",
+        "newTitle": "Prompt baru",
+        "delete": "Hapus",
+        "deleteConfirm": "Hapus {{name}}? Dikte yang sudah dirapikan dengannya tidak berubah.",
+        "deleteAction": "Hapus prompt",
+        "lastPrompt": "Sisakan setidaknya satu prompt.",
+        "saveFailed": "Prompt tidak dapat disimpan.",
+        "createFirst": "Tekan Prompt baru untuk menulis instruksi perapian pertama Anda."
       }
     },
     "history": {
       "title": "Riwayat",
-      "cleaned": "Dipascaproses",
-      "cleanedWith": "Dipascaproses dengan {{model}}",
-      "raw": "Mentah",
-      "copyRaw": "Salin teks mentah",
-      "copyPostProcessed": "Salin teks hasil pascaproses",
       "compare": {
         "title": "Tampilan perbandingan",
         "diff": "Perbedaan",
         "side_by_side": "Berdampingan",
         "stacked": "Bertumpuk"
       },
-      "clearHistory": "Hapus Riwayat",
-      "clearConfirmation": "Hapus {{count}} entri riwayat tanpa bintang dan {{recordings}} rekaman? Entri berbintang beserta rekamannya akan dipertahankan.",
       "openFolder": "Buka Folder Rekaman",
       "loading": "Memuat riwayat...",
       "empty": "Belum ada transkripsi. Mulai merekam untuk mengisi riwayat Anda!",
@@ -799,6 +864,7 @@
       "deleteConfirm": "Hapus entri ini beserta rekamannya?",
       "deleteConfirmAction": "Hapus entri",
       "retranscribe": "Transkripsikan ulang",
+      "retranscribeError": "Entri ini tidak dapat ditranskripsikan ulang.",
       "cancelTranscription": "Batalkan transkripsi",
       "transcribing": "Mentranskripsikan...",
       "transcriptionFailed": "Transkripsi gagal. Anda dapat mentranskripsikan ulang menggunakan ikon coba lagi.",
@@ -820,6 +886,38 @@
         "weeks2": "Hapus entri tanpa bintang yang lebih lama dari 2 minggu beserta rekamannya? Entri berbintang dan file yang ditranskripsi tetap disimpan.",
         "months3": "Hapus entri tanpa bintang yang lebih lama dari 3 bulan beserta rekamannya? Entri berbintang dan file yang ditranskripsi tetap disimpan.",
         "action": "Hapus entri"
+      }
+    },
+    "dictationHistory": {
+      "limitTitle": "Simpan yang terbaru",
+      "limitUnit": "entri",
+      "limitHelp": "Berapa banyak entri yang disimpan «Simpan yang terbaru».",
+      "limitTimeLimit": "Tidak dipakai dengan batas waktu.",
+      "autoDeleteTitle": "Hapus otomatis",
+      "autoDeleteHelp": "Entri berbintang dan file yang ditranskripsikan tidak pernah dihapus otomatis.",
+      "options": {
+        "never": "Mati (simpan semuanya)",
+        "preserveLimit": "Simpan {{count}} terbaru",
+        "days3": "Lebih lama dari 3 hari",
+        "weeks2": "Lebih lama dari 2 minggu",
+        "months3": "Lebih lama dari 3 bulan"
+      },
+      "folderTitle": "Folder rekaman",
+      "folderOpen": "Buka"
+    },
+    "readAloudHistory": {
+      "keepTitle": "Simpan riwayat",
+      "keepHelp": "Hanya teks, tanpa audio.",
+      "limitTitle": "Simpan yang terbaru",
+      "limitUnit": "entri",
+      "limitHelp": "Berapa banyak entri yang disimpan «Simpan riwayat».",
+      "limitOff": "Tidak dipakai saat riwayat mati.",
+      "options": {
+        "keepNothing": "Jangan simpan",
+        "keepLimit": "Simpan {{count}} yang terbaru",
+        "days3": "Simpan {{count}} yang terbaru, tanpa yang lebih lama dari 3 hari",
+        "weeks2": "Simpan {{count}} yang terbaru, tanpa yang lebih lama dari 2 minggu",
+        "months3": "Simpan {{count}} yang terbaru, tanpa yang lebih lama dari 3 bulan"
       }
     },
     "debug": {
@@ -1034,6 +1132,14 @@
     "noOptionsFound": "Tidak ada opsi yang ditemukan",
     "cancel": "Batal"
   },
+  "editor": {
+    "save": "Simpan",
+    "discard": {
+      "message": "Buang perubahan Anda?",
+      "keep": "Lanjut mengedit",
+      "action": "Buang"
+    }
+  },
   "errors": {
     "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
     "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
@@ -1189,7 +1295,6 @@
       "finished": "Selesai",
       "error": "Kesalahan"
     },
-    "modelsTitle": "Model Teks ke Ucapan",
     "modelsSubtitle": "Pilih model suara. Angka kecepatan diukur di komputer pengembang; hasil di komputer Anda mungkin berbeda.",
     "downloaded": "Terunduh",
     "availableToDownload": "Tersedia untuk diunduh",
@@ -1213,11 +1318,10 @@
     "saveToken": "Atur token",
     "model": "Model",
     "voice": "Suara",
-    "preview": "Pratinjau suara",
-    "speed": "Kecepatan: {{value}}x",
+    "preview": "Dengarkan",
     "pitch": "Nada: {{value}} semiton",
-    "output": "Perangkat keluaran",
-    "sameAsHandy": "Sama seperti Handy",
+    "output": "Perangkat keluaran baca nyaring",
+    "sameAsHandy": "Sama seperti {{device}}",
     "readCode": "Baca blok kode",
     "technicalReading": "Pembacaan teknis",
     "fullPaths": "Bacakan path lengkap",
@@ -1250,49 +1354,22 @@
     },
     "voiceCount": "{{count}} suara",
     "downloadProgress": "Kemajuan pengunduhan model",
-    "settingsTitle": "Teks ke ucapan",
     "speedLabel": "Kecepatan",
     "pitchLabel": "Nada",
     "help": {
-      "model": "Pilih model teks ke ucapan yang sudah diunduh.",
-      "voice": "Pilih suara untuk model ini dan pratinjau.",
+      "voice": "Pilih suara untuk model ini dan dengarkan.",
       "speed": "Atur seberapa cepat teks dibaca.",
       "pitch": "Atur nada suara dalam semiton.",
       "output": "Pilih tempat audio baca nyaring diputar.",
       "readCode": "Sertakan blok kode berpagar saat membaca.",
       "technicalReading": "Mengucapkan path, nama file, flag, dan nama kode secara lengkap, menggunakan file kosakata Anda.",
       "fullPaths": "Membacakan setiap folder dalam path. Jika nonaktif, hanya nama file yang dibacakan.",
-      "fullLinks": "Membacakan seluruh alamat web. Jika nonaktif, hanya nama situs yang disebut."
-    },
-    "tabs": {
-      "settings": "Pengaturan",
-      "history": "Riwayat",
-      "vocabulary": "Kosakata"
+      "fullLinks": "Membacakan seluruh alamat web. Jika nonaktif, hanya nama situs yang disebut.",
+      "technicalOff": "Tidak digunakan saat pembacaan teknis mati."
     },
     "history": {
-      "title": "Pengaturan riwayat",
       "reading": "Kata tertulis dengan yang diucapkan",
-      "hint": "Seret di atas kata untuk memilih sebagian teks dan memperbaiki cara membacanya.",
-      "empty": "Belum ada yang dibacakan. Bacaan yang Anda putar muncul di sini.",
-      "limit": {
-        "title": "Batas riwayat",
-        "description": "Jumlah bacaan terbanyak yang disimpan di riwayat",
-        "entries": "bacaan"
-      },
-      "retention": {
-        "title": "Hapus otomatis",
-        "description": "Hapus juga bacaan yang lebih lama secara otomatis",
-        "keepNothing": "Jangan pernah simpan",
-        "keepLimit": "Simpan {{count}} terbaru",
-        "days3": "Setelah 3 hari",
-        "weeks2": "Setelah 2 minggu",
-        "months3": "Setelah 3 bulan"
-      },
-      "clear": {
-        "title": "Hapus riwayat",
-        "description": "Menghapus semua bacaan tersimpan. Kosakata Anda tidak berubah.",
-        "confirmation": "Hapus semua {{count}} bacaan tersimpan? Kosakata Anda tidak berubah."
-      },
+      "readingHint": "Teks tertulis di atas, yang diucapkan di bawahnya. Seret di atas kata untuk memperbaiki cara kata itu dibacakan.",
       "retentionConfirm": {
         "message_one": "Hapus {{count}} bacaan tersimpan sekarang? Kosakata Anda tidak berubah.",
         "message": "Hapus {{count}} bacaan tersimpan sekarang? Kosakata Anda tidak berubah.",
@@ -1304,10 +1381,7 @@
         "written": "Tertulis",
         "spoken": "Terucap",
         "kind": "Jenis",
-        "voices": "Suara",
-        "match": "Pencocokan",
-        "enabled": "Aktif",
-        "actions": "Tindakan"
+        "match": "Pencocokan"
       },
       "kinds": {
         "symbol": "Simbol",
@@ -1315,10 +1389,9 @@
         "term": "Istilah",
         "acronym": "Akronim"
       },
-      "voices": {
-        "all": "Semua suara",
-        "except": "kecuali {{names}}",
-        "add": "+ suara"
+      "models": {
+        "all": "Semua model",
+        "except": "kecuali {{names}}"
       },
       "origins": {
         "builtin": "Bawaan",
@@ -1331,7 +1404,6 @@
         "listen": "Dengarkan",
         "delete": "Hapus",
         "reset": "Atur ulang ke bawaan",
-        "save": "Simpan",
         "cancel": "Batal"
       },
       "match": {
@@ -1347,13 +1419,13 @@
       },
       "filter": "Cari teks tertulis atau ucapan",
       "toggle": "Gunakan {{written}}",
-      "editTitle": "Edit entri",
       "fields": {
         "skip": "Lewati",
         "appliesTo": "Berlaku untuk"
       },
-      "empty": "Tidak ada entri yang cocok dengan filter Anda.",
-      "deleteConfirmation": "Hapus {{written}} dari kosakata Anda? Tindakan ini tidak dapat dibatalkan.",
+      "emptyQuery": "Tidak ada yang cocok dengan “{{query}}”.",
+      "emptyFilters": "Tidak ada yang cocok dengan filter ini.",
+      "clearFilters": "Hapus filter",
       "resetConfirm": "Atur ulang {{written}} ke bacaan bawaan? Entri Anda dihapus.",
       "errors": {
         "changed": "Berkas kosakata berubah di disk. Tabel dimuat ulang; lakukan perubahan Anda lagi.",
@@ -1361,7 +1433,7 @@
         "invalidEdit": "Entri ini tidak dapat disimpan: {{message}}",
         "tooLarge": "Berkas kosakata akan lebih besar dari 1 MiB sehingga tidak ada yang disimpan.",
         "io": "Berkas kosakata tidak dapat ditulis: {{message}}",
-        "voicesChanged": "Kosakata berubah saat perubahan ini menunggu, jadi perubahan suara tidak diterapkan. Pilih suara lagi."
+        "voicesChanged": "Kosakata berubah saat perubahan ini menunggu, jadi perubahan tidak diterapkan."
       },
       "problems": {
         "shadowed": "Tidak pernah berlaku: entri berprioritas lebih tinggi selalu menang",
@@ -1382,35 +1454,50 @@
         "invalid": "Tidak dapat disimpan: {{detail}}"
       },
       "check": {
-        "title": "Periksa di semua suara",
+        "title": "Periksa di semua model",
         "playAll": "Putar semua",
         "playing": "Memutar {{model}}",
-        "checking": "Memeriksa setiap suara...",
+        "checking": "Memeriksa setiap model...",
         "heardRight": "terdengar benar",
         "missed": "salah dengar: {{heard}}",
         "failed": "tidak dapat diperiksa: {{error}}",
         "row": "{{model}}: {{outcome}}",
-        "advisory": "Beberapa suara tidak membacanya dengan benar. Anda tetap bisa menyimpannya.",
-        "saveAllAnyway": "Tetap simpan untuk semua suara",
-        "savePassedOnly": "Simpan hanya untuk suara yang lulus",
-        "pickOne": "Pilih satu suara",
+        "advisory": "Beberapa model tidak membacanya dengan benar. Anda tetap bisa menyimpannya.",
+        "saveAllAnyway": "Tetap simpan untuk semua model",
+        "savePassedOnly": "Simpan hanya untuk model yang lulus",
+        "pickOne": "Pilih satu model",
         "dictating": "Dikte sedang berjalan. Periksa lagi setelah selesai.",
         "transcribeFailed": "Ucapan-ke-teks tidak dapat mentranskripsikan suara."
       },
       "filters": {
-        "voice": "Suara",
+        "model": "Model",
         "kind": "Jenis",
         "source": "Sumber",
         "all": "Semua",
         "changed": "Diubah oleh Anda",
-        "onlyProblems": "Hanya masalah"
+        "problems": "Masalah"
       },
       "defaultLabel": "bawaan:",
-      "defaultLabelFor": "bawaan untuk {{voices}}:"
+      "defaultLabelFor": "bawaan untuk {{voices}}:",
+      "dialog": {
+        "editTitle": "Edit {{written}}",
+        "context": "{{written}}, kini diucapkan sebagai {{spoken}}.",
+        "overrides": "Entri Anda menggantikan bacaan bawaan {{default}}.",
+        "builtinDelete": "Entri bawaan dapat dimatikan, tidak dapat dihapus.",
+        "deleteConfirm": "Hapus {{written}}? Entri Anda yang lain tetap disimpan.",
+        "deleteAction": "Hapus entri",
+        "conflict": "File kosakata berubah di disk dan dimuat ulang. Periksa entri, lalu Simpan lagi.",
+        "refused": "Kosakata berubah dan entri ini tidak dapat lagi disimpan apa adanya. Periksa Berlaku untuk, atau batalkan dan tambahkan lagi.",
+        "scopeRefused": "Model ini tidak dapat diubah untuk entri ini."
+      },
+      "acronymStylePerModel": "Gaya akronim per model",
+      "invalid": {
+        "builtinUsed": "Pembacaan bawaan digunakan sampai berkas diperbaiki.",
+        "reload": "Muat ulang",
+        "openFolder": "Buka folder"
+      }
     },
     "correction": {
-      "add": "Tambah koreksi",
-      "start": "Tambah koreksi",
       "writtenText": "Teks tertulis",
       "next": "Berikutnya",
       "title": "Koreksi pembacaan",
@@ -1421,12 +1508,11 @@
       "deriving": "Menentukan aturan...",
       "exactOnly": "Hanya teks yang persis ini",
       "chooseScope": "Pilih cakupan penerapannya",
-      "scopeRequired": "Pilih Semua suara atau satu suara sebelum menyimpan.",
-      "acronymStyle": "Gaya akronim per suara",
+      "scopeRequiredModels": "Pilih Semua model atau satu model sebelum menyimpan.",
       "style": {
         "spaced": "Huruf terpisah (C L I)",
         "capitals": "Huruf kapital (CLI)",
-        "inherit": "Sama seperti semua suara"
+        "inheritModels": "Sama seperti semua model"
       },
       "reach": {
         "extension": "berlaku untuk setiap file {{extension}}",
@@ -1447,5 +1533,67 @@
         "transcribeFailed": "Ucapan ke teks tidak dapat mentranskripsikan yang Anda ucapkan."
       }
     }
+  },
+  "history": {
+    "change": "Ubah",
+    "changeLabel": "Ubah cara riwayat disimpan",
+    "transcribeFile": "Transkripsikan file",
+    "notKept": "Riwayat tidak disimpan.",
+    "empty": {
+      "dictation": "Belum ada dikte.",
+      "dictationHint": "Tekan <dictate/> untuk mendikte atau <cleanup/> untuk mendikte dengan perapian.",
+      "dictationHintDictate": "Tekan <keys/> untuk mendikte.",
+      "dictationHintCleanup": "Tekan <keys/> untuk mendikte dengan perapian.",
+      "read": "Belum ada yang dibacakan.",
+      "readHint": "Salin teks lalu tekan <keys/>."
+    },
+    "summary": {
+      "dictation": {
+        "never": "Semua entri disimpan. Entri berbintang tetap disimpan.",
+        "none": "Tidak ada entri yang disimpan. Entri berbintang dan file yang ditranskripsi tetap disimpan.",
+        "latest_one": "Entri terbaru disimpan. Entri berbintang tetap disimpan.",
+        "latest": "{{count}} entri terbaru disimpan. Entri berbintang tetap disimpan.",
+        "days3": "Entri yang lebih lama dari 3 hari dihapus. Entri berbintang tetap disimpan.",
+        "weeks2": "Entri yang lebih lama dari 2 minggu dihapus. Entri berbintang tetap disimpan.",
+        "months3": "Entri yang lebih lama dari 3 bulan dihapus. Entri berbintang tetap disimpan."
+      },
+      "read": {
+        "latest_one": "Entri terbaru disimpan.",
+        "latest": "{{count}} entri terbaru disimpan.",
+        "days3_one": "Entri terbaru disimpan, tidak ada yang lebih lama dari 3 hari.",
+        "days3": "{{count}} entri terbaru disimpan, tidak ada yang lebih lama dari 3 hari.",
+        "weeks2_one": "Entri terbaru disimpan, tidak ada yang lebih lama dari 2 minggu.",
+        "weeks2": "{{count}} entri terbaru disimpan, tidak ada yang lebih lama dari 2 minggu.",
+        "months3_one": "Entri terbaru disimpan, tidak ada yang lebih lama dari 3 bulan.",
+        "months3": "{{count}} entri terbaru disimpan, tidak ada yang lebih lama dari 3 bulan."
+      }
+    },
+    "clear": {
+      "action": "Hapus riwayat",
+      "dictationConfirm_one": "Hapus {{count}} entri dan {{recordings}}? Entri berbintang tetap disimpan.",
+      "dictationConfirm": "Hapus {{count}} entri dan {{recordings}}? Entri berbintang tetap disimpan.",
+      "recordings_one": "{{count}} rekaman",
+      "recordings": "{{count}} rekaman",
+      "readConfirm_one": "Hapus {{count}} entri? Kosakata Anda tidak berubah.",
+      "readConfirm": "Hapus {{count}} entri? Kosakata Anda tidak berubah.",
+      "nothing": "Tidak ada yang perlu dihapus."
+    },
+    "row": {
+      "open": "Tampilkan entri",
+      "close": "Sembunyikan entri"
+    },
+    "copy": "Salin teks",
+    "copyCleaned": "Salin teks yang dibersihkan",
+    "copyOriginal": "Salin asli",
+    "star": "Beri bintang",
+    "unstar": "Hapus bintang",
+    "retranscribe": "Transkripsikan ulang",
+    "cancelTranscription": "Batalkan transkripsi",
+    "delete": "Hapus",
+    "cleanedWith": "Dibersihkan dengan {{model}}.",
+    "cleaned": "Teks yang dibersihkan",
+    "original": "Transkrip asli",
+    "diffNote": "Menampilkan perbedaan dari transkrip asli.",
+    "noCleanup": "Tanpa pembersihan"
   }
 }

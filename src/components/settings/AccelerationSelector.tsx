@@ -9,6 +9,7 @@ import type { TranscribeAcceleratorSetting } from "@/bindings";
 interface AccelerationSelectorProps {
   descriptionMode?: "tooltip" | "inline";
   grouped?: boolean;
+  title?: string;
 }
 
 /**
@@ -40,6 +41,7 @@ function decodeTranscribeValue(value: string): {
 export const AccelerationSelector: FC<AccelerationSelectorProps> = ({
   descriptionMode = "tooltip",
   grouped = false,
+  title,
 }) => {
   const { t } = useTranslation();
   const { getSetting, updateSetting, isUpdating } = useSettings();
@@ -100,7 +102,7 @@ export const AccelerationSelector: FC<AccelerationSelectorProps> = ({
 
   return (
     <SettingContainer
-      title={t("settings.advanced.acceleration.transcribe.title")}
+      title={title ?? t("settings.advanced.acceleration.transcribe.title")}
       description={t("settings.advanced.acceleration.transcribe.description")}
       descriptionMode={descriptionMode}
       grouped={grouped}

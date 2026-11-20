@@ -36,6 +36,19 @@
     "debug": "Probleemoplossing",
     "about": "Over Handy"
   },
+  "nav": {
+    "dictation": "Dicteren",
+    "readAloud": "Voorlezen",
+    "models": "Modellen",
+    "settings": "Instellingen",
+    "history": "Geschiedenis",
+    "cleanup": "Opschonen",
+    "vocabulary": "Woordenschat",
+    "general": "Algemeen",
+    "advanced": "Geavanceerd",
+    "about": "Over Handy",
+    "debug": "Probleemoplossing"
+  },
   "onboarding": {
     "customModelDescription": "Niet officieel ondersteund",
     "migration": {
@@ -345,6 +358,52 @@
     "lockedWhileTranscribing": "Je kunt van model wisselen zodra het transcriberen in Geschiedenis klaar is."
   },
   "settings": {
+    "groups": {
+      "shortcuts": "Sneltoetsen",
+      "model": "Model",
+      "languages": "Talen",
+      "microphone": "Microfoon",
+      "output": "Uitvoer",
+      "text": "Tekst",
+      "overlay": "Overlay",
+      "history": "Geschiedenis",
+      "playback": "Afspelen",
+      "textHandling": "Tekstverwerking",
+      "sound": "Geluid",
+      "appearance": "Uiterlijk",
+      "startup": "Opstarten",
+      "models": "Modellen",
+      "dictationEngine": "Dicteermotor",
+      "experimental": "Experimenteel",
+      "provider": "Aanbieder",
+      "instructions": "Instructies",
+      "localModel": "Lokaal model"
+    },
+    "jobModel": {
+      "manage": "Modellen beheren",
+      "choose": "Kies een model",
+      "loading": "Modellen laden",
+      "empty": {
+        "dictation": "Nog geen dicteermodel.",
+        "readAloud": "Nog geen voorleesmodel."
+      },
+      "help": {
+        "dictation": "Kies een gedownload dicteermodel.",
+        "readAloud": "Kies een gedownload voorleesmodel."
+      }
+    },
+    "rows": {
+      "unloadIdle": "Inactieve modellen ontladen",
+      "runOn": "Dicteermodellen uitvoeren op"
+    },
+    "shortcuts": {
+      "dictate": "Dicteren",
+      "dictateWithCleanup": "Dicteren met opschonen",
+      "cancel": "Annuleren",
+      "readAloud": "Voorlezen",
+      "activation": "Activering",
+      "activationHelp": "Voor dicteersneltoetsen"
+    },
     "modelSettings": {
       "title": "Instellingen voor {{model}}"
     },
@@ -363,9 +422,6 @@
             "name": "Sneltoets voor dicteren",
             "description": "De sneltoets om je stem op te nemen en te transcriberen."
           },
-          "transcribe_raw": {
-            "name": "Sneltoets voor ruwe tekst"
-          },
           "cancel": {
             "name": "Sneltoets voor annuleren",
             "description": "De sneltoets om de huidige opname te annuleren."
@@ -375,7 +431,6 @@
             "description": "Optioneel: Een specifieke sneltoets die altijd AI-naverwerking toepast op je transcriptie."
           },
           "read_aloud": {
-            "name": "Sneltoets voor voorlezen",
             "description": "Opent het pop-upvenster en leest gekopieerde tekst voor."
           }
         },
@@ -487,11 +542,13 @@
         "title": "Afspeelapparaat",
         "description": "Selecteer het gewenste audioapparaat voor feedbackgeluiden",
         "placeholder": "Afspeelapparaat selecteren...",
-        "loading": "Laden..."
+        "loading": "Laden...",
+        "offReason": "Niet gebruikt wanneer geluidsfeedback uit staat."
       },
       "volume": {
         "title": "Volume",
-        "description": "Pas het volume van de geluidsfeedback aan"
+        "description": "Pas het volume van de geluidsfeedback aan",
+        "offReason": "Niet gebruikt wanneer geluidsfeedback uit staat."
       }
     },
     "advanced": {
@@ -657,9 +714,6 @@
       }
     },
     "postProcessing": {
-      "provider": {
-        "title": "Aanbieder"
-      },
       "api": {
         "title": "API",
         "provider": {
@@ -722,7 +776,6 @@
         "noCleanupModel": "Geen naverwerkingsmodel",
         "s1Description": "Gebruikt de instellingen voor stijl, structuur en context.",
         "plainDescription": "Gebruikt je geselecteerde Handy-prompt.",
-        "groupTitle": "Lokaal model",
         "size": "{{size}} MiB",
         "downloaded": "Gedownload",
         "use": "Gebruiken",
@@ -768,25 +821,37 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 met één extra voorwaarde: het model moet altijd \"S1-mini\" van \"Superwhisper\" heten, met precies deze hoofdletters en kleine letters."
         },
-        "promptRequired": "Selecteer in de groep Prompts een niet-lege Handy-prompt. Tot die tijd wordt naverwerking overgeslagen en wordt de ruwe transcriptie gebruikt.",
+        "promptRequired": "Selecteer in de groep Instructies een niet-lege Handy-prompt. Tot die tijd wordt naverwerking overgeslagen en wordt de ruwe transcriptie gebruikt.",
         "promptHidden": "Dit model gebruikt zijn eigen vaste prompt en de instellingen voor stijl, structuur en context hierboven, dus de prompt-editor is verborgen."
+      }
+    },
+    "cleanup": {
+      "enable": {
+        "label": "Dictaten opschonen",
+        "description": "Voegt de sneltoets \"Dicteren met opschonen\" toe. Tekst die ermee is gedicteerd, wordt opgeschoond voordat deze wordt geplakt."
+      },
+      "sentTo": "Dictaten worden voor opschoning naar {{host}} gestuurd.",
+      "prompt": {
+        "edit": "Bewerken",
+        "new": "Nieuwe prompt",
+        "editTitle": "{{name}} bewerken",
+        "newTitle": "Nieuwe prompt",
+        "delete": "Verwijderen",
+        "deleteConfirm": "{{name}} verwijderen? Dictaten die er al mee zijn opgeschoond, veranderen niet.",
+        "deleteAction": "Prompt verwijderen",
+        "lastPrompt": "Houd minstens één prompt over.",
+        "saveFailed": "De prompt kon niet worden opgeslagen.",
+        "createFirst": "Kies Nieuwe prompt om je eerste opschoonopdracht te schrijven."
       }
     },
     "history": {
       "title": "Geschiedenis",
-      "cleaned": "Naverwerkt",
-      "cleanedWith": "Naverwerkt met {{model}}",
-      "raw": "Ruw",
-      "copyRaw": "Ruwe tekst kopiëren",
-      "copyPostProcessed": "Naverwerkte tekst kopiëren",
       "compare": {
         "title": "Vergelijkingsweergave",
         "diff": "Verschillen",
         "side_by_side": "Naast elkaar",
         "stacked": "Onder elkaar"
       },
-      "clearHistory": "Geschiedenis wissen",
-      "clearConfirmation": "{{count}} niet-gemarkeerde geschiedenisitems en {{recordings}} opnamen verwijderen? Gemarkeerde items en hun opnamen blijven bewaard.",
       "openFolder": "Opnamemap openen",
       "loading": "Geschiedenis laden...",
       "empty": "Nog geen transcripties. Start met opnemen om je geschiedenis op te bouwen!",
@@ -799,6 +864,7 @@
       "deleteConfirm": "Dit item en de opname ervan verwijderen?",
       "deleteConfirmAction": "Item verwijderen",
       "retranscribe": "Opnieuw transcriberen",
+      "retranscribeError": "Dit item kon niet opnieuw worden getranscribeerd.",
       "cancelTranscription": "Transcriptie annuleren",
       "transcribing": "Transcriberen...",
       "transcriptionFailed": "Transcriptie mislukt. Je kunt het opnieuw proberen via het herlaad-pictogram.",
@@ -820,6 +886,38 @@
         "weeks2": "Items zonder ster ouder dan 2 weken en hun opnames verwijderen? Items met ster en getranscribeerde bestanden blijven bewaard.",
         "months3": "Items zonder ster ouder dan 3 maanden en hun opnames verwijderen? Items met ster en getranscribeerde bestanden blijven bewaard.",
         "action": "Items verwijderen"
+      }
+    },
+    "dictationHistory": {
+      "limitTitle": "Bewaar de laatste",
+      "limitUnit": "items",
+      "limitHelp": "Hoeveel items 'Bewaar de laatste' bewaart.",
+      "limitTimeLimit": "Niet gebruikt bij een tijdslimiet.",
+      "autoDeleteTitle": "Automatisch verwijderen",
+      "autoDeleteHelp": "Items met een ster en getranscribeerde bestanden worden nooit automatisch verwijderd.",
+      "options": {
+        "never": "Uit (alles bewaren)",
+        "preserveLimit": "Bewaar de nieuwste {{count}}",
+        "days3": "Ouder dan 3 dagen",
+        "weeks2": "Ouder dan 2 weken",
+        "months3": "Ouder dan 3 maanden"
+      },
+      "folderTitle": "Map met opnamen",
+      "folderOpen": "Openen"
+    },
+    "readAloudHistory": {
+      "keepTitle": "Bewaar geschiedenis",
+      "keepHelp": "Alleen tekst, geen audio.",
+      "limitTitle": "Bewaar de laatste",
+      "limitUnit": "items",
+      "limitHelp": "Hoeveel items 'Bewaar geschiedenis' bewaart.",
+      "limitOff": "Niet gebruikt als de geschiedenis uit staat.",
+      "options": {
+        "keepNothing": "Niet bewaren",
+        "keepLimit": "Bewaar de laatste {{count}}",
+        "days3": "Bewaar de laatste {{count}}, geen ouder dan 3 dagen",
+        "weeks2": "Bewaar de laatste {{count}}, geen ouder dan 2 weken",
+        "months3": "Bewaar de laatste {{count}}, geen ouder dan 3 maanden"
       }
     },
     "debug": {
@@ -1034,6 +1132,14 @@
     "noOptionsFound": "Geen opties gevonden",
     "cancel": "Annuleren"
   },
+  "editor": {
+    "save": "Opslaan",
+    "discard": {
+      "message": "Wijzigingen negeren?",
+      "keep": "Verder bewerken",
+      "action": "Negeren"
+    }
+  },
   "errors": {
     "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
     "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
@@ -1189,7 +1295,6 @@
       "finished": "Voltooid",
       "error": "Fout"
     },
-    "modelsTitle": "Tekst-naar-spraakmodellen",
     "modelsSubtitle": "Kies een stemmodel. De snelheidscijfers zijn gemeten op de computer van de ontwikkelaar; die van jou kunnen afwijken.",
     "downloaded": "Gedownload",
     "availableToDownload": "Beschikbaar om te downloaden",
@@ -1213,11 +1318,10 @@
     "saveToken": "Token instellen",
     "model": "Model",
     "voice": "Stem",
-    "preview": "Stem beluisteren",
-    "speed": "Snelheid: {{value}}x",
+    "preview": "Beluisteren",
     "pitch": "Toonhoogte: {{value}} halve tonen",
-    "output": "Uitvoerapparaat",
-    "sameAsHandy": "Hetzelfde als Handy",
+    "output": "Uitvoerapparaat voor voorlezen",
+    "sameAsHandy": "Hetzelfde als {{device}}",
     "readCode": "Codeblokken voorlezen",
     "technicalReading": "Technisch voorlezen",
     "fullPaths": "Volledige paden voorlezen",
@@ -1250,11 +1354,9 @@
     },
     "voiceCount": "{{count}} stemmen",
     "downloadProgress": "Voortgang van modeldownload",
-    "settingsTitle": "Tekst-naar-spraak",
     "speedLabel": "Snelheid",
     "pitchLabel": "Toonhoogte",
     "help": {
-      "model": "Kies een gedownload tekst-naar-spraakmodel.",
       "voice": "Kies een stem voor dit model en beluister die.",
       "speed": "Pas aan hoe snel de tekst wordt voorgelezen.",
       "pitch": "Pas de toonhoogte van de stem aan in halve tonen.",
@@ -1262,37 +1364,12 @@
       "readCode": "Neem omheinde codeblokken mee bij het voorlezen.",
       "technicalReading": "Spreekt paden, bestandsnamen, opties en codenamen volledig uit met behulp van je woordenlijstbestand.",
       "fullPaths": "Leest elke map in een pad voor. Uit leest alleen de bestandsnaam voor.",
-      "fullLinks": "Leest het hele webadres voor. Uit noemt alleen de sitenaam."
-    },
-    "tabs": {
-      "settings": "Instellingen",
-      "history": "Geschiedenis",
-      "vocabulary": "Woordenschat"
+      "fullLinks": "Leest het hele webadres voor. Uit noemt alleen de sitenaam.",
+      "technicalOff": "Niet gebruikt als technisch voorlezen uit staat."
     },
     "history": {
-      "title": "Instellingen voor geschiedenis",
       "reading": "Geschreven woorden met wat er gezegd is",
-      "hint": "Sleep over woorden om een stuk te selecteren en te corrigeren hoe het is voorgelezen.",
-      "empty": "Er is nog niets voorgelezen. Voorlezingen die je afspeelt verschijnen hier.",
-      "limit": {
-        "title": "Limiet van de geschiedenis",
-        "description": "Maximum aantal voorlezingen dat in de geschiedenis wordt bewaard",
-        "entries": "voorlezingen"
-      },
-      "retention": {
-        "title": "Automatisch verwijderen",
-        "description": "Verwijder oudere voorlezingen ook automatisch",
-        "keepNothing": "Nooit bewaren",
-        "keepLimit": "Laatste {{count}} bewaren",
-        "days3": "Na 3 dagen",
-        "weeks2": "Na 2 weken",
-        "months3": "Na 3 maanden"
-      },
-      "clear": {
-        "title": "Geschiedenis wissen",
-        "description": "Verwijdert alle bewaarde voorlezingen. Je woordenlijst verandert niet.",
-        "confirmation": "Alle {{count}} bewaarde voorlezingen verwijderen? Je woordenlijst verandert niet."
-      },
+      "readingHint": "Bovenaan de geschreven tekst, eronder wat er gezegd is. Sleep over woorden om te corrigeren hoe ze zijn voorgelezen.",
       "retentionConfirm": {
         "message_one": "Nu {{count}} bewaarde voorlezing verwijderen? Je woordenlijst verandert niet.",
         "message": "Nu {{count}} bewaarde voorlezingen verwijderen? Je woordenlijst verandert niet.",
@@ -1304,10 +1381,7 @@
         "written": "Geschreven",
         "spoken": "Uitgesproken",
         "kind": "Soort",
-        "voices": "Stemmen",
-        "match": "Overeenkomst",
-        "enabled": "Aan",
-        "actions": "Acties"
+        "match": "Overeenkomst"
       },
       "kinds": {
         "symbol": "Symbool",
@@ -1315,10 +1389,9 @@
         "term": "Term",
         "acronym": "Acroniem"
       },
-      "voices": {
-        "all": "Alle stemmen",
-        "except": "behalve {{names}}",
-        "add": "+ stem"
+      "models": {
+        "all": "Alle modellen",
+        "except": "behalve {{names}}"
       },
       "origins": {
         "builtin": "Ingebouwd",
@@ -1331,7 +1404,6 @@
         "listen": "Beluisteren",
         "delete": "Verwijderen",
         "reset": "Terugzetten naar standaard",
-        "save": "Opslaan",
         "cancel": "Annuleren"
       },
       "match": {
@@ -1347,13 +1419,13 @@
       },
       "filter": "Zoeken in geschreven of gesproken tekst",
       "toggle": "{{written}} gebruiken",
-      "editTitle": "Item bewerken",
       "fields": {
         "skip": "Overslaan",
         "appliesTo": "Geldt voor"
       },
-      "empty": "Geen items komen overeen met je filter.",
-      "deleteConfirmation": "{{written}} uit je woordenschat verwijderen? Dit kan niet ongedaan worden gemaakt.",
+      "emptyQuery": "Niets gevonden voor „{{query}}”.",
+      "emptyFilters": "Niets komt overeen met deze filters.",
+      "clearFilters": "Filters wissen",
       "resetConfirm": "{{written}} terugzetten naar de ingebouwde uitspraak? Je item wordt verwijderd.",
       "errors": {
         "changed": "Het woordenschatbestand is op schijf gewijzigd. De tabel is opnieuw geladen; voer je wijziging opnieuw uit.",
@@ -1361,7 +1433,7 @@
         "invalidEdit": "Dit item kon niet worden opgeslagen: {{message}}",
         "tooLarge": "Het woordenschatbestand zou groter zijn dan 1 MiB, dus er is niets opgeslagen.",
         "io": "Het woordenschatbestand kon niet worden geschreven: {{message}}",
-        "voicesChanged": "De woordenschat veranderde terwijl dit wachtte, dus de wijziging van stemmen is niet toegepast. Kies de stemmen opnieuw."
+        "voicesChanged": "De woordenschat veranderde terwijl dit wachtte, dus de wijziging is niet toegepast."
       },
       "problems": {
         "shadowed": "Is nooit van toepassing: een item met hogere prioriteit wint altijd",
@@ -1382,35 +1454,50 @@
         "invalid": "Opslaan lukt niet: {{detail}}"
       },
       "check": {
-        "title": "Controle over alle stemmen",
+        "title": "Controle over alle modellen",
         "playAll": "Alles afspelen",
         "playing": "{{model}} wordt afgespeeld",
-        "checking": "Elke stem wordt gecontroleerd...",
+        "checking": "Elk model wordt gecontroleerd...",
         "heardRight": "goed verstaan",
         "missed": "verkeerd verstaan: {{heard}}",
         "failed": "kon niet controleren: {{error}}",
         "row": "{{model}}: {{outcome}}",
-        "advisory": "Sommige stemmen lazen dit niet goed. Je kunt het toch opslaan.",
-        "saveAllAnyway": "Toch opslaan voor alle stemmen",
-        "savePassedOnly": "Alleen opslaan voor geslaagde stemmen",
-        "pickOne": "Kies één stem",
+        "advisory": "Sommige modellen lazen dit niet goed. Je kunt het toch opslaan.",
+        "saveAllAnyway": "Toch opslaan voor alle modellen",
+        "savePassedOnly": "Alleen opslaan voor geslaagde modellen",
+        "pickOne": "Kies één model",
         "dictating": "Er loopt een dictaat. Controleer opnieuw als het klaar is.",
         "transcribeFailed": "Spraak-naar-tekst kon de stem niet transcriberen."
       },
       "filters": {
-        "voice": "Stem",
+        "model": "Model",
         "kind": "Soort",
         "source": "Bron",
         "all": "Alles",
         "changed": "Door jou gewijzigd",
-        "onlyProblems": "Alleen problemen"
+        "problems": "Problemen"
       },
       "defaultLabel": "standaard:",
-      "defaultLabelFor": "standaard voor {{voices}}:"
+      "defaultLabelFor": "standaard voor {{voices}}:",
+      "dialog": {
+        "editTitle": "{{written}} bewerken",
+        "context": "{{written}}, nu uitgesproken als {{spoken}}.",
+        "overrides": "Jouw item vervangt de ingebouwde uitspraak {{default}}.",
+        "builtinDelete": "Ingebouwde items kunnen worden uitgeschakeld, niet verwijderd.",
+        "deleteConfirm": "{{written}} verwijderen? Je andere items blijven behouden.",
+        "deleteAction": "Item verwijderen",
+        "conflict": "Het woordenlijstbestand is op de schijf gewijzigd en opnieuw geladen. Controleer het item en sla daarna opnieuw op.",
+        "refused": "De woordenlijst is gewijzigd en dit item kan niet meer worden opgeslagen zoals het is. Controleer Geldt voor, of annuleer en voeg het opnieuw toe.",
+        "scopeRefused": "Deze modellen kunnen voor dit item niet worden gewijzigd."
+      },
+      "acronymStylePerModel": "Afkortingsstijl per model",
+      "invalid": {
+        "builtinUsed": "Tot het is hersteld, worden de ingebouwde uitspraken gebruikt.",
+        "reload": "Opnieuw laden",
+        "openFolder": "Map openen"
+      }
     },
     "correction": {
-      "add": "Correctie toevoegen",
-      "start": "Een correctie toevoegen",
       "writtenText": "Geschreven tekst",
       "next": "Volgende",
       "title": "Een uitspraak corrigeren",
@@ -1421,12 +1508,11 @@
       "deriving": "Regel wordt bepaald...",
       "exactOnly": "Alleen deze exacte tekst",
       "chooseScope": "Kies waar het geldt",
-      "scopeRequired": "Kies Alle stemmen of één stem voordat je opslaat.",
-      "acronymStyle": "Afkortingsstijl per stem",
+      "scopeRequiredModels": "Kies Alle modellen of één model voordat je opslaat.",
       "style": {
         "spaced": "Losse letters (C L I)",
         "capitals": "Hoofdletters (CLI)",
-        "inherit": "Zelfde als alle stemmen"
+        "inheritModels": "Zelfde als alle modellen"
       },
       "reach": {
         "extension": "geldt voor elk {{extension}}-bestand",
@@ -1447,5 +1533,67 @@
         "transcribeFailed": "Spraak-naar-tekst kon niet transcriberen wat je zei."
       }
     }
+  },
+  "history": {
+    "change": "Wijzigen",
+    "changeLabel": "Wijzig hoe de geschiedenis wordt bewaard",
+    "transcribeFile": "Bestand transcriberen",
+    "notKept": "De geschiedenis wordt niet bewaard.",
+    "empty": {
+      "dictation": "Nog geen dictaten.",
+      "dictationHint": "Druk op <dictate/> om te dicteren of op <cleanup/> om te dicteren met opschonen.",
+      "dictationHintDictate": "Druk op <keys/> om te dicteren.",
+      "dictationHintCleanup": "Druk op <keys/> om te dicteren met opschonen.",
+      "read": "Nog niets voorgelezen.",
+      "readHint": "Kopieer wat tekst en druk op <keys/>."
+    },
+    "summary": {
+      "dictation": {
+        "never": "Alle items worden bewaard. Gemarkeerde items blijven bewaard.",
+        "none": "Er worden geen items bewaard. Gemarkeerde items en getranscribeerde bestanden blijven bewaard.",
+        "latest_one": "Het nieuwste item wordt bewaard. Gemarkeerde items blijven bewaard.",
+        "latest": "De nieuwste {{count}} items worden bewaard. Gemarkeerde items blijven bewaard.",
+        "days3": "Items die ouder zijn dan 3 dagen worden verwijderd. Gemarkeerde items blijven bewaard.",
+        "weeks2": "Items die ouder zijn dan 2 weken worden verwijderd. Gemarkeerde items blijven bewaard.",
+        "months3": "Items die ouder zijn dan 3 maanden worden verwijderd. Gemarkeerde items blijven bewaard."
+      },
+      "read": {
+        "latest_one": "Het nieuwste item wordt bewaard.",
+        "latest": "De nieuwste {{count}} items worden bewaard.",
+        "days3_one": "Het nieuwste item wordt bewaard, geen ouder dan 3 dagen.",
+        "days3": "De nieuwste {{count}} items worden bewaard, geen ouder dan 3 dagen.",
+        "weeks2_one": "Het nieuwste item wordt bewaard, geen ouder dan 2 weken.",
+        "weeks2": "De nieuwste {{count}} items worden bewaard, geen ouder dan 2 weken.",
+        "months3_one": "Het nieuwste item wordt bewaard, geen ouder dan 3 maanden.",
+        "months3": "De nieuwste {{count}} items worden bewaard, geen ouder dan 3 maanden."
+      }
+    },
+    "clear": {
+      "action": "Geschiedenis wissen",
+      "dictationConfirm_one": "{{count}} item en {{recordings}} verwijderen? Gemarkeerde items blijven bewaard.",
+      "dictationConfirm": "{{count}} items en {{recordings}} verwijderen? Gemarkeerde items blijven bewaard.",
+      "recordings_one": "{{count}} opname",
+      "recordings": "{{count}} opnamen",
+      "readConfirm_one": "{{count}} item verwijderen? Je woordenlijst verandert niet.",
+      "readConfirm": "{{count}} items verwijderen? Je woordenlijst verandert niet.",
+      "nothing": "Er is niets om te wissen."
+    },
+    "row": {
+      "open": "Item tonen",
+      "close": "Item verbergen"
+    },
+    "copy": "Tekst kopiëren",
+    "copyCleaned": "Opgeschoonde tekst kopiëren",
+    "copyOriginal": "Origineel kopiëren",
+    "star": "Ster toevoegen",
+    "unstar": "Ster verwijderen",
+    "retranscribe": "Opnieuw transcriberen",
+    "cancelTranscription": "Transcriptie annuleren",
+    "delete": "Verwijderen",
+    "cleanedWith": "Opgeschoond met {{model}}.",
+    "cleaned": "Opgeschoonde tekst",
+    "original": "Oorspronkelijke transcriptie",
+    "diffNote": "Toont de verschillen met de oorspronkelijke transcriptie.",
+    "noCleanup": "Geen opschoning"
   }
 }

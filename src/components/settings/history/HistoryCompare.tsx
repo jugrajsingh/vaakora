@@ -37,20 +37,18 @@ export function HistoryCompare({
     );
   const effectiveView = diff?.kind === "side_by_side" ? "side_by_side" : view;
   const textClass = "text-sm whitespace-pre-wrap break-words select-text";
+  const showsDiff =
+    cleaned !== entry.transcription_text &&
+    effectiveView === "diff" &&
+    diff?.kind === "diff";
+  const caption = modelName
+    ? t("history.cleanedWith", { model: modelName })
+    : t("history.cleaned");
   return (
     <div className="space-y-2">
-      <div>
-        <span className="text-xs text-logo-primary">
-          {modelName
-            ? t("settings.history.cleanedWith", {
-                model: modelName,
-              })
-            : t("settings.history.cleaned")}
-        </span>
-      </div>
       {cleaned === entry.transcription_text ? (
         <p className={textClass}>{cleaned}</p>
-      ) : effectiveView === "diff" && diff?.kind === "diff" ? (
+      ) : showsDiff ? (
         <p className={textClass}>
           {diff.tokens.map((token, index) => (
             <React.Fragment key={index}>
@@ -74,17 +72,18 @@ export function HistoryCompare({
           }
         >
           <div>
-            <h3 className="text-xs text-ink-3">{t("settings.history.raw")}</h3>
+            <h3 className="text-xs text-ink-3">{t("history.original")}</h3>
             <p className={textClass}>{entry.transcription_text}</p>
           </div>
           <div>
-            <h3 className="text-xs text-ink-3">
-              {t("settings.history.cleaned")}
-            </h3>
+            <h3 className="text-xs text-ink-3">{t("history.cleaned")}</h3>
             <p className={textClass}>{cleaned}</p>
           </div>
         </div>
       )}
+      <p className="text-xs text-ink-2">
+        {showsDiff ? `${caption} ${t("history.diffNote")}` : caption}
+      </p>
     </div>
   );
 }

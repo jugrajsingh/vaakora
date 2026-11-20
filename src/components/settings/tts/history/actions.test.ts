@@ -3,9 +3,11 @@ import { createRequire } from "node:module";
 import type { ReadHistoryEntry, Result } from "@/bindings";
 import {
   createHistoryActions,
+  createRetentionActions,
   createSettingSetters,
-  shownEntry,
+  sameReadCount,
   type HistoryDependencies,
+  type RetentionDependencies,
 } from "./actions";
 const {
   describe,
@@ -16,6 +18,7 @@ const {
 } = createRequire(import.meta.url)("bun:test");
 
 const entry = { id: 7 } as ReadHistoryEntry;
+const older = { id: 6 } as ReadHistoryEntry;
 
 function harness(patch: Partial<HistoryDependencies> = {}) {
   const calls: string[] = [];
@@ -28,9 +31,20 @@ function harness(patch: Partial<HistoryDependencies> = {}) {
       calls.push("clear");
       return 1;
     },
-    confirm: async (count) => {
-      calls.push(`confirm ${count}`);
-      return true;
+    cleared: () => calls.push("cleared"),
+    setEntries: (entries) => calls.push(`entries ${entries.length}`),
+    setError: (key) => calls.push(`error ${key}`),
+    ...patch,
+  };
+  return { calls, actions: createHistoryActions(deps) };
+}
+
+function retentionHarness(patch: Partial<RetentionDependencies> = {}) {
+  const calls: string[] = [];
+  const deps: RetentionDependencies = {
+    load: async () => {
+      calls.push("load");
+      return [entry];
     },
     setLimit: async (limit) => {
       calls.push(`limit ${limit}`);
@@ -39,11 +53,10 @@ function harness(patch: Partial<HistoryDependencies> = {}) {
       calls.push(`retention ${retention}`);
     },
     setEntries: (entries) => calls.push(`entries ${entries.length}`),
-    setClearing: (clearing) => calls.push(`clearing ${clearing}`),
     setError: (key) => calls.push(`error ${key}`),
     ...patch,
   };
-  return { calls, actions: createHistoryActions(deps) };
+  return { calls, actions: createRetentionActions(deps) };
 }
 
 describe("history actions", () => {
@@ -61,25 +74,48 @@ describe("history actions", () => {
     assert.equal(await actions.load(), null);
     assert.deepEqual(calls, ["error null", "error tts.errors.generic"]);
   });
-  it("clear asks first, then clears and reloads", async () => {
+  it("read_count_reloads_the_list", async () => {
+    const { calls, actions } = harness({
+      load: async () => {
+        calls.push("load");
+        return [entry, older];
+      },
+    });
+    assert.deepEqual(await actions.count(), { count: 2, newest: 7 });
+    assert.deepEqual(calls, ["error null", "load", "entries 2"]);
+    const empty = harness({ load: async () => [] });
+    assert.deepEqual(await empty.actions.count(), { count: 0, newest: null });
+    const failing = harness({
+      load: async () => {
+        throw new Error("no");
+      },
+    });
+    assert.equal(await failing.actions.count(), null);
+    assert.deepEqual(failing.calls, ["error null", "error tts.errors.generic"]);
+    assert.equal(
+      sameReadCount({ count: 2, newest: 7 }, { count: 2, newest: 7 }),
+      true,
+    );
+    assert.equal(
+      sameReadCount({ count: 2, newest: 7 }, { count: 3, newest: 8 }),
+      false,
+    );
+    assert.equal(
+      sameReadCount({ count: 2, newest: 7 }, { count: 2, newest: 8 }),
+      false,
+      "one read added and the oldest pruned asks again",
+    );
+  });
+  it("read_clear_clears_then_reloads", async () => {
     const { calls, actions } = harness();
-    await actions.clear(3);
+    await actions.clear();
     assert.deepEqual(calls, [
-      "clearing true",
-      "error null",
-      "confirm 3",
       "clear",
+      "cleared",
       "error null",
       "load",
       "entries 1",
-      "clearing false",
     ]);
-  });
-  it("clear does nothing when the owner declines", async () => {
-    const { calls, actions } = harness({ confirm: async () => false });
-    await actions.clear(3);
-    assert.ok(!calls.includes("clear"), calls.join());
-    assert.equal(calls[calls.length - 1], "clearing false");
   });
   it("a failed clear is reported and does not reload", async () => {
     const { calls, actions } = harness({
@@ -87,25 +123,10 @@ describe("history actions", () => {
         throw new Error("no");
       },
     });
-    await actions.clear(3);
+    await actions.clear();
     assert.ok(calls.includes("error tts.errors.generic"), calls.join());
     assert.ok(!calls.includes("load"), calls.join());
-    assert.equal(calls[calls.length - 1], "clearing false");
-  });
-  it("a second clear while one runs is ignored", async () => {
-    let release: () => void = () => {};
-    const gate = new Promise<void>((resolve) => (release = resolve));
-    const { calls, actions } = harness({
-      confirm: async () => {
-        await gate;
-        return true;
-      },
-    });
-    const first = actions.clear(1);
-    await actions.clear(1);
-    release();
-    await first;
-    assert.equal(calls.filter((call) => call === "clear").length, 1);
+    assert.ok(!calls.includes("cleared"), "nothing was cleared");
   });
 });
 
@@ -119,7 +140,7 @@ function deferred() {
 describe("history settings", () => {
   it("retention_change_reloads_after_prune", async () => {
     const { gate, release } = deferred();
-    const { calls, actions } = harness({
+    const { calls, actions } = retentionHarness({
       setRetention: async (retention) => {
         calls.push(`retention ${retention}`);
         await gate;
@@ -141,7 +162,7 @@ describe("history settings", () => {
   });
   it("a limit change reloads once the new limit is applied", async () => {
     const { gate, release } = deferred();
-    const { calls, actions } = harness({
+    const { calls, actions } = retentionHarness({
       setLimit: async (limit) => {
         calls.push(`limit ${limit}`);
         await gate;
@@ -162,7 +183,7 @@ describe("history settings", () => {
     ]);
   });
   it("reloads even when the setting could not be saved", async () => {
-    const { calls, actions } = harness({
+    const { calls, actions } = retentionHarness({
       setLimit: async () => {
         throw new Error("no");
       },
@@ -170,6 +191,58 @@ describe("history settings", () => {
     await actions.changeLimit(2);
     assert.ok(calls.includes("load"), calls.join());
     assert.equal(calls[calls.length - 1], "error tts.errors.generic");
+  });
+});
+
+describe("retention actions", () => {
+  function recorded(patch: Partial<RetentionDependencies> = {}) {
+    const calls: string[] = [];
+    const actions = createRetentionActions({
+      load: async () => {
+        calls.push("load");
+        return [entry];
+      },
+      setLimit: async (limit) => {
+        calls.push(`limit ${limit}`);
+      },
+      setRetention: async (retention) => {
+        calls.push(`retention ${retention}`);
+      },
+      setEntries: (entries) => calls.push(`entries ${entries.length}`),
+      setError: (key) => calls.push(`error ${key}`),
+      ...patch,
+    });
+    return { calls, actions };
+  }
+  it("retention_actions_load_and_apply_without_clear", async () => {
+    const { calls, actions } = recorded();
+    assert.ok(!("clear" in actions), "no clear in the retention actions");
+    await actions.changeLimit(3);
+    assert.deepEqual(calls, ["limit 3", "error null", "load", "entries 1"]);
+    assert.equal(calls.filter((call) => call === "load").length, 1);
+    const refused = recorded({
+      setRetention: async () => {
+        throw new Error("tts.errors.busy");
+      },
+    });
+    await refused.actions.changeRetention("keep_nothing");
+    assert.deepEqual(refused.calls, [
+      "error null",
+      "load",
+      "entries 1",
+      "error tts.errors.busy",
+    ]);
+    const failing = recorded({
+      load: async () => {
+        throw new Error("no");
+      },
+    });
+    assert.equal(await failing.actions.load(), null);
+    assert.deepEqual(failing.calls, ["error null", "error tts.errors.generic"]);
+  });
+  it("the history actions are load, count and clear, without the retention changes", () => {
+    const { actions } = harness();
+    assert.deepEqual(Object.keys(actions).sort(), ["clear", "count", "load"]);
   });
 });
 
@@ -191,7 +264,7 @@ describe("history setting adapter", () => {
         calls.push("refresh settings");
       },
     });
-    const { actions } = harness({
+    const { actions } = retentionHarness({
       ...setters,
       load: async () => {
         calls.push("load");
@@ -232,20 +305,5 @@ describe("history setting adapter", () => {
     const { calls, actions } = wired({ status: "error", error: "disk full" });
     await actions.changeLimit(3);
     assert.equal(calls[calls.length - 1], "error tts.errors.generic");
-  });
-});
-
-describe("shownEntry", () => {
-  const rows = [{ id: 9 }, { id: 4 }] as ReadHistoryEntry[];
-  it("shows the chosen read while it exists", () => {
-    assert.equal(shownEntry(rows, 4)?.id, 4);
-  });
-  it("falls back to the newest read when the chosen one was pruned", () => {
-    assert.equal(shownEntry(rows, 3)?.id, 9);
-    assert.equal(shownEntry(rows, null)?.id, 9);
-  });
-  it("shows nothing for an empty or unloaded history", () => {
-    assert.equal(shownEntry([], 4), undefined);
-    assert.equal(shownEntry(null, null), undefined);
   });
 });

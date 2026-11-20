@@ -1,54 +1,54 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ReadHistoryEntry, ReadHistoryRetention } from "@/bindings";
 import {
   createPendingConfirm,
   InlineConfirm,
 } from "@/components/shared/InlineConfirm";
-import { Button } from "@/components/ui/Button";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Input } from "@/components/ui/Input";
 import { SettingContainer } from "@/components/ui/SettingContainer";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
 import { useSettings } from "@/hooks/useSettings";
 import { createLimitField, MAX_LIMIT } from "@/lib/utils/limitField";
-import { readsRemovedBy, routeChange } from "@/lib/utils/retention";
+import {
+  DEFAULT_READ_LIMIT,
+  readLimitRow,
+  readRecount,
+  readsRemovedBy,
+  routeChange,
+} from "@/lib/utils/retention";
 import { retentionOptions } from "./presentation";
 
-const DEFAULT_LIMIT = 5;
-
-/** A limit or retention change, with how many stored reads it deletes now. */
+/** A limit or retention change, with how many stored reads it deletes now and the newest read counted. */
 type ReadChange = {
   control: "limit" | "retention";
   count: number;
+  newest: number | null;
+  next: { limit: number; retention: ReadHistoryRetention };
   apply: () => void;
 };
 
 /**
- * The history settings: how many reads to keep, when older ones go, and clearing them all. The
- * limit and retention wait for `entries`; a change reads the stored list again through `refresh`
- * (`null` when it fails, which drops the change) and asks first when it deletes stored reads.
+ * The read history settings: how many reads to keep and when older ones go. The limit and
+ * retention wait for `entries`; a change reads the stored list again through `refresh` (`null`
+ * when it fails, which drops the change) and asks first when it deletes stored reads. Confirming
+ * reads the list once more: a changed count or newest read asks again with the new number.
  */
-export function HistorySettingsRow({
+export function ReadRetentionGroup({
   entries,
   refresh,
-  clearing,
-  canClear,
-  clear,
   changeLimit,
   changeRetention,
 }: {
   entries: readonly ReadHistoryEntry[] | null;
   refresh: () => Promise<readonly ReadHistoryEntry[] | null>;
-  clearing: boolean;
-  canClear: boolean;
-  clear: () => void;
   changeLimit: (limit: number) => void;
   changeRetention: (retention: ReadHistoryRetention) => void;
 }) {
   const { t } = useTranslation();
   const { getSetting, isUpdating } = useSettings();
-  const limit = getSetting("tts_history_limit") ?? DEFAULT_LIMIT;
+  const limit = getSetting("tts_history_limit") ?? DEFAULT_READ_LIMIT;
   const retention = getSetting("tts_history_retention") ?? "keep_limit";
   const [draft, setDraft] = useState<string | null>(null);
   const [pending, setPending] = useState<ReadChange | null>(null);
@@ -58,6 +58,12 @@ export function HistorySettingsRow({
     const confirm = createPendingConfirm<ReadChange>({
       show: setPending,
       apply: (change) => change.apply(),
+      recount: async (change) =>
+        readRecount(
+          change,
+          await latest.current.refresh(),
+          Math.floor(Date.now() / 1000),
+        ),
     });
     const route = async (
       next: { limit: number; retention: ReadHistoryRetention },
@@ -68,7 +74,7 @@ export function HistorySettingsRow({
       if (stored === null) return;
       const count = readsRemovedBy(stored, next, Math.floor(Date.now() / 1000));
       routeChange(
-        { control, count, apply },
+        { control, count, newest: stored[0]?.id ?? null, next, apply },
         {
           deletes: (change) => change.count > 0,
           ask: confirm.ask,
@@ -88,10 +94,13 @@ export function HistorySettingsRow({
     });
     return { field, confirm, route };
   }, []);
+  useEffect(() => confirm.cancel, [confirm]);
   const waiting = entries === null;
+  const limitRow = readLimitRow(retention);
   const confirmation = (control: ReadChange["control"]) =>
     pending?.control === control ? (
       <InlineConfirm
+        key={`${pending.count}:${pending.newest}`}
         message={t("tts.history.retentionConfirm.message", {
           count: pending.count,
         })}
@@ -101,40 +110,11 @@ export function HistorySettingsRow({
       />
     ) : null;
   return (
-    <SettingsGroup title={t("tts.history.title")}>
+    <SettingsGroup title={t("settings.groups.history")}>
       <SettingContainer
-        title={t("tts.history.limit.title")}
-        description={t("tts.history.limit.description")}
+        title={t("settings.readAloudHistory.keepTitle")}
+        description={t("settings.readAloudHistory.keepHelp")}
         descriptionMode="inline"
-        grouped
-        layout={pending?.control === "limit" ? "stacked" : "horizontal"}
-      >
-        {confirmation("limit") ?? (
-          <div className="flex items-center space-x-2">
-            <Input
-              type="number"
-              min="0"
-              max={MAX_LIMIT}
-              value={draft ?? limit}
-              onChange={(event) => field.type(event.target.value)}
-              onBlur={field.commit}
-              onKeyDown={(event) => {
-                // Enter's keypress would otherwise click the Cancel button the confirmation focuses.
-                if (event.key === "Enter") event.preventDefault();
-                field.key(event.key);
-              }}
-              disabled={waiting || isUpdating("tts_history_limit")}
-              className="w-20"
-            />
-            <span className="text-sm text-text">
-              {t("tts.history.limit.entries")}
-            </span>
-          </div>
-        )}
-      </SettingContainer>
-      <SettingContainer
-        title={t("tts.history.retention.title")}
-        description={t("tts.history.retention.description")}
         grouped
         layout={pending?.control === "retention" ? "stacked" : "horizontal"}
       >
@@ -153,18 +133,41 @@ export function HistorySettingsRow({
         )}
       </SettingContainer>
       <SettingContainer
-        title={t("tts.history.clear.title")}
-        description={t("tts.history.clear.description")}
+        title={t("settings.readAloudHistory.limitTitle")}
+        description={
+          limitRow.reasonKey
+            ? t(limitRow.reasonKey)
+            : t("settings.readAloudHistory.limitHelp")
+        }
+        descriptionMode={limitRow.disabled ? "inline" : "tooltip"}
+        disabled={limitRow.disabled}
         grouped
+        layout={pending?.control === "limit" ? "stacked" : "horizontal"}
       >
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={clearing || !canClear}
-          onClick={clear}
-        >
-          {t("tts.history.clear.title")}
-        </Button>
+        {confirmation("limit") ?? (
+          <div className="flex items-center space-x-2">
+            <Input
+              type="number"
+              min="0"
+              max={MAX_LIMIT}
+              value={draft ?? limit}
+              onChange={(event) => field.type(event.target.value)}
+              onBlur={field.commit}
+              onKeyDown={(event) => {
+                // Enter's keypress would otherwise click the Cancel button the confirmation focuses.
+                if (event.key === "Enter") event.preventDefault();
+                field.key(event.key);
+              }}
+              disabled={
+                limitRow.disabled || waiting || isUpdating("tts_history_limit")
+              }
+              className="w-20"
+            />
+            <span className="text-sm text-text">
+              {t("settings.readAloudHistory.limitUnit")}
+            </span>
+          </div>
+        )}
       </SettingContainer>
     </SettingsGroup>
   );

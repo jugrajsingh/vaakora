@@ -42,5 +42,5 @@ There are no packages yet. Clone this repository and build it from source by fol
 - Built and tested on Fedora 44 (KDE Plasma, Wayland) on an Intel Core Ultra 7 258V, and packaged as an RPM only.
 - Local post-processing needs Unix sockets and uses the Linux parent-death signal to stop `llama-server` if the app dies. The `llama-server` bundling is Linux-only.
 - Read aloud's worker process, its OpenVINO libraries, the parent-death signal and the 1 GiB free-memory check are Linux-only. On other platforms the memory check is skipped. Clipboard capture uses `wl-paste` or `xclip` on Linux.
-- The device ratings shown on the Text-to-speech Models page were measured on that one machine. Other hardware may rank devices differently.
+- The device ratings shown in Models, Read aloud were measured on that one machine. Other hardware may rank devices differently.
 - Windows and macOS are not supported by these features yet.

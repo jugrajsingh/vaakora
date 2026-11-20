@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { TtsModelInfo } from "@/bindings";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { Button } from "@/components/ui/Button";
 
 export function selectDownloadedModel(
   models: readonly TtsModelInfo[],
@@ -16,12 +15,10 @@ export function ModelSelect({
   models,
   value,
   change,
-  openModels,
 }: {
   models: readonly TtsModelInfo[];
   value: string;
   change: (model: TtsModelInfo) => void;
-  openModels: () => void;
 }) {
   const { t } = useTranslation();
   const missing = !models.some((row) => row.id === value && row.downloaded);
@@ -38,18 +35,11 @@ export function ModelSelect({
       disabled: true,
     });
   return (
-    <div className="flex flex-col items-end gap-2">
-      <Dropdown
-        options={options}
-        selectedValue={value}
-        onSelect={(id) => selectDownloadedModel(models, id, change)}
-        disabled={available.length === 0}
-      />
-      {missing && (
-        <Button variant="ghost" size="sm" onClick={openModels}>
-          {t("tts.openModels")}
-        </Button>
-      )}
-    </div>
+    <Dropdown
+      options={options}
+      selectedValue={value}
+      onSelect={(id) => selectDownloadedModel(models, id, change)}
+      disabled={available.length === 0}
+    />
   );
 }

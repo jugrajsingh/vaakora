@@ -5,13 +5,7 @@ import i18next from "i18next";
 import { I18nextProvider } from "react-i18next";
 import english from "../../../i18n/locales/en/translation.json";
 import type { DeviceRating, TtsModelInfo } from "../../../bindings";
-import {
-  ModelCard,
-  completeRating,
-  applyModelUse,
-  modelCardCallbacks,
-  modelDeleteHandlers,
-} from "./ModelCard";
+import { ModelCard, completeRating, applyModelUse } from "./ModelCard";
 import { rowActions } from "./actions";
 import { TokenField, tokenCardProps } from "./TokenField";
 import { tokenEntry, createTokenPresence } from "./token";
@@ -300,30 +294,6 @@ assert.ok(
 console.log("token entry and access error render within the Pocket card");
 
 // delete_button_asks_and_confirm_names_the_cost
-const deleteCalls: string[] = [];
-const deleteProps = {
-  confirmDelete: () => deleteCalls.push("confirmDelete"),
-  cancelDelete: () => deleteCalls.push("cancelDelete"),
-};
-const askingRow = rowActions(
-  model,
-  { selectedId: model.id, downloadId: null, deletingId: null },
-  {
-    use: () => deleteCalls.push("use"),
-    download: () => deleteCalls.push("download"),
-    delete: (id) => deleteCalls.push(`ask:${id}`),
-  },
-);
-const handlers = modelDeleteHandlers(askingRow, deleteProps);
-handlers.press();
-assert.deepEqual(deleteCalls, ["ask:pocket-en"], "Delete asks, never deletes");
-handlers.confirm();
-handlers.cancel();
-assert.deepEqual(deleteCalls, [
-  "ask:pocket-en",
-  "confirmDelete",
-  "cancelDelete",
-]);
 const renderConfirming = (selectedId: string) =>
   renderToStaticMarkup(
     <I18nextProvider i18n={i18n}>
@@ -363,44 +333,3 @@ assert.ok(
 assert.ok(!confirmingOther.includes(">Use</button>"));
 assert.ok(button(active, "Delete"), "idle card keeps its Delete button");
 console.log("delete_button_asks_and_confirm_names_the_cost passed");
-
-// models_page_delete_asks_and_drops_a_gone_model
-const pageCalls: string[] = [];
-const asked: (string | null)[] = [];
-let downloadedIds = ["pocket-en", "kokoro"];
-const page = modelCardCallbacks({
-  use: (id) => pageCalls.push(`use:${id}`),
-  download: (id) => pageCalls.push(`download:${id}`),
-  remove: (id) => pageCalls.push(`remove:${id}`),
-  show: (id) => asked.push(id),
-  downloaded: (id) => downloadedIds.includes(id),
-});
-const pageRow = rowActions(
-  model,
-  { selectedId: "other", downloadId: null, deletingId: null },
-  page.actions,
-);
-pageRow.delete();
-assert.deepEqual(pageCalls, [], "the card's Delete only asks");
-assert.deepEqual(asked, ["pocket-en"]);
-page.confirmDelete();
-page.confirmDelete();
-assert.deepEqual(pageCalls, ["remove:pocket-en"], "confirm removes once");
-page.actions.delete("kokoro");
-page.cancelDelete();
-page.confirmDelete();
-assert.deepEqual(pageCalls, ["remove:pocket-en"], "nothing after Cancel");
-page.actions.delete("kokoro");
-downloadedIds = ["pocket-en"];
-page.prune();
-page.confirmDelete();
-assert.deepEqual(
-  pageCalls,
-  ["remove:pocket-en"],
-  "a gone model's question drops",
-);
-assert.deepEqual(asked, ["pocket-en", null, "kokoro", null, "kokoro", null]);
-page.actions.use("kokoro");
-page.actions.download("kokoro");
-assert.deepEqual(pageCalls.slice(1), ["use:kokoro", "download:kokoro"]);
-console.log("models_page_delete_asks_and_drops_a_gone_model passed");

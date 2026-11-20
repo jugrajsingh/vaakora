@@ -308,49 +308,92 @@ export async function retryHistoryWithAnchor(
   }
 }
 
-export function createHistoryActions({
+/** What Clear history deletes, and the newest entry, so an entry saved since is noticed. */
+export interface HistoryClearCount extends HistoryClearSummary {
+  newest: number | null;
+}
+
+/** True when nothing was added or removed: same counts and the same newest entry. */
+export function sameSummary(
+  asked: HistoryClearCount,
+  fresh: HistoryClearCount,
+): boolean {
+  return (
+    asked.entries === fresh.entries &&
+    asked.recordings === fresh.recordings &&
+    asked.newest === fresh.newest
+  );
+}
+
+/** Counts and clears the unstarred dictation history; a failure is shown through `setError`. */
+export function createHistoryClear({
+  getEntries,
   getSummary,
-  confirm,
   clear,
   reload,
-  changeCompareView,
-  setClearing,
-  setChangingView,
   setError,
 }: {
+  getEntries: (
+    cursor: number | null,
+    limit: number,
+  ) => Promise<Result<PaginatedHistory, string>>;
   getSummary: (
     keepSaved: boolean,
   ) => Promise<Result<HistoryClearSummary, string>>;
-  confirm: (summary: HistoryClearSummary) => Promise<boolean>;
   clear: (keepSaved: boolean) => Promise<Result<HistoryClearSummary, string>>;
   reload: () => Promise<void>;
+  setError: (error: string | null) => void;
+}): {
+  count(): Promise<HistoryClearCount | null>;
+  clear(): Promise<void>;
+} {
+  return {
+    count: async () => {
+      setError(null);
+      try {
+        const page = await getEntries(null, 1);
+        if (page.status === "error") throw new Error(page.error);
+        const summary = await getSummary(true);
+        if (summary.status === "error") throw new Error(summary.error);
+        return {
+          entries: summary.data.entries,
+          recordings: summary.data.recordings,
+          newest: page.data.entries[0]?.id ?? null,
+        };
+      } catch (error: unknown) {
+        setError(errorMessage(error));
+        return null;
+      }
+    },
+    clear: async () => {
+      try {
+        const result = await clear(true);
+        if (result.status === "error") throw new Error(result.error);
+      } catch (error: unknown) {
+        setError(errorMessage(error));
+        return;
+      }
+      try {
+        await reload();
+      } catch (error: unknown) {
+        setError(errorMessage(error));
+      }
+    },
+  };
+}
+
+/** Changes the compare view one at a time, ignoring a value that is not one of the three views. */
+export function createCompareViewAction({
+  changeCompareView,
+  setChangingView,
+  setError,
+}: {
   changeCompareView: (view: HistoryCompareView) => Promise<void>;
-  setClearing: (clearing: boolean) => void;
   setChangingView: (changing: boolean) => void;
   setError: (error: string | null) => void;
-}) {
-  let clearing = false;
+}): (next: string) => Promise<void> {
   let changingView = false;
-  const clearHistory = async (): Promise<void> => {
-    if (clearing) return;
-    clearing = true;
-    setClearing(true);
-    setError(null);
-    try {
-      const summary = await getSummary(true);
-      if (summary.status === "error") throw new Error(summary.error);
-      if (!(await confirm(summary.data))) return;
-      const result = await clear(true);
-      if (result.status === "error") throw new Error(result.error);
-      await reload();
-    } catch (error: unknown) {
-      setError(errorMessage(error));
-    } finally {
-      clearing = false;
-      setClearing(false);
-    }
-  };
-  const changeView = async (next: string): Promise<void> => {
+  return async (next) => {
     if (
       changingView ||
       (next !== "diff" && next !== "side_by_side" && next !== "stacked")
@@ -368,5 +411,4 @@ export function createHistoryActions({
       setChangingView(false);
     }
   };
-  return { clearHistory, changeView };
 }

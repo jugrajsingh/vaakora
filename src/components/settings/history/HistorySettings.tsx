@@ -7,10 +7,9 @@ import React, {
   useState,
 } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { ask } from "@tauri-apps/plugin-dialog";
 import { readFile } from "@tauri-apps/plugin-fs";
-import { FileAudio, FilePlus, FolderOpen } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { ClipboardCopy, FileAudio, FilePlus, Trash2 } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 import { notify } from "@/stores/noticeStore";
 import {
   commands,
@@ -24,17 +23,20 @@ import {
   type ActiveJobStatus,
 } from "@/stores/transcriptionJobsStore";
 import { useSettings } from "@/hooks/useSettings";
-import { useSettingsStore } from "@/stores/settingsStore";
 import {
+  boundShortcuts,
   cleanedText,
   copyHistoryRaw,
   historyCopyText,
   historyModelName,
+  historyState,
+  nextOpen,
+  type BoundShortcut,
+  shortDateTime,
 } from "@/lib/utils/historyPresentation";
 import { formatDateTime } from "@/utils/dateFormat";
 import { AudioPlayer, AudioPlayerGroup } from "../../ui/AudioPlayer";
 import { Button } from "../../ui/Button";
-import { Dropdown } from "../../ui/Dropdown";
 import { copyToClipboard } from "./clipboard";
 import {
   pickAndTranscribeFiles,
@@ -42,26 +44,34 @@ import {
   type FileRead,
 } from "./transcribeFiles";
 import { HistoryCompare } from "./HistoryCompare";
-import { HistoryActions, type HistoryActionsProps } from "./HistoryActions";
+import { HistoryActions } from "./HistoryActions";
 import {
-  createPendingConfirm,
   InlineConfirm,
-  useFocusReturn,
+  useRowConfirm,
 } from "@/components/shared/InlineConfirm";
+import { ClearHistory } from "@/components/shared/ClearHistory";
+import {
+  HISTORY_ROW_GRID,
+  HistoryRow,
+  HistoryStateLine,
+  HistoryToolbar,
+} from "@/components/shared/HistoryList";
+import { Keycaps } from "@/components/shared/Keycaps";
+import { shortcutNameKey } from "@/lib/utils/shortcutPresentation";
+import type { OSType } from "@/lib/utils/keyboard";
+import { currentKeep, dictationSummary } from "@/lib/utils/retention";
 import { useLocalLlmModels } from "../post-processing/LocalLlmSettings";
 import {
   PageGeneration,
-  createHistoryActions,
+  createHistoryClear,
   createHistoryPageLoader,
   reloadHistoryOnUpdate,
   createHistoryScrollAnchor,
   createHistoryEntryActions,
+  sameSummary,
 } from "./pageGeneration";
 
 const PAGE_SIZE = 30;
-
-// Long text folds to this many lines until "Show more".
-const FOLDED_LINES = 4;
 
 // The pulse of an entry's text while it's being transcribed.
 const TRANSCRIBE_PULSE = {
@@ -81,18 +91,20 @@ const TranscribePulseKeyframes: React.FC = () => (
 const FileReadRow: React.FC<{ read: FileRead }> = ({ read }) => {
   const { t } = useTranslation();
   return (
-    <div className="px-4 py-2 pb-5 flex flex-col gap-3">
-      <span
-        className="flex items-center gap-1 min-w-0 h-7 text-sm text-ink-3"
-        title={read.name}
-      >
-        <FileAudio width={14} height={14} className="shrink-0" />
-        <span className="truncate">{read.name}</span>
-      </span>
-      <p className="italic text-sm w-full" style={TRANSCRIBE_PULSE}>
-        <TranscribePulseKeyframes />
-        {t("settings.history.readingFile")}
-      </p>
+    <div className="border-b border-line">
+      <div className={HISTORY_ROW_GRID}>
+        <span
+          className="flex items-center gap-1 text-xs text-ink-2 whitespace-nowrap"
+          title={read.name}
+        >
+          <FileAudio width={14} height={14} className="shrink-0" />
+          <span className="max-w-[8rem] truncate">{read.name}</span>
+        </span>
+        <p className="min-w-0 text-sm" style={TRANSCRIBE_PULSE}>
+          <TranscribePulseKeyframes />
+          {t("settings.history.readingFile")}
+        </p>
+      </div>
     </div>
   );
 };
@@ -112,7 +124,7 @@ const HeaderButton: React.FC<HeaderButtonProps> = ({
     onClick={onClick}
     variant="secondary"
     size="sm"
-    className="flex items-center gap-2"
+    className="flex shrink-0 items-center gap-2"
     title={label}
   >
     <Icon className="w-4 h-4" />
@@ -120,24 +132,89 @@ const HeaderButton: React.FC<HeaderButtonProps> = ({
   </Button>
 );
 
-export const HistorySettings: React.FC = () => {
+const DICTATION_SHORTCUTS = ["transcribe", "transcribe_with_post_process"];
+
+/** The dictation history's loading, not-kept and empty lines; the empty one names every bound shortcut. */
+export function DictationStateLine({
+  state,
+  shortcuts,
+  osType,
+  transcribeFile,
+}: {
+  state: "loading" | "notKept" | "empty";
+  shortcuts: readonly BoundShortcut[];
+  osType: OSType;
+  transcribeFile: () => void;
+}): React.JSX.Element {
+  const { t } = useTranslation();
+  if (state === "loading")
+    return (
+      <HistoryStateLine state="loading" title={t("settings.history.loading")} />
+    );
+  if (state === "notKept")
+    return <HistoryStateLine state="notKept" title={t("history.notKept")} />;
+  const keys = (shortcut: BoundShortcut) => (
+    <span title={t(shortcutNameKey(shortcut.id))}>
+      <Keycaps binding={shortcut.binding} osType={osType} size="line" />
+    </span>
+  );
+  const dictate = shortcuts.find((shortcut) => shortcut.id === "transcribe");
+  const cleanup = shortcuts.find(
+    (shortcut) => shortcut.id === "transcribe_with_post_process",
+  );
+  let hint: React.ReactNode;
+  if (dictate && cleanup)
+    hint = (
+      <Trans
+        i18nKey="history.empty.dictationHint"
+        components={{ dictate: keys(dictate), cleanup: keys(cleanup) }}
+      />
+    );
+  else if (dictate || cleanup)
+    hint = (
+      <Trans
+        i18nKey={
+          dictate
+            ? "history.empty.dictationHintDictate"
+            : "history.empty.dictationHintCleanup"
+        }
+        components={{ keys: keys((dictate ?? cleanup)!) }}
+      />
+    );
+  return (
+    <HistoryStateLine
+      state="empty"
+      title={t("history.empty.dictation")}
+      hint={hint}
+      action={
+        <HeaderButton
+          onClick={transcribeFile}
+          label={t("history.transcribeFile")}
+          icon={FilePlus}
+        />
+      }
+    />
+  );
+}
+
+export const HistorySettings: React.FC<{ changeRetention: () => void }> = ({
+  changeRetention,
+}) => {
   const { t } = useTranslation();
   const osType = useOsType();
   const jobs = useTranscriptionJobsStore((state) => state.jobs);
   const reads = useFileReadsStore((state) => state.reads);
   const { models: localModels } = useLocalLlmModels();
   const { getSetting } = useSettings();
-  const changeCompareView = useSettingsStore(
-    (state) => state.changeHistoryCompareView,
-  );
   const view = getSetting("history_compare_view") ?? "diff";
+  const summary = dictationSummary(currentKeep(getSetting));
   const [actionError, setActionError] = useState<string | null>(null);
-  const [clearing, setClearing] = useState(false);
-  const [changingView, setChangingView] = useState(false);
   const generation = useRef(new PageGeneration());
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
+  // The one open entry; UI state only, never stored.
+  const [open, setOpen] = useState<number | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const entriesRef = useRef<HistoryEntry[]>([]);
   const loadingRef = useRef(false);
@@ -186,6 +263,12 @@ export const HistorySettings: React.FC = () => {
     entriesRef.current = entries;
   }, [entries]);
 
+  useEffect(() => {
+    setOpen((current) =>
+      nextOpen(current, { loading, ids: entries.map((entry) => entry.id) }),
+    );
+  }, [entries, loading]);
+
   const {
     loadPage,
     loadPageChecked,
@@ -208,31 +291,16 @@ export const HistorySettings: React.FC = () => {
     [scrollAnchor],
   );
 
-  const { clearHistory, changeView } = useMemo(
+  const clear = useMemo(
     () =>
-      createHistoryActions({
+      createHistoryClear({
+        getEntries: commands.getHistoryEntries,
         getSummary: commands.getHistoryClearSummary,
         clear: commands.clearHistory,
         reload: loadPageChecked,
-        changeCompareView,
-        confirm: (summary) =>
-          ask(
-            t("settings.history.clearConfirmation", {
-              count: summary.entries,
-              recordings: summary.recordings,
-            }),
-            {
-              title: t("settings.history.clearHistory"),
-              kind: "warning",
-              okLabel: t("settings.history.clearHistory"),
-              cancelLabel: t("settings.models.cancel"),
-            },
-          ),
-        setClearing,
-        setChangingView,
         setError: setActionError,
       }),
-    [changeCompareView, loadPageChecked, t],
+    [loadPageChecked],
   );
 
   // Initial load
@@ -322,36 +390,28 @@ export const HistorySettings: React.FC = () => {
     }
   };
 
-  const openRecordingsFolder = async () => {
-    try {
-      const result = await commands.openRecordingsFolder();
-      if (result.status !== "ok") {
-        throw new Error(String(result.error));
-      }
-    } catch (error) {
-      console.error("Failed to open recordings folder:", error);
-    }
-  };
+  const state = historyState({
+    loading,
+    failed: actionError !== null && entries.length === 0,
+    count: entries.length + reads.length,
+    kept: summary.kept,
+  });
+  let content: React.ReactNode = null;
 
-  let content: React.ReactNode;
-
-  if (loading) {
+  if (state === "loading" || state === "notKept" || state === "empty") {
     content = (
-      <div className="px-4 py-3 text-center text-ink-2">
-        {t("settings.history.loading")}
-      </div>
+      <DictationStateLine
+        state={state}
+        shortcuts={boundShortcuts(getSetting("bindings"), DICTATION_SHORTCUTS)}
+        osType={osType}
+        transcribeFile={transcribeFile}
+      />
     );
-  } else if (entries.length === 0 && reads.length === 0) {
-    content = (
-      <div className="px-4 py-3 text-center text-ink-2">
-        {t("settings.history.empty")}
-      </div>
-    );
-  } else {
+  } else if (state === "list") {
     content = (
       <>
         <AudioPlayerGroup>
-          <div className="divide-y divide-line">
+          <div>
             {reads.map((read) => (
               <FileReadRow key={`read-${read.id}`} read={read} />
             ))}
@@ -362,6 +422,10 @@ export const HistorySettings: React.FC = () => {
                 job={jobs[entry.id]}
                 view={view}
                 modelName={historyModelName(entry, localModels)}
+                open={open === entry.id}
+                toggle={() =>
+                  setOpen((current) => (current === entry.id ? null : entry.id))
+                }
                 onToggleSaved={() => void entryActions.toggleSaved(entry.id)}
                 onCopyText={() => copyToClipboard(historyCopyText(entry))}
                 onCopyRaw={() => copyToClipboard(entry.transcription_text)}
@@ -382,103 +446,147 @@ export const HistorySettings: React.FC = () => {
   }
 
   return (
-    <div ref={rootRef} className="max-w-3xl w-full mx-auto space-y-6">
-      <div className="space-y-2">
-        <div className="px-4 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="text-xs font-medium text-ink-3 uppercase tracking-wide">
-              {t("settings.history.title")}
-            </h2>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-ink-3">
-                {t("settings.history.compare.title")}
-              </span>
-              <Dropdown
-                options={(
-                  ["diff", "side_by_side", "stacked"] as HistoryCompareView[]
-                ).map((value) => ({
-                  value,
-                  label: t(`settings.history.compare.${value}`),
-                }))}
-                selectedValue={view}
-                onSelect={(next) => void changeView(next)}
-                disabled={changingView}
-                placeholder={t("settings.history.compare.title")}
-              />
-            </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={clearing}
-              onClick={() => void clearHistory()}
-            >
-              {t("settings.history.clearHistory")}
-            </Button>
-            <HeaderButton
-              onClick={transcribeFile}
-              label={t("settings.history.transcribeFile")}
-              icon={FilePlus}
-            />
-            <HeaderButton
-              onClick={openRecordingsFolder}
-              label={t("settings.history.openFolder")}
-              icon={FolderOpen}
-            />
-          </div>
-        </div>
-        {actionError && (
-          <p role="alert" className="px-4 text-sm text-red-500">
-            {actionError}
-          </p>
-        )}
-        <div className="bg-background border border-line rounded-lg overflow-visible">
-          {content}
-        </div>
-      </div>
+    <div ref={rootRef} className="w-full max-w-3xl min-w-0 space-y-2">
+      <HistoryToolbar
+        summary={t(summary.key, { count: summary.count })}
+        change={changeRetention}
+      >
+        <HeaderButton
+          onClick={transcribeFile}
+          label={t("history.transcribeFile")}
+          icon={FilePlus}
+        />
+        <ClearHistory
+          count={clear.count}
+          empty={(counted) => counted.entries === 0}
+          same={sameSummary}
+          message={(counted) =>
+            t("history.clear.dictationConfirm", {
+              count: counted.entries,
+              recordings: t("history.clear.recordings", {
+                count: counted.recordings,
+              }),
+            })
+          }
+          nothing={t("history.clear.nothing")}
+          clear={clear.clear}
+          disabled={loading}
+        />
+      </HistoryToolbar>
+      {actionError && (
+        <p role="alert" className="px-4 text-sm text-red-500">
+          {actionError}
+        </p>
+      )}
+      <div>{content}</div>
     </div>
   );
 };
 
-/** The entry's buttons, or the question its Delete asks. */
-export function EntryActionsOrConfirm({
-  asking,
-  onConfirmDelete,
-  onCancelDelete,
-  ...actions
-}: HistoryActionsProps & {
-  asking: boolean;
-  onConfirmDelete: () => void;
-  onCancelDelete: () => void;
-}): React.JSX.Element {
-  const { t } = useTranslation();
-  return asking ? (
-    <InlineConfirm
-      message={t("settings.history.deleteConfirm")}
-      action={t("settings.history.deleteConfirmAction")}
-      onCancel={onCancelDelete}
-      onConfirm={onConfirmDelete}
-    />
-  ) : (
-    <HistoryActions {...actions} />
-  );
+interface EntryBodyProps {
+  entry: HistoryEntry;
+  view: HistoryCompareView;
+  modelName: string | null;
+  /** The transcript, its progress, or why there is none. */
+  text: React.ReactNode;
+  muted?: boolean;
+  retrying: boolean;
+  cancelling: boolean;
+  loadAudio: () => Promise<string | null>;
+  onCopyRaw: () => void;
+  onRetranscribe: () => void;
+  onCancel: () => void;
+  onDelete: () => Promise<void>;
 }
 
-/** The entry's Delete only asks; `onConfirmDelete` removes the entry once. */
-export function entryDeleteControls(deps: {
-  show: (asking: boolean) => void;
-  remove: () => Promise<void> | void;
-}) {
-  const pending = createPendingConfirm<true>({
-    show: (asked) => deps.show(asked !== null),
-    apply: () => deps.remove(),
-  });
-  return {
-    onDelete: () => pending.ask(true),
-    onConfirmDelete: () => void pending.confirm(),
-    onCancelDelete: pending.cancel,
-  };
+/** The open entry: its text or comparison, the audio player, then labelled actions or the delete question. */
+export function EntryBody({
+  entry,
+  view,
+  modelName,
+  text,
+  muted = false,
+  retrying,
+  cancelling,
+  loadAudio,
+  onCopyRaw,
+  onRetranscribe,
+  onCancel,
+  onDelete,
+}: EntryBodyProps): React.JSX.Element {
+  const { t } = useTranslation();
+  const deletion = useRowConfirm<number>({ apply: () => onDelete() });
+  const processed = cleanedText(entry) !== null;
+  return (
+    <div className="space-y-3">
+      {!retrying && processed ? (
+        <HistoryCompare entry={entry} view={view} modelName={modelName} />
+      ) : (
+        <p
+          className={`text-sm whitespace-pre-wrap break-words select-text ${
+            muted ? "text-ink-3" : "cursor-text"
+          }`}
+        >
+          {text}
+        </p>
+      )}
+      <AudioPlayer onLoadRequest={loadAudio} className="w-full" />
+      <div ref={deletion.rowsRef} className="flex flex-wrap items-center gap-2">
+        {deletion.asking !== null ? (
+          <InlineConfirm
+            message={t("settings.history.deleteConfirm")}
+            action={t("settings.history.deleteConfirmAction")}
+            onCancel={deletion.cancel}
+            onConfirm={deletion.confirm}
+          />
+        ) : (
+          <>
+            {processed && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="flex items-center gap-1.5"
+                disabled={
+                  entry.transcription_text.trim().length === 0 || retrying
+                }
+                onClick={onCopyRaw}
+              >
+                <ClipboardCopy className="w-3.5 h-3.5" />
+                {t("history.copyOriginal")}
+              </Button>
+            )}
+            {retrying ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={cancelling}
+                onClick={onCancel}
+              >
+                {t("history.cancelTranscription")}
+              </Button>
+            ) : (
+              <Button variant="secondary" size="sm" onClick={onRetranscribe}>
+                {t("history.retranscribe")}
+              </Button>
+            )}
+            {/* Cancel returns focus to the first enabled button in this confirm row: Delete. */}
+            <span data-confirm-row={entry.id} className="contents">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="flex items-center gap-1.5"
+                disabled={retrying}
+                onClick={() => deletion.ask(entry.id)}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {t("history.delete")}
+              </Button>
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 interface HistoryEntryProps {
@@ -486,6 +594,8 @@ interface HistoryEntryProps {
   job?: ActiveJobStatus;
   view: HistoryCompareView;
   modelName: string | null;
+  open: boolean;
+  toggle: () => void;
   onToggleSaved: () => void;
   onCopyText: () => Promise<boolean>;
   onCopyRaw: () => Promise<boolean>;
@@ -497,11 +607,13 @@ interface HistoryEntryProps {
   restoreAnchor: () => void;
 }
 
-const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
+export const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   entry,
   job,
   view,
   modelName,
+  open,
+  toggle,
   onToggleSaved,
   onCopyText,
   onCopyRaw,
@@ -514,11 +626,8 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const [showCopied, setShowCopied] = useState(false);
-  // Pressed cancel: a running job stops after its current chunk.
+  // Pressed cancel: a running job stops after its current chunk. Kept here so closing the entry keeps it.
   const [cancelling, setCancelling] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const [overflows, setOverflows] = useState(false);
-  const textRef = useRef<HTMLParagraphElement>(null);
 
   // Queued or being transcribed in the background.
   const retrying = job !== undefined;
@@ -529,18 +638,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
     if (!retrying) setCancelling(false);
   }, [retrying]);
   const hasTranscription = historyCopyText(entry).trim().length > 0;
-  const folded = hasTranscription && !retrying && !expanded;
-
-  // Offer "Show more" only when the folded text is actually cut off.
-  useLayoutEffect(() => {
-    const el = textRef.current;
-    if (!el || !folded) return;
-    const measure = () => setOverflows(el.scrollHeight > el.clientHeight + 1);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [folded, entry.transcription_text]);
+  const processed = cleanedText(entry) !== null;
 
   const handleLoadAudio = useCallback(
     () => getAudioUrl(entry.file_name),
@@ -570,20 +668,6 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
       notify({ title: t("settings.history.deleteError") });
     }
   };
-  const [asking, setAsking] = useState(false);
-  const latestDelete = useRef(handleDeleteEntry);
-  latestDelete.current = handleDeleteEntry;
-  const deleteControls = useMemo(
-    () =>
-      entryDeleteControls({
-        show: setAsking,
-        remove: () => latestDelete.current(),
-      }),
-    [],
-  );
-  const rowRef = useFocusReturn<HTMLDivElement>(
-    asking ? String(entry.id) : null,
-  );
 
   const handleRetranscribe = async () => {
     captureAnchor();
@@ -595,8 +679,6 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
     }
   };
 
-  const formattedDate = formatDateTime(String(entry.timestamp), i18n.language);
-
   let progressText = t("settings.history.transcribing");
   if (job?.state === "queued") {
     progressText = t("settings.history.waiting");
@@ -606,102 +688,71 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
     });
   }
 
+  const muted = !retrying && !hasTranscription;
+  const text = retrying ? (
+    <span style={TRANSCRIBE_PULSE}>
+      <TranscribePulseKeyframes />
+      {progressText}
+    </span>
+  ) : hasTranscription ? (
+    historyCopyText(entry)
+  ) : entry.source_name ? (
+    // Cancelled, interrupted by a quit, or failed.
+    t("settings.history.notTranscribed")
+  ) : (
+    t("settings.history.transcriptionFailed")
+  );
+
   return (
-    <div
-      ref={rowRef}
-      data-history-entry-id={entry.id}
-      data-confirm-row={entry.id}
-      className="px-4 py-2 pb-5 flex flex-col gap-3"
-    >
-      <div className="flex justify-between items-center gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <p className="text-sm font-medium shrink-0">{formattedDate}</p>
-          {entry.source_name && (
-            <span
-              className="flex items-center gap-1 min-w-0 text-sm text-ink-3"
-              title={entry.source_name}
-            >
-              <FileAudio width={14} height={14} className="shrink-0" />
-              <span className="truncate">{entry.source_name}</span>
-            </span>
-          )}
-        </div>
-        <EntryActionsOrConfirm
-          asking={asking}
-          processed={cleanedText(entry) !== null}
-          rawAvailable={entry.transcription_text.trim().length > 0}
+    <HistoryRow
+      id={entry.id}
+      open={open}
+      onToggle={toggle}
+      when={{
+        short: shortDateTime(entry.timestamp, i18n.language),
+        long: formatDateTime(String(entry.timestamp), i18n.language),
+      }}
+      excerpt={text}
+      excerptClass={muted ? "text-ink-3" : undefined}
+      tag={
+        entry.source_name ??
+        (processed
+          ? (modelName ?? t("history.cleaned"))
+          : t("history.noCleanup"))
+      }
+      actions={
+        <HistoryActions
+          processed={processed}
           hasText={hasTranscription}
           saved={entry.saved}
           retrying={retrying}
           copied={showCopied}
           onCopy={() => void handleCopyText()}
-          onCopyRaw={() =>
-            void copyHistoryRaw(onCopyRaw, () =>
-              notify({ title: t("settings.history.copyError") }),
-            )
-          }
           onToggleSaved={onToggleSaved}
-          onRetranscribe={() => void handleRetranscribe()}
-          onCancel={() => {
-            setCancelling(true);
-            void cancelTranscription(entry.id);
-          }}
-          cancelling={cancelling}
-          {...deleteControls}
         />
-      </div>
-
-      {!retrying && cleanedText(entry) !== null ? (
-        <HistoryCompare entry={entry} view={view} modelName={modelName} />
-      ) : (
-        <div className="flex flex-col items-start gap-1 pb-2">
-          <p
-            ref={textRef}
-            className={`italic text-sm w-full ${
-              retrying
-                ? ""
-                : hasTranscription
-                  ? "text-text select-text cursor-text whitespace-pre-wrap break-words"
-                  : "text-ink-3"
-            }`}
-            style={
-              retrying
-                ? TRANSCRIBE_PULSE
-                : folded
-                  ? {
-                      display: "-webkit-box",
-                      WebkitLineClamp: FOLDED_LINES,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }
-                  : undefined
-            }
-          >
-            {retrying && <TranscribePulseKeyframes />}
-            {retrying
-              ? progressText
-              : hasTranscription
-                ? entry.transcription_text
-                : entry.source_name
-                  ? // Cancelled, interrupted by a quit, or failed.
-                    t("settings.history.notTranscribed")
-                  : t("settings.history.transcriptionFailed")}
-          </p>
-          {hasTranscription && !retrying && (expanded || overflows) && (
-            <button
-              type="button"
-              onClick={() => setExpanded(!expanded)}
-              className="text-xs font-medium text-ink-3 hover:text-logo-primary cursor-pointer"
-            >
-              {expanded
-                ? t("settings.history.showLess")
-                : t("settings.history.showMore")}
-            </button>
-          )}
-        </div>
-      )}
-
-      <AudioPlayer onLoadRequest={handleLoadAudio} className="w-full" />
-    </div>
+      }
+    >
+      <EntryBody
+        entry={entry}
+        view={view}
+        modelName={modelName}
+        text={text}
+        muted={muted}
+        retrying={retrying}
+        cancelling={cancelling}
+        loadAudio={handleLoadAudio}
+        onCopyRaw={() =>
+          void copyHistoryRaw(onCopyRaw, () =>
+            notify({ title: t("settings.history.copyError") }),
+          )
+        }
+        onRetranscribe={() => void handleRetranscribe()}
+        onCancel={() => {
+          setCancelling(true);
+          void cancelTranscription(entry.id);
+        }}
+        onDelete={handleDeleteEntry}
+      />
+    </HistoryRow>
   );
 };

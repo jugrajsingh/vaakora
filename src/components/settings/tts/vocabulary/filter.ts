@@ -6,7 +6,7 @@ export type SourceFilter = "builtin" | "owner" | "changed";
 
 export interface Filters {
   query: string;
-  /** A voice model id: rows that apply to it. */
+  /** A voice model id: rows that apply to it (the Model filter). */
   voice: string | null;
   kind: Section | null;
   source: SourceFilter | null;
@@ -26,6 +26,14 @@ const reaches = (group: RowGroup, voice: string) =>
 
 const fromSource = (group: RowGroup, source: SourceFilter) =>
   source === "changed" ? group.changed : group.origin === source;
+
+/** The line shown when no entry passes: the trimmed query if there is one, else the filters. */
+export function emptyState(filters: Filters): { key: string; query?: string } {
+  const query = filters.query.trim();
+  return query
+    ? { key: "tts.vocabulary.emptyQuery", query }
+    : { key: "tts.vocabulary.emptyFilters" };
+}
 
 /** The groups that pass every filter; a query matches written or spoken text, ignoring case. */
 export function filterGroups(

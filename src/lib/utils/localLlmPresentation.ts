@@ -30,10 +30,22 @@ export function cleanupStatus(
   }
 }
 
-export function providerGroupKey(providerId: string): string {
-  return providerId === "local_llm"
-    ? "settings.postProcessing.localLlm.groupTitle"
-    : "settings.postProcessing.api.title";
+/** The server a dictation is sent to for cleanup; null when cleanup stays on the device or the URL is not http(s). */
+export function cleanupHost(
+  providerId: string,
+  baseUrl: string,
+): string | null {
+  if (providerId === "local_llm" || providerId === "apple_intelligence") {
+    return null;
+  }
+  try {
+    const url = new URL(baseUrl);
+    return url.protocol === "http:" || url.protocol === "https:"
+      ? url.host
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 export function cleanupPickerPresentation(

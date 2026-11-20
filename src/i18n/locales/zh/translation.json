@@ -36,6 +36,19 @@
     "debug": "调试",
     "about": "关于"
   },
+  "nav": {
+    "dictation": "听写",
+    "readAloud": "朗读",
+    "models": "模型",
+    "settings": "设置",
+    "history": "历史记录",
+    "cleanup": "清理",
+    "vocabulary": "词汇",
+    "general": "通用",
+    "advanced": "高级",
+    "about": "关于",
+    "debug": "调试"
+  },
   "onboarding": {
     "customModelDescription": "非官方支持",
     "migration": {
@@ -345,6 +358,52 @@
     "lockedWhileTranscribing": "历史记录中的转录完成后才能更换模型。"
   },
   "settings": {
+    "groups": {
+      "shortcuts": "快捷键",
+      "model": "模型",
+      "languages": "语言",
+      "microphone": "麦克风",
+      "output": "输出",
+      "text": "文本",
+      "overlay": "悬浮窗",
+      "history": "历史",
+      "playback": "播放",
+      "textHandling": "文本处理",
+      "sound": "声音",
+      "appearance": "外观",
+      "startup": "启动",
+      "models": "模型",
+      "dictationEngine": "听写引擎",
+      "experimental": "实验性",
+      "provider": "提供商",
+      "instructions": "指令",
+      "localModel": "本地模型"
+    },
+    "jobModel": {
+      "manage": "管理模型",
+      "choose": "选择一个模型",
+      "loading": "正在加载模型",
+      "empty": {
+        "dictation": "还没有听写模型。",
+        "readAloud": "还没有朗读模型。"
+      },
+      "help": {
+        "dictation": "选择已下载的听写模型。",
+        "readAloud": "选择已下载的朗读模型。"
+      }
+    },
+    "rows": {
+      "unloadIdle": "卸载闲置模型",
+      "runOn": "听写模型运行于"
+    },
+    "shortcuts": {
+      "dictate": "听写",
+      "dictateWithCleanup": "听写并清理",
+      "cancel": "取消",
+      "readAloud": "朗读",
+      "activation": "触发方式",
+      "activationHelp": "用于听写快捷键"
+    },
     "modelSettings": {
       "title": "{{model}} 设置"
     },
@@ -363,9 +422,6 @@
             "name": "转录快捷键",
             "description": "用于录制和转录语音的键盘快捷键。"
           },
-          "transcribe_raw": {
-            "name": "原始文本快捷键"
-          },
           "cancel": {
             "name": "取消快捷键",
             "description": "用于取消当前录制的键盘快捷键。"
@@ -375,7 +431,6 @@
             "description": "可选：一个专用快捷键，始终对您的转录应用 AI 后处理。"
           },
           "read_aloud": {
-            "name": "朗读快捷键",
             "description": "打开弹窗并朗读已复制的文本。"
           }
         },
@@ -487,11 +542,13 @@
         "title": "输出设备",
         "description": "选择用于反馈声音的音频输出设备",
         "placeholder": "选择输出设备...",
-        "loading": "加载中..."
+        "loading": "加载中...",
+        "offReason": "音频反馈关闭时不使用。"
       },
       "volume": {
         "title": "音量",
-        "description": "调整音频反馈的音量"
+        "description": "调整音频反馈的音量",
+        "offReason": "音频反馈关闭时不使用。"
       }
     },
     "advanced": {
@@ -657,9 +714,6 @@
       }
     },
     "postProcessing": {
-      "provider": {
-        "title": "提供商"
-      },
       "api": {
         "title": "API",
         "provider": {
@@ -722,7 +776,6 @@
         "noCleanupModel": "无后处理模型",
         "s1Description": "使用风格、结构和场景控制。",
         "plainDescription": "使用你所选的 Handy 提示词。",
-        "groupTitle": "本地模型",
         "size": "{{size}} MiB",
         "downloaded": "已下载",
         "use": "使用",
@@ -768,25 +821,37 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0，另加一项条款：该模型必须始终称为 \"Superwhisper\" 的 \"S1-mini\"，且大小写须完全一致。"
         },
-        "promptRequired": "请在“提示词”分组中选择一个非空的 Handy 提示词。在此之前,将跳过后处理并使用原始转录文本。",
+        "promptRequired": "请在“指令”分组中选择一个非空的 Handy 提示词。在此之前,将跳过后处理并使用原始转录文本。",
         "promptHidden": "此模型使用自带的固定提示词以及上方的风格、结构和场景设置,因此提示词编辑器已隐藏。"
+      }
+    },
+    "cleanup": {
+      "enable": {
+        "label": "清理听写内容",
+        "description": "添加“听写并清理”快捷键。用它听写的文字会在粘贴前先清理。"
+      },
+      "sentTo": "听写内容会发送到 {{host}} 进行整理。",
+      "prompt": {
+        "edit": "编辑",
+        "new": "新建提示词",
+        "editTitle": "编辑 {{name}}",
+        "newTitle": "新建提示词",
+        "delete": "删除",
+        "deleteConfirm": "删除 {{name}}？已用它整理过的听写内容不会改变。",
+        "deleteAction": "删除提示词",
+        "lastPrompt": "请至少保留一个提示词。",
+        "saveFailed": "无法保存提示词。",
+        "createFirst": "点击“新建提示词”，写下你的第一条整理指令。"
       }
     },
     "history": {
       "title": "历史记录",
-      "cleaned": "已后处理",
-      "cleanedWith": "已使用 {{model}} 后处理",
-      "raw": "原始",
-      "copyRaw": "复制原始文本",
-      "copyPostProcessed": "复制后处理文本",
       "compare": {
         "title": "对比视图",
         "diff": "差异",
         "side_by_side": "并排",
         "stacked": "堆叠"
       },
-      "clearHistory": "清除历史记录",
-      "clearConfirmation": "要移除 {{count}} 条未加星标的历史记录和 {{recordings}} 个录音吗?已加星标的记录及其录音将被保留。",
       "openFolder": "打开录音文件夹",
       "loading": "加载历史记录中...",
       "empty": "还没有转录记录。开始录制以建立您的历史记录！",
@@ -799,6 +864,7 @@
       "deleteConfirm": "要删除此条目及其录音吗？",
       "deleteConfirmAction": "删除条目",
       "retranscribe": "重新转录",
+      "retranscribeError": "无法重新转录此条目。",
       "cancelTranscription": "取消转录",
       "transcribing": "转录中...",
       "transcriptionFailed": "转录失败。您可以使用重试图标重新转录。",
@@ -820,6 +886,38 @@
         "weeks2": "删除超过 2 周的未加星标条目及其录音？已加星标的条目和已转录的文件会保留。",
         "months3": "删除超过 3 个月的未加星标条目及其录音？已加星标的条目和已转录的文件会保留。",
         "action": "删除条目"
+      }
+    },
+    "dictationHistory": {
+      "limitTitle": "保留最近的",
+      "limitUnit": "条",
+      "limitHelp": "“保留最近的”保留的条目数。",
+      "limitTimeLimit": "设置时间限制时不使用。",
+      "autoDeleteTitle": "自动删除",
+      "autoDeleteHelp": "加星标的条目和已转写的文件永远不会被自动删除。",
+      "options": {
+        "never": "关闭（全部保留）",
+        "preserveLimit": "保留最新 {{count}} 条",
+        "days3": "超过 3 天的",
+        "weeks2": "超过 2 周的",
+        "months3": "超过 3 个月的"
+      },
+      "folderTitle": "录音文件夹",
+      "folderOpen": "打开"
+    },
+    "readAloudHistory": {
+      "keepTitle": "保留历史记录",
+      "keepHelp": "仅文本，不含音频。",
+      "limitTitle": "保留最近的",
+      "limitUnit": "条",
+      "limitHelp": "“保留历史记录”保留的条目数。",
+      "limitOff": "历史记录关闭时不使用。",
+      "options": {
+        "keepNothing": "不保留",
+        "keepLimit": "保留最近 {{count}} 条",
+        "days3": "保留最近 {{count}} 条，超过 3 天的不保留",
+        "weeks2": "保留最近 {{count}} 条，超过 2 周的不保留",
+        "months3": "保留最近 {{count}} 条，超过 3 个月的不保留"
       }
     },
     "debug": {
@@ -1034,6 +1132,14 @@
     "noOptionsFound": "未找到选项",
     "cancel": "取消"
   },
+  "editor": {
+    "save": "保存",
+    "discard": {
+      "message": "放弃更改？",
+      "keep": "继续编辑",
+      "action": "放弃"
+    }
+  },
   "errors": {
     "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
     "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
@@ -1189,7 +1295,6 @@
       "finished": "已完成",
       "error": "错误"
     },
-    "modelsTitle": "文本转语音模型",
     "modelsSubtitle": "选择语音模型。速度数据是在开发者的电脑上测得的，你的电脑上可能有所不同。",
     "downloaded": "已下载",
     "availableToDownload": "可下载",
@@ -1213,11 +1318,10 @@
     "saveToken": "设置令牌",
     "model": "模型",
     "voice": "语音",
-    "preview": "试听语音",
-    "speed": "速度:{{value}}x",
+    "preview": "试听",
     "pitch": "音高:{{value}} 半音",
-    "output": "输出设备",
-    "sameAsHandy": "与 Handy 相同",
+    "output": "朗读输出设备",
+    "sameAsHandy": "与 {{device}} 相同",
     "readCode": "朗读代码块",
     "technicalReading": "技术朗读",
     "fullPaths": "朗读完整路径",
@@ -1250,11 +1354,9 @@
     },
     "voiceCount": "{{count}} 种语音",
     "downloadProgress": "模型下载进度",
-    "settingsTitle": "文本转语音",
     "speedLabel": "速度",
     "pitchLabel": "音高",
     "help": {
-      "model": "选择已下载的文本转语音模型。",
       "voice": "为此模型选择语音并试听。",
       "speed": "调整文本朗读的速度。",
       "pitch": "以半音为单位调整语音音高。",
@@ -1262,37 +1364,12 @@
       "readCode": "朗读时包含围栏代码块。",
       "technicalReading": "借助你的词汇文件，完整朗读路径、文件名、命令行标志和代码名称。",
       "fullPaths": "朗读路径中的每个文件夹。关闭后只朗读文件名。",
-      "fullLinks": "朗读完整的网址。关闭后只说网站名称。"
-    },
-    "tabs": {
-      "settings": "设置",
-      "history": "历史",
-      "vocabulary": "词汇"
+      "fullLinks": "朗读完整的网址。关闭后只说网站名称。",
+      "technicalOff": "技术朗读关闭时不使用。"
     },
     "history": {
-      "title": "历史设置",
       "reading": "书写的词语与所读内容",
-      "hint": "在词语上拖动以选择一段，并更正它的读法。",
-      "empty": "还没有朗读过任何内容。你播放的朗读会显示在这里。",
-      "limit": {
-        "title": "历史上限",
-        "description": "历史中最多保留的朗读次数",
-        "entries": "条"
-      },
-      "retention": {
-        "title": "自动删除",
-        "description": "同时自动删除较早的朗读",
-        "keepNothing": "不保留",
-        "keepLimit": "保留最近 {{count}} 条",
-        "days3": "3 天后",
-        "weeks2": "2 周后",
-        "months3": "3 个月后"
-      },
-      "clear": {
-        "title": "清除历史",
-        "description": "删除所有已保存的朗读。你的词汇表不会改变。",
-        "confirmation": "删除全部 {{count}} 条已保存的朗读？你的词汇表不会改变。"
-      },
+      "readingHint": "上方是书写的文本，下方是实际朗读的内容。在词语上拖动以更正它们的读法。",
       "retentionConfirm": {
         "message_one": "现在删除 {{count}} 条已保存的朗读？你的词汇表不会改变。",
         "message": "现在删除 {{count}} 条已保存的朗读？你的词汇表不会改变。",
@@ -1304,10 +1381,7 @@
         "written": "书写",
         "spoken": "读法",
         "kind": "类型",
-        "voices": "语音",
-        "match": "匹配",
-        "enabled": "启用",
-        "actions": "操作"
+        "match": "匹配"
       },
       "kinds": {
         "symbol": "符号",
@@ -1315,10 +1389,9 @@
         "term": "术语",
         "acronym": "缩写"
       },
-      "voices": {
-        "all": "所有语音",
-        "except": "{{names}}除外",
-        "add": "+ 语音"
+      "models": {
+        "all": "所有模型",
+        "except": "{{names}}除外"
       },
       "origins": {
         "builtin": "内置",
@@ -1331,7 +1404,6 @@
         "listen": "试听",
         "delete": "删除",
         "reset": "恢复默认",
-        "save": "保存",
         "cancel": "取消"
       },
       "match": {
@@ -1347,13 +1419,13 @@
       },
       "filter": "搜索书写或朗读内容",
       "toggle": "使用 {{written}}",
-      "editTitle": "编辑条目",
       "fields": {
         "skip": "跳过",
         "appliesTo": "适用于"
       },
-      "empty": "没有条目符合筛选条件。",
-      "deleteConfirmation": "要从你的词汇中删除 {{written}} 吗？此操作无法撤销。",
+      "emptyQuery": "没有与“{{query}}”匹配的内容。",
+      "emptyFilters": "没有符合这些筛选条件的内容。",
+      "clearFilters": "清除筛选",
       "resetConfirm": "要将 {{written}} 恢复为内置读法吗？你的条目将被删除。",
       "errors": {
         "changed": "词汇文件在磁盘上已更改。表格已重新加载，请重新进行修改。",
@@ -1361,7 +1433,7 @@
         "invalidEdit": "无法保存此条目：{{message}}",
         "tooLarge": "词汇文件将超过 1 MiB，因此未保存任何内容。",
         "io": "无法写入词汇文件：{{message}}",
-        "voicesChanged": "等待期间词汇已更改，因此语音更改未应用。请重新选择语音。"
+        "voicesChanged": "等待期间词汇已更改，因此更改未应用。"
       },
       "problems": {
         "shadowed": "永不生效：优先级更高的条目总会胜出",
@@ -1382,35 +1454,50 @@
         "invalid": "无法保存：{{detail}}"
       },
       "check": {
-        "title": "在所有语音上检查",
+        "title": "在所有模型上检查",
         "playAll": "全部播放",
         "playing": "正在播放 {{model}}",
-        "checking": "正在检查每个语音...",
+        "checking": "正在检查每个模型...",
         "heardRight": "识别正确",
         "missed": "识别错误：{{heard}}",
         "failed": "无法检查：{{error}}",
         "row": "{{model}}：{{outcome}}",
-        "advisory": "部分语音没有读对。你仍然可以保存。",
-        "saveAllAnyway": "仍为所有语音保存",
-        "savePassedOnly": "仅为通过的语音保存",
-        "pickOne": "选择一个语音",
+        "advisory": "部分模型没有读对。你仍然可以保存。",
+        "saveAllAnyway": "仍为所有模型保存",
+        "savePassedOnly": "仅为通过的模型保存",
+        "pickOne": "选择一个模型",
         "dictating": "正在听写。结束后请再检查一次。",
         "transcribeFailed": "语音转文字无法转写该语音。"
       },
       "filters": {
-        "voice": "语音",
+        "model": "模型",
         "kind": "类型",
         "source": "来源",
         "all": "全部",
         "changed": "你修改过的",
-        "onlyProblems": "仅显示有问题的"
+        "problems": "问题"
       },
       "defaultLabel": "默认：",
-      "defaultLabelFor": "{{voices}}的默认值："
+      "defaultLabelFor": "{{voices}}的默认值：",
+      "dialog": {
+        "editTitle": "编辑 {{written}}",
+        "context": "{{written}}，现在读作 {{spoken}}。",
+        "overrides": "你的条目覆盖了内置读法 {{default}}。",
+        "builtinDelete": "内置条目只能关闭，不能删除。",
+        "deleteConfirm": "要删除 {{written}} 吗？你的其他条目会保留。",
+        "deleteAction": "删除条目",
+        "conflict": "词汇文件在磁盘上已更改并已重新加载。请检查该条目，然后再次保存。",
+        "refused": "词汇已更改，此条目无法按原样保存。请检查“适用于”，或取消后重新添加。",
+        "scopeRefused": "无法为此条目更改这些模型。"
+      },
+      "acronymStylePerModel": "每个模型的缩写样式",
+      "invalid": {
+        "builtinUsed": "在修复之前，将使用内置读法。",
+        "reload": "重新加载",
+        "openFolder": "打开文件夹"
+      }
     },
     "correction": {
-      "add": "添加修正",
-      "start": "添加修正",
       "writtenText": "书写文本",
       "next": "下一步",
       "title": "修正读法",
@@ -1421,12 +1508,11 @@
       "deriving": "正在推导规则...",
       "exactOnly": "仅限这段确切文本",
       "chooseScope": "选择适用范围",
-      "scopeRequired": "保存前请选择“所有语音”或一个语音。",
-      "acronymStyle": "每种语音的缩写样式",
+      "scopeRequiredModels": "保存前请选择“所有模型”或一个模型。",
       "style": {
         "spaced": "逐字母 (C L I)",
         "capitals": "大写 (CLI)",
-        "inherit": "与所有语音相同"
+        "inheritModels": "与所有模型相同"
       },
       "reach": {
         "extension": "影响每个 {{extension}} 文件",
@@ -1447,5 +1533,67 @@
         "transcribeFailed": "语音转文字无法转写你说的内容。"
       }
     }
+  },
+  "history": {
+    "change": "更改",
+    "changeLabel": "更改历史的保留方式",
+    "transcribeFile": "转录文件",
+    "notKept": "历史未保留。",
+    "empty": {
+      "dictation": "还没有听写记录。",
+      "dictationHint": "按 <dictate/> 听写，或按 <cleanup/> 听写并清理。",
+      "dictationHintDictate": "按 <keys/> 听写。",
+      "dictationHintCleanup": "按 <keys/> 听写并清理。",
+      "read": "还没有朗读过任何内容。",
+      "readHint": "复制一段文字，然后按 <keys/>。"
+    },
+    "summary": {
+      "dictation": {
+        "never": "保留所有记录。已加星标的记录会保留。",
+        "none": "不保留任何记录。已加星标的记录和已转录的文件会保留。",
+        "latest_one": "保留最新的记录。已加星标的记录会保留。",
+        "latest": "保留最新的 {{count}} 条记录。已加星标的记录会保留。",
+        "days3": "删除超过3 天的记录。已加星标的记录会保留。",
+        "weeks2": "删除超过2 周的记录。已加星标的记录会保留。",
+        "months3": "删除超过3 个月的记录。已加星标的记录会保留。"
+      },
+      "read": {
+        "latest_one": "保留最新的记录。",
+        "latest": "保留最新的 {{count}} 条记录。",
+        "days3_one": "保留最新的记录，没有超过3 天的记录。",
+        "days3": "保留最新的 {{count}} 条记录，没有超过3 天的记录。",
+        "weeks2_one": "保留最新的记录，没有超过2 周的记录。",
+        "weeks2": "保留最新的 {{count}} 条记录，没有超过2 周的记录。",
+        "months3_one": "保留最新的记录，没有超过3 个月的记录。",
+        "months3": "保留最新的 {{count}} 条记录，没有超过3 个月的记录。"
+      }
+    },
+    "clear": {
+      "action": "清除历史",
+      "dictationConfirm_one": "删除 {{count}} 条记录和 {{recordings}}？已加星标的记录会保留。",
+      "dictationConfirm": "删除 {{count}} 条记录和 {{recordings}}？已加星标的记录会保留。",
+      "recordings_one": "{{count}} 个录音",
+      "recordings": "{{count}} 个录音",
+      "readConfirm_one": "删除 {{count}} 条记录？你的词汇表不会改变。",
+      "readConfirm": "删除 {{count}} 条记录？你的词汇表不会改变。",
+      "nothing": "没有可清除的内容。"
+    },
+    "row": {
+      "open": "显示条目",
+      "close": "隐藏条目"
+    },
+    "copy": "复制文本",
+    "copyCleaned": "复制清理后的文本",
+    "copyOriginal": "复制原文",
+    "star": "加星标",
+    "unstar": "取消星标",
+    "retranscribe": "重新转录",
+    "cancelTranscription": "取消转录",
+    "delete": "删除",
+    "cleanedWith": "已使用 {{model}} 清理。",
+    "cleaned": "清理后的文本",
+    "original": "原始转录",
+    "diffNote": "显示与原始转录的差异。",
+    "noCleanup": "未清理"
   }
 }

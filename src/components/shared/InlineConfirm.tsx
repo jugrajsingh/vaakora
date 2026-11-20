@@ -1,10 +1,12 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 
 export interface InlineConfirmProps {
   message: string;
   action: string;
+  /** The Cancel button's label; defaults to the common Cancel. */
+  cancel?: string;
   onCancel: () => void;
   onConfirm: () => void;
 }
@@ -18,6 +20,7 @@ export function confirmKey(key: string, onCancel: () => void): void {
 export function InlineConfirm({
   message,
   action,
+  cancel,
   onCancel,
   onConfirm,
 }: InlineConfirmProps): React.JSX.Element {
@@ -42,7 +45,7 @@ export function InlineConfirm({
         className="focus-visible:ring-2 focus-visible:ring-logo-primary"
         onClick={onCancel}
       >
-        {t("common.cancel")}
+        {cancel ?? t("common.cancel")}
       </Button>
       <Button variant="danger" size="sm" onClick={onConfirm}>
         {action}
@@ -52,15 +55,36 @@ export function InlineConfirm({
 }
 
 /**
+ * What a recount decides about the asked change: apply it, drop it, or ask again with a new
+ * change. A new change is shown as the pending question; a host that renders one of its own
+ * values as terminal (for example a count of nothing) shows it without a red action.
+ */
+export type Recount<T> = "apply" | "drop" | T;
+
+/**
  * Holds one change waiting for its confirmation. `confirm` applies the last asked change once
- * and clears it before applying, so a second press or a press after Cancel does nothing.
+ * and clears it before applying, so a second press or a press after Cancel does nothing. With
+ * `recount`, `confirm` first asks it about the asked change (a throw drops it) and applies
+ * nothing when the question was cancelled, asked again or pruned during the recount; a second
+ * `confirm` during the recount does nothing. `prune` drops the question when `present` says
+ * what it asked about is gone.
  */
 export function createPendingConfirm<T>(deps: {
   show: (pending: T | null) => void;
   apply: (pending: T) => Promise<void> | void;
-}): { ask(pending: T): void; cancel(): void; confirm(): Promise<void> } {
+  present?: (pending: T) => boolean;
+  recount?: (pending: T) => Promise<Recount<T>>;
+}): {
+  ask(pending: T): void;
+  cancel(): void;
+  confirm(): Promise<void>;
+  prune(): void;
+} {
   let pending: T | null = null;
+  let generation = 0;
+  let counting = false;
   const set = (next: T | null) => {
+    generation += 1;
     pending = next;
     deps.show(next);
   };
@@ -68,37 +92,28 @@ export function createPendingConfirm<T>(deps: {
     ask: set,
     cancel: () => set(null),
     confirm: async () => {
-      if (pending === null) return;
+      if (pending === null || counting) return;
       const change = pending;
+      if (deps.recount) {
+        const asked = generation;
+        counting = true;
+        let outcome: Recount<T>;
+        try {
+          outcome = await deps.recount(change);
+        } catch {
+          outcome = "drop";
+        } finally {
+          counting = false;
+        }
+        if (generation !== asked) return;
+        if (outcome === "drop") return set(null);
+        if (outcome !== "apply") return set(outcome);
+      }
       set(null);
       await deps.apply(change);
     },
-  };
-}
-
-/**
- * A row's question: `ask` shows it, `confirm` applies the asked key once, and `prune` drops it
- * when `present` says the asked row is gone.
- */
-export function createRowConfirm<K>(deps: {
-  show: (key: K | null) => void;
-  present: (key: K) => boolean;
-  apply: (key: K) => Promise<void> | void;
-}): { ask(key: K): void; confirm(): void; cancel(): void; prune(): void } {
-  let asked: K | null = null;
-  const pending = createPendingConfirm<K>({
-    show: (key) => {
-      asked = key;
-      deps.show(key);
-    },
-    apply: deps.apply,
-  });
-  return {
-    ask: pending.ask,
-    confirm: () => void pending.confirm(),
-    cancel: pending.cancel,
     prune: () => {
-      if (asked !== null && !deps.present(asked)) pending.cancel();
+      if (pending !== null && deps.present && !deps.present(pending)) set(null);
     },
   };
 }
@@ -122,22 +137,61 @@ export function returnTarget<
   return undefined;
 }
 
+export interface RowConfirm<K> {
+  /** The key whose question is shown, or null. */
+  asking: K | null;
+  ask(key: K): void;
+  cancel(): void;
+  confirm(): void;
+}
+
 /**
- * Returns focus to the row a confirmation closed on: when `asking` goes from a key to null, focuses
- * the `returnTarget` of the element marked `data-confirm-row` with that key, if it is still shown.
+ * A list host's delete question: `ask` shows it for a key, `confirm` applies that key once,
+ * `prune` runs after every render and drops it when `present` says the row is gone, and focus
+ * goes back to the closed row's first enabled button. Put `rowsRef` on the element that holds
+ * the rows (or is the row); each row carries `data-confirm-row={key}`.
  */
-export function useFocusReturn<T extends HTMLElement>(asking: string | null) {
-  const container = useRef<T>(null);
+export function useRowConfirm<
+  K extends string | number,
+  E extends HTMLElement = HTMLDivElement,
+>(deps: {
+  apply: (key: K) => Promise<void> | void;
+  present?: (key: K) => boolean;
+}): RowConfirm<K> & { rowsRef: React.RefObject<E> } {
+  const [asking, setAsking] = useState<K | null>(null);
+  const latest = useRef(deps);
+  latest.current = deps;
+  const pending = useMemo(
+    () =>
+      createPendingConfirm<K>({
+        show: setAsking,
+        apply: (key) => latest.current.apply(key),
+        present: (key) => latest.current.present?.(key) ?? true,
+      }),
+    [],
+  );
+  useEffect(() => pending.prune());
+  useEffect(() => pending.cancel, [pending]);
+  const rowsRef = useRef<E>(null);
   const previous = useRef(asking);
   useEffect(() => {
-    const key = rowToRefocus(previous.current, asking);
+    const key = rowToRefocus(
+      previous.current === null ? null : String(previous.current),
+      asking === null ? null : String(asking),
+    );
     previous.current = asking;
-    if (key === null || !container.current) return;
+    if (key === null || !rowsRef.current) return;
     const row = [
-      container.current,
-      ...container.current.querySelectorAll<HTMLElement>("[data-confirm-row]"),
+      rowsRef.current,
+      ...rowsRef.current.querySelectorAll<HTMLElement>("[data-confirm-row]"),
     ].find((element) => element.dataset.confirmRow === key);
     if (row) returnTarget(row.querySelectorAll("button"))?.focus();
   }, [asking]);
-  return container;
+  return {
+    asking,
+    ask: pending.ask,
+    cancel: pending.cancel,
+    confirm: () => void pending.confirm(),
+    rowsRef,
+  };
 }

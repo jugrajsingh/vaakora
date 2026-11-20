@@ -36,6 +36,19 @@
     "debug": "Ladění",
     "about": "O aplikaci"
   },
+  "nav": {
+    "dictation": "Diktování",
+    "readAloud": "Čtení nahlas",
+    "models": "Modely",
+    "settings": "Nastavení",
+    "history": "Historie",
+    "cleanup": "Úprava textu",
+    "vocabulary": "Slovník",
+    "general": "Obecné",
+    "advanced": "Pokročilé",
+    "about": "O aplikaci",
+    "debug": "Ladění"
+  },
   "onboarding": {
     "customModelDescription": "Oficiálně nepodporováno",
     "migration": {
@@ -345,6 +358,52 @@
     "lockedWhileTranscribing": "Model můžete změnit, až se dokončí přepis v Historii."
   },
   "settings": {
+    "groups": {
+      "shortcuts": "Zkratky",
+      "model": "Model",
+      "languages": "Jazyky",
+      "microphone": "Mikrofon",
+      "output": "Výstup",
+      "text": "Text",
+      "overlay": "Překryv",
+      "history": "Historie",
+      "playback": "Přehrávání",
+      "textHandling": "Zpracování textu",
+      "sound": "Zvuk",
+      "appearance": "Vzhled",
+      "startup": "Spuštění",
+      "models": "Modely",
+      "dictationEngine": "Modul diktování",
+      "experimental": "Experimentální",
+      "provider": "Poskytovatel",
+      "instructions": "Pokyny",
+      "localModel": "Místní model"
+    },
+    "jobModel": {
+      "manage": "Spravovat modely",
+      "choose": "Vyberte model",
+      "loading": "Načítání modelů",
+      "empty": {
+        "dictation": "Zatím žádný model pro diktování.",
+        "readAloud": "Zatím žádný model pro čtení nahlas."
+      },
+      "help": {
+        "dictation": "Vyberte stažený model pro diktování.",
+        "readAloud": "Vyberte stažený model pro čtení nahlas."
+      }
+    },
+    "rows": {
+      "unloadIdle": "Uvolnit nečinné modely",
+      "runOn": "Spouštět modely diktování na"
+    },
+    "shortcuts": {
+      "dictate": "Nadiktovat",
+      "dictateWithCleanup": "Nadiktovat s úpravou",
+      "cancel": "Zrušit",
+      "readAloud": "Čtení nahlas",
+      "activation": "Aktivace",
+      "activationHelp": "Pro zkratky diktování"
+    },
     "modelSettings": {
       "title": "Nastavení {{model}}"
     },
@@ -363,9 +422,6 @@
             "name": "Zkratka přepisu",
             "description": "Klávesová zkratka pro nahrávání a přepis vašeho hlasu."
           },
-          "transcribe_raw": {
-            "name": "Zkratka pro nezpracovaný přepis"
-          },
           "cancel": {
             "name": "Zkratka zrušení",
             "description": "Klávesová zkratka pro zrušení aktuálního nahrávání."
@@ -375,7 +431,6 @@
             "description": "Volitelné: Vyhrazená klávesová zkratka, která vždy použije AI následné zpracování na váš přepis."
           },
           "read_aloud": {
-            "name": "Zkratka pro čtení nahlas",
             "description": "Otevře okno a přečte zkopírovaný text nahlas."
           }
         },
@@ -487,11 +542,13 @@
         "title": "Výstupní zařízení",
         "description": "Vyberte preferované výstupní zařízení pro zvuky odezvy",
         "placeholder": "Vyberte výstupní zařízení...",
-        "loading": "Načítání..."
+        "loading": "Načítání...",
+        "offReason": "Nepoužívá se, když je zvuková odezva vypnutá."
       },
       "volume": {
         "title": "Hlasitost",
-        "description": "Upravte hlasitost zvukové odezvy"
+        "description": "Upravte hlasitost zvukové odezvy",
+        "offReason": "Nepoužívá se, když je zvuková odezva vypnutá."
       }
     },
     "advanced": {
@@ -657,9 +714,6 @@
       }
     },
     "postProcessing": {
-      "provider": {
-        "title": "Poskytovatel"
-      },
       "api": {
         "title": "API",
         "provider": {
@@ -722,7 +776,6 @@
         "noCleanupModel": "Žádný model následného zpracování",
         "s1Description": "Používá ovládání stylu, struktury a kontextu.",
         "plainDescription": "Používá vybraný prompt Handy.",
-        "groupTitle": "Místní model",
         "size": "{{size}} MiB",
         "downloaded": "Staženo",
         "use": "Použít",
@@ -768,25 +821,37 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 s jednou podmínkou navíc: model musí být vždy uváděn jako \"S1-mini\" od \"Superwhisper\", přesně s tímto psaním velkých a malých písmen."
         },
-        "promptRequired": "Ve skupině Prompty vyberte neprázdný prompt Handy. Do té doby se následné zpracování přeskakuje a použije se nezpracovaný přepis.",
+        "promptRequired": "Ve skupině Pokyny vyberte neprázdný prompt Handy. Do té doby se následné zpracování přeskakuje a použije se nezpracovaný přepis.",
         "promptHidden": "Tento model používá vlastní pevný prompt a výše uvedená nastavení Styl, Struktura a Kontext, proto je editor promptů skrytý."
+      }
+    },
+    "cleanup": {
+      "enable": {
+        "label": "Úprava nadiktovaného textu",
+        "description": "Přidá zkratku „Nadiktovat s úpravou“. Text nadiktovaný pomocí ní se před vložením upraví."
+      },
+      "sentTo": "Diktáty se posílají na {{host}} k úpravě.",
+      "prompt": {
+        "edit": "Upravit",
+        "new": "Nový prompt",
+        "editTitle": "Upravit {{name}}",
+        "newTitle": "Nový prompt",
+        "delete": "Smazat",
+        "deleteConfirm": "Smazat {{name}}? Diktáty, které už s ním byly upraveny, se nezmění.",
+        "deleteAction": "Smazat prompt",
+        "lastPrompt": "Ponechte alespoň jeden prompt.",
+        "saveFailed": "Prompt se nepodařilo uložit.",
+        "createFirst": "Stiskněte Nový prompt a napište své první pokyny pro úpravu."
       }
     },
     "history": {
       "title": "Historie",
-      "cleaned": "Po následném zpracování",
-      "cleanedWith": "Zpracováno modelem {{model}}",
-      "raw": "Nezpracované",
-      "copyRaw": "Kopírovat nezpracovaný text",
-      "copyPostProcessed": "Kopírovat zpracovaný text",
       "compare": {
         "title": "Zobrazení porovnání",
         "diff": "Rozdíly",
         "side_by_side": "Vedle sebe",
         "stacked": "Pod sebou"
       },
-      "clearHistory": "Vymazat historii",
-      "clearConfirmation": "Odebrat nehvězdičkované záznamy historie (počet: {{count}}) a nahrávky (počet: {{recordings}})? Záznamy s hvězdičkou a jejich nahrávky zůstanou zachovány.",
       "openFolder": "Otevřít složku nahrávek",
       "loading": "Načítám historii...",
       "empty": "Zatím žádné přepisy. Začněte nahrávat a vytvořte si historii!",
@@ -799,6 +864,7 @@
       "deleteConfirm": "Smazat tento záznam a jeho nahrávku?",
       "deleteConfirmAction": "Smazat záznam",
       "retranscribe": "Přepsat znovu",
+      "retranscribeError": "Tento záznam se nepodařilo znovu přepsat.",
       "cancelTranscription": "Zrušit přepis",
       "transcribing": "Přepisuji...",
       "transcriptionFailed": "Přepis selhal. Můžete zkusit přepis znovu pomocí ikony opakování.",
@@ -820,6 +886,38 @@
         "weeks2": "Smazat záznamy bez hvězdičky starší než 2 týdny i s jejich nahrávkami? Záznamy s hvězdičkou a přepsané soubory zůstanou.",
         "months3": "Smazat záznamy bez hvězdičky starší než 3 měsíce i s jejich nahrávkami? Záznamy s hvězdičkou a přepsané soubory zůstanou.",
         "action": "Smazat záznamy"
+      }
+    },
+    "dictationHistory": {
+      "limitTitle": "Ponechat nejnovější",
+      "limitUnit": "záznamů",
+      "limitHelp": "Kolik záznamů ponechá „Ponechat nejnovější“.",
+      "limitTimeLimit": "Nepoužije se s časovým limitem.",
+      "autoDeleteTitle": "Automatické mazání",
+      "autoDeleteHelp": "Záznamy s hvězdičkou a přepsané soubory se nikdy automaticky nemažou.",
+      "options": {
+        "never": "Vypnuto (ponechat vše)",
+        "preserveLimit": "Ponechat posledních {{count}}",
+        "days3": "Starší než 3 dny",
+        "weeks2": "Starší než 2 týdny",
+        "months3": "Starší než 3 měsíce"
+      },
+      "folderTitle": "Složka nahrávek",
+      "folderOpen": "Otevřít"
+    },
+    "readAloudHistory": {
+      "keepTitle": "Ponechat historii",
+      "keepHelp": "Pouze text, bez zvuku.",
+      "limitTitle": "Ponechat nejnovější",
+      "limitUnit": "záznamů",
+      "limitHelp": "Kolik záznamů ponechá „Ponechat historii“.",
+      "limitOff": "Nepoužije se, když je historie vypnutá.",
+      "options": {
+        "keepNothing": "Neponechávat",
+        "keepLimit": "Ponechat nejnovější {{count}}",
+        "days3": "Ponechat nejnovější {{count}}, žádné starší než 3 dny",
+        "weeks2": "Ponechat nejnovější {{count}}, žádné starší než 2 týdny",
+        "months3": "Ponechat nejnovější {{count}}, žádné starší než 3 měsíce"
       }
     },
     "debug": {
@@ -1034,6 +1132,14 @@
     "noOptionsFound": "Nenalezeny žádné možnosti",
     "cancel": "Zrušit"
   },
+  "editor": {
+    "save": "Uložit",
+    "discard": {
+      "message": "Zahodit změny?",
+      "keep": "Pokračovat v úpravách",
+      "action": "Zahodit"
+    }
+  },
   "errors": {
     "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
     "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
@@ -1189,7 +1295,6 @@
       "finished": "Dokončeno",
       "error": "Chyba"
     },
-    "modelsTitle": "Modely převodu textu na řeč",
     "modelsSubtitle": "Vyberte hlasový model. Údaje o rychlosti byly změřeny na počítači vývojáře; u vás se mohou lišit.",
     "downloaded": "Staženo",
     "availableToDownload": "K dispozici ke stažení",
@@ -1213,11 +1318,10 @@
     "saveToken": "Nastavit token",
     "model": "Model",
     "voice": "Hlas",
-    "preview": "Poslechnout ukázku hlasu",
-    "speed": "Rychlost: {{value}}x",
+    "preview": "Poslechnout",
     "pitch": "Výška tónu: {{value}} půltónů",
-    "output": "Výstupní zařízení",
-    "sameAsHandy": "Stejné jako Handy",
+    "output": "Výstupní zařízení pro čtení nahlas",
+    "sameAsHandy": "Stejné jako {{device}}",
     "readCode": "Číst bloky kódu",
     "technicalReading": "Technické čtení",
     "fullPaths": "Číst celé cesty",
@@ -1250,49 +1354,22 @@
     },
     "voiceCount": "Počet hlasů: {{count}}",
     "downloadProgress": "Průběh stahování modelu",
-    "settingsTitle": "Převod textu na řeč",
     "speedLabel": "Rychlost",
     "pitchLabel": "Výška tónu",
     "help": {
-      "model": "Vyberte stažený model převodu textu na řeč.",
-      "voice": "Vyberte hlas pro tento model a poslechněte si ukázku.",
+      "voice": "Vyberte hlas pro tento model a poslechněte si ho.",
       "speed": "Upravte, jak rychle se text čte.",
       "pitch": "Upravte výšku hlasu v půltónech.",
       "output": "Vyberte, kde se přehrává zvuk čtení nahlas.",
       "readCode": "Při čtení zahrnout bloky kódu v ohraničení.",
       "technicalReading": "Vyslovuje cesty, názvy souborů, přepínače a názvy v kódu celé podle vašeho slovníkového souboru.",
       "fullPaths": "Přečte každou složku v cestě. Když je vypnuto, přečte jen název souboru.",
-      "fullLinks": "Přečte celou webovou adresu. Když je vypnuto, řekne jen název webu."
-    },
-    "tabs": {
-      "settings": "Nastavení",
-      "history": "Historie",
-      "vocabulary": "Slovník"
+      "fullLinks": "Přečte celou webovou adresu. Když je vypnuto, řekne jen název webu.",
+      "technicalOff": "Nepoužije se, když je technické čtení vypnuté."
     },
     "history": {
-      "title": "Nastavení historie",
       "reading": "Psaná slova s tím, co bylo řečeno",
-      "hint": "Tažením přes slova vyberte úsek a opravte, jak byl přečten.",
-      "empty": "Zatím nebylo nic přečteno nahlas. Přehraná čtení se zobrazí zde.",
-      "limit": {
-        "title": "Limit historie",
-        "description": "Nejvyšší počet čtení uchovaných v historii",
-        "entries": "čtení"
-      },
-      "retention": {
-        "title": "Automatické mazání",
-        "description": "Starší čtení také automaticky smazat",
-        "keepNothing": "Nikdy neuchovávat",
-        "keepLimit": "Ponechat posledních {{count}}",
-        "days3": "Po 3 dnech",
-        "weeks2": "Po 2 týdnech",
-        "months3": "Po 3 měsících"
-      },
-      "clear": {
-        "title": "Vymazat historii",
-        "description": "Odstraní všechna uložená čtení. Slovník se nezmění.",
-        "confirmation": "Odstranit všech {{count}} uložených čtení? Slovník se nezmění."
-      },
+      "readingHint": "Nahoře je psaný text, pod ním to, co zaznělo. Tažením přes slova opravíte, jak byla přečtena.",
       "retentionConfirm": {
         "message_one": "Smazat nyní {{count}} uložené čtení? Slovník se nezmění.",
         "message": "Smazat nyní uložená čtení ({{count}})? Slovník se nezmění.",
@@ -1304,10 +1381,7 @@
         "written": "Zápis",
         "spoken": "Výslovnost",
         "kind": "Druh",
-        "voices": "Hlasy",
-        "match": "Shoda",
-        "enabled": "Zapnuto",
-        "actions": "Akce"
+        "match": "Shoda"
       },
       "kinds": {
         "symbol": "Symbol",
@@ -1315,10 +1389,9 @@
         "term": "Termín",
         "acronym": "Zkratka"
       },
-      "voices": {
-        "all": "Všechny hlasy",
-        "except": "kromě {{names}}",
-        "add": "+ hlas"
+      "models": {
+        "all": "Všechny modely",
+        "except": "kromě {{names}}"
       },
       "origins": {
         "builtin": "Vestavěný",
@@ -1331,7 +1404,6 @@
         "listen": "Poslechnout",
         "delete": "Smazat",
         "reset": "Obnovit výchozí",
-        "save": "Uložit",
         "cancel": "Zrušit"
       },
       "match": {
@@ -1347,13 +1419,13 @@
       },
       "filter": "Hledat v psaném nebo mluveném tvaru",
       "toggle": "Použít {{written}}",
-      "editTitle": "Upravit položku",
       "fields": {
         "skip": "Přeskočit",
         "appliesTo": "Platí pro"
       },
-      "empty": "Filtru neodpovídá žádná položka.",
-      "deleteConfirmation": "Smazat {{written}} z vašeho slovníku? Tuto akci nelze vrátit.",
+      "emptyQuery": "Pro „{{query}}“ nic nenalezeno.",
+      "emptyFilters": "Těmto filtrům nic neodpovídá.",
+      "clearFilters": "Zrušit filtry",
       "resetConfirm": "Obnovit {{written}} na vestavěné čtení? Váš záznam bude smazán.",
       "errors": {
         "changed": "Soubor slovníku se na disku změnil. Tabulka byla načtena znovu; proveďte úpravu znovu.",
@@ -1361,7 +1433,7 @@
         "invalidEdit": "Položku se nepodařilo uložit: {{message}}",
         "tooLarge": "Soubor slovníku by byl větší než 1 MiB, proto se nic neuložilo.",
         "io": "Soubor slovníku se nepodařilo zapsat: {{message}}",
-        "voicesChanged": "Slovník se během čekání změnil, proto se změna hlasů neprovedla. Zvolte hlasy znovu."
+        "voicesChanged": "Slovník se během čekání změnil, proto se změna neprovedla."
       },
       "problems": {
         "shadowed": "Nikdy se neuplatní: vždy vyhraje položka s vyšší prioritou",
@@ -1382,35 +1454,50 @@
         "invalid": "Nelze uložit: {{detail}}"
       },
       "check": {
-        "title": "Kontrola napříč hlasy",
+        "title": "Kontrola napříč modely",
         "playAll": "Přehrát vše",
         "playing": "Přehrává se {{model}}",
-        "checking": "Kontroluje se každý hlas...",
+        "checking": "Kontroluje se každý model...",
         "heardRight": "slyšeno správně",
         "missed": "nerozpoznáno: {{heard}}",
         "failed": "nelze zkontrolovat: {{error}}",
         "row": "{{model}}: {{outcome}}",
-        "advisory": "Některé hlasy to nepřečetly správně. Přesto to můžete uložit.",
-        "saveAllAnyway": "Přesto uložit pro všechny hlasy",
-        "savePassedOnly": "Uložit jen pro hlasy, které prošly",
-        "pickOne": "Vybrat jeden hlas",
+        "advisory": "Některé modely to nepřečetly správně. Přesto to můžete uložit.",
+        "saveAllAnyway": "Přesto uložit pro všechny modely",
+        "savePassedOnly": "Uložit jen pro modely, které prošly",
+        "pickOne": "Vybrat jeden model",
         "dictating": "Probíhá diktování. Zkontrolujte znovu, až skončí.",
         "transcribeFailed": "Převod řeči na text nedokázal přepsat hlas."
       },
       "filters": {
-        "voice": "Hlas",
+        "model": "Model",
         "kind": "Druh",
         "source": "Zdroj",
         "all": "Vše",
         "changed": "Změněno vámi",
-        "onlyProblems": "Jen problémy"
+        "problems": "Problémy"
       },
       "defaultLabel": "výchozí:",
-      "defaultLabelFor": "výchozí pro {{voices}}:"
+      "defaultLabelFor": "výchozí pro {{voices}}:",
+      "dialog": {
+        "editTitle": "Upravit {{written}}",
+        "context": "{{written}}, nyní se vyslovuje jako {{spoken}}.",
+        "overrides": "Váš záznam přepisuje vestavěné čtení {{default}}.",
+        "builtinDelete": "Vestavěné záznamy lze vypnout, ne smazat.",
+        "deleteConfirm": "Smazat {{written}}? Vaše ostatní záznamy zůstanou.",
+        "deleteAction": "Smazat záznam",
+        "conflict": "Soubor slovníku se na disku změnil a byl znovu načten. Zkontrolujte záznam a pak znovu uložte.",
+        "refused": "Slovník se změnil a tento záznam už nelze uložit v této podobě. Zkontrolujte Platí pro, nebo zrušte a přidejte ho znovu.",
+        "scopeRefused": "Tyto modely nelze pro tento záznam změnit."
+      },
+      "acronymStylePerModel": "Styl zkratek podle modelu",
+      "invalid": {
+        "builtinUsed": "Dokud se chyba neopraví, používají se vestavěná čtení.",
+        "reload": "Načíst znovu",
+        "openFolder": "Otevřít složku"
+      }
     },
     "correction": {
-      "add": "Přidat opravu",
-      "start": "Přidat opravu",
       "writtenText": "Psaný text",
       "next": "Další",
       "title": "Opravit čtení",
@@ -1421,12 +1508,11 @@
       "deriving": "Hledám pravidlo...",
       "exactOnly": "Jen přesně tento text",
       "chooseScope": "Vyberte, kde platí",
-      "scopeRequired": "Před uložením zvolte Všechny hlasy nebo jeden hlas.",
-      "acronymStyle": "Styl zkratek podle hlasu",
+      "scopeRequiredModels": "Před uložením zvolte Všechny modely nebo jeden model.",
       "style": {
         "spaced": "Oddělená písmena (C L I)",
         "capitals": "Velká písmena (CLI)",
-        "inherit": "Stejně jako u všech hlasů"
+        "inheritModels": "Stejně jako u všech modelů"
       },
       "reach": {
         "extension": "týká se každého souboru {{extension}}",
@@ -1447,5 +1533,67 @@
         "transcribeFailed": "Převod řeči na text nedokázal přepsat, co jste řekli."
       }
     }
+  },
+  "history": {
+    "change": "Změnit",
+    "changeLabel": "Změnit způsob uchovávání historie",
+    "transcribeFile": "Přepsat soubor",
+    "notKept": "Historie se neukládá.",
+    "empty": {
+      "dictation": "Zatím žádná nadiktování.",
+      "dictationHint": "Stiskněte <dictate/> pro nadiktování nebo <cleanup/> pro nadiktování s úpravou.",
+      "dictationHintDictate": "Stiskněte <keys/> pro nadiktování.",
+      "dictationHintCleanup": "Stiskněte <keys/> pro nadiktování s úpravou.",
+      "read": "Zatím nebylo nic přečteno.",
+      "readHint": "Zkopírujte text a stiskněte <keys/>."
+    },
+    "summary": {
+      "dictation": {
+        "never": "Uchovávají se všechny záznamy. Záznamy s hvězdičkou zůstanou zachovány.",
+        "none": "Neuchovávají se žádné záznamy. Záznamy s hvězdičkou a přepsané soubory zůstanou zachovány.",
+        "latest_one": "Uchovává se poslední záznam. Záznamy s hvězdičkou zůstanou zachovány.",
+        "latest": "Uchovává se posledních {{count}} záznamů. Záznamy s hvězdičkou zůstanou zachovány.",
+        "days3": "Záznamy starší než 3 dny se smažou. Záznamy s hvězdičkou zůstanou zachovány.",
+        "weeks2": "Záznamy starší než 2 týdny se smažou. Záznamy s hvězdičkou zůstanou zachovány.",
+        "months3": "Záznamy starší než 3 měsíce se smažou. Záznamy s hvězdičkou zůstanou zachovány."
+      },
+      "read": {
+        "latest_one": "Uchovává se poslední záznam.",
+        "latest": "Uchovává se posledních {{count}} záznamů.",
+        "days3_one": "Uchovává se poslední záznam, žádný starší než 3 dny.",
+        "days3": "Uchovává se posledních {{count}} záznamů, žádný starší než 3 dny.",
+        "weeks2_one": "Uchovává se poslední záznam, žádný starší než 2 týdny.",
+        "weeks2": "Uchovává se posledních {{count}} záznamů, žádný starší než 2 týdny.",
+        "months3_one": "Uchovává se poslední záznam, žádný starší než 3 měsíce.",
+        "months3": "Uchovává se posledních {{count}} záznamů, žádný starší než 3 měsíce."
+      }
+    },
+    "clear": {
+      "action": "Vymazat historii",
+      "dictationConfirm_one": "Smazat {{count}} záznam a {{recordings}}? Záznamy s hvězdičkou zůstanou zachovány.",
+      "dictationConfirm": "Smazat záznamy ({{count}}) a {{recordings}}? Záznamy s hvězdičkou zůstanou zachovány.",
+      "recordings_one": "{{count}} nahrávku",
+      "recordings": "nahrávky ({{count}})",
+      "readConfirm_one": "Smazat {{count}} záznam? Slovník se nezmění.",
+      "readConfirm": "Smazat záznamy ({{count}})? Slovník se nezmění.",
+      "nothing": "Není co mazat."
+    },
+    "row": {
+      "open": "Zobrazit záznam",
+      "close": "Skrýt záznam"
+    },
+    "copy": "Kopírovat text",
+    "copyCleaned": "Kopírovat upravený text",
+    "copyOriginal": "Kopírovat originál",
+    "star": "Označit hvězdičkou",
+    "unstar": "Odebrat hvězdičku",
+    "retranscribe": "Přepsat znovu",
+    "cancelTranscription": "Zrušit přepis",
+    "delete": "Smazat",
+    "cleanedWith": "Upraveno modelem {{model}}.",
+    "cleaned": "Upravený text",
+    "original": "Původní přepis",
+    "diffNote": "Zobrazeny rozdíly oproti původnímu přepisu.",
+    "noCleanup": "Bez úpravy"
   }
 }

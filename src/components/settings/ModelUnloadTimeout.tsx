@@ -8,11 +8,13 @@ import { SettingContainer } from "../ui/SettingContainer";
 interface ModelUnloadTimeoutProps {
   descriptionMode?: "tooltip" | "inline";
   grouped?: boolean;
+  title?: string;
 }
 
 export const ModelUnloadTimeoutSetting: React.FC<ModelUnloadTimeoutProps> = ({
   descriptionMode = "inline",
   grouped = false,
+  title,
 }) => {
   const { t } = useTranslation();
   const { settings, getSetting, updateSetting } = useSettings();
@@ -75,7 +77,7 @@ export const ModelUnloadTimeoutSetting: React.FC<ModelUnloadTimeoutProps> = ({
 
   return (
     <SettingContainer
-      title={t("settings.advanced.modelUnload.title")}
+      title={title ?? t("settings.advanced.modelUnload.title")}
       description={t("settings.advanced.modelUnload.description")}
       descriptionMode={descriptionMode}
       grouped={grouped}

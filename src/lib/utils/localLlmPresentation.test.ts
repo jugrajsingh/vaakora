@@ -9,7 +9,7 @@ import {
   cleanupStatus,
   cleanupPickerPresentation,
   createCleanupModelPickerActions,
-  providerGroupKey,
+  cleanupHost,
   selectedDownloadedModel,
   type CleanupModelPickerDependencies,
 } from "./localLlmPresentation";
@@ -48,15 +48,17 @@ for (const [state, expected] of [
   assert.equal(cleanupStatus(status), expected);
 }
 assert.equal(cleanupStatus(null), "unloaded");
-assert.equal(
-  providerGroupKey("local_llm"),
-  "settings.postProcessing.localLlm.groupTitle",
-);
-assert.equal(providerGroupKey("openai"), "settings.postProcessing.api.title");
-assert.equal(
-  providerGroupKey("apple_intelligence"),
-  "settings.postProcessing.api.title",
-);
+for (const [providerId, baseUrl, expected] of [
+  ["openai", "https://api.openai.com/v1", "api.openai.com"],
+  ["custom", "http://localhost:11434/v1", "localhost:11434"],
+  ["local_llm", "local-llm://in-app", null],
+  ["apple_intelligence", "apple-intelligence://local", null],
+  ["custom", "", null],
+  ["custom", "not a url", null],
+  ["custom", "file:///tmp/x", null],
+] as const) {
+  assert.equal(cleanupHost(providerId, baseUrl), expected, baseUrl);
+}
 
 const models = [
   model,

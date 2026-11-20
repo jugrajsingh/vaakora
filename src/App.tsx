@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useState,
   useRef,
   type ReactNode,
@@ -26,10 +27,11 @@ import {
   clearOnboardingProgress,
   type OnboardingStep as OnboardingPreviewStep,
 } from "./components/onboarding/onboardingStore";
-import { DebugSettings, ModelsSettings } from "./components/settings";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { FileDropOverlay } from "./components/FileDropOverlay";
-import { Sidebar, SidebarSection, SECTIONS_CONFIG } from "./components/Sidebar";
+import { MainPage } from "./components/MainPage";
+import { Sidebar } from "./components/Sidebar";
+import { PANEL_ID, TabStrip, tabId } from "./components/shared/TabStrip";
 import { WhatsNewGate } from "./components/whats-new";
 import { useSettings } from "./hooks/useSettings";
 import { useSettingsStore } from "./stores/settingsStore";
@@ -37,6 +39,19 @@ import { commands } from "@/bindings";
 import { deleteRetiredModel } from "@/lib/models/retired";
 import { NoticePanel } from "@/components/notices/NoticePanel";
 import { getLanguageDirection, initializeRTL } from "@/lib/utils/rtl";
+import {
+  LINKS,
+  createNavigator,
+  defaultStorage,
+  firstTab,
+  labelKey,
+  loadLocation,
+  normalizeLocation,
+  revealGroup,
+  visibleTabs,
+  type GroupId,
+  type Location,
+} from "@/lib/navigation";
 
 // flow is first-run onboarding; the rest are single screens for returning users.
 type OnboardingStep =
@@ -45,33 +60,6 @@ type OnboardingStep =
   | "migration"
   | "replaceModel"
   | "done";
-
-const renderSettingsContent = (
-  section: SidebarSection,
-  onPreviewOnboarding: (step: OnboardingPreviewStep) => void,
-  onRunOnboarding: () => void,
-  onRunModelMigration: () => void,
-  onSectionChange: (section: SidebarSection) => void,
-) => {
-  if (section === "models") {
-    return (
-      <ModelsSettings onChangeLanguages={() => onSectionChange("general")} />
-    );
-  }
-  if (section === "debug") {
-    return (
-      <DebugSettings
-        onPreviewOnboarding={onPreviewOnboarding}
-        onRunOnboarding={onRunOnboarding}
-        onRunModelMigration={onRunModelMigration}
-      />
-    );
-  }
-
-  const ActiveComponent =
-    SECTIONS_CONFIG[section]?.component || SECTIONS_CONFIG.general.component;
-  return <ActiveComponent />;
-};
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -83,10 +71,30 @@ function App() {
   // Set when a returning user's selected model is a retired (ONNX) model that
   // is still on disk: they must update it before the app can transcribe.
   const [migrationModelId, setMigrationModelId] = useState<string | null>(null);
-  const [currentSection, setCurrentSection] =
-    useState<SidebarSection>("general");
-  const showHistory = useCallback(() => setCurrentSection("history"), []);
+  const [location, setLocation] = useState<Location>(() =>
+    loadLocation(defaultStorage()),
+  );
+  // A new object per navigation, so revealing the same group again re-runs the scroll.
+  const [reveal, setReveal] = useState<{ group: GroupId | null }>({
+    group: null,
+  });
+  const navigation = useMemo(
+    () =>
+      createNavigator({
+        storage: defaultStorage(),
+        set: setLocation,
+        reveal: (group) => setReveal({ group }),
+      }),
+    [],
+  );
+  const showHistory = useCallback(
+    () => navigation.navigate(LINKS.dictationHistory),
+    [navigation],
+  );
   const { settings, updateSetting } = useSettings();
+  const debug = settings?.debug_mode ?? false;
+  // Normalised for display only; a stored Debug tab returns once debug mode is known.
+  const shown = normalizeLocation(location, debug);
   const direction = getLanguageDirection(i18n.language);
   const refreshAudioDevices = useSettingsStore(
     (state) => state.refreshAudioDevices,
@@ -96,10 +104,14 @@ function App() {
   );
   const hasCompletedPostOnboardingInit = useRef(false);
   const settingsScrollRef = useRef<HTMLDivElement>(null);
-  // Reset the scroll position whenever the active section changes.
+  // Scroll to the linked group, else to the top, whenever the shown page changes.
   useLayoutEffect(() => {
-    settingsScrollRef.current?.scrollTo({ top: 0 });
-  }, [currentSection]);
+    revealGroup(reveal.group, {
+      find: (id) =>
+        settingsScrollRef.current?.querySelector<HTMLElement>("#" + id) ?? null,
+      top: () => settingsScrollRef.current?.scrollTo({ top: 0 }),
+    });
+  }, [shown.destination, shown.tab, reveal]);
 
   useEffect(() => {
     checkOnboardingStatus();
@@ -107,13 +119,13 @@ function App() {
 
   useEffect(() => {
     const unlisten = listen("open-tts-models", () => {
-      setCurrentSection("ttsmodels");
+      navigation.navigate(LINKS.readAloudModels);
       void commands.showMainWindowCommand();
     });
     return () => {
       void unlisten.then((stop) => stop());
     };
-  }, []);
+  }, [navigation]);
 
   // Initialize RTL direction when language changes
   useEffect(() => {
@@ -338,29 +350,57 @@ function App() {
         {/* Main content area that takes remaining space */}
         <div className="flex-1 flex overflow-hidden">
           <Sidebar
-            activeSection={currentSection}
-            onSectionChange={setCurrentSection}
+            active={shown.destination}
+            navigate={(destination) =>
+              navigation.navigate(firstTab(destination, debug))
+            }
           />
-          {/* Scrollable content area */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            {/* The tab strip sits outside the scroll body, so it stays pinned. */}
+            <div className="shrink-0 border-b border-line px-4">
+              <div className="mx-auto w-full min-w-0 max-w-3xl">
+                <TabStrip
+                  label={t(labelKey(shown.destination))}
+                  tabs={visibleTabs(shown.destination, debug)}
+                  active={shown.tab}
+                  select={(tab) =>
+                    navigation.navigate({
+                      destination: shown.destination,
+                      tab,
+                    } as Location)
+                  }
+                  rtl={direction === "rtl"}
+                />
+              </div>
+            </div>
             <div
               ref={settingsScrollRef}
               data-settings-scroll
               style={{ overflowAnchor: "none" }}
               className="flex-1 overflow-y-auto"
+              role="tabpanel"
+              id={PANEL_ID}
+              aria-labelledby={tabId(shown.tab)}
             >
-              {/* Models fills the window: its table scrolls, not the page. */}
+              {/* Models, Dictation fills the window: its table scrolls, not the page. */}
               <div
-                className={`flex flex-col items-center p-4 gap-4 ${currentSection === "models" ? "h-full" : ""}`}
+                className={
+                  "flex flex-col gap-4 p-4" +
+                  (shown.destination === "models" && shown.tab === "dictation"
+                    ? " h-full"
+                    : "")
+                }
               >
                 <SecureInputWarning />
-                {renderSettingsContent(
-                  currentSection,
-                  setOnboardingPreview,
-                  runOnboarding,
-                  runModelMigration,
-                  setCurrentSection,
-                )}
+                <div className="mx-auto flex min-h-0 w-full min-w-0 max-w-3xl flex-1 flex-col">
+                  <MainPage
+                    location={shown}
+                    navigate={navigation.navigate}
+                    onPreviewOnboarding={setOnboardingPreview}
+                    onRunOnboarding={runOnboarding}
+                    onRunModelMigration={runModelMigration}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -368,7 +408,7 @@ function App() {
         {/* Fixed footer at bottom */}
         <Footer
           onShowHistory={showHistory}
-          onOpenPostProcessing={() => setCurrentSection("postprocessing")}
+          onOpenPostProcessing={() => navigation.navigate(LINKS.cleanup)}
         />
         <FileDropOverlay onDropped={showHistory} />
       </div>

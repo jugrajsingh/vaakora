@@ -2,13 +2,11 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import type { Edit, EntryRow } from "@/bindings";
 import { row } from "./fixtures";
-import { filterGroups, NO_FILTERS, type Filters } from "./filter";
+import { emptyState, filterGroups, NO_FILTERS, type Filters } from "./filter";
 import {
   groupRows,
   switchPlan,
   switchPlanFor,
-  voiceChangePlan,
-  voiceOptions,
   voicesPlan,
   type RowGroup,
   type VoiceTarget,
@@ -392,6 +390,28 @@ const reading = (spoken: string) => (groups: RowGroup[]) => {
   return found;
 };
 
+describe("emptyState", () => {
+  it("names a non-blank query, trimmed, and otherwise the filters", () => {
+    assert.deepEqual(emptyState({ ...NO_FILTERS, query: "  zzz " }), {
+      key: "tts.vocabulary.emptyQuery",
+      query: "zzz",
+    });
+    assert.deepEqual(
+      emptyState({ ...NO_FILTERS, query: "zzz", source: "owner" }),
+      { key: "tts.vocabulary.emptyQuery", query: "zzz" },
+    );
+    assert.deepEqual(
+      emptyState({ ...NO_FILTERS, query: "   ", kind: "term" }),
+      {
+        key: "tts.vocabulary.emptyFilters",
+      },
+    );
+    assert.deepEqual(emptyState(NO_FILTERS), {
+      key: "tts.vocabulary.emptyFilters",
+    });
+  });
+});
+
 describe("voicesPlan, owner entries", () => {
   const two = () => [
     term("owner", "pocket-en", "cube control"),
@@ -581,63 +601,6 @@ describe("voicesPlan, built-in entries", () => {
   });
 });
 
-describe("voiceOptions", () => {
-  const flags = (g: RowGroup, groups: RowGroup[]) =>
-    voiceOptions(g, groups, CATALOG).map((o) => [
-      o.voice,
-      o.selected,
-      o.enabled,
-    ]);
-
-  it("lists all voices and every catalog voice with whether it is in the row and can change", () => {
-    const groups = group([
-      term("owner", "pocket-en", "cube control"),
-      term("owner", "supertonic-3", "cube control"),
-    ]);
-    assert.deepEqual(flags(groups[0], groups), [
-      [null, false, true],
-      ["phonon", false, true],
-      ["pocket-en", true, true],
-      ["supertonic-3", true, true],
-      ["indic-hi", false, true],
-      ["indic-pa", false, true],
-    ]);
-  });
-  it("keeps the last voice fixed", () => {
-    const lone = group([term("owner", "pocket-en", "cube control")]);
-    assert.deepEqual(
-      flags(lone[0], lone).filter(([, selected]) => selected),
-      [["pocket-en", true, false]],
-    );
-  });
-  it("fixes every voice of an all-voices built-in row", () => {
-    const groups = group([
-      row("builtin", "symbol", "/", { spoken: "slash" }),
-      row("builtin", "symbol", "/", { spoken: "x", model: "indic-hi" }),
-    ]);
-    const shared = groups.find((g) => g.all);
-    assert.ok(shared);
-    const options = voiceOptions(shared, groups, CATALOG);
-    assert.ok(options.every((o) => !o.enabled));
-    assert.equal(options.find((o) => o.voice === "indic-hi")?.selected, false);
-    assert.equal(options.find((o) => o.voice === "pocket-en")?.selected, true);
-  });
-  it("lets an owner all-voices row drop a voice except those with their own reading", () => {
-    const groups = group([
-      term("owner", null, "kube control"),
-      term("owner", "indic-hi", "cube control"),
-    ]);
-    assert.deepEqual(flags(reading("kube control")(groups), groups), [
-      [null, true, false],
-      ["phonon", true, true],
-      ["pocket-en", true, true],
-      ["supertonic-3", true, true],
-      ["indic-hi", false, false],
-      ["indic-pa", true, true],
-    ]);
-  });
-});
-
 describe("switchPlan", () => {
   const SLASH = [
     row("builtin", "symbol", "/", { spoken: "slash" }),
@@ -725,7 +688,7 @@ describe("switchPlan", () => {
   });
 });
 
-describe("voiceChangePlan and switchPlan on the latest rows", () => {
+describe("switchPlan on the latest rows", () => {
   const pocket = term("owner", "pocket-en", "cube control");
   const phonon = term("owner", "phonon", "kube control");
   const keyOf = (rows: EntryRow[], spoken: string) => {
@@ -734,42 +697,6 @@ describe("voiceChangePlan and switchPlan on the latest rows", () => {
     return found.key;
   };
 
-  it("plans the voice change against the rows it is given", () => {
-    const rows = [pocket, phonon];
-    const cube = keyOf(rows, "cube control");
-    assert.deepEqual(
-      voiceChangePlan(rows, CATALOG, cube, "supertonic-3", false),
-      [put("supertonic-3", "cube control")],
-    );
-  });
-  it("refuses a voice change whose voice another reading took since it was offered", () => {
-    const cube = keyOf([pocket, phonon], "cube control");
-    const latest = [
-      pocket,
-      phonon,
-      term("owner", "supertonic-3", "kube control"),
-    ];
-    assert.equal(
-      voiceChangePlan(latest, CATALOG, cube, "supertonic-3", false),
-      null,
-    );
-  });
-  it("refuses a voice change when the row is gone or the voice changed side meanwhile", () => {
-    const rows = [pocket, phonon];
-    const cube = keyOf(rows, "cube control");
-    assert.equal(
-      voiceChangePlan([phonon], CATALOG, cube, "phonon", false),
-      null,
-    );
-    const withSuper = [
-      term("owner", "pocket-en", "cube control"),
-      term("owner", "supertonic-3", "cube control"),
-    ];
-    assert.equal(
-      voiceChangePlan(withSuper, CATALOG, cube, "supertonic-3", false),
-      null,
-    );
-  });
   it("plans a switch against the latest rows and refuses one for a row that is gone", () => {
     const rows = [pocket, phonon];
     const cube = keyOf(rows, "cube control");

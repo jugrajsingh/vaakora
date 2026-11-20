@@ -36,6 +36,19 @@
     "debug": "Hata Ayıklama",
     "about": "Hakkında"
   },
+  "nav": {
+    "dictation": "Dikte",
+    "readAloud": "Sesli okuma",
+    "models": "Modeller",
+    "settings": "Ayarlar",
+    "history": "Geçmiş",
+    "cleanup": "Temizleme",
+    "vocabulary": "Sözlük",
+    "general": "Genel",
+    "advanced": "Gelişmiş",
+    "about": "Hakkında",
+    "debug": "Hata Ayıklama"
+  },
   "onboarding": {
     "customModelDescription": "Resmi olarak desteklenmiyor",
     "migration": {
@@ -345,6 +358,52 @@
     "lockedWhileTranscribing": "Geçmiş'teki yazıya dökme bitince modeli değiştirebilirsiniz."
   },
   "settings": {
+    "groups": {
+      "shortcuts": "Kısayollar",
+      "model": "Model",
+      "languages": "Diller",
+      "microphone": "Mikrofon",
+      "output": "Çıktı",
+      "text": "Metin",
+      "overlay": "Ekran Katmanı",
+      "history": "Geçmiş",
+      "playback": "Oynatma",
+      "textHandling": "Metin işleme",
+      "sound": "Ses",
+      "appearance": "Görünüm",
+      "startup": "Başlangıç",
+      "models": "Modeller",
+      "dictationEngine": "Dikte motoru",
+      "experimental": "Deneysel",
+      "provider": "Sağlayıcı",
+      "instructions": "Talimatlar",
+      "localModel": "Yerel model"
+    },
+    "jobModel": {
+      "manage": "Modelleri yönet",
+      "choose": "Bir model seçin",
+      "loading": "Modeller yükleniyor",
+      "empty": {
+        "dictation": "Henüz dikte modeli yok.",
+        "readAloud": "Henüz sesli okuma modeli yok."
+      },
+      "help": {
+        "dictation": "İndirilmiş bir dikte modeli seçin.",
+        "readAloud": "İndirilmiş bir sesli okuma modeli seçin."
+      }
+    },
+    "rows": {
+      "unloadIdle": "Boştaki modelleri boşalt",
+      "runOn": "Dikte modellerini şurada çalıştır"
+    },
+    "shortcuts": {
+      "dictate": "Dikte et",
+      "dictateWithCleanup": "Temizleyerek dikte et",
+      "cancel": "İptal",
+      "readAloud": "Sesli okuma",
+      "activation": "Etkinleştirme",
+      "activationHelp": "Dikte kısayolları için"
+    },
     "modelSettings": {
       "title": "{{model}} Ayarları"
     },
@@ -363,9 +422,6 @@
             "name": "Transkripsiyon Kısayolu",
             "description": "Sesinizi kaydetmek ve metne dönüştürmek için klavye kısayolu."
           },
-          "transcribe_raw": {
-            "name": "Ham Metin Kısayolu"
-          },
           "cancel": {
             "name": "İptal Kısayolu",
             "description": "Mevcut kaydı iptal etmek için klavye kısayolu."
@@ -375,7 +431,6 @@
             "description": "İsteğe bağlı: Transkripsiyonunuza her zaman yapay zekâ ile son işlem uygulayan özel bir kısayol tuşu."
           },
           "read_aloud": {
-            "name": "Sesli okuma kısayolu",
             "description": "Açılır pencereyi açar ve kopyalanan metni sesli okur."
           }
         },
@@ -487,11 +542,13 @@
         "title": "Çıkış Cihazı",
         "description": "Geri bildirim sesleri için ses çıkış cihazını seçin",
         "placeholder": "Çıkış cihazı seçin...",
-        "loading": "Yükleniyor..."
+        "loading": "Yükleniyor...",
+        "offReason": "Sesli geri bildirim kapalıyken kullanılmaz."
       },
       "volume": {
         "title": "Ses Seviyesi",
-        "description": "Sesli geri bildirimlerin ses seviyesini ayarlayın"
+        "description": "Sesli geri bildirimlerin ses seviyesini ayarlayın",
+        "offReason": "Sesli geri bildirim kapalıyken kullanılmaz."
       }
     },
     "advanced": {
@@ -657,9 +714,6 @@
       }
     },
     "postProcessing": {
-      "provider": {
-        "title": "Sağlayıcı"
-      },
       "api": {
         "title": "API",
         "provider": {
@@ -722,7 +776,6 @@
         "noCleanupModel": "Son işlem modeli yok",
         "s1Description": "Stil, yapı ve bağlam denetimlerini kullanır.",
         "plainDescription": "Seçtiğiniz Handy promptunu kullanır.",
-        "groupTitle": "Yerel model",
         "size": "{{size}} MiB",
         "downloaded": "İndirildi",
         "use": "Kullan",
@@ -768,25 +821,37 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 ve ek bir koşul: model her zaman \"Superwhisper\" tarafından \"S1-mini\" olarak, büyük ve küçük harfler tam olarak bu şekilde yazılarak anılmalıdır."
         },
-        "promptRequired": "Prompt grubunda boş olmayan bir Handy promptu seçin. Seçilene kadar son işlem atlanır ve ham transkript kullanılır.",
+        "promptRequired": "Talimatlar grubunda boş olmayan bir Handy promptu seçin. Seçilene kadar son işlem atlanır ve ham transkript kullanılır.",
         "promptHidden": "Bu model kendi sabit promptunu ve yukarıdaki Stil, Yapı ve Bağlam ayarlarını kullandığından prompt düzenleyici gizlidir."
+      }
+    },
+    "cleanup": {
+      "enable": {
+        "label": "Dikteleri temizle",
+        "description": "\"Temizleyerek dikte et\" kısayolunu ekler. Bununla dikte edilen metin yapıştırılmadan önce temizlenir."
+      },
+      "sentTo": "Dikteler temizlenmek üzere {{host}} adresine gönderilir.",
+      "prompt": {
+        "edit": "Düzenle",
+        "new": "Yeni prompt",
+        "editTitle": "{{name}} düzenle",
+        "newTitle": "Yeni prompt",
+        "delete": "Sil",
+        "deleteConfirm": "{{name}} silinsin mi? Onunla daha önce temizlenen diktelerde değişiklik olmaz.",
+        "deleteAction": "Prompt'u sil",
+        "lastPrompt": "En az bir prompt bırakın.",
+        "saveFailed": "Prompt kaydedilemedi.",
+        "createFirst": "İlk temizleme talimatlarınızı yazmak için Yeni prompt'a basın."
       }
     },
     "history": {
       "title": "Geçmiş",
-      "cleaned": "Son işlemli",
-      "cleanedWith": "{{model}} ile son işlem yapıldı",
-      "raw": "Ham",
-      "copyRaw": "Ham metni kopyala",
-      "copyPostProcessed": "Son işlemli metni kopyala",
       "compare": {
         "title": "Karşılaştırma görünümü",
         "diff": "Fark",
         "side_by_side": "Yan yana",
         "stacked": "Üst üste"
       },
-      "clearHistory": "Geçmişi Temizle",
-      "clearConfirmation": "{{count}} yıldızsız geçmiş kaydı ve {{recordings}} kayıt kaldırılsın mı? Yıldızlı kayıtlar ve ses kayıtları korunur.",
       "openFolder": "Kayıtlar Klasörünü Aç",
       "loading": "Geçmiş yükleniyor...",
       "empty": "Henüz transkripsiyon yok. Geçmişinizi oluşturmak için kayda başlayın!",
@@ -799,6 +864,7 @@
       "deleteConfirm": "Bu kayıt ve ses kaydı silinsin mi?",
       "deleteConfirmAction": "Kaydı sil",
       "retranscribe": "Yeniden transkribe et",
+      "retranscribeError": "Bu kayıt yeniden transkribe edilemedi.",
       "cancelTranscription": "Transkripsiyonu iptal et",
       "transcribing": "Transkribe ediliyor...",
       "transcriptionFailed": "Transkripsiyon başarısız oldu. Yeniden deneme simgesini kullanarak tekrar transkribe edebilirsiniz.",
@@ -820,6 +886,38 @@
         "weeks2": "2 haftadan eski yıldızsız kayıtlar ve ses kayıtları silinsin mi? Yıldızlı kayıtlar ve yazıya dökülen dosyalar korunur.",
         "months3": "3 aydan eski yıldızsız kayıtlar ve ses kayıtları silinsin mi? Yıldızlı kayıtlar ve yazıya dökülen dosyalar korunur.",
         "action": "Kayıtları sil"
+      }
+    },
+    "dictationHistory": {
+      "limitTitle": "Son kayıtları tut",
+      "limitUnit": "kayıt",
+      "limitHelp": "\"Son kayıtları tut\" kaç kaydı saklar.",
+      "limitTimeLimit": "Zaman sınırıyla birlikte kullanılmaz.",
+      "autoDeleteTitle": "Otomatik silme",
+      "autoDeleteHelp": "Yıldızlı kayıtlar ve yazıya dökülen dosyalar asla otomatik silinmez.",
+      "options": {
+        "never": "Kapalı (hepsini tut)",
+        "preserveLimit": "Son {{count}} kaydı tut",
+        "days3": "3 günden eski",
+        "weeks2": "2 haftadan eski",
+        "months3": "3 aydan eski"
+      },
+      "folderTitle": "Kayıtlar klasörü",
+      "folderOpen": "Aç"
+    },
+    "readAloudHistory": {
+      "keepTitle": "Geçmişi tut",
+      "keepHelp": "Yalnızca metin, ses yok.",
+      "limitTitle": "Son kayıtları tut",
+      "limitUnit": "kayıt",
+      "limitHelp": "\"Geçmişi tut\" kaç kaydı saklar.",
+      "limitOff": "Geçmiş kapalıyken kullanılmaz.",
+      "options": {
+        "keepNothing": "Tutma",
+        "keepLimit": "Son {{count}} kaydı tut",
+        "days3": "Son {{count}} kaydı tut, 3 günden eski olanlar hariç",
+        "weeks2": "Son {{count}} kaydı tut, 2 haftadan eski olanlar hariç",
+        "months3": "Son {{count}} kaydı tut, 3 aydan eski olanlar hariç"
       }
     },
     "debug": {
@@ -1034,6 +1132,14 @@
     "noOptionsFound": "Seçenek bulunamadı",
     "cancel": "İptal"
   },
+  "editor": {
+    "save": "Kaydet",
+    "discard": {
+      "message": "Değişiklikler atılsın mı?",
+      "keep": "Düzenlemeye devam et",
+      "action": "At"
+    }
+  },
   "errors": {
     "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
     "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
@@ -1189,7 +1295,6 @@
       "finished": "Bitti",
       "error": "Hata"
     },
-    "modelsTitle": "Metin Okuma Modelleri",
     "modelsSubtitle": "Bir ses modeli seçin. Hız değerleri geliştiricinin bilgisayarında ölçüldü; sizin bilgisayarınızda farklı olabilir.",
     "downloaded": "İndirildi",
     "availableToDownload": "İndirilebilir",
@@ -1213,11 +1318,10 @@
     "saveToken": "Belirteci ayarla",
     "model": "Model",
     "voice": "Ses",
-    "preview": "Sesi dinle",
-    "speed": "Hız: {{value}}x",
+    "preview": "Dinle",
     "pitch": "Perde: {{value}} yarım ton",
-    "output": "Çıkış cihazı",
-    "sameAsHandy": "Handy ile aynı",
+    "output": "Sesli okuma çıkış cihazı",
+    "sameAsHandy": "{{device}} ile aynı",
     "readCode": "Kod bloklarını oku",
     "technicalReading": "Teknik okuma",
     "fullPaths": "Tam yolları oku",
@@ -1250,11 +1354,9 @@
     },
     "voiceCount": "{{count}} ses",
     "downloadProgress": "Model indirme ilerlemesi",
-    "settingsTitle": "Metin okuma",
     "speedLabel": "Hız",
     "pitchLabel": "Perde",
     "help": {
-      "model": "İndirilmiş bir metin okuma modeli seçin.",
       "voice": "Bu model için bir ses seçin ve dinleyin.",
       "speed": "Metnin ne kadar hızlı okunacağını ayarlayın.",
       "pitch": "Ses perdesini yarım ton cinsinden ayarlayın.",
@@ -1262,37 +1364,12 @@
       "readCode": "Okurken çitli kod bloklarını dahil et.",
       "technicalReading": "Yolları, dosya adlarını, bayrakları ve kod adlarını sözlük dosyanızı kullanarak eksiksiz seslendirir.",
       "fullPaths": "Bir yoldaki her klasörü okur. Kapalıyken yalnızca dosya adını okur.",
-      "fullLinks": "Web adresinin tamamını okur. Kapalıyken yalnızca site adını söyler."
-    },
-    "tabs": {
-      "settings": "Ayarlar",
-      "history": "Geçmiş",
-      "vocabulary": "Sözlük"
+      "fullLinks": "Web adresinin tamamını okur. Kapalıyken yalnızca site adını söyler.",
+      "technicalOff": "Teknik okuma kapalıyken kullanılmaz."
     },
     "history": {
-      "title": "Geçmiş ayarları",
       "reading": "Yazılan sözcükler ve söylenenler",
-      "hint": "Bir bölümü seçip nasıl okunduğunu düzeltmek için sözcüklerin üzerinde sürükleyin.",
-      "empty": "Henüz sesli okunan bir şey yok. Oynattığınız okumalar burada görünür.",
-      "limit": {
-        "title": "Geçmiş sınırı",
-        "description": "Geçmişte tutulacak en fazla okuma sayısı",
-        "entries": "okuma"
-      },
-      "retention": {
-        "title": "Otomatik silme",
-        "description": "Eski okumaları da otomatik olarak sil",
-        "keepNothing": "Hiç saklama",
-        "keepLimit": "Son {{count}} okumayı sakla",
-        "days3": "3 gün sonra",
-        "weeks2": "2 hafta sonra",
-        "months3": "3 ay sonra"
-      },
-      "clear": {
-        "title": "Geçmişi temizle",
-        "description": "Kayıtlı tüm okumaları kaldırır. Sözlüğünüz değişmez.",
-        "confirmation": "Kayıtlı {{count}} okumanın tümü kaldırılsın mı? Sözlüğünüz değişmez."
-      },
+      "readingHint": "Yazılan metin üstte, söylenenler altta. Nasıl okunduklarını düzeltmek için kelimelerin üzerinde sürükleyin.",
       "retentionConfirm": {
         "message_one": "Kayıtlı {{count}} okuma şimdi silinsin mi? Sözlüğünüz değişmez.",
         "message": "Kayıtlı {{count}} okuma şimdi silinsin mi? Sözlüğünüz değişmez.",
@@ -1304,10 +1381,7 @@
         "written": "Yazılış",
         "spoken": "Okunuş",
         "kind": "Tür",
-        "voices": "Sesler",
-        "match": "Eşleşme",
-        "enabled": "Açık",
-        "actions": "Eylemler"
+        "match": "Eşleşme"
       },
       "kinds": {
         "symbol": "Simge",
@@ -1315,10 +1389,9 @@
         "term": "Terim",
         "acronym": "Kısaltma"
       },
-      "voices": {
-        "all": "Tüm sesler",
-        "except": "{{names}} hariç",
-        "add": "+ ses"
+      "models": {
+        "all": "Tüm modeller",
+        "except": "{{names}} hariç"
       },
       "origins": {
         "builtin": "Yerleşik",
@@ -1331,7 +1404,6 @@
         "listen": "Dinle",
         "delete": "Sil",
         "reset": "Varsayılana sıfırla",
-        "save": "Kaydet",
         "cancel": "İptal"
       },
       "match": {
@@ -1347,13 +1419,13 @@
       },
       "filter": "Yazılan veya okunan metinde ara",
       "toggle": "{{written}} kullan",
-      "editTitle": "Girdiyi düzenle",
       "fields": {
         "skip": "Atla",
         "appliesTo": "Geçerli olduğu yer"
       },
-      "empty": "Filtrenizle eşleşen girdi yok.",
-      "deleteConfirmation": "{{written}} sözlüğünüzden silinsin mi? Bu işlem geri alınamaz.",
+      "emptyQuery": "“{{query}}” ile eşleşen bir şey yok.",
+      "emptyFilters": "Bu filtrelerle eşleşen bir şey yok.",
+      "clearFilters": "Filtreleri temizle",
       "resetConfirm": "{{written}} yerleşik okumaya sıfırlansın mı? Kaydınız silinir.",
       "errors": {
         "changed": "Sözlük dosyası diskte değişti. Tablo yeniden yüklendi; değişikliğinizi tekrar yapın.",
@@ -1361,7 +1433,7 @@
         "invalidEdit": "Bu girdi kaydedilemedi: {{message}}",
         "tooLarge": "Sözlük dosyası 1 MiB'tan büyük olacağı için hiçbir şey kaydedilmedi.",
         "io": "Sözlük dosyası yazılamadı: {{message}}",
-        "voicesChanged": "Bekleme sırasında sözlük değişti, bu yüzden ses değişikliği uygulanmadı. Sesleri yeniden seçin."
+        "voicesChanged": "Bekleme sırasında sözlük değişti, bu yüzden değişiklik uygulanmadı."
       },
       "problems": {
         "shadowed": "Hiç uygulanmaz: daha yüksek öncelikli girdi her zaman kazanır",
@@ -1382,35 +1454,50 @@
         "invalid": "Kaydedilemiyor: {{detail}}"
       },
       "check": {
-        "title": "Tüm seslerde kontrol",
+        "title": "Tüm modellerde kontrol",
         "playAll": "Tümünü çal",
         "playing": "{{model}} çalınıyor",
-        "checking": "Her ses kontrol ediliyor...",
+        "checking": "Her model kontrol ediliyor...",
         "heardRight": "doğru duyuldu",
         "missed": "yanlış duyuldu: {{heard}}",
         "failed": "kontrol edilemedi: {{error}}",
         "row": "{{model}}: {{outcome}}",
-        "advisory": "Bazı sesler bunu doğru okumadı. Yine de kaydedebilirsiniz.",
-        "saveAllAnyway": "Yine de tüm sesler için kaydet",
-        "savePassedOnly": "Yalnızca geçen sesler için kaydet",
-        "pickOne": "Bir ses seç",
+        "advisory": "Bazı modeller bunu doğru okumadı. Yine de kaydedebilirsiniz.",
+        "saveAllAnyway": "Yine de tüm modeller için kaydet",
+        "savePassedOnly": "Yalnızca geçen modeller için kaydet",
+        "pickOne": "Bir model seç",
         "dictating": "Dikte sürüyor. Bittiğinde yeniden kontrol edin.",
         "transcribeFailed": "Konuşmadan metne dönüştürme sesi yazıya dökemedi."
       },
       "filters": {
-        "voice": "Ses",
+        "model": "Model",
         "kind": "Tür",
         "source": "Kaynak",
         "all": "Tümü",
         "changed": "Sizin değiştirdiğiniz",
-        "onlyProblems": "Yalnızca sorunlar"
+        "problems": "Sorunlar"
       },
       "defaultLabel": "varsayılan:",
-      "defaultLabelFor": "{{voices}} için varsayılan:"
+      "defaultLabelFor": "{{voices}} için varsayılan:",
+      "dialog": {
+        "editTitle": "{{written}} düzenle",
+        "context": "{{written}}, artık {{spoken}} olarak okunuyor.",
+        "overrides": "Girdiniz yerleşik okuma {{default}} yerine geçer.",
+        "builtinDelete": "Yerleşik girdiler kapatılabilir, silinemez.",
+        "deleteConfirm": "{{written}} silinsin mi? Diğer girdileriniz korunur.",
+        "deleteAction": "Girdiyi sil",
+        "conflict": "Sözcük dağarcığı dosyası diskte değişti ve yeniden yüklendi. Girdiyi kontrol edin, ardından yeniden kaydedin.",
+        "refused": "Sözcük dağarcığı değişti ve bu girdi artık olduğu gibi kaydedilemez. Geçerli olduğu yeri kontrol edin ya da iptal edip yeniden ekleyin.",
+        "scopeRefused": "Bu girdi için bu modeller değiştirilemez."
+      },
+      "acronymStylePerModel": "Model başına kısaltma stili",
+      "invalid": {
+        "builtinUsed": "Düzeltilene kadar yerleşik okunuşlar kullanılır.",
+        "reload": "Yeniden yükle",
+        "openFolder": "Klasörü aç"
+      }
     },
     "correction": {
-      "add": "Düzeltme ekle",
-      "start": "Düzeltme ekle",
       "writtenText": "Yazılı metin",
       "next": "İleri",
       "title": "Okunuşu düzelt",
@@ -1421,12 +1508,11 @@
       "deriving": "Kural belirleniyor...",
       "exactOnly": "Yalnızca tam olarak bu metin",
       "chooseScope": "Nerede geçerli olacağını seçin",
-      "scopeRequired": "Kaydetmeden önce Tüm sesler'i veya tek bir sesi seçin.",
-      "acronymStyle": "Ses başına kısaltma stili",
+      "scopeRequiredModels": "Kaydetmeden önce Tüm modeller'i veya tek bir modeli seçin.",
       "style": {
         "spaced": "Ayrı harfler (C L I)",
         "capitals": "Büyük harfler (CLI)",
-        "inherit": "Tüm seslerle aynı"
+        "inheritModels": "Tüm modellerle aynı"
       },
       "reach": {
         "extension": "her {{extension}} dosyasını etkiler",
@@ -1447,5 +1533,67 @@
         "transcribeFailed": "Konuşmayı metne dönüştürme söylediklerinizi yazıya dökemedi."
       }
     }
+  },
+  "history": {
+    "change": "Değiştir",
+    "changeLabel": "Geçmişin nasıl tutulacağını değiştir",
+    "transcribeFile": "Dosyayı yazıya dök",
+    "notKept": "Geçmiş tutulmuyor.",
+    "empty": {
+      "dictation": "Henüz dikte yok.",
+      "dictationHint": "Dikte etmek için <dictate/>, temizleyerek dikte etmek için <cleanup/> tuşlarına basın.",
+      "dictationHintDictate": "Dikte etmek için <keys/> tuşlarına basın.",
+      "dictationHintCleanup": "Temizleyerek dikte etmek için <keys/> tuşlarına basın.",
+      "read": "Henüz okunan bir şey yok.",
+      "readHint": "Biraz metin kopyalayın ve <keys/> tuşlarına basın."
+    },
+    "summary": {
+      "dictation": {
+        "never": "Tüm kayıtlar tutulur. Yıldızlı kayıtlar korunur.",
+        "none": "Hiçbir kayıt tutulmaz. Yıldızlı kayıtlar ve yazıya dökülen dosyalar korunur.",
+        "latest_one": "Son kayıt tutulur. Yıldızlı kayıtlar korunur.",
+        "latest": "Son {{count}} kayıt tutulur. Yıldızlı kayıtlar korunur.",
+        "days3": "3 günden eski kayıtlar silinir. Yıldızlı kayıtlar korunur.",
+        "weeks2": "2 haftadan eski kayıtlar silinir. Yıldızlı kayıtlar korunur.",
+        "months3": "3 aydan eski kayıtlar silinir. Yıldızlı kayıtlar korunur."
+      },
+      "read": {
+        "latest_one": "Son kayıt tutulur.",
+        "latest": "Son {{count}} kayıt tutulur.",
+        "days3_one": "Son kayıt tutulur, 3 günden eski kayıt yoktur.",
+        "days3": "Son {{count}} kayıt tutulur, 3 günden eski kayıt yoktur.",
+        "weeks2_one": "Son kayıt tutulur, 2 haftadan eski kayıt yoktur.",
+        "weeks2": "Son {{count}} kayıt tutulur, 2 haftadan eski kayıt yoktur.",
+        "months3_one": "Son kayıt tutulur, 3 aydan eski kayıt yoktur.",
+        "months3": "Son {{count}} kayıt tutulur, 3 aydan eski kayıt yoktur."
+      }
+    },
+    "clear": {
+      "action": "Geçmişi temizle",
+      "dictationConfirm_one": "{{count}} kayıt ve {{recordings}} silinsin mi? Yıldızlı kayıtlar korunur.",
+      "dictationConfirm": "{{count}} kayıt ve {{recordings}} silinsin mi? Yıldızlı kayıtlar korunur.",
+      "recordings_one": "{{count}} ses kaydı",
+      "recordings": "{{count}} ses kaydı",
+      "readConfirm_one": "{{count}} kayıt silinsin mi? Sözlüğünüz değişmez.",
+      "readConfirm": "{{count}} kayıt silinsin mi? Sözlüğünüz değişmez.",
+      "nothing": "Temizlenecek bir şey yok."
+    },
+    "row": {
+      "open": "Kaydı göster",
+      "close": "Kaydı gizle"
+    },
+    "copy": "Metni kopyala",
+    "copyCleaned": "Temizlenmiş metni kopyala",
+    "copyOriginal": "Orijinali kopyala",
+    "star": "Yıldızla",
+    "unstar": "Yıldızı kaldır",
+    "retranscribe": "Yeniden transkribe et",
+    "cancelTranscription": "Transkripsiyonu iptal et",
+    "delete": "Sil",
+    "cleanedWith": "{{model}} ile temizlendi.",
+    "cleaned": "Temizlenmiş metin",
+    "original": "Orijinal transkripsiyon",
+    "diffNote": "Orijinal transkripsiyondan farklar gösteriliyor.",
+    "noCleanup": "Temizleme yok"
   }
 }

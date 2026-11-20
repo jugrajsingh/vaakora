@@ -5,6 +5,7 @@ import { SettingContainer } from "../ui/SettingContainer";
 import { useSettings } from "../../hooks/useSettings";
 import { RecordingRetentionPeriod } from "@/bindings";
 import {
+  AUTO_DELETE_OPTIONS,
   autoDeleteConfirm,
   currentKeep,
   dictationChangeDeletes,
@@ -14,12 +15,11 @@ import {
 import { createPendingConfirm, InlineConfirm } from "../shared/InlineConfirm";
 
 interface RecordingRetentionPeriodProps {
-  descriptionMode?: "inline" | "tooltip";
   grouped?: boolean;
 }
 
 export const RecordingRetentionPeriodSelector: React.FC<RecordingRetentionPeriodProps> =
-  React.memo(({ descriptionMode = "tooltip", grouped = false }) => {
+  React.memo(({ grouped = false }) => {
     const { t } = useTranslation();
     const { getSetting, updateSetting, isUpdating } = useSettings();
 
@@ -52,27 +52,16 @@ export const RecordingRetentionPeriodSelector: React.FC<RecordingRetentionPeriod
         },
       );
 
-    const retentionOptions = [
-      { value: "never", label: t("settings.debug.recordingRetention.never") },
-      {
-        value: "preserve_limit",
-        label: t("settings.debug.recordingRetention.preserveLimit", {
-          count: Number(historyLimit),
-        }),
-      },
-      { value: "days3", label: t("settings.debug.recordingRetention.days3") },
-      { value: "weeks2", label: t("settings.debug.recordingRetention.weeks2") },
-      {
-        value: "months3",
-        label: t("settings.debug.recordingRetention.months3"),
-      },
-    ];
+    const retentionOptions = AUTO_DELETE_OPTIONS.map(({ value, key }) => ({
+      value,
+      label: t(key, { count: Number(historyLimit) }),
+    }));
 
     return (
       <SettingContainer
-        title={t("settings.debug.recordingRetention.title")}
-        description={t("settings.debug.recordingRetention.description")}
-        descriptionMode={descriptionMode}
+        title={t("settings.dictationHistory.autoDeleteTitle")}
+        description={t("settings.dictationHistory.autoDeleteHelp")}
+        descriptionMode="inline"
         grouped={grouped}
         layout={pending ? "stacked" : "horizontal"}
       >

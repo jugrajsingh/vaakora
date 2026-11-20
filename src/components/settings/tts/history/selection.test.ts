@@ -7,8 +7,12 @@ import {
   beginDrag,
   correctionFor,
   extendDrag,
+  NO_READ_VIEW,
+  readView,
   releaseDrag,
   shownSelection,
+  type ReadView,
+  type ReadViewAction,
 } from "./selection";
 const {
   describe,
@@ -122,5 +126,99 @@ describe("correctionFor", () => {
       end: 0,
     });
     assert.equal(new Set([one.key, two.key, other.key]).size, 3);
+  });
+});
+
+describe("read view", () => {
+  const run = (actions: ReadViewAction[], from: ReadView = NO_READ_VIEW) =>
+    actions.reduce(readView, from);
+  const at = (id: number): ReadHistoryEntry => ({ ...ENTRY, id });
+  const pick = (
+    id: number,
+    range: TokenSelection = { start: 0, end: 1 },
+  ): ReadViewAction => ({
+    type: "select",
+    entry: at(id),
+    tokens: tokensOf(ENTRY),
+    range,
+  });
+
+  it("read_view_opens_one_at_a_time", () => {
+    const first = run([{ type: "toggle", id: 1 }]);
+    assert.equal(first.open, 1);
+    assert.equal(readView(first, { type: "toggle", id: 2 }).open, 2);
+    assert.equal(
+      run([
+        { type: "toggle", id: 1 },
+        { type: "toggle", id: 2 },
+        { type: "toggle", id: 2 },
+      ]).open,
+      null,
+    );
+  });
+
+  it("read_view_drops_open_after_clear", () => {
+    const open = run([{ type: "toggle", id: 3 }]);
+    const emptied = readView(open, { type: "loaded", ids: [] });
+    assert.equal(emptied.open, null);
+    assert.equal(readView(emptied, { type: "loaded", ids: [3] }).open, null);
+  });
+
+  it("read_view_clear_drops_open_and_selection_not_the_correction", () => {
+    const view = run([{ type: "toggle", id: 3 }, pick(3)]);
+    const cleared = readView(view, { type: "cleared" });
+    assert.equal(cleared.open, null);
+    assert.equal(cleared.selection, null);
+    assert.equal(cleared.correction, view.correction);
+    assert.equal(
+      readView(cleared, { type: "loaded", ids: [3] }).open,
+      null,
+      "a new read that reuses the id stays closed",
+    );
+  });
+
+  it("read_view_keeps_the_correction_across_reloads", () => {
+    const view = run([{ type: "toggle", id: 3 }, pick(3)]);
+    assert.equal(view.correction?.key, "3:0-1");
+    assert.deepEqual(view.selection, { entry: 3, range: { start: 0, end: 1 } });
+    const reloaded = readView(view, { type: "loaded", ids: [4, 5] });
+    assert.equal(reloaded.open, null);
+    assert.equal(reloaded.selection, null);
+    assert.equal(reloaded.correction, view.correction);
+    assert.equal(
+      readView(reloaded, { type: "toggle", id: 4 }).correction,
+      view.correction,
+    );
+    assert.equal(
+      readView(view, { type: "toggle", id: 4 }).correction,
+      view.correction,
+    );
+  });
+
+  it("read_view_loaded_keeps_selection_of_the_open_entry", () => {
+    const view = run([{ type: "toggle", id: 3 }, pick(3)]);
+    const kept = readView(view, { type: "loaded", ids: [2, 3] });
+    assert.equal(kept.open, 3);
+    assert.deepEqual(kept.selection, view.selection);
+  });
+
+  it("select_on_a_closed_entry_is_ignored", () => {
+    assert.equal(readView(NO_READ_VIEW, pick(3)), NO_READ_VIEW);
+    const open = run([{ type: "toggle", id: 3 }]);
+    assert.equal(readView(open, pick(4)), open);
+  });
+
+  it("toggle_clears_the_selection", () => {
+    const view = run([{ type: "toggle", id: 3 }, pick(3)]);
+    assert.equal(readView(view, { type: "toggle", id: 3 }).selection, null);
+    assert.equal(readView(view, { type: "toggle", id: 4 }).selection, null);
+  });
+
+  it("close_correction_drops_correction_and_selection", () => {
+    const view = run([{ type: "toggle", id: 3 }, pick(3)]);
+    const closed = readView(view, { type: "closeCorrection" });
+    assert.equal(closed.correction, null);
+    assert.equal(closed.selection, null);
+    assert.equal(closed.open, 3);
   });
 });

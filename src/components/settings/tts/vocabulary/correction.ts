@@ -28,6 +28,8 @@ export interface CorrectionState {
   exact: boolean;
   matching: TermMatch;
   caseSensitive: boolean;
+  /** The voices a "save only for voices that passed" was asked for; a retry after a conflict repeats it. */
+  passed: readonly string[] | null;
 }
 
 export const initialCorrection = (spokenAs: string): CorrectionState => ({
@@ -36,7 +38,22 @@ export const initialCorrection = (spokenAs: string): CorrectionState => ({
   exact: false,
   matching: "whole",
   caseSensitive: true,
+  passed: null,
 });
+
+/** Whether the correction holds a change a close would lose. */
+export function correctionDirty(state: CorrectionState, spokenAs: string) {
+  const start = initialCorrection(spokenAs);
+  return (
+    state.shouldSay !== start.shouldSay ||
+    state.scope.kind !== start.scope.kind ||
+    scopeModel(state.scope) !== scopeModel(start.scope) ||
+    state.exact !== start.exact ||
+    state.matching !== start.matching ||
+    state.caseSensitive !== start.caseSensitive ||
+    state.passed !== start.passed
+  );
+}
 
 /** The result of deriving a rule: shown while pending, as a rule, or as an inline reason. */
 export type Derived =
@@ -189,6 +206,15 @@ export function createCorrectionActions(deps: CorrectionDependencies) {
       };
     }
   };
+  const savePassed = (
+    revision: string,
+    rule: DerivedRule,
+    passed: readonly string[],
+  ): Promise<SaveOutcome> =>
+    saveRules(
+      revision,
+      passed.map((id) => ({ ...rule, entry: { ...rule.entry, model: id } })),
+    );
   return {
     load: () => deps.load(),
     derive: async (request: CorrectionRequest): Promise<Derived> => {
@@ -212,20 +238,88 @@ export function createCorrectionActions(deps: CorrectionDependencies) {
     ): Promise<VoiceText[]> => deps.voices(written, rule, models),
     /** Saves the rule shown. */
     save: (revision: string, rule: DerivedRule) => saveRules(revision, [rule]),
+    /** The save the dialog asks for: the rule shown, or the same rule for the voices that passed. */
+    submit: (
+      revision: string,
+      rule: DerivedRule,
+      passed: readonly string[] | null,
+    ): Promise<SaveOutcome> =>
+      passed === null
+        ? saveRules(revision, [rule])
+        : savePassed(revision, rule, passed),
     /**
      * Saves the checked rule only for the voices that passed the check: the same rule scoped to
      * each of them, in one save.
      */
-    savePassed: (
-      revision: string,
-      rule: DerivedRule,
-      passed: readonly string[],
-    ): Promise<SaveOutcome> =>
-      saveRules(
-        revision,
-        passed.map((id) => ({ ...rule, entry: { ...rule.entry, model: id } })),
-      ),
+    savePassed,
   };
+}
+
+/** What a save press needs: the loaded table, the rule shown, and the state that rule was derived for. */
+export interface SaveAsk {
+  table: VocabularyTable | null;
+  rule: DerivedRule | null;
+  state: CorrectionState;
+  derived: Derived;
+}
+
+/**
+ * Every save of the dialog goes through here: nothing is written unless `canSave` accepts the
+ * state, so a form submitted by Enter cannot save for a scope the owner has not chosen.
+ */
+export async function attemptSave(
+  actions: Pick<ReturnType<typeof createCorrectionActions>, "submit">,
+  { table, rule, state, derived }: SaveAsk,
+  passed: readonly string[] | null,
+): Promise<SaveOutcome | null> {
+  if (!table || !rule || !canSave(state, derived)) return null;
+  return actions.submit(table.revision, rule, passed);
+}
+
+/**
+ * The text prompt's Next: the box opens only if the prompt is still the open dialog when the
+ * voice answers, so a prompt the owner discarded cannot reopen its text over a newer dialog.
+ */
+export async function settleNext(
+  speak: (written: string) => Promise<string | null>,
+  written: string,
+  on: {
+    live: () => boolean;
+    open: (written: string, spokenAs: string) => void;
+  },
+): Promise<void> {
+  const spoken = await speak(written);
+  if (spoken !== null && on.live()) on.open(written, spoken);
+}
+
+/**
+ * A finished save reaches the dialog that asked for it only if that dialog is still open. The
+ * written table is shared with the host either way, since the file did change.
+ */
+export function settleSave(
+  outcome: SaveOutcome,
+  on: {
+    live: () => boolean;
+    saved: (table: VocabularyTable) => void;
+    close: () => void;
+    failed: (outcome: Extract<SaveOutcome, { saved: false }>) => void;
+  },
+): void {
+  if (outcome.saved) {
+    on.saved(outcome.table);
+    if (on.live()) on.close();
+    return;
+  }
+  if (on.live()) on.failed(outcome);
+}
+
+/** The dialog's line for a failed save: a file changed on disk is the dialog conflict line. */
+export function correctionNotice(
+  outcome: Extract<SaveOutcome, { saved: false }>,
+): Failure {
+  return outcome.failure.key === "tts.vocabulary.errors.changed"
+    ? { key: "tts.vocabulary.dialog.conflict" }
+    : outcome.failure;
 }
 
 const keyOfError = (message: string) =>

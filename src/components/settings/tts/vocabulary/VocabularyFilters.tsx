@@ -1,15 +1,18 @@
 import { useTranslation } from "react-i18next";
 import type { Section, TtsModelInfo } from "@/bindings";
+import { FilterChip } from "@/components/shared/FilterChip";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { Switch } from "@/components/ui/Switch";
 import type { Filters, SourceFilter } from "./filter";
 import { kindLabel, modelName, originLabel } from "./labels";
 
 const ANY = "";
 const KINDS: Section[] = ["symbol", "extension", "term", "acronym"];
 const SOURCES: SourceFilter[] = ["builtin", "owner", "changed"];
+/** Fixed 132 px wrapper; the arbitrary variant replaces the trigger's 200 px minimum so three fit 528 px. */
+const PICKER = "w-[132px] shrink-0 [&>button]:min-w-0";
+const MENU = "start-0 min-w-40";
 
-/** The Voice, Kind and Source pickers and the Only problems switch. */
+/** The Model, Kind and Source pickers and the Problems chip. */
 export function VocabularyFilters({
   filters,
   models,
@@ -32,9 +35,11 @@ export function VocabularyFilters({
     <div className="flex flex-wrap items-center gap-2">
       <Dropdown
         tone="neutral"
+        className={PICKER}
+        menuClassName={MENU}
         selectedValue={filters.voice ?? ANY}
         options={[
-          any(t("tts.vocabulary.filters.voice")),
+          any(t("tts.vocabulary.filters.model")),
           ...models.map((model) => ({
             value: model.id,
             label: modelName(models, model.id),
@@ -44,6 +49,8 @@ export function VocabularyFilters({
       />
       <Dropdown
         tone="neutral"
+        className={PICKER}
+        menuClassName={MENU}
         selectedValue={filters.kind ?? ANY}
         options={[
           any(t("tts.vocabulary.filters.kind")),
@@ -55,6 +62,8 @@ export function VocabularyFilters({
       />
       <Dropdown
         tone="neutral"
+        className={PICKER}
+        menuClassName={MENU}
         selectedValue={filters.source ?? ANY}
         options={[
           any(t("tts.vocabulary.filters.source")),
@@ -70,13 +79,14 @@ export function VocabularyFilters({
           })
         }
       />
-      <label className="flex items-center gap-2 text-sm">
-        <Switch
-          checked={filters.onlyProblems}
-          onChange={(onlyProblems) => setFilters({ ...filters, onlyProblems })}
-        />
-        {t("tts.vocabulary.filters.onlyProblems")}
-      </label>
+      <FilterChip
+        pressed={filters.onlyProblems}
+        onToggle={() =>
+          setFilters({ ...filters, onlyProblems: !filters.onlyProblems })
+        }
+      >
+        {t("tts.vocabulary.filters.problems")}
+      </FilterChip>
     </div>
   );
 }

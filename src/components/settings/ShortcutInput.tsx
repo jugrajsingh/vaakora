@@ -1,6 +1,6 @@
 import {
   clearButtonState,
-  shortcutLabelId,
+  shortcutNameKey,
 } from "@/lib/utils/shortcutPresentation";
 import { notify } from "@/stores/noticeStore";
 import React, { useRef } from "react";
@@ -94,7 +94,6 @@ export const ShortcutInput: React.FC<ShortcutInputProps> = ({
 
   // Get translated name and description for the binding
   const enabled = getSetting("post_process_enabled") ?? false;
-  const labelId = shortcutLabelId(shortcutId, enabled);
   const clearState = clearButtonState({
     enabled,
     id: shortcutId,
@@ -113,10 +112,7 @@ export const ShortcutInput: React.FC<ShortcutInputProps> = ({
       });
     }
   };
-  const translatedName = t(
-    `settings.general.shortcut.bindings.${labelId}.name`,
-    binding.name,
-  );
+  const translatedName = t(shortcutNameKey(shortcutId), binding.name);
   const translatedDescription = t(
     `settings.general.shortcut.bindings.${shortcutId}.description`,
     binding.description,

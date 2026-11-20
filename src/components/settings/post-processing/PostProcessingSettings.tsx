@@ -1,22 +1,17 @@
-import React, { useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { RefreshCcw } from "lucide-react";
-import { commands, type PostProcessApiFormat } from "@/bindings";
 import {
-  promptControls,
-  providerGroupKey,
-} from "@/lib/utils/localLlmPresentation";
+  commands,
+  type LLMPrompt,
+  type PostProcessApiFormat,
+} from "@/bindings";
+import { cleanupHost, promptControls } from "@/lib/utils/localLlmPresentation";
 
 import { Alert } from "../../ui/Alert";
-import {
-  Dropdown,
-  SettingContainer,
-  SettingsGroup,
-  Textarea,
-} from "@/components/ui";
+import { Dropdown, SettingContainer, SettingsGroup } from "@/components/ui";
 import { Button } from "../../ui/Button";
 import { ResetButton } from "../../ui/ResetButton";
-import { Input } from "../../ui/Input";
 
 import { ProviderSelect } from "../PostProcessingSettingsApi/ProviderSelect";
 import { BaseUrlField } from "../PostProcessingSettingsApi/BaseUrlField";
@@ -32,6 +27,7 @@ import {
   LocalLlmSettings,
   useLocalLlmModels,
 } from "./LocalLlmSettings";
+import { PromptDialog } from "./PromptDialog";
 
 const PostProcessingProvider: React.FC<{ state: PostProcessProviderState }> = ({
   state,
@@ -64,9 +60,7 @@ const PostProcessingSettingsApiComponent: React.FC<{
 
   return (
     <>
-      {isLocalLlm ? (
-        <LocalLlmSettings />
-      ) : state.isAppleProvider ? (
+      {isLocalLlm ? null : state.isAppleProvider ? (
         state.appleIntelligenceUnavailable ? (
           <Alert variant="error" contained>
             {t("settings.postProcessing.api.appleIntelligence.unavailable")}
@@ -207,105 +201,68 @@ const PostProcessingSettingsPromptsComponent: React.FC = () => {
   const { t } = useTranslation();
   const { getSetting, updateSetting, isUpdating, refreshSettings } =
     useSettings();
-  const [isCreating, setIsCreating] = useState(false);
-  const [draftName, setDraftName] = useState("");
-  const [draftText, setDraftText] = useState("");
+  /** The open dialog and the prompt it edits (null for a new one), fixed when it opened. */
+  const [dialog, setDialog] = useState<{ prompt: LLMPrompt | null } | null>(
+    null,
+  );
 
   const prompts = getSetting("post_process_prompts") || [];
   const selectedPromptId = getSetting("post_process_selected_prompt_id") || "";
   const selectedPrompt =
     prompts.find((prompt) => prompt.id === selectedPromptId) || null;
 
-  useEffect(() => {
-    if (isCreating) return;
-
-    if (selectedPrompt) {
-      setDraftName(selectedPrompt.name);
-      setDraftText(selectedPrompt.prompt);
-    } else {
-      setDraftName("");
-      setDraftText("");
-    }
-  }, [
-    isCreating,
-    selectedPromptId,
-    selectedPrompt?.name,
-    selectedPrompt?.prompt,
-  ]);
-
   const handlePromptSelect = (promptId: string | null) => {
     if (!promptId) return;
     updateSetting("post_process_selected_prompt_id", promptId);
-    setIsCreating(false);
   };
 
-  const handleCreatePrompt = async () => {
-    if (!draftName.trim() || !draftText.trim()) return;
-
+  const refresh = async () => {
     try {
-      const result = await commands.addPostProcessPrompt(
-        draftName.trim(),
-        draftText.trim(),
-      );
-      if (result.status === "ok") {
-        await refreshSettings();
-        updateSetting("post_process_selected_prompt_id", result.data.id);
-        setIsCreating(false);
-      }
+      await refreshSettings();
+    } catch (error) {
+      console.error("Failed to refresh settings:", error);
+    }
+  };
+
+  const addPrompt = async (name: string, text: string) => {
+    try {
+      const result = await commands.addPostProcessPrompt(name, text);
+      if (result.status !== "ok") return false;
+      await refresh();
+      updateSetting("post_process_selected_prompt_id", result.data.id);
+      return true;
     } catch (error) {
       console.error("Failed to create prompt:", error);
+      return false;
     }
   };
 
-  const handleUpdatePrompt = async () => {
-    if (!selectedPromptId || !draftName.trim() || !draftText.trim()) return;
-
+  const updatePrompt = async (id: string, name: string, text: string) => {
     try {
-      await commands.updatePostProcessPrompt(
-        selectedPromptId,
-        draftName.trim(),
-        draftText.trim(),
-      );
-      await refreshSettings();
+      const result = await commands.updatePostProcessPrompt(id, name, text);
+      if (result.status !== "ok") return false;
+      await refresh();
+      return true;
     } catch (error) {
       console.error("Failed to update prompt:", error);
+      return false;
     }
   };
 
-  const handleDeletePrompt = async (promptId: string) => {
-    if (!promptId) return;
-
+  const deletePrompt = async (id: string) => {
     try {
-      await commands.deletePostProcessPrompt(promptId);
-      await refreshSettings();
-      setIsCreating(false);
+      const result = await commands.deletePostProcessPrompt(id);
+      if (result.status !== "ok") return false;
+      await refresh();
+      return true;
     } catch (error) {
       console.error("Failed to delete prompt:", error);
+      return false;
     }
-  };
-
-  const handleCancelCreate = () => {
-    setIsCreating(false);
-    if (selectedPrompt) {
-      setDraftName(selectedPrompt.name);
-      setDraftText(selectedPrompt.prompt);
-    } else {
-      setDraftName("");
-      setDraftText("");
-    }
-  };
-
-  const handleStartCreate = () => {
-    setIsCreating(true);
-    setDraftName("");
-    setDraftText("");
   };
 
   const hasPrompts = prompts.length > 0;
-  const isDirty =
-    !!selectedPrompt &&
-    (draftName.trim() !== selectedPrompt.name ||
-      draftText.trim() !== selectedPrompt.prompt.trim());
+  const editing = dialog?.prompt ?? null;
 
   return (
     <SettingContainer
@@ -331,143 +288,52 @@ const PostProcessingSettingsPromptsComponent: React.FC = () => {
                 ? t("settings.postProcessing.prompts.noPrompts")
                 : t("settings.postProcessing.prompts.selectPrompt")
             }
-            disabled={
-              isUpdating("post_process_selected_prompt_id") || isCreating
-            }
+            disabled={isUpdating("post_process_selected_prompt_id")}
             className="flex-1 min-w-0"
           />
           <Button
-            onClick={handleStartCreate}
-            variant="primary"
+            onClick={() =>
+              selectedPrompt && setDialog({ prompt: selectedPrompt })
+            }
+            variant="secondary"
             size="md"
-            disabled={isCreating}
+            disabled={!selectedPrompt}
             className="shrink-0"
           >
-            {t("settings.postProcessing.prompts.createNew")}
+            {t("settings.cleanup.prompt.edit")}
+          </Button>
+          <Button
+            onClick={() => setDialog({ prompt: null })}
+            variant="primary"
+            size="md"
+            className="shrink-0"
+          >
+            {t("settings.cleanup.prompt.new")}
           </Button>
         </div>
 
-        {!isCreating && hasPrompts && selectedPrompt && (
-          <div className="space-y-3">
-            <div className="space-y-2 flex flex-col">
-              <label className="text-sm font-semibold">
-                {t("settings.postProcessing.prompts.promptLabel")}
-              </label>
-              <Input
-                type="text"
-                value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
-                placeholder={t(
-                  "settings.postProcessing.prompts.promptLabelPlaceholder",
-                )}
-                variant="compact"
-              />
-            </div>
-
-            <div className="space-y-2 flex flex-col">
-              <label className="text-sm font-semibold">
-                {t("settings.postProcessing.prompts.promptInstructions")}
-              </label>
-              <Textarea
-                value={draftText}
-                onChange={(e) => setDraftText(e.target.value)}
-                placeholder={t(
-                  "settings.postProcessing.prompts.promptInstructionsPlaceholder",
-                )}
-              />
-              <p className="text-xs text-ink-3">
-                <Trans
-                  i18nKey="settings.postProcessing.prompts.promptTip"
-                  components={{ code: <code /> }}
-                />
-              </p>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button
-                onClick={handleUpdatePrompt}
-                variant="primary"
-                size="md"
-                disabled={!draftName.trim() || !draftText.trim() || !isDirty}
-              >
-                {t("settings.postProcessing.prompts.updatePrompt")}
-              </Button>
-              <Button
-                onClick={() => handleDeletePrompt(selectedPromptId)}
-                variant="secondary"
-                size="md"
-                disabled={!selectedPromptId || prompts.length <= 1}
-              >
-                {t("settings.postProcessing.prompts.deletePrompt")}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {!isCreating && !selectedPrompt && (
+        {!selectedPrompt && (
           <div className="p-3 bg-wash rounded-md border border-line">
             <p className="text-sm text-ink-3">
               {hasPrompts
                 ? t("settings.postProcessing.prompts.selectToEdit")
-                : t("settings.postProcessing.prompts.createFirst")}
+                : t("settings.cleanup.prompt.createFirst")}
             </p>
           </div>
         )}
 
-        {isCreating && (
-          <div className="space-y-3">
-            <div className="space-y-2 block flex flex-col">
-              <label className="text-sm font-semibold text-text">
-                {t("settings.postProcessing.prompts.promptLabel")}
-              </label>
-              <Input
-                type="text"
-                value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
-                placeholder={t(
-                  "settings.postProcessing.prompts.promptLabelPlaceholder",
-                )}
-                variant="compact"
-              />
-            </div>
-
-            <div className="space-y-2 flex flex-col">
-              <label className="text-sm font-semibold">
-                {t("settings.postProcessing.prompts.promptInstructions")}
-              </label>
-              <Textarea
-                value={draftText}
-                onChange={(e) => setDraftText(e.target.value)}
-                placeholder={t(
-                  "settings.postProcessing.prompts.promptInstructionsPlaceholder",
-                )}
-              />
-              <p className="text-xs text-ink-3">
-                <Trans
-                  i18nKey="settings.postProcessing.prompts.promptTip"
-                  components={{ code: <code /> }}
-                />
-              </p>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button
-                onClick={handleCreatePrompt}
-                variant="primary"
-                size="md"
-                disabled={!draftName.trim() || !draftText.trim()}
-              >
-                {t("settings.postProcessing.prompts.createPrompt")}
-              </Button>
-              <Button
-                onClick={handleCancelCreate}
-                variant="secondary"
-                size="md"
-              >
-                {t("settings.postProcessing.prompts.cancel")}
-              </Button>
-            </div>
-          </div>
+        {dialog && (
+          <PromptDialog
+            prompt={dialog.prompt}
+            canDelete={prompts.length > 1}
+            save={
+              editing
+                ? (name, text) => updatePrompt(editing.id, name, text)
+                : addPrompt
+            }
+            remove={editing ? () => deletePrompt(editing.id) : undefined}
+            close={() => setDialog(null)}
+          />
         )}
       </div>
     </SettingContainer>
@@ -499,28 +365,37 @@ export const PostProcessingSettings: React.FC = () => {
     getSetting("post_process_selected_prompt_id") ?? null,
   );
 
+  const isLocalLlm = state.selectedProviderId === LOCAL_LLM_PROVIDER_ID;
+  const host = cleanupHost(state.selectedProviderId, state.baseUrl);
+
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
-      <SettingsGroup title={t("settings.postProcessing.provider.title")}>
+      <SettingsGroup title={t("settings.groups.provider")}>
         <PostProcessingProvider state={state} />
-      </SettingsGroup>
-      <SettingsGroup
-        title={t(
-          providerGroupKey(getSetting("post_process_provider_id") ?? "openai"),
+        {host !== null && (
+          <p role="note" className="px-4 py-2 text-sm text-ink-2">
+            {t("settings.cleanup.sentTo", { host })}
+          </p>
         )}
-      >
         <PostProcessingSettingsApi state={state} />
       </SettingsGroup>
 
-      <SettingsGroup title={t("settings.postProcessing.prompts.title")}>
-        {hidePrompts ? (
-          <p className="px-4 py-3 text-sm text-ink-3">
-            {t("settings.postProcessing.localLlm.promptHidden")}
-          </p>
-        ) : (
+      {!hidePrompts && (
+        <SettingsGroup title={t("settings.groups.instructions")}>
           <PostProcessingSettingsPrompts />
-        )}
-      </SettingsGroup>
+        </SettingsGroup>
+      )}
+
+      {isLocalLlm && (
+        <SettingsGroup title={t("settings.groups.localModel")}>
+          <LocalLlmSettings />
+          {hidePrompts && (
+            <p className="px-4 py-3 text-sm text-ink-3">
+              {t("settings.postProcessing.localLlm.promptHidden")}
+            </p>
+          )}
+        </SettingsGroup>
+      )}
     </div>
   );
 };

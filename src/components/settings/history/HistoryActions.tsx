@@ -1,29 +1,15 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Check,
-  Copy,
-  ClipboardCopy,
-  Star,
-  RotateCcw,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Check, Copy, Star } from "lucide-react";
 
 export interface HistoryActionsProps {
   processed: boolean;
-  rawAvailable: boolean;
   hasText: boolean;
   saved: boolean;
   retrying: boolean;
   copied: boolean;
   onCopy: () => void;
-  onCopyRaw: () => void;
   onToggleSaved: () => void;
-  onRetranscribe: () => void;
-  onDelete: () => void;
-  onCancel?: () => void;
-  cancelling?: boolean;
 }
 
 function IconButton({
@@ -52,6 +38,7 @@ function IconButton({
   );
 }
 
+/** A history row's icon actions: Copy and Star. */
 export function HistoryActions(props: HistoryActionsProps): React.JSX.Element {
   const { t } = useTranslation();
   return (
@@ -59,11 +46,7 @@ export function HistoryActions(props: HistoryActionsProps): React.JSX.Element {
       <IconButton
         onClick={props.onCopy}
         disabled={!props.hasText || props.retrying}
-        title={t(
-          props.processed
-            ? "settings.history.copyPostProcessed"
-            : "settings.history.copyToClipboard",
-        )}
+        title={t(props.processed ? "history.copyCleaned" : "history.copy")}
       >
         {props.copied ? (
           <Check width={16} height={16} />
@@ -71,56 +54,17 @@ export function HistoryActions(props: HistoryActionsProps): React.JSX.Element {
           <Copy width={16} height={16} />
         )}
       </IconButton>
-      {props.processed && (
-        <IconButton
-          onClick={props.onCopyRaw}
-          disabled={!props.rawAvailable || props.retrying}
-          title={t("settings.history.copyRaw")}
-        >
-          <ClipboardCopy width={16} height={16} />
-        </IconButton>
-      )}
       <IconButton
         onClick={props.onToggleSaved}
         disabled={props.retrying}
         active={props.saved}
-        title={t(
-          props.saved ? "settings.history.unsave" : "settings.history.save",
-        )}
+        title={t(props.saved ? "history.unstar" : "history.star")}
       >
         <Star
           width={16}
           height={16}
           fill={props.saved ? "currentColor" : "none"}
         />
-      </IconButton>
-      {props.retrying && props.onCancel ? (
-        <IconButton
-          onClick={props.onCancel}
-          disabled={props.cancelling ?? false}
-          title={t("settings.history.cancelTranscription")}
-        >
-          <X width={16} height={16} />
-        </IconButton>
-      ) : (
-        <IconButton
-          onClick={props.onRetranscribe}
-          disabled={props.retrying}
-          title={t("settings.history.retranscribe")}
-        >
-          <RotateCcw
-            width={16}
-            height={16}
-            className={props.retrying ? "animate-spin" : ""}
-          />
-        </IconButton>
-      )}
-      <IconButton
-        onClick={props.onDelete}
-        disabled={props.retrying}
-        title={t("settings.history.delete")}
-      >
-        <Trash2 width={16} height={16} />
       </IconButton>
     </div>
   );

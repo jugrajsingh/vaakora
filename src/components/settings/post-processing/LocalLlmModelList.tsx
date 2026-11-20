@@ -2,11 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import type { LocalLlmModelInfo } from "@/bindings";
 import { Button } from "../../ui/Button";
-import {
-  createRowConfirm,
-  InlineConfirm,
-  useFocusReturn,
-} from "@/components/shared/InlineConfirm";
+import { InlineConfirm } from "@/components/shared/InlineConfirm";
 import { formatModelSize } from "@/lib/utils/format";
 import { createLocalLlmRowActions } from "./localLlmRowActions";
 
@@ -25,32 +21,6 @@ export interface LocalLlmModelListProps {
   onCancelDelete: () => void;
   onSelect: (id: string) => void;
 }
-/**
- * The settings page's delete callbacks for the list: Delete only asks, `onConfirmDelete` removes
- * the asked model once, and `prune` drops the question when that model is no longer downloaded.
- */
-export function cleanupDeleteControls(deps: {
-  remove: (id: string) => void;
-  show: (id: string | null) => void;
-  downloaded: (id: string) => boolean;
-}) {
-  const question = createRowConfirm<string>({
-    show: deps.show,
-    present: deps.downloaded,
-    apply: deps.remove,
-  });
-  return {
-    props: {
-      onDelete: question.ask,
-      onConfirmDelete: question.confirm,
-      onCancelDelete: question.cancel,
-    } satisfies Pick<
-      LocalLlmModelListProps,
-      "onDelete" | "onConfirmDelete" | "onCancelDelete"
-    >,
-    prune: question.prune,
-  };
-}
 export function LocalLlmModelList({
   models,
   selectedId,
@@ -65,9 +35,8 @@ export function LocalLlmModelList({
   onSelect,
 }: LocalLlmModelListProps) {
   const { t } = useTranslation();
-  const listRef = useFocusReturn<HTMLDivElement>(askingId);
   return (
-    <div ref={listRef} className="divide-y divide-line">
+    <div className="divide-y divide-line">
       {models.map((model) => {
         const size = formatModelSize(model.size_bytes / 1e6);
         const actions = createLocalLlmRowActions(

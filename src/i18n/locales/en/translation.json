@@ -36,6 +36,19 @@
     "debug": "Debug",
     "about": "About"
   },
+  "nav": {
+    "dictation": "Dictation",
+    "readAloud": "Read aloud",
+    "models": "Models",
+    "settings": "Settings",
+    "history": "History",
+    "cleanup": "Cleanup",
+    "vocabulary": "Vocabulary",
+    "general": "General",
+    "advanced": "Advanced",
+    "about": "About",
+    "debug": "Debug"
+  },
   "onboarding": {
     "customModelDescription": "Not officially supported",
     "migration": {
@@ -345,6 +358,52 @@
     "lockedWhileTranscribing": "You can switch models once History finishes transcribing."
   },
   "settings": {
+    "groups": {
+      "shortcuts": "Shortcuts",
+      "model": "Model",
+      "languages": "Languages",
+      "microphone": "Microphone",
+      "output": "Output",
+      "text": "Text",
+      "overlay": "Overlay",
+      "history": "History",
+      "playback": "Playback",
+      "textHandling": "Text handling",
+      "sound": "Sound",
+      "appearance": "Appearance",
+      "startup": "Startup",
+      "models": "Models",
+      "dictationEngine": "Dictation engine",
+      "experimental": "Experimental",
+      "provider": "Provider",
+      "instructions": "Instructions",
+      "localModel": "Local model"
+    },
+    "jobModel": {
+      "manage": "Manage models",
+      "choose": "Choose a model",
+      "loading": "Loading models",
+      "empty": {
+        "dictation": "No dictation model yet.",
+        "readAloud": "No read-aloud model yet."
+      },
+      "help": {
+        "dictation": "Choose a downloaded dictation model.",
+        "readAloud": "Choose a downloaded read-aloud model."
+      }
+    },
+    "rows": {
+      "unloadIdle": "Unload idle models",
+      "runOn": "Run dictation models on"
+    },
+    "shortcuts": {
+      "dictate": "Dictate",
+      "dictateWithCleanup": "Dictate with cleanup",
+      "cancel": "Cancel",
+      "readAloud": "Read aloud",
+      "activation": "Activation",
+      "activationHelp": "For dictation shortcuts"
+    },
     "modelSettings": {
       "title": "{{model}} Settings"
     },
@@ -363,9 +422,6 @@
             "name": "Transcribe Shortcut",
             "description": "The keyboard shortcut to record and transcribe your voice."
           },
-          "transcribe_raw": {
-            "name": "Raw Shortcut"
-          },
           "cancel": {
             "name": "Cancel Shortcut",
             "description": "The keyboard shortcut to cancel the current recording."
@@ -375,7 +431,6 @@
             "description": "Optional: A dedicated hotkey that always applies AI post-processing to your transcription."
           },
           "read_aloud": {
-            "name": "Read-aloud shortcut",
             "description": "Open the popup and read copied text aloud."
           }
         },
@@ -400,7 +455,7 @@
         "stopDetectorDownload": "Stop downloading the language detector"
       },
       "preferredLanguages": {
-        "title": "Preferred Languages",
+        "title": "Preferred languages",
         "description": "The languages you speak. Handy uses them to recommend models.",
         "noMatch": "No language matches “{{query}}”",
         "weak": "No model recognizes {{languages}} well yet."
@@ -474,7 +529,7 @@
         "loading": "Loading..."
       },
       "channel": {
-        "title": "Input Channel",
+        "title": "Input channel",
         "description": "Select which input channel to record from. Use this if your audio interface has multiple inputs.",
         "average": "Average all channels",
         "channel": "Channel {{n}}"
@@ -487,11 +542,13 @@
         "title": "Output Device",
         "description": "Select your preferred audio output device for feedback sounds",
         "placeholder": "Select output device...",
-        "loading": "Loading..."
+        "loading": "Loading...",
+        "offReason": "Not used when audio feedback is off."
       },
       "volume": {
         "title": "Volume",
-        "description": "Adjust the volume of audio feedback sounds"
+        "description": "Adjust the volume of audio feedback sounds",
+        "offReason": "Not used when audio feedback is off."
       }
     },
     "advanced": {
@@ -503,7 +560,7 @@
         "experimental": "Experimental"
       },
       "experimentalToggle": {
-        "label": "Experimental Features",
+        "label": "Experimental features",
         "description": "Enable experimental features that are still in development."
       },
       "lazyStreamClose": {
@@ -524,15 +581,15 @@
         }
       },
       "startHidden": {
-        "label": "Start Hidden",
+        "label": "Start hidden",
         "description": "Launch to system tray without opening the window."
       },
       "autostart": {
-        "label": "Launch on Startup",
+        "label": "Launch on startup",
         "description": "Automatically start Handy when you log in to your computer."
       },
       "showTrayIcon": {
-        "label": "Show Tray Icon",
+        "label": "Show tray icon",
         "description": "Display the Handy icon in the system tray."
       },
       "overlay": {
@@ -555,7 +612,7 @@
         }
       },
       "pasteMethod": {
-        "title": "Paste Method",
+        "title": "Paste method",
         "description": "Choose how text is inserted. Direct: simulates typing via system input. None: skips paste, only updates history/clipboard.",
         "options": {
           "clipboard": "Clipboard ({{modifier}}+V)",
@@ -568,14 +625,14 @@
         "externalScriptPlaceholder": "/path/to/your/script.sh"
       },
       "typingTool": {
-        "title": "Typing Tool",
+        "title": "Typing tool",
         "description": "Choose which Linux typing tool to use for Direct paste method. Auto will automatically detect and use the best available tool for your system.",
         "options": {
           "auto": "Auto (Recommended)"
         }
       },
       "clipboardHandling": {
-        "title": "Clipboard Handling",
+        "title": "Clipboard handling",
         "description": "Don't Modify Clipboard preserves your current clipboard contents after transcription. Copy to Clipboard leaves the transcription result in your clipboard after pasting.",
         "options": {
           "dontModify": "Don't Modify Clipboard",
@@ -583,7 +640,7 @@
         }
       },
       "autoSubmit": {
-        "title": "Auto Submit",
+        "title": "Auto submit",
         "description": "Automatically send the selected key combination after text insertion. Cmd+Enter applies on macOS, while Windows/Linux use Super+Enter.",
         "options": {
           "off": "Off",
@@ -612,7 +669,7 @@
         }
       },
       "customWords": {
-        "title": "Custom Words",
+        "title": "Custom words",
         "description": "Help supported models recognize names and specialized terms. Fuzzy correction is currently limited to words using A–Z and numbers.",
         "placeholder": "Add a word",
         "add": "Add",
@@ -620,11 +677,11 @@
         "duplicate": "\"{{word}}\" already exists"
       },
       "voiceActivityDetection": {
-        "title": "Voice Activity Detection",
+        "title": "Voice activity detection",
         "description": "Filter silence from recordings. Streaming-capable models use a longer VAD tail; disabling VAD records raw audio."
       },
       "longFormChunking": {
-        "title": "Long Audio Chunking",
+        "title": "Long audio chunking",
         "description": "Splits long recordings at pauses before transcribing, which typically improves transcription performance. Transcribed files and long re-transcriptions are always split."
       },
       "languageDetection": {
@@ -642,11 +699,11 @@
         }
       },
       "fillerWordRemoval": {
-        "title": "Remove Filler Words",
+        "title": "Remove filler words",
         "description": "Removes common hesitation words from transcriptions. Turn off to keep them."
       },
       "chineseScript": {
-        "title": "Chinese Script",
+        "title": "Chinese script",
         "description": "Writes Mandarin and Cantonese transcriptions in Simplified characters, or in Traditional characters as written in Taiwan or Hong Kong. Other languages are left unchanged.",
         "options": {
           "asTranscribed": "As Transcribed",
@@ -657,9 +714,6 @@
       }
     },
     "postProcessing": {
-      "provider": {
-        "title": "Provider"
-      },
       "api": {
         "title": "API",
         "provider": {
@@ -722,7 +776,6 @@
         "noCleanupModel": "No post-processing model",
         "s1Description": "Uses styling, structure and context controls.",
         "plainDescription": "Uses your selected Handy prompt.",
-        "groupTitle": "Local model",
         "size": "{{size}} MiB",
         "downloaded": "Downloaded",
         "use": "Use",
@@ -768,25 +821,37 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 with one added term: the model must always be named \"S1-mini\" by \"Superwhisper\", with that exact capitalization."
         },
-        "promptRequired": "Select a non-empty Handy prompt in the Prompts group. Until then, post-processing is skipped and the raw transcript is used.",
+        "promptRequired": "Select a non-empty Handy prompt in the Instructions group. Until then, post-processing is skipped and the raw transcript is used.",
         "promptHidden": "This model uses its own fixed prompt and the Styling, Structure and Context settings above, so the prompt editor is hidden."
+      }
+    },
+    "cleanup": {
+      "enable": {
+        "label": "Clean up dictations",
+        "description": "Adds the Dictate with cleanup shortcut. Text dictated with it is cleaned up before it is pasted."
+      },
+      "sentTo": "Dictations are sent to {{host}} for cleanup.",
+      "prompt": {
+        "edit": "Edit",
+        "new": "New prompt",
+        "editTitle": "Edit {{name}}",
+        "newTitle": "New prompt",
+        "delete": "Delete",
+        "deleteConfirm": "Delete {{name}}? Dictations already cleaned up with it are not changed.",
+        "deleteAction": "Delete prompt",
+        "lastPrompt": "Keep at least one prompt.",
+        "saveFailed": "The prompt could not be saved.",
+        "createFirst": "Press New prompt to write your first cleanup instructions."
       }
     },
     "history": {
       "title": "History",
-      "cleaned": "Post-processed",
-      "cleanedWith": "Post-processed with {{model}}",
-      "raw": "Raw",
-      "copyRaw": "Copy raw text",
-      "copyPostProcessed": "Copy post-processed text",
       "compare": {
         "title": "Compare view",
         "diff": "Diff",
         "side_by_side": "Side by side",
         "stacked": "Stacked"
       },
-      "clearHistory": "Clear History",
-      "clearConfirmation": "Remove {{count}} unstarred history entries and {{recordings}} recordings? Starred entries and their recordings will be kept.",
       "openFolder": "Open Recordings Folder",
       "loading": "Loading history...",
       "empty": "No transcriptions yet. Start recording to build your history!",
@@ -799,6 +864,7 @@
       "deleteConfirm": "Delete this entry and its recording?",
       "deleteConfirmAction": "Delete entry",
       "retranscribe": "Re-transcribe",
+      "retranscribeError": "Could not re-transcribe this entry.",
       "cancelTranscription": "Cancel transcription",
       "transcribing": "Transcribing...",
       "transcriptionFailed": "Transcription failed. You can re-transcribe using the retry icon.",
@@ -820,6 +886,38 @@
         "weeks2": "Delete unstarred entries older than 2 weeks and their recordings? Starred entries and transcribed files are kept.",
         "months3": "Delete unstarred entries older than 3 months and their recordings? Starred entries and transcribed files are kept.",
         "action": "Delete entries"
+      }
+    },
+    "dictationHistory": {
+      "limitTitle": "Keep the latest",
+      "limitUnit": "entries",
+      "limitHelp": "How many entries Keep latest keeps.",
+      "limitTimeLimit": "Not used with a time limit.",
+      "autoDeleteTitle": "Auto-delete",
+      "autoDeleteHelp": "Starred entries and transcribed files are never auto-deleted.",
+      "options": {
+        "never": "Off (keep everything)",
+        "preserveLimit": "Keep latest {{count}}",
+        "days3": "Older than 3 days",
+        "weeks2": "Older than 2 weeks",
+        "months3": "Older than 3 months"
+      },
+      "folderTitle": "Recordings folder",
+      "folderOpen": "Open"
+    },
+    "readAloudHistory": {
+      "keepTitle": "Keep history",
+      "keepHelp": "Text only, no audio.",
+      "limitTitle": "Keep the latest",
+      "limitUnit": "entries",
+      "limitHelp": "How many entries Keep history keeps.",
+      "limitOff": "Not used when history is off.",
+      "options": {
+        "keepNothing": "Do not keep",
+        "keepLimit": "Keep the latest {{count}}",
+        "days3": "Keep the latest {{count}}, none older than 3 days",
+        "weeks2": "Keep the latest {{count}}, none older than 2 weeks",
+        "months3": "Keep the latest {{count}}, none older than 3 months"
       }
     },
     "debug": {
@@ -878,7 +976,7 @@
         "button": "Open"
       },
       "soundTheme": {
-        "label": "Sound Theme",
+        "label": "Sound theme",
         "description": "Choose a sound theme for recording start and stop feedback"
       },
       "wordCorrectionThreshold": {
@@ -913,11 +1011,11 @@
         "description": "Enable AI-powered text refinement after transcription"
       },
       "muteWhileRecording": {
-        "label": "Mute While Recording",
+        "label": "Mute while recording",
         "description": "Mute system audio during recording"
       },
       "appendTrailingSpace": {
-        "label": "Append Trailing Space",
+        "label": "Append trailing space",
         "description": "Add a space after pasted transcription"
       },
       "keyboardImplementation": {
@@ -1034,6 +1132,14 @@
     "noOptionsFound": "No options found",
     "cancel": "Cancel"
   },
+  "editor": {
+    "save": "Save",
+    "discard": {
+      "message": "Discard your changes?",
+      "keep": "Keep editing",
+      "action": "Discard"
+    }
+  },
   "errors": {
     "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
     "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
@@ -1079,11 +1185,11 @@
     "errorsAndWarnings": "{{errors}}, {{warnings}}"
   },
   "appLanguage": {
-    "title": "Application Language",
+    "title": "Application language",
     "description": "Change the language of the Handy interface"
   },
   "theme": {
-    "title": "Application Theme",
+    "title": "Application theme",
     "description": "Choose whether Handy follows your system theme or stays light or dark",
     "options": {
       "system": "System",
@@ -1189,7 +1295,6 @@
       "finished": "Finished",
       "error": "Error"
     },
-    "modelsTitle": "Text-to-speech Models",
     "modelsSubtitle": "Choose a voice model. Speed figures were measured on the developer's computer; yours may differ.",
     "downloaded": "Downloaded",
     "availableToDownload": "Available to download",
@@ -1213,11 +1318,10 @@
     "saveToken": "Set token",
     "model": "Model",
     "voice": "Voice",
-    "preview": "Preview voice",
-    "speed": "Speed: {{value}}x",
+    "preview": "Listen",
     "pitch": "Pitch: {{value}} semitones",
-    "output": "Output device",
-    "sameAsHandy": "Same as Handy",
+    "output": "Read-aloud output device",
+    "sameAsHandy": "Same as {{device}}",
     "readCode": "Read code blocks",
     "technicalReading": "Technical reading",
     "fullPaths": "Read full paths",
@@ -1250,49 +1354,22 @@
     },
     "voiceCount": "{{count}} voices",
     "downloadProgress": "Model download progress",
-    "settingsTitle": "Text-to-speech",
     "speedLabel": "Speed",
     "pitchLabel": "Pitch",
     "help": {
-      "model": "Choose a downloaded text-to-speech model.",
-      "voice": "Choose a voice for this model and preview it.",
+      "voice": "Choose a voice for this model and listen to it.",
       "speed": "Adjust how fast the text is read.",
       "pitch": "Adjust the voice pitch in semitones.",
       "output": "Choose where read-aloud audio plays.",
       "readCode": "Include fenced code blocks when reading.",
       "technicalReading": "Speak paths, file names, flags and code names in full, using your vocabulary file.",
       "fullPaths": "Read every folder in a path. Off reads only the file name.",
-      "fullLinks": "Read the whole web address. Off says only the site name."
-    },
-    "tabs": {
-      "settings": "Settings",
-      "history": "History",
-      "vocabulary": "Vocabulary"
+      "fullLinks": "Read the whole web address. Off says only the site name.",
+      "technicalOff": "Not used when technical reading is off."
     },
     "history": {
-      "title": "History settings",
       "reading": "Written words with what was said",
-      "hint": "Drag over words to select a chunk and correct how it was read.",
-      "empty": "Nothing has been read aloud yet. Reads you play appear here.",
-      "limit": {
-        "title": "History limit",
-        "description": "Most reads to keep in the history",
-        "entries": "reads"
-      },
-      "retention": {
-        "title": "Auto-delete",
-        "description": "Also delete older reads automatically",
-        "keepNothing": "Never keep",
-        "keepLimit": "Keep latest {{count}}",
-        "days3": "After 3 days",
-        "weeks2": "After 2 weeks",
-        "months3": "After 3 months"
-      },
-      "clear": {
-        "title": "Clear history",
-        "description": "Remove every stored read. Your vocabulary is not changed.",
-        "confirmation": "Remove all {{count}} stored reads? Your vocabulary is not changed."
-      },
+      "readingHint": "Written text on top, what was spoken underneath. Drag over words to correct how they were read.",
       "retentionConfirm": {
         "message_one": "Delete {{count}} stored read now? Your vocabulary is not changed.",
         "message": "Delete {{count}} stored reads now? Your vocabulary is not changed.",
@@ -1304,10 +1381,7 @@
         "written": "Written",
         "spoken": "Spoken",
         "kind": "Kind",
-        "voices": "Voices",
-        "match": "Match",
-        "enabled": "On",
-        "actions": "Actions"
+        "match": "Match"
       },
       "kinds": {
         "symbol": "Symbol",
@@ -1315,10 +1389,9 @@
         "term": "Term",
         "acronym": "Acronym"
       },
-      "voices": {
-        "all": "All voices",
-        "except": "except {{names}}",
-        "add": "+ voice"
+      "models": {
+        "all": "All models",
+        "except": "except {{names}}"
       },
       "origins": {
         "builtin": "Built-in",
@@ -1331,7 +1404,6 @@
         "listen": "Listen",
         "delete": "Delete",
         "reset": "Reset to default",
-        "save": "Save",
         "cancel": "Cancel"
       },
       "match": {
@@ -1347,13 +1419,13 @@
       },
       "filter": "Search written or spoken",
       "toggle": "Use {{written}}",
-      "editTitle": "Edit entry",
       "fields": {
         "skip": "Skip",
         "appliesTo": "Applies to"
       },
-      "empty": "No entries match your filter.",
-      "deleteConfirmation": "Delete {{written}} from your vocabulary? This cannot be undone.",
+      "emptyQuery": "Nothing matches \"{{query}}\".",
+      "emptyFilters": "Nothing matches these filters.",
+      "clearFilters": "Clear filters",
       "resetConfirm": "Reset {{written}} to the built-in reading? Your entry is deleted.",
       "errors": {
         "changed": "The vocabulary file changed on disk. The table was reloaded; make your edit again.",
@@ -1361,7 +1433,7 @@
         "invalidEdit": "This entry could not be saved: {{message}}",
         "tooLarge": "The vocabulary file would be larger than 1 MiB, so nothing was saved.",
         "io": "The vocabulary file could not be written: {{message}}",
-        "voicesChanged": "The vocabulary changed while this was waiting, so the voices change was not applied. Choose the voices again."
+        "voicesChanged": "The vocabulary changed while this was waiting, so the change was not applied."
       },
       "problems": {
         "shadowed": "Never applies: a higher-priority entry always wins",
@@ -1382,35 +1454,50 @@
         "invalid": "This cannot be saved: {{detail}}"
       },
       "check": {
-        "title": "Check across voices",
+        "title": "Check across models",
         "playAll": "Play all",
         "playing": "Playing {{model}}",
-        "checking": "Checking each voice...",
+        "checking": "Checking each model...",
         "heardRight": "heard right",
         "missed": "missed: {{heard}}",
         "failed": "could not check: {{error}}",
         "row": "{{model}}: {{outcome}}",
-        "advisory": "Some voices did not read this right. You can still save it.",
-        "saveAllAnyway": "Save for all voices anyway",
-        "savePassedOnly": "Save only for voices that passed",
-        "pickOne": "Pick one voice",
+        "advisory": "Some models did not read this right. You can still save it.",
+        "saveAllAnyway": "Save for all models anyway",
+        "savePassedOnly": "Save only for models that passed",
+        "pickOne": "Pick one model",
         "dictating": "Dictation is running. Check again when it ends.",
         "transcribeFailed": "Speech-to-text could not transcribe the voice."
       },
       "filters": {
-        "voice": "Voice",
+        "model": "Model",
         "kind": "Kind",
         "source": "Source",
         "all": "All",
         "changed": "Changed by you",
-        "onlyProblems": "Only problems"
+        "problems": "Problems"
       },
       "defaultLabel": "default:",
-      "defaultLabelFor": "default for {{voices}}:"
+      "defaultLabelFor": "default for {{voices}}:",
+      "dialog": {
+        "editTitle": "Edit {{written}}",
+        "context": "{{written}}, now spoken as {{spoken}}.",
+        "overrides": "Your entry overrides the built-in reading {{default}}.",
+        "builtinDelete": "Built-in entries can be switched off, not deleted.",
+        "deleteConfirm": "Delete {{written}}? Your other entries are kept.",
+        "deleteAction": "Delete entry",
+        "conflict": "The vocabulary file changed on disk and was reloaded. Check the entry, then Save again.",
+        "refused": "The vocabulary changed and this entry can no longer be saved as it is. Check Applies to, or cancel and add it again.",
+        "scopeRefused": "These models cannot be changed for this entry."
+      },
+      "acronymStylePerModel": "Acronym style per model",
+      "invalid": {
+        "builtinUsed": "Built-in readings are used until it is fixed.",
+        "reload": "Reload",
+        "openFolder": "Open folder"
+      }
     },
     "correction": {
-      "add": "Add correction",
-      "start": "Add a correction",
       "writtenText": "Written text",
       "next": "Next",
       "title": "Correct a reading",
@@ -1421,12 +1508,11 @@
       "deriving": "Working out the rule...",
       "exactOnly": "Only this exact text",
       "chooseScope": "Choose where it applies",
-      "scopeRequired": "Choose All voices or one voice before saving.",
-      "acronymStyle": "Acronym style per voice",
+      "scopeRequiredModels": "Choose All models or one model before saving.",
       "style": {
         "spaced": "Spaced letters (C L I)",
         "capitals": "Capitals (CLI)",
-        "inherit": "Same as all voices"
+        "inheritModels": "Same as all models"
       },
       "reach": {
         "extension": "affects every {{extension}} file",
@@ -1447,5 +1533,67 @@
         "transcribeFailed": "Speech-to-text could not transcribe what you said."
       }
     }
+  },
+  "history": {
+    "change": "Change",
+    "changeLabel": "Change how history is kept",
+    "transcribeFile": "Transcribe file",
+    "notKept": "History is not being kept.",
+    "empty": {
+      "dictation": "No dictations yet.",
+      "dictationHint": "Press <dictate/> to dictate or <cleanup/> to dictate with cleanup.",
+      "dictationHintDictate": "Press <keys/> to dictate.",
+      "dictationHintCleanup": "Press <keys/> to dictate with cleanup.",
+      "read": "Nothing read yet.",
+      "readHint": "Copy some text and press <keys/>."
+    },
+    "summary": {
+      "dictation": {
+        "never": "Keeps every entry. Starred entries are kept.",
+        "none": "Keeps no entries. Starred entries and transcribed files are kept.",
+        "latest_one": "Keeps the latest entry. Starred entries are kept.",
+        "latest": "Keeps the latest {{count}} entries. Starred entries are kept.",
+        "days3": "Deletes entries older than 3 days. Starred entries are kept.",
+        "weeks2": "Deletes entries older than 2 weeks. Starred entries are kept.",
+        "months3": "Deletes entries older than 3 months. Starred entries are kept."
+      },
+      "read": {
+        "latest_one": "Keeps the latest entry.",
+        "latest": "Keeps the latest {{count}} entries.",
+        "days3_one": "Keeps the latest entry, none older than 3 days.",
+        "days3": "Keeps the latest {{count}} entries, none older than 3 days.",
+        "weeks2_one": "Keeps the latest entry, none older than 2 weeks.",
+        "weeks2": "Keeps the latest {{count}} entries, none older than 2 weeks.",
+        "months3_one": "Keeps the latest entry, none older than 3 months.",
+        "months3": "Keeps the latest {{count}} entries, none older than 3 months."
+      }
+    },
+    "clear": {
+      "action": "Clear history",
+      "dictationConfirm_one": "Delete {{count}} entry and {{recordings}}? Starred entries are kept.",
+      "dictationConfirm": "Delete {{count}} entries and {{recordings}}? Starred entries are kept.",
+      "recordings_one": "{{count}} recording",
+      "recordings": "{{count}} recordings",
+      "readConfirm_one": "Delete {{count}} entry? Your vocabulary is not changed.",
+      "readConfirm": "Delete {{count}} entries? Your vocabulary is not changed.",
+      "nothing": "Nothing to clear."
+    },
+    "row": {
+      "open": "Show entry",
+      "close": "Hide entry"
+    },
+    "copy": "Copy text",
+    "copyCleaned": "Copy cleaned text",
+    "copyOriginal": "Copy original",
+    "star": "Star",
+    "unstar": "Remove star",
+    "retranscribe": "Re-transcribe",
+    "cancelTranscription": "Cancel transcription",
+    "delete": "Delete",
+    "cleanedWith": "Cleaned with {{model}}.",
+    "cleaned": "Cleaned text",
+    "original": "Original transcript",
+    "diffNote": "Showing differences from the original transcript.",
+    "noCleanup": "No cleanup"
   }
 }

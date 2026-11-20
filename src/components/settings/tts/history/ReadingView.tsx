@@ -48,7 +48,7 @@ export function ReadingView({
             tabIndex={0}
             aria-pressed={selected}
             data-changed={token.changed}
-            className={`inline-flex flex-col rounded px-1 cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-logo-primary ${
+            className={`inline-flex max-w-full flex-col rounded px-1 cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-logo-primary ${
               selected ? "bg-logo-primary/20 ring-2 ring-logo-primary" : ""
             }`}
             onPointerDown={(event) => {
@@ -66,13 +66,17 @@ export function ReadingView({
             }}
           >
             <span
-              className={`text-sm font-mono rounded px-0.5 ${
-                token.changed ? "bg-warning-wash" : ""
+              className={`max-w-full [overflow-wrap:anywhere] text-sm font-mono rounded px-0.5 ${
+                token.changed ? "bg-warning-wash border-b-2 border-warning" : ""
               } ${skipped ? "line-through opacity-60" : ""}`}
             >
               {token.written}
             </span>
-            <span className="text-xs text-moss px-0.5">
+            <span
+              className={`max-w-full [overflow-wrap:anywhere] text-xs text-moss px-0.5 ${
+                token.changed ? "underline underline-offset-2" : ""
+              }`}
+            >
               {skipped ? t("tts.vocabulary.skipped") : token.spoken}
             </span>
           </span>

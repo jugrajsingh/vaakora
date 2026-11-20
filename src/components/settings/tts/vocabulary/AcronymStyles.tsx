@@ -6,7 +6,7 @@ import { modelName } from "./labels";
 export const ACRONYM_STYLES: AcronymStyle[] = ["spaced", "capitals"];
 const INHERIT = "";
 
-/** How each downloaded voice is given an acronym: spaced letters or written capitals; collapsed until opened. */
+/** How each downloaded model is given an acronym: spaced letters or written capitals; collapsed until opened. */
 export function AcronymStyles({
   styles,
   models,
@@ -26,7 +26,7 @@ export function AcronymStyles({
   );
   const options = (own: boolean) => [
     ...(own
-      ? [{ value: INHERIT, label: t("tts.correction.style.inherit") }]
+      ? [{ value: INHERIT, label: t("tts.correction.style.inheritModels") }]
       : []),
     ...ACRONYM_STYLES.map((style) => ({
       value: style,
@@ -36,14 +36,14 @@ export function AcronymStyles({
   return (
     <details className="bg-background border border-line rounded-lg p-4">
       <summary className="text-sm font-medium cursor-pointer">
-        {t("tts.correction.acronymStyle")}
+        {t("tts.vocabulary.acronymStylePerModel")}
       </summary>
       <div className="grid mt-2 grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
         {shown.map((row) => (
           <div key={row.model ?? "all"} className="flex items-center gap-2">
             <span className="text-sm flex-grow">
               {row.model === null
-                ? t("tts.vocabulary.voices.all")
+                ? t("tts.vocabulary.models.all")
                 : modelName(models, row.model)}
             </span>
             <Dropdown

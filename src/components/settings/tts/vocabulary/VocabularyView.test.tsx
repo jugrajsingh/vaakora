@@ -5,21 +5,28 @@ import { renderToStaticMarkup } from "react-dom/server";
 import i18next from "i18next";
 import { I18nextProvider } from "react-i18next";
 import en from "../../../../i18n/locales/en/translation.json";
-import type {
-  Edit,
-  EntryKey,
-  EntryRow,
-  Rule,
-  VocabularyTable,
-} from "@/bindings";
+import type { Edit, EntryRow, VocabularyTable } from "@/bindings";
+import type { SaveResult } from "./actions";
+import {
+  deletePlan,
+  entryEdits,
+  resetPlan,
+  type EntryDraft,
+} from "./entryPlan";
 import { NO_FILTERS, type Filters } from "./filter";
 import type { AcronymStyles } from "./AcronymStyles";
 import type { CorrectionBox } from "./CorrectionBox";
 import type { CorrectionStart } from "./CorrectionStart";
-import type { RowEditor } from "./RowEditor";
+import type { EntryDialog } from "./EntryDialog";
+import type { FilterChip } from "@/components/shared/FilterChip";
 import type { VocabularyTableProps } from "./VocabularyTable";
-import type { Correction, Draft, VocabularyActions } from "./VocabularyView";
+import type {
+  Correction,
+  EntryOpen,
+  VocabularyActions,
+} from "./VocabularyView";
 import { models, row } from "./fixtures";
+import { groupRows } from "./groups";
 const {
   mock,
   describe,
@@ -32,21 +39,22 @@ const {
 
 // The view's children record their props as they render, so the test can call them.
 let tableProps: VocabularyTableProps | undefined;
-let editorProps: Parameters<typeof RowEditor>[0] | undefined;
+let dialogProps: Parameters<typeof EntryDialog>[0] | undefined;
 let boxProps: Parameters<typeof CorrectionBox>[0] | undefined;
 let startProps: Parameters<typeof CorrectionStart>[0] | undefined;
 let styleProps: Parameters<typeof AcronymStyles>[0] | undefined;
 const buttons: Parameters<typeof import("@/components/ui/Button").Button>[0][] =
   [];
+const chips: Parameters<typeof FilterChip>[0][] = [];
 mock.module("./VocabularyTable", () => ({
   VocabularyTable: (props: VocabularyTableProps) => {
     tableProps = props;
-    return null;
+    return <i data-marker="table" />;
   },
 }));
-mock.module("./RowEditor", () => ({
-  RowEditor: (props: Parameters<typeof RowEditor>[0]) => {
-    editorProps = props;
+mock.module("./EntryDialog", () => ({
+  EntryDialog: (props: Parameters<typeof EntryDialog>[0]) => {
+    dialogProps = props;
     return null;
   },
 }));
@@ -65,7 +73,7 @@ mock.module("./CorrectionStart", () => ({
 mock.module("./AcronymStyles", () => ({
   AcronymStyles: (props: Parameters<typeof AcronymStyles>[0]) => {
     styleProps = props;
-    return null;
+    return <i data-marker="acronyms" />;
   },
 }));
 const { Button: RealButton } = await import("@/components/ui/Button");
@@ -75,29 +83,55 @@ mock.module("@/components/ui/Button", () => ({
     return RealButton(props);
   },
 }));
-const { VocabularyView, resetOffered } = await import("./VocabularyView");
+const { FilterChip: RealChip } = await import("@/components/shared/FilterChip");
+mock.module("@/components/shared/FilterChip", () => ({
+  FilterChip: (props: Parameters<typeof RealChip>[0]) => {
+    chips.push(props);
+    return RealChip(props);
+  },
+}));
+const { VocabularyFilters } = await import("./VocabularyFilters");
+const { VocabularyView, dialogOutcome, entryDialogKey } = await import(
+  "./VocabularyView"
+);
 const i18n = i18next.createInstance();
 await i18n.init({ lng: "en", resources: { en: { translation: en } } });
 
 const owner = row("owner", "extension", "md", { spoken: "M D" });
+const IDS = models.map((model) => model.id);
 type Call = [string, ...unknown[]];
+type Editing = EntryOpen | null;
+type SetEditing = Editing | ((current: Editing) => Editing);
+/** What a recorded `setEditing` call leaves when the open dialog is `current`. */
+const settle = (next: SetEditing, current: Editing) =>
+  typeof next === "function" ? next(current) : next;
 
 function render(options: {
   revision: string;
-  draft?: Draft | null;
+  editing?: EntryOpen | null;
   correction?: Correction | "starting" | null;
-  putResult?: boolean;
+  saveResult?: SaveResult;
   rows?: EntryRow[];
   filters?: Filters;
+  fileError?: string;
+  path?: string;
+  failure?: { key: string; message?: string };
 }) {
   const calls: Call[] = [];
-  const drafts: (Draft | null)[] = [];
+  const editings: SetEditing[] = [];
   const corrections: (Correction | "starting" | null)[] = [];
   const filterChanges: Filters[] = [];
+  const pending: Promise<SaveResult>[] = [];
   const actions: VocabularyActions = {
-    reset: (target, base) => calls.push(["reset", target, base]),
-    remove: (target, base) => calls.push(["remove", target, base]),
     applyPlan: (plan, base) => calls.push(["applyPlan", plan, base]),
+    saveEntry: (plan, base) => {
+      calls.push(["saveEntry", plan, base]);
+      const result = Promise.resolve<SaveResult>(
+        options.saveResult ?? { status: "saved" },
+      );
+      pending.push(result);
+      return result;
+    },
     listen: (target) => calls.push(["listen", target]),
     setAcronymStyle: (model, style, base) =>
       calls.push(["setAcronymStyle", model, style, base]),
@@ -106,137 +140,85 @@ function render(options: {
       return `said ${written}`;
     },
     adopt: (saved) => calls.push(["adopt", saved.revision]),
-    put: async (entries: readonly EntryKey[], rule: Rule, previous, base) => {
-      calls.push(["put", entries, rule, previous, base]);
-      return options.putResult ?? true;
-    },
   };
   const table: VocabularyTable = {
     revision: options.revision,
-    path: "tts-vocabulary.json",
-    file_error: null,
+    path: options.path ?? "tts-vocabulary.json",
+    file_error: options.fileError ?? null,
     rows: options.rows ?? [owner],
     acronym_styles: [
       { model: "pocket-en", owner: "capitals", effective: "capitals" },
     ],
   };
   tableProps = undefined;
-  editorProps = undefined;
+  dialogProps = undefined;
   boxProps = undefined;
   startProps = undefined;
   styleProps = undefined;
   buttons.length = 0;
+  chips.length = 0;
   const html = renderToStaticMarkup(
     <I18nextProvider i18n={i18n}>
       <VocabularyView
         table={table}
         models={models}
-        failure={null}
+        failure={options.failure ?? null}
         filters={options.filters ?? NO_FILTERS}
         setFilters={(next) => filterChanges.push(next)}
-        draft={options.draft ?? null}
-        setDraft={(next) => drafts.push(next)}
+        editing={options.editing ?? null}
+        setEditing={(next) => editings.push(next)}
         correction={options.correction ?? null}
         setCorrection={(next) => corrections.push(next)}
         readingModel="pocket-en"
         actions={actions}
+        reload={() => calls.push(["reload"])}
+        openFolder={() => calls.push(["openFolder"])}
       />
     </I18nextProvider>,
   );
-  return { calls, drafts, corrections, filterChanges, html };
+  const settled = async () => {
+    await Promise.all(pending);
+    await new Promise((resolve) => setTimeout(resolve));
+  };
+  return { calls, editings, corrections, filterChanges, html, settled };
 }
 
-const rule: Rule = { say: "M D", matching: null, case: null };
-const entry: EntryKey = owner.id.entry;
+const latest = (rows: EntryRow[]): VocabularyTable => ({
+  revision: "rev-latest",
+  path: "tts-vocabulary.json",
+  file_error: null,
+  rows,
+  acronym_styles: [],
+});
+const groupOf = (rows: EntryRow[]) => {
+  const [group] = groupRows(rows, IDS);
+  return group;
+};
+const draft: EntryDraft = {
+  section: "extension",
+  written: "md",
+  rule: { say: "em dee", matching: null, case: null },
+  scopes: [null],
+  opened: [null],
+};
+const opened = (rows: EntryRow[] = [owner], base = "rev-open"): EntryOpen => ({
+  group: groupOf(rows),
+  base,
+  notice: null,
+});
+type Planned = [string, (latest: VocabularyTable) => unknown, string];
 
 describe("VocabularyView", () => {
-  it("edit_locked_while_a_draft_or_correction_is_open", () => {
-    render({ revision: "rev-render" });
-    assert.equal(tableProps?.editLocked, false);
-    render({
-      revision: "rev-render",
-      draft: { initial: owner, members: [owner], base: "rev-render" },
-    });
-    assert.equal(tableProps?.editLocked, true, "a draft is open");
-    render({ revision: "rev-render", correction: "starting" });
-    assert.equal(tableProps?.editLocked, true, "the correction prompt");
-    render({
-      revision: "rev-render",
-      correction: { written: "README.md", spokenAs: "README dot markdown" },
-    });
-    assert.equal(tableProps?.editLocked, true, "an open correction");
-  });
   it("the view is as wide as the page column, never max-w-5xl", () => {
     const { html } = render({ revision: "rev-render" });
-    assert.match(html, /^<section class="[^"]*\bmax-w-3xl\b/);
+    assert.match(html, /^<section class="w-full max-w-3xl min-w-0 space-y-4"/);
     assert.ok(!html.includes("max-w-5xl"));
   });
-  it("passes the rendered table's revision with reset and remove, and resets only the rows that override a built-in", () => {
-    const builtin = row("builtin", "extension", "md", { spoken: "markdown" });
-    const overriding = row("owner", "extension", "md", {
-      spoken: "M D",
-      replaces_builtin: true,
-    });
-    const plain = row("owner", "extension", "md", {
-      model: "pocket-en",
-      spoken: "M D",
-    });
-    const { calls } = render({
-      revision: "rev-render",
-      rows: [builtin, overriding, plain],
-    });
+  it("a row's Listen plays the group's first member", () => {
+    const { calls } = render({ revision: "rev-render" });
     assert.ok(tableProps);
-    const [target] = tableProps.groups;
-    tableProps.reset(target);
-    tableProps.confirmReset();
-    tableProps.remove(target);
-    tableProps.listen(target);
-    assert.deepEqual(calls, [
-      ["reset", [overriding], "rev-render"],
-      ["remove", [overriding, plain], "rev-render"],
-      ["listen", overriding],
-    ]);
-  });
-  it("reset_waits_for_confirmation", () => {
-    const overriding = row("owner", "extension", "md", {
-      spoken: "M D",
-      replaces_builtin: true,
-    });
-    const builtin = row("builtin", "extension", "md", { spoken: "markdown" });
-    const { calls } = render({
-      revision: "rev-render",
-      rows: [builtin, overriding],
-    });
-    assert.ok(tableProps);
-    assert.equal(tableProps.resetting, null);
-    const [group] = tableProps.groups;
-    tableProps.reset(group);
-    assert.deepEqual(calls, [], "Reset only asks");
-    tableProps.confirmReset();
-    tableProps.confirmReset();
-    assert.deepEqual(calls, [["reset", group.overriding, "rev-render"]]);
-    tableProps.reset(group);
-    tableProps.cancelReset();
-    tableProps.confirmReset();
-    assert.equal(calls.length, 1, "nothing resets after Cancel");
-  });
-  it("reset_question_drops_when_the_row_stops_offering_reset", () => {
-    const overriding = row("owner", "extension", "md", {
-      spoken: "M D",
-      replaces_builtin: true,
-    });
-    const builtin = row("builtin", "extension", "md", { spoken: "markdown" });
-    const plain = row("owner", "term", "kubectl", { spoken: "cube control" });
-    render({ revision: "rev-render", rows: [builtin, overriding, plain] });
-    assert.ok(tableProps);
-    const shown = tableProps.groups;
-    const md = shown.find((group) => group.written === "md");
-    const kubectl = shown.find((group) => group.written === "kubectl");
-    assert.ok(md && kubectl);
-    assert.equal(resetOffered(shown, false, md.key), true);
-    assert.equal(resetOffered(shown, true, md.key), false, "file error");
-    assert.equal(resetOffered(shown, false, kubectl.key), false);
-    assert.equal(resetOffered([kubectl], false, md.key), false, "filtered");
+    tableProps.listen(tableProps.groups[0]);
+    assert.deepEqual(calls, [["listen", owner]]);
   });
   it("a switch is planned from the latest rows and saved with the rendered table's revision", () => {
     const { calls } = render({ revision: "rev-render" });
@@ -249,63 +231,190 @@ describe("VocabularyView", () => {
       string,
     ];
     assert.deepEqual([name, base], ["applyPlan", "rev-render"]);
-    const latest = (rows: EntryRow[]): VocabularyTable => ({
-      revision: "rev-latest",
-      path: "tts-vocabulary.json",
-      file_error: null,
-      rows,
-      acronym_styles: [],
-    });
     assert.deepEqual(plan(latest([owner])), [
       { kind: "set_enabled", id: owner.id, enabled: false },
     ]);
     assert.equal(plan(latest([])), null);
   });
-  it("opens a draft on Edit and Add with the rendered table's revision", () => {
-    const { drafts } = render({ revision: "rev-render" });
+  it("edit_and_add_open_the_dialog_on_the_rendered_revision", () => {
+    const { editings } = render({ revision: "rev-render" });
     assert.ok(tableProps);
     tableProps.edit(tableProps.groups[0]);
-    assert.equal(buttons.length, 2, "Add correction and Add entry");
+    assert.equal(buttons.length, 2, "Correct a reading and Add entry");
     buttons[1].onClick?.({} as never);
-    assert.deepEqual(drafts, [
-      { initial: owner, members: [owner], base: "rev-render" },
-      { initial: null, members: [], base: "rev-render" },
+    assert.deepEqual(editings, [
+      { group: groupOf([owner]), base: "rev-render", notice: null },
+      { group: null, base: "rev-render", notice: null },
     ]);
   });
-  it("Save sends the revision captured when the draft opened, then closes it", async () => {
-    const { calls, drafts } = render({
+  it("saved_closes_the_dialog", async () => {
+    const open = opened();
+    const { calls, editings, settled } = render({
       revision: "rev-now",
-      draft: { initial: owner, members: [owner], base: "rev-open" },
+      editing: open,
     });
-    assert.ok(editorProps);
-    editorProps.submit([entry], rule, []);
-    await new Promise((resolve) => setTimeout(resolve));
-    assert.deepEqual(calls, [["put", [entry], rule, [], "rev-open"]]);
-    assert.deepEqual(drafts, [null]);
+    assert.ok(dialogProps);
+    dialogProps.save(draft);
+    await settled();
+    assert.equal(calls.length, 1);
+    const [name, plan, base] = calls[0] as Planned;
+    assert.deepEqual([name, base], ["saveEntry", "rev-open"]);
+    assert.deepEqual(
+      plan(latest([owner])),
+      entryEdits([owner], IDS, open.group?.key ?? null, draft),
+    );
+    assert.equal(editings.length, 1);
+    assert.equal(settle(editings[0], open), null);
   });
-  it("the editor plays and checks acronyms with the table's acronym styles", () => {
+  it("save_conflict_keeps_the_dialog_on_the_reloaded_revision", async () => {
+    const open = opened();
+    const { editings, settled } = render({
+      revision: "rev-now",
+      editing: open,
+      saveResult: { status: "conflict", revision: "rev-2" },
+    });
+    assert.ok(dialogProps);
+    dialogProps.save(draft);
+    await settled();
+    assert.equal(editings.length, 1);
+    assert.deepEqual(settle(editings[0], open), {
+      group: open.group,
+      base: "rev-2",
+      notice: { key: "tts.vocabulary.dialog.conflict" },
+    });
+  });
+  it("an_outcome_reaches_only_the_dialog_still_open", async () => {
+    const open = opened();
+    const { editings, settled } = render({
+      revision: "rev-now",
+      editing: open,
+      saveResult: { status: "conflict", revision: "rev-2" },
+    });
+    assert.ok(dialogProps);
+    dialogProps.save(draft);
+    await settled();
+    const other = opened([row("owner", "term", "kubectl")]);
+    assert.equal(settle(editings[0], null), null, "closed meanwhile");
+    assert.equal(settle(editings[0], other), other, "another dialog opened");
+  });
+  it("delete_from_the_dialog_uses_the_dialog_revision", async () => {
+    const pocket = row("owner", "term", "kubectl", { model: "pocket-en" });
+    const supertonic = row("owner", "term", "kubectl", {
+      model: "supertonic-3",
+    });
+    const rows = [pocket, supertonic];
+    const open = opened(rows);
+    const { calls, editings, settled } = render({
+      revision: "rev-now",
+      rows,
+      editing: open,
+    });
+    assert.ok(dialogProps && open.group);
+    dialogProps.remove();
+    await settled();
+    const [name, plan, base] = calls[0] as Planned;
+    assert.deepEqual([name, base], ["saveEntry", "rev-open"]);
+    const key = open.group.key;
+    const scopes = ["pocket-en", "supertonic-3"];
+    assert.deepEqual(plan(latest(rows)), deletePlan(rows, IDS, key, scopes));
+    assert.deepEqual(plan(latest(rows)), [
+      { kind: "delete", entry: pocket.id.entry },
+      { kind: "delete", entry: supertonic.id.entry },
+    ]);
+    assert.equal(settle(editings[0], open), null);
+  });
+  it("reset_from_the_dialog_uses_the_dialog_revision", async () => {
+    const builtin = row("builtin", "extension", "md", { spoken: "markdown" });
+    const overriding = row("owner", "extension", "md", {
+      spoken: "M D",
+      replaces_builtin: true,
+    });
+    const rows = [builtin, overriding];
+    const open = opened(rows);
+    const { calls, settled } = render({
+      revision: "rev-now",
+      rows,
+      editing: open,
+    });
+    assert.ok(dialogProps && open.group);
+    dialogProps.reset();
+    await settled();
+    const [name, plan, base] = calls[0] as Planned;
+    assert.deepEqual([name, base], ["saveEntry", "rev-open"]);
+    assert.deepEqual(
+      plan(latest(rows)),
+      resetPlan(rows, IDS, open.group.key, [null]),
+    );
+    assert.deepEqual(plan(latest(rows)), [
+      { kind: "reset", entry: overriding.id.entry },
+    ]);
+  });
+  it("dialog_outcome_maps_each_result", () => {
+    const open = opened();
+    assert.equal(dialogOutcome(open, { status: "saved" }), null);
+    assert.deepEqual(
+      dialogOutcome(open, { status: "conflict", revision: "rev-2" }),
+      {
+        ...open,
+        base: "rev-2",
+        notice: { key: "tts.vocabulary.dialog.conflict" },
+      },
+    );
+    assert.deepEqual(
+      dialogOutcome(open, { status: "refused", reason: "taken" }),
+      {
+        ...open,
+        notice: { key: "tts.vocabulary.dialog.refused" },
+      },
+    );
+    const failure = { key: "tts.vocabulary.errors.io", message: "disk full" };
+    assert.deepEqual(dialogOutcome(open, { status: "failed", failure }), {
+      ...open,
+      notice: failure,
+    });
+  });
+  it("entry_dialog_key_survives_a_conflict", () => {
+    const open = opened();
+    const rebased = dialogOutcome(open, {
+      status: "conflict",
+      revision: "rev-2",
+    });
+    assert.ok(rebased);
+    assert.equal(entryDialogKey(rebased), entryDialogKey(open));
+    assert.equal(entryDialogKey(open), open.group?.key);
+    assert.equal(
+      entryDialogKey({ group: null, base: "a", notice: null }),
+      "new",
+    );
+  });
+  it("the dialog plays and checks acronyms with the table's acronym styles", () => {
     render({
       revision: "rev-now",
-      draft: { initial: null, members: [], base: "rev-open" },
+      editing: { group: null, base: "rev-open", notice: null },
     });
-    assert.ok(editorProps);
-    assert.deepEqual(editorProps.styles, [
+    assert.ok(dialogProps);
+    assert.deepEqual(dialogProps.styles, [
       { model: "pocket-en", owner: "capitals", effective: "capitals" },
     ]);
+    assert.equal(dialogProps.group, null);
+    assert.equal(dialogProps.fileError, null);
   });
-  it("Save keeps the draft open when the edit is not finished", async () => {
-    const { calls, drafts } = render({
-      revision: "rev-now",
-      draft: { initial: null, members: [], base: "rev-open" },
-      putResult: false,
+  it("the dialog of a grouped row gets every row of the group", () => {
+    const pocket = row("owner", "term", "kubectl", { model: "pocket-en" });
+    const supertonic = row("owner", "term", "kubectl", {
+      model: "supertonic-3",
     });
-    assert.ok(editorProps);
-    editorProps.submit([entry], rule, []);
-    await new Promise((resolve) => setTimeout(resolve));
-    assert.equal(calls.length, 1);
-    assert.deepEqual(drafts, []);
+    const rows = [pocket, supertonic];
+    const { editings } = render({ revision: "rev-render", rows });
+    assert.ok(tableProps);
+    tableProps.edit(tableProps.groups[0]);
+    const open = settle(editings[0], null);
+    assert.deepEqual(open?.group?.members, [pocket, supertonic]);
+    render({ revision: "rev-render", rows, editing: open });
+    assert.deepEqual(dialogProps?.rows, rows);
+    assert.deepEqual(dialogProps?.group?.members, [pocket, supertonic]);
   });
-  it("Add correction opens the text prompt and is off while another editor is open", () => {
+  it("Correct a reading opens the text prompt and is off while another editor is open", () => {
     const { corrections } = render({ revision: "rev-render" });
     buttons[0].onClick?.({} as never);
     assert.deepEqual(corrections, ["starting"]);
@@ -374,81 +483,169 @@ describe("VocabularyView", () => {
       ["md"],
     );
   });
-  it("a Voices change is planned from the latest rows, refusing a voice another reading took meanwhile", () => {
-    const kubectl = (model: string, spoken: string) =>
-      row("owner", "term", "kubectl", { spoken, model });
-    const pocket = kubectl("pocket-en", "cube control");
-    const { calls } = render({
-      revision: "rev-render",
-      rows: [pocket, kubectl("phonon", "kube control")],
-    });
-    assert.ok(tableProps);
-    const group = tableProps.groups.find((g) => g.spoken === "cube control");
-    assert.ok(group);
-    tableProps.changeVoice(group, "supertonic-3");
-    assert.equal(calls.length, 1);
-    const [name, plan, base] = calls[0] as [
-      string,
-      (latest: VocabularyTable) => Edit[] | null,
-      string,
-    ];
-    assert.deepEqual([name, base], ["applyPlan", "rev-render"]);
-    const latest = (rows: EntryRow[]): VocabularyTable => ({
-      revision: "rev-latest",
-      path: "tts-vocabulary.json",
-      file_error: null,
-      rows,
-      acronym_styles: [],
-    });
-    const edits: Edit[] = [
-      {
-        kind: "put",
-        entry: { section: "term", model: "supertonic-3", key: "kubectl" },
-        rule: { say: "cube control", matching: "whole", case: true },
-        previous: null,
-      },
-    ];
-    assert.deepEqual(
-      plan(latest([pocket, kubectl("phonon", "kube control")])),
-      edits,
-    );
-    assert.equal(
-      plan(
-        latest([
-          pocket,
-          kubectl("phonon", "kube control"),
-          kubectl("supertonic-3", "kube control"),
-        ]),
+});
+
+const button = (label: string) =>
+  buttons.find((props) => props.children === label);
+const sectionOrder = (html: string, ...markers: string[]) =>
+  markers.map((marker) => html.indexOf(marker));
+const inOrder = (positions: number[]) =>
+  positions.every((at, index) => at >= 0 && at > (positions[index - 1] ?? -1));
+
+describe("VocabularyView, toolbar and states", () => {
+  it("toolbar_is_search_then_correct_then_add", () => {
+    const { html } = render({ revision: "rev-render" });
+    const toolbar = html.match(/<div class="([^"]*\bsticky\b[^"]*)"/);
+    assert.ok(toolbar, "a sticky toolbar");
+    for (const token of ["top-0", "z-10", "bg-background"]) {
+      assert.ok(toolbar[1].split(" ").includes(token), token);
+    }
+    assert.ok(!html.includes("-top-4"));
+    assert.ok(
+      inOrder(
+        sectionOrder(
+          html,
+          "sticky",
+          'type="search"',
+          ">Correct a reading</button>",
+          ">Add entry</button>",
+          "Model: All",
+          'data-marker="table"',
+        ),
       ),
-      null,
+      "search, Correct a reading, Add entry, filters, then the list",
+    );
+    assert.equal(button("Correct a reading")?.variant, "secondary");
+    assert.equal(button("Add entry")?.variant, undefined);
+    assert.deepEqual(
+      buttons.map((props) => props.children),
+      ["Correct a reading", "Add entry"],
     );
   });
-  it("a Voices change no safe edit makes saves nothing", () => {
-    const { calls } = render({
+  it("filters_offer_model_kind_source_and_a_problems_chip", () => {
+    const { html, filterChanges } = render({ revision: "rev-render" });
+    for (const label of ["Model: All", "Kind: All", "Source: All"]) {
+      assert.ok(html.includes(label), label);
+    }
+    assert.ok(!html.includes("Voice: All") && !html.includes("Only problems"));
+    assert.match(
+      html,
+      /<button type="button" aria-pressed="false"[^>]*>Problems<\/button>/,
+    );
+    assert.equal(chips.length, 1);
+    chips[0].onToggle();
+    assert.deepEqual(filterChanges, [{ ...NO_FILTERS, onlyProblems: true }]);
+    const on = render({
       revision: "rev-render",
-      rows: [row("owner", "term", "kubectl", { model: "pocket-en" })],
+      filters: { ...NO_FILTERS, onlyProblems: true },
     });
-    assert.ok(tableProps);
-    tableProps.changeVoice(tableProps.groups[0], "pocket-en");
-    assert.deepEqual(calls, []);
+    assert.match(on.html, /aria-pressed="true"[^>]*>Problems<\/button>/);
   });
-  it("the editor of a grouped row gets every row of the group", () => {
-    const pocket = row("owner", "term", "kubectl", { model: "pocket-en" });
-    const supertonic = row("owner", "term", "kubectl", {
-      model: "supertonic-3",
+  it("filters_fit_one_line_at_the_528_px_content_width", () => {
+    // The Dropdown trigger has min-w-[200px]; a toolbar wrapper must override it and fix its width.
+    const CONTENT = 528;
+    const GAP = 8; // gap-2 is 7.5 px at the 15 px root; 8 is the safe figure
+    const CHIP = 100; // the Problems chip: 16 px padding plus the longest locale label
+    const html = renderToStaticMarkup(
+      <I18nextProvider i18n={i18n}>
+        <VocabularyFilters
+          filters={NO_FILTERS}
+          models={models}
+          setFilters={() => {}}
+        />
+      </I18nextProvider>,
+    );
+    const wrappers = [...html.matchAll(/<div class="relative ([^"]*)"/g)].map(
+      (match) =>
+        match[1].replace(/&amp;/g, "&").replace(/&gt;/g, ">").split(" "),
+    );
+    assert.equal(wrappers.length, 3, "Model, Kind and Source");
+    const widths = wrappers.map((classes) => {
+      const fixed = classes
+        .map((token) => token.match(/^w-\[(\d+)px\]$/)?.[1])
+        .find(Boolean);
+      const trigger = classes.includes("[&>button]:min-w-0") ? 0 : 200;
+      return Math.max(Number(fixed ?? 0), trigger);
     });
-    const { drafts } = render({
+    assert.ok(
+      widths.every((width) => width > 0 && width < 200),
+      `${widths}`,
+    );
+    const total =
+      widths.reduce((sum, width) => sum + width, 0) + 3 * GAP + CHIP;
+    assert.ok(total <= CONTENT, `${widths} + gaps + chip = ${total} px`);
+  });
+  it("filter_empty_names_the_query_and_clears", () => {
+    const { html, filterChanges } = render({
       revision: "rev-render",
-      rows: [pocket, supertonic],
+      filters: { ...NO_FILTERS, query: " zzz " },
     });
+    assert.ok(html.includes("Nothing matches &quot;zzz&quot;."), html);
+    assert.ok(!html.includes('data-marker="table"'));
+    const clear = button("Clear filters");
+    assert.ok(clear, "Clear filters button");
+    clear.onClick?.({} as never);
+    assert.equal(filterChanges.length, 1);
+    assert.equal(filterChanges[0], NO_FILTERS);
+    const byFilter = render({
+      revision: "rev-render",
+      filters: { ...NO_FILTERS, source: "builtin" },
+    });
+    assert.ok(byFilter.html.includes("Nothing matches these filters."));
+  });
+  it("invalid_file_shows_path_reason_and_turns_editing_off", () => {
+    const reason = "trailing comma at line 4 column 1";
+    const path = "/data/tts-vocabulary.json";
+    const { html, calls } = render({
+      revision: "rev-render",
+      fileError: reason,
+      path,
+      failure: { key: "tts.vocabulary.errors.io", message: "disk full" },
+    });
+    assert.equal(html.split(reason).length, 2, "the reason shows once");
+    assert.match(
+      html,
+      new RegExp(
+        `<p class="[^"]*font-mono[^"]*break-all[^"]*text-ink-2[^"]*">${path}</p>`,
+      ),
+    );
+    assert.ok(html.includes("Built-in readings are used until it is fixed."));
+    assert.ok(html.includes("disk full"), "another failure still shows");
+    button("Reload")?.onClick?.({} as never);
+    button("Open folder")?.onClick?.({} as never);
+    assert.deepEqual(calls, [["reload"], ["openFolder"]]);
+    assert.equal(button("Correct a reading")?.disabled, true);
+    assert.equal(button("Add entry")?.disabled, true);
     assert.ok(tableProps);
-    tableProps.edit(tableProps.groups[0]);
-    assert.deepEqual(drafts, [
-      {
-        initial: pocket,
-        members: [pocket, supertonic],
-        base: "rev-render",
-      },
-    ]);
+    assert.equal(tableProps.readOnly, true);
+    assert.equal(styleProps?.readOnly, true);
+    tableProps.listen(tableProps.groups[0]);
+    assert.deepEqual(calls[2], ["listen", owner]);
+    const healthy = render({ revision: "rev-render" });
+    assert.ok(!healthy.html.includes("Built-in readings are used"));
+    assert.equal(tableProps?.readOnly, false);
+  });
+  it("acronym_section_follows_the_list", () => {
+    const { html } = render({ revision: "rev-render" });
+    assert.ok(
+      inOrder(
+        sectionOrder(html, 'data-marker="table"', 'data-marker="acronyms"'),
+      ),
+    );
+    const empty = render({
+      revision: "rev-render",
+      filters: { ...NO_FILTERS, query: "zzz" },
+    }).html;
+    assert.ok(
+      inOrder(sectionOrder(empty, "Clear filters", 'data-marker="acronyms"')),
+      "after the empty state too",
+    );
+  });
+  it("the old voice terms are gone from the English file", () => {
+    const vocabulary = en.tts.vocabulary as unknown as Record<string, unknown>;
+    assert.ok(!("voices" in vocabulary));
+    assert.ok(
+      !("onlyProblems" in (vocabulary.filters as Record<string, unknown>)),
+    );
   });
 });

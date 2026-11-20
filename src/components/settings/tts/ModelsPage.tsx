@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import {
   commands,
@@ -13,12 +7,8 @@ import {
   type Result,
 } from "@/bindings";
 import { listen } from "@tauri-apps/api/event";
-import {
-  ModelCard,
-  modelCardCallbacks,
-  type DownloadProgress,
-} from "./ModelCard";
-import { useFocusReturn } from "@/components/shared/InlineConfirm";
+import { ModelCard, type DownloadProgress } from "./ModelCard";
+import { useRowConfirm } from "@/components/shared/InlineConfirm";
 import { useSettings } from "@/hooks/useSettings";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { downloadController } from "./actions";
@@ -54,6 +44,7 @@ export function ModelsPage() {
   const [available, setAvailable] = useState<Device[]>(["cpu"]);
   const downloadState = useSyncExternalStore(
     downloads.subscribe,
+    downloads.snapshot,
     downloads.snapshot,
   );
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -104,36 +95,20 @@ export function ModelsPage() {
       return false;
     }
   };
-  const latest = useRef({ run, models });
-  latest.current = { run, models };
-  const [askingId, setAskingId] = useState<string | null>(null);
-  const callbacks = useMemo(
-    () =>
-      modelCardCallbacks({
-        use: (id) => void latest.current.run(commands.setTtsModel(id)),
-        download: (id) => void downloads.download(id),
-        remove: (id) => {
-          setDeletingId(id);
-          void latest.current
-            .run(commands.deleteTtsModel(id))
-            .finally(() => setDeletingId(null));
-        },
-        show: setAskingId,
-        downloaded: (id) =>
-          latest.current.models.some(
-            (model) => model.id === id && model.downloaded,
-          ),
-      }),
-    [],
-  );
-  useEffect(() => callbacks.prune(), [models, callbacks]);
-  const listRef = useFocusReturn<HTMLElement>(askingId);
+  const deletion = useRowConfirm<string, HTMLElement>({
+    apply: (id) => {
+      setDeletingId(id);
+      void run(commands.deleteTtsModel(id)).finally(() => setDeletingId(null));
+    },
+    present: (id) =>
+      models.some((model) => model.id === id && model.downloaded),
+  });
   return (
-    <section ref={listRef} className="w-full max-w-3xl flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold mb-2">{t("tts.modelsTitle")}</h1>
-        <p className="text-text/60 text-sm">{t("tts.modelsSubtitle")}</p>
-      </div>
+    <section
+      ref={deletion.rowsRef}
+      className="w-full max-w-3xl flex flex-col gap-4"
+    >
+      <p className="text-text/60 text-sm">{t("tts.modelsSubtitle")}</p>
       {(error || downloadState.error) && (
         <p role="alert">
           {t(error ?? downloadState.error ?? "tts.errors.generic")}
@@ -157,10 +132,14 @@ export function ModelsPage() {
                   : (downloadState.active[0] ?? null),
                 deletingId,
               }}
-              actions={callbacks.actions}
-              confirming={askingId === model.id}
-              confirmDelete={callbacks.confirmDelete}
-              cancelDelete={callbacks.cancelDelete}
+              actions={{
+                use: (id) => void run(commands.setTtsModel(id)),
+                download: (id) => void downloads.download(id),
+                delete: deletion.ask,
+              }}
+              confirming={deletion.asking === model.id}
+              confirmDelete={deletion.confirm}
+              cancelDelete={deletion.cancel}
               runOn={(id, value) => void run(commands.setTtsRunOn(id, value))}
               cancel={(id) => void downloads.cancel(id)}
               {...tokenCardProps(token)}

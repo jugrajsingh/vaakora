@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   commands,
@@ -18,7 +12,8 @@ import { Alert } from "../../ui/Alert";
 import { useSettings } from "../../../hooks/useSettings";
 import { useLocalLlmStatus } from "../../../hooks/useLocalLlmStatus";
 import { LocalLlmAttribution } from "./LocalLlmAttribution";
-import { cleanupDeleteControls, LocalLlmModelList } from "./LocalLlmModelList";
+import { LocalLlmModelList } from "./LocalLlmModelList";
+import { useRowConfirm } from "@/components/shared/InlineConfirm";
 import { createLocalLlmActions } from "./localLlmActions";
 import { isLocalLlmBusy } from "./localLlmRowActions";
 import { promptControls } from "@/lib/utils/localLlmPresentation";
@@ -101,22 +96,11 @@ export const LocalLlmSettings: React.FC = () => {
     modelsChanged: useLocalLlmDownloadStore.getState().modelsChanged,
   });
 
-  const latest = useRef({ actions, models });
-  latest.current = { actions, models };
-  const [askingId, setAskingId] = useState<string | null>(null);
-  const deleteControls = useMemo(
-    () =>
-      cleanupDeleteControls({
-        remove: (id) => void latest.current.actions.delete(id),
-        show: setAskingId,
-        downloaded: (id) =>
-          latest.current.models.some(
-            (model) => model.id === id && model.downloaded,
-          ),
-      }),
-    [],
-  );
-  useEffect(() => deleteControls.prune(), [models, deleteControls]);
+  const deletion = useRowConfirm<string>({
+    apply: (id) => void actions.delete(id),
+    present: (id) =>
+      models.some((model) => model.id === id && model.downloaded),
+  });
 
   const statusLabel = (() => {
     if (status?.state === "ready")
@@ -132,17 +116,21 @@ export const LocalLlmSettings: React.FC = () => {
 
   return (
     <>
-      <LocalLlmModelList
-        models={models}
-        selectedId={selectedId}
-        downloadId={downloadModelId}
-        percentage={percentage}
-        deletingId={deletingId}
-        askingId={askingId}
-        onDownload={(id) => void actions.download(id)}
-        {...deleteControls.props}
-        onSelect={(id) => void actions.select(id)}
-      />
+      <div ref={deletion.rowsRef}>
+        <LocalLlmModelList
+          models={models}
+          selectedId={selectedId}
+          downloadId={downloadModelId}
+          percentage={percentage}
+          deletingId={deletingId}
+          askingId={deletion.asking}
+          onDownload={(id) => void actions.download(id)}
+          onDelete={deletion.ask}
+          onConfirmDelete={deletion.confirm}
+          onCancelDelete={deletion.cancel}
+          onSelect={(id) => void actions.select(id)}
+        />
+      </div>
 
       <SettingContainer
         title={t("settings.postProcessing.localLlm.status.title")}

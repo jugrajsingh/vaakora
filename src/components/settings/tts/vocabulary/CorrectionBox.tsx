@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Mic, Square } from "lucide-react";
 import {
@@ -8,7 +8,7 @@ import {
   type VocabularyTable,
   type VoiceText,
 } from "@/bindings";
-import { Alert } from "@/components/ui/Alert";
+import { EditorDialog } from "@/components/shared/EditorDialog";
 import { Button } from "@/components/ui/Button";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Input } from "@/components/ui/Input";
@@ -16,13 +16,17 @@ import { Switch } from "@/components/ui/Switch";
 import { unwrapTts } from "../ModelsPage";
 import {
   applyCapture,
+  attemptSave,
   canSave,
   chosenRule,
   correctionRequest,
   createCapture,
+  correctionDirty,
+  correctionNotice,
   createCorrectionActions,
   initialCorrection,
   savesAs,
+  settleSave,
   scopeModel,
   type CaptureState,
   type CorrectionDependencies,
@@ -31,7 +35,7 @@ import {
   type Scope,
   voicesAfter,
 } from "./correction";
-import { EDITOR_MATCHES, scopeChoices } from "./form";
+import { appliesToChoices, EDITOR_MATCHES } from "./form";
 import { modelName, termMatchLabel } from "./labels";
 import { useVoiceCheck, VoiceCheckPanel } from "./VoiceCheckPanel";
 import { checkedModels, passedModels, saveOptions } from "./voiceCheck";
@@ -70,7 +74,7 @@ function Field({
 
 /**
  * The owner edits how a chunk is spoken, listens, sees the rule that edit saves as and who it
- * reaches, chooses All voices or one downloaded voice model, and saves.
+ * reaches, chooses All models or one downloaded model, and saves.
  */
 export function CorrectionBox({
   written,
@@ -94,12 +98,27 @@ export function CorrectionBox({
   const [table, setTable] = useState<VocabularyTable | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [reloads, setReloads] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const formId = useId();
+  const mounted = useRef(true);
+  const close = () => {
+    mounted.current = false;
+    onClose();
+  };
+  const shouldSay = useRef<HTMLElement | null>(null);
   const patch = (change: Partial<typeof state>) =>
-    setState((current) => ({ ...current, ...change }));
+    setState((current) => ({ ...current, passed: null, ...change }));
   const [microphone, setMicrophone] = useState<ReturnType<
     typeof createCapture
   > | null>(null);
   const [capture, setCapture] = useState<CaptureState>("idle");
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     const created = createCapture({
@@ -115,6 +134,7 @@ export function CorrectionBox({
         setState((current) => ({
           ...current,
           shouldSay: applyCapture(current.shouldSay, words),
+          passed: null,
         })),
       fail: setFailure,
     });
@@ -189,28 +209,30 @@ export function CorrectionBox({
       );
     }
   };
-  const finish = (outcome: SaveOutcome) => {
-    if (outcome.saved) {
-      onSaved(outcome.table);
-      onClose();
-      return;
+  const finish = (outcome: SaveOutcome) =>
+    settleSave(outcome, {
+      live: () => mounted.current,
+      saved: onSaved,
+      close,
+      failed: (failed) => {
+        setFailure(correctionNotice(failed).key);
+        if (failed.reload) setReloads((count) => count + 1);
+      },
+    });
+  /** Saves the shown rule, or for `passed` voices only; a pending save blocks another. */
+  const save = async (passed: readonly string[] | null) => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const outcome = await attemptSave(
+        actions,
+        { table, rule, state, derived },
+        passed,
+      );
+      if (outcome) finish(outcome);
+    } finally {
+      if (mounted.current) setSaving(false);
     }
-    setFailure(outcome.failure.key);
-    if (outcome.reload) setReloads((count) => count + 1);
-  };
-  const save = async () => {
-    if (!table || !rule) return;
-    finish(await actions.save(table.revision, rule));
-  };
-  const savePassed = async () => {
-    if (!table || !rule) return;
-    finish(
-      await actions.savePassed(
-        table.revision,
-        rule,
-        passedModels(check.results ?? []),
-      ),
-    );
   };
   const scopeValue =
     state.scope.kind === "unset"
@@ -220,52 +242,22 @@ export function CorrectionBox({
         : state.scope.id;
   const chooseScope = (value: string): Scope =>
     value === ALL ? { kind: "all" } : { kind: "model", id: value };
+  const saveLabel =
+    state.passed !== null
+      ? t("tts.vocabulary.check.savePassedOnly")
+      : options.includes("save_all_anyway")
+        ? t("tts.vocabulary.check.saveAllAnyway")
+        : t("editor.save");
   return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        void save();
-      }}
-      className="bg-background border border-line rounded-lg p-4 space-y-4"
-    >
-      <h2 className="text-sm font-medium">{t("tts.correction.title")}</h2>
-      {failure && (
-        <div role="alert">
-          <Alert>{t(failure)}</Alert>
-        </div>
-      )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label={t("tts.correction.selected")}>
-          <p className="text-sm font-mono break-words">{written}</p>
-        </Field>
-        <Field label={t("tts.correction.spokenAs")}>
-          <p className="text-sm break-words">{spokenAs}</p>
-        </Field>
-      </div>
-      <Field label={t("tts.correction.shouldSay")}>
-        <div className="flex items-center gap-2">
-          <Input
-            variant="compact"
-            className="flex-grow"
-            aria-label={t("tts.correction.shouldSay")}
-            value={state.shouldSay}
-            onChange={(event) => patch({ shouldSay: event.target.value })}
-          />
-          <Button
-            type="button"
-            variant="secondary"
-            aria-label={t(`tts.correction.microphone.${capture}`)}
-            title={t(`tts.correction.microphone.${capture}`)}
-            aria-pressed={capture === "recording"}
-            disabled={!microphone || capture === "transcribing"}
-            onClick={() => void microphone?.press()}
-          >
-            {capture === "recording" ? (
-              <Square className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <Mic className="h-4 w-4" aria-hidden="true" />
-            )}
-          </Button>
+    <EditorDialog
+      title={t("tts.correction.title")}
+      notice={failure && t(failure)}
+      dirty={correctionDirty(state, spokenAs)}
+      busy={saving}
+      onClose={close}
+      initialFocusRef={shouldSay}
+      actions={
+        <>
           <Button
             type="button"
             variant="secondary"
@@ -284,105 +276,156 @@ export function CorrectionBox({
               ? t("tts.vocabulary.check.playAll")
               : t("tts.vocabulary.buttons.listen")}
           </Button>
-        </div>
-      </Field>
-      <Field label={t("tts.correction.savesAs")}>
-        {derived.status === "error" ? (
-          <p role="alert" className="text-sm text-error">
-            {t(derived.key, { detail: derived.detail })}
-          </p>
-        ) : rule ? (
-          <p className="text-sm">{savesAs(rule, t)}</p>
-        ) : (
-          <p className="text-sm text-ink-3">{t("tts.correction.deriving")}</p>
-        )}
-      </Field>
-      {exact && (
-        <label className="flex items-center gap-3 text-sm">
-          <Switch
-            checked={state.exact}
-            onChange={(value) => patch({ exact: value })}
-          />
-          {t("tts.correction.exactOnly", { text: written })}
-        </label>
-      )}
-      {rule?.reach.kind === "term" && (
+          {options.includes("save_passed_only") && state.passed === null && (
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={saving || !table || !rule}
+              onClick={() => {
+                const passed = passedModels(check.results ?? []);
+                patch({ passed });
+                void save(passed);
+              }}
+            >
+              {t("tts.vocabulary.check.savePassedOnly")}
+            </Button>
+          )}
+        </>
+      }
+      save={{
+        label: saveLabel,
+        disabled: !canSave(state, derived) || !table,
+        form: formId,
+      }}
+    >
+      <form
+        id={formId}
+        onSubmit={(event) => {
+          event.preventDefault();
+          void save(state.passed);
+        }}
+        className="space-y-4"
+      >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label={t("tts.vocabulary.columns.match")}>
-            <Dropdown
-              options={matches.map((matching) => ({
-                value: matching,
-                label: termMatchLabel(t, matching),
-              }))}
-              selectedValue={state.matching}
-              onSelect={(matching) =>
-                patch({ matching: matching as TermMatch })
-              }
-            />
+          <Field label={t("tts.correction.selected")}>
+            <p className="text-sm font-mono break-words">{written}</p>
           </Field>
+          <Field label={t("tts.correction.spokenAs")}>
+            <p className="text-sm break-words">{spokenAs}</p>
+          </Field>
+        </div>
+        <Field label={t("tts.correction.shouldSay")}>
+          <div className="flex items-center gap-2">
+            {/* Input passes no ref, so the dialog focuses the input inside this wrapper. */}
+            <div
+              className="flex-grow"
+              ref={(node) => {
+                shouldSay.current = node?.querySelector("input") ?? null;
+              }}
+            >
+              <Input
+                variant="compact"
+                className="w-full"
+                aria-label={t("tts.correction.shouldSay")}
+                value={state.shouldSay}
+                onChange={(event) => patch({ shouldSay: event.target.value })}
+              />
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              aria-label={t(`tts.correction.microphone.${capture}`)}
+              title={t(`tts.correction.microphone.${capture}`)}
+              aria-pressed={capture === "recording"}
+              disabled={!microphone || capture === "transcribing"}
+              onClick={() => void microphone?.press()}
+            >
+              {capture === "recording" ? (
+                <Square className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Mic className="h-4 w-4" aria-hidden="true" />
+              )}
+            </Button>
+          </div>
+        </Field>
+        <Field label={t("tts.correction.savesAs")}>
+          {derived.status === "error" ? (
+            <p role="alert" className="text-sm text-error">
+              {t(derived.key, { detail: derived.detail })}
+            </p>
+          ) : rule ? (
+            <p className="text-sm">{savesAs(rule, t)}</p>
+          ) : (
+            <p className="text-sm text-ink-3">{t("tts.correction.deriving")}</p>
+          )}
+        </Field>
+        {exact && (
           <label className="flex items-center gap-3 text-sm">
             <Switch
-              checked={state.caseSensitive}
-              onChange={(caseSensitive) => patch({ caseSensitive })}
+              checked={state.exact}
+              onChange={(value) => patch({ exact: value })}
             />
-            {t("tts.vocabulary.match.caseSensitive")}
+            {t("tts.correction.exactOnly", { text: written })}
           </label>
-        </div>
-      )}
-      <Field label={t("tts.vocabulary.fields.appliesTo")}>
-        <Dropdown
-          placeholder={t("tts.correction.chooseScope")}
-          options={[
-            { value: ALL, label: t("tts.vocabulary.voices.all") },
-            ...scopeChoices(models, null).map((id) => ({
-              value: id,
-              label: modelName(models, id),
-            })),
-          ]}
-          selectedValue={scopeValue}
-          onSelect={(value) => patch({ scope: chooseScope(value) })}
-        />
-      </Field>
-      {state.scope.kind === "unset" && (
-        <p className="text-xs text-ink-3">
-          {t("tts.correction.scopeRequired")}
-        </p>
-      )}
-      <VoiceCheckPanel run={check} models={models} />
-      {options.includes("pick_one") && (
-        <div className="space-y-2">
-          <p className="text-sm">{t("tts.vocabulary.check.advisory")}</p>
-          <Dropdown
-            placeholder={t("tts.vocabulary.check.pickOne")}
-            options={(check.results ?? []).map((result) => ({
-              value: result.model_id,
-              label: modelName(models, result.model_id),
-            }))}
-            selectedValue={null}
-            onSelect={(id) => patch({ scope: { kind: "model", id } })}
-          />
-        </div>
-      )}
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="secondary" onClick={onClose}>
-          {t("tts.vocabulary.buttons.cancel")}
-        </Button>
-        {options.includes("save_passed_only") && (
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={!table || !rule}
-            onClick={() => void savePassed()}
-          >
-            {t("tts.vocabulary.check.savePassedOnly")}
-          </Button>
         )}
-        <Button type="submit" disabled={!canSave(state, derived) || !table}>
-          {options.includes("save_all_anyway")
-            ? t("tts.vocabulary.check.saveAllAnyway")
-            : t("tts.vocabulary.buttons.save")}
-        </Button>
-      </div>
-    </form>
+        {rule?.reach.kind === "term" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label={t("tts.vocabulary.columns.match")}>
+              <Dropdown
+                options={matches.map((matching) => ({
+                  value: matching,
+                  label: termMatchLabel(t, matching),
+                }))}
+                selectedValue={state.matching}
+                onSelect={(matching) =>
+                  patch({ matching: matching as TermMatch })
+                }
+              />
+            </Field>
+            <label className="flex items-center gap-3 text-sm">
+              <Switch
+                checked={state.caseSensitive}
+                onChange={(caseSensitive) => patch({ caseSensitive })}
+              />
+              {t("tts.vocabulary.match.caseSensitive")}
+            </label>
+          </div>
+        )}
+        <Field label={t("tts.vocabulary.fields.appliesTo")}>
+          <Dropdown
+            placeholder={t("tts.correction.chooseScope")}
+            options={[
+              { value: ALL, label: t("tts.vocabulary.models.all") },
+              ...appliesToChoices(models, []).map((id) => ({
+                value: id,
+                label: modelName(models, id),
+              })),
+            ]}
+            selectedValue={scopeValue}
+            onSelect={(value) => patch({ scope: chooseScope(value) })}
+          />
+        </Field>
+        {state.scope.kind === "unset" && (
+          <p className="text-xs text-ink-3">
+            {t("tts.correction.scopeRequiredModels")}
+          </p>
+        )}
+        <VoiceCheckPanel run={check} models={models} />
+        {options.includes("pick_one") && (
+          <div className="space-y-2">
+            <p className="text-sm">{t("tts.vocabulary.check.advisory")}</p>
+            <Dropdown
+              placeholder={t("tts.vocabulary.check.pickOne")}
+              options={(check.results ?? []).map((result) => ({
+                value: result.model_id,
+                label: modelName(models, result.model_id),
+              }))}
+              selectedValue={null}
+              onSelect={(id) => patch({ scope: { kind: "model", id } })}
+            />
+          </div>
+        )}
+      </form>
+    </EditorDialog>
   );
 }

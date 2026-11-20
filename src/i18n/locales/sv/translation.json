@@ -36,6 +36,19 @@
     "debug": "Felsökning",
     "about": "Om"
   },
+  "nav": {
+    "dictation": "Diktering",
+    "readAloud": "Uppläsning",
+    "models": "Modeller",
+    "settings": "Inställningar",
+    "history": "Historik",
+    "cleanup": "Rensning",
+    "vocabulary": "Vokabulär",
+    "general": "Allmänt",
+    "advanced": "Avancerat",
+    "about": "Om",
+    "debug": "Felsökning"
+  },
   "onboarding": {
     "customModelDescription": "Stöds inte officiellt",
     "migration": {
@@ -345,6 +358,52 @@
     "lockedWhileTranscribing": "Du kan byta modell när transkriberingen i Historik är klar."
   },
   "settings": {
+    "groups": {
+      "shortcuts": "Kortkommandon",
+      "model": "Modell",
+      "languages": "Språk",
+      "microphone": "Mikrofon",
+      "output": "Utmatning",
+      "text": "Text",
+      "overlay": "Overlay",
+      "history": "Historik",
+      "playback": "Uppspelning",
+      "textHandling": "Textbehandling",
+      "sound": "Ljud",
+      "appearance": "Utseende",
+      "startup": "Uppstart",
+      "models": "Modeller",
+      "dictationEngine": "Dikteringsmotor",
+      "experimental": "Experimentellt",
+      "provider": "Leverantör",
+      "instructions": "Instruktioner",
+      "localModel": "Lokal modell"
+    },
+    "jobModel": {
+      "manage": "Hantera modeller",
+      "choose": "Välj en modell",
+      "loading": "Laddar modeller",
+      "empty": {
+        "dictation": "Ingen modell för diktering än.",
+        "readAloud": "Ingen modell för uppläsning än."
+      },
+      "help": {
+        "dictation": "Välj en nedladdad modell för diktering.",
+        "readAloud": "Välj en nedladdad modell för uppläsning."
+      }
+    },
+    "rows": {
+      "unloadIdle": "Avlasta inaktiva modeller",
+      "runOn": "Kör dikteringsmodeller på"
+    },
+    "shortcuts": {
+      "dictate": "Diktera",
+      "dictateWithCleanup": "Diktera med upprensning",
+      "cancel": "Avbryt",
+      "readAloud": "Uppläsning",
+      "activation": "Aktivering",
+      "activationHelp": "För dikteringskortkommandon"
+    },
     "modelSettings": {
       "title": "{{model}}-inställningar"
     },
@@ -363,9 +422,6 @@
             "name": "Kortkommando för transkribering",
             "description": "Kortkommandot för att spela in och transkribera din röst."
           },
-          "transcribe_raw": {
-            "name": "Kortkommando för rå transkription"
-          },
           "cancel": {
             "name": "Kortkommando för att avbryta",
             "description": "Kortkommandot för att avbryta den aktuella inspelningen."
@@ -375,7 +431,6 @@
             "description": "Valfritt: En dedikerad snabbknapp som alltid tillämpar AI-efterbearbetning på din transkription."
           },
           "read_aloud": {
-            "name": "Kortkommando för uppläsning",
             "description": "Öppnar fönstret och läser upp kopierad text."
           }
         },
@@ -487,11 +542,13 @@
         "title": "Utmatningsenhet",
         "description": "Välj din föredragna ljudutmatningsenhet för återkopplingsljud",
         "placeholder": "Välj utmatningsenhet...",
-        "loading": "Laddar..."
+        "loading": "Laddar...",
+        "offReason": "Används inte när ljudåterkoppling är av."
       },
       "volume": {
         "title": "Volym",
-        "description": "Justera volymen för ljudåterkopplingsljud"
+        "description": "Justera volymen för ljudåterkopplingsljud",
+        "offReason": "Används inte när ljudåterkoppling är av."
       }
     },
     "advanced": {
@@ -657,9 +714,6 @@
       }
     },
     "postProcessing": {
-      "provider": {
-        "title": "Leverantör"
-      },
       "api": {
         "title": "API",
         "provider": {
@@ -722,7 +776,6 @@
         "noCleanupModel": "Ingen efterbearbetningsmodell",
         "s1Description": "Använder kontroller för stil, struktur och sammanhang.",
         "plainDescription": "Använder din valda Handy-prompt.",
-        "groupTitle": "Lokal modell",
         "size": "{{size}} MiB",
         "downloaded": "Nedladdad",
         "use": "Använd",
@@ -768,25 +821,37 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 med ett extra villkor: modellen måste alltid kallas \"S1-mini\" från \"Superwhisper\", med exakt den användningen av versaler och gemener."
         },
-        "promptRequired": "Välj en icke-tom Handy-prompt i gruppen Prompter. Tills dess hoppas efterbearbetningen över och den råa transkriptionen används.",
+        "promptRequired": "Välj en icke-tom Handy-prompt i gruppen Instruktioner. Tills dess hoppas efterbearbetningen över och den råa transkriptionen används.",
         "promptHidden": "Den här modellen använder sin egen fasta prompt och inställningarna Stil, Struktur och Sammanhang ovan, så promptredigeraren är dold."
+      }
+    },
+    "cleanup": {
+      "enable": {
+        "label": "Rensa upp dikteringar",
+        "description": "Lägger till kortkommandot ”Diktera med upprensning”. Text som dikteras med det rensas upp innan den klistras in."
+      },
+      "sentTo": "Dikteringar skickas till {{host}} för städning.",
+      "prompt": {
+        "edit": "Redigera",
+        "new": "Ny prompt",
+        "editTitle": "Redigera {{name}}",
+        "newTitle": "Ny prompt",
+        "delete": "Ta bort",
+        "deleteConfirm": "Ta bort {{name}}? Dikteringar som redan städats med den ändras inte.",
+        "deleteAction": "Ta bort prompten",
+        "lastPrompt": "Behåll minst en prompt.",
+        "saveFailed": "Prompten kunde inte sparas.",
+        "createFirst": "Tryck på Ny prompt för att skriva dina första instruktioner för städning."
       }
     },
     "history": {
       "title": "Historik",
-      "cleaned": "Efterbearbetad",
-      "cleanedWith": "Efterbearbetad med {{model}}",
-      "raw": "Rå",
-      "copyRaw": "Kopiera rå text",
-      "copyPostProcessed": "Kopiera efterbearbetad text",
       "compare": {
         "title": "Jämförelsevy",
         "diff": "Skillnader",
         "side_by_side": "Sida vid sida",
         "stacked": "Staplade"
       },
-      "clearHistory": "Rensa historik",
-      "clearConfirmation": "Ta bort {{count}} historikposter utan stjärna och {{recordings}} inspelningar? Poster med stjärna och deras inspelningar behålls.",
       "openFolder": "Öppna mapp för inspelningar",
       "loading": "Laddar historik...",
       "empty": "Inga transkriptioner ännu. Börja spela in för att bygga upp din historik!",
@@ -799,6 +864,7 @@
       "deleteConfirm": "Ta bort den här posten och dess inspelning?",
       "deleteConfirmAction": "Ta bort post",
       "retranscribe": "Transkribera igen",
+      "retranscribeError": "Posten kunde inte transkriberas igen.",
       "cancelTranscription": "Avbryt transkribering",
       "transcribing": "Transkriberar...",
       "transcriptionFailed": "Transkribering misslyckades. Du kan transkribera igen med hjälp av ikonen för nytt försök.",
@@ -820,6 +886,38 @@
         "weeks2": "Ta bort poster utan stjärna som är äldre än 2 veckor och deras inspelningar? Poster med stjärna och transkriberade filer behålls.",
         "months3": "Ta bort poster utan stjärna som är äldre än 3 månader och deras inspelningar? Poster med stjärna och transkriberade filer behålls.",
         "action": "Ta bort poster"
+      }
+    },
+    "dictationHistory": {
+      "limitTitle": "Behåll de senaste",
+      "limitUnit": "poster",
+      "limitHelp": "Hur många poster «Behåll de senaste» behåller.",
+      "limitTimeLimit": "Används inte med en tidsgräns.",
+      "autoDeleteTitle": "Automatisk radering",
+      "autoDeleteHelp": "Stjärnmärkta poster och transkriberade filer raderas aldrig automatiskt.",
+      "options": {
+        "never": "Av (behåll allt)",
+        "preserveLimit": "Behåll de senaste {{count}}",
+        "days3": "Äldre än 3 dagar",
+        "weeks2": "Äldre än 2 veckor",
+        "months3": "Äldre än 3 månader"
+      },
+      "folderTitle": "Mapp med inspelningar",
+      "folderOpen": "Öppna"
+    },
+    "readAloudHistory": {
+      "keepTitle": "Behåll historik",
+      "keepHelp": "Endast text, inget ljud.",
+      "limitTitle": "Behåll de senaste",
+      "limitUnit": "poster",
+      "limitHelp": "Hur många poster «Behåll historik» behåller.",
+      "limitOff": "Används inte när historiken är av.",
+      "options": {
+        "keepNothing": "Behåll inte",
+        "keepLimit": "Behåll de senaste {{count}}",
+        "days3": "Behåll de senaste {{count}}, inga äldre än 3 dagar",
+        "weeks2": "Behåll de senaste {{count}}, inga äldre än 2 veckor",
+        "months3": "Behåll de senaste {{count}}, inga äldre än 3 månader"
       }
     },
     "debug": {
@@ -1034,6 +1132,14 @@
     "noOptionsFound": "Inga alternativ hittades",
     "cancel": "Avbryt"
   },
+  "editor": {
+    "save": "Spara",
+    "discard": {
+      "message": "Vill du förkasta dina ändringar?",
+      "keep": "Fortsätt redigera",
+      "action": "Förkasta"
+    }
+  },
   "errors": {
     "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
     "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
@@ -1189,7 +1295,6 @@
       "finished": "Klar",
       "error": "Fel"
     },
-    "modelsTitle": "Text-till-tal-modeller",
     "modelsSubtitle": "Välj en röstmodell. Hastighetssiffrorna mättes på utvecklarens dator; dina kan skilja sig.",
     "downloaded": "Nedladdade",
     "availableToDownload": "Tillgängliga för nedladdning",
@@ -1213,11 +1318,10 @@
     "saveToken": "Ange token",
     "model": "Modell",
     "voice": "Röst",
-    "preview": "Förhandslyssna på rösten",
-    "speed": "Hastighet: {{value}}x",
+    "preview": "Lyssna",
     "pitch": "Tonhöjd: {{value}} halvtoner",
-    "output": "Utenhet",
-    "sameAsHandy": "Samma som Handy",
+    "output": "Utenhet för uppläsning",
+    "sameAsHandy": "Samma som {{device}}",
     "readCode": "Läs upp kodblock",
     "technicalReading": "Teknisk uppläsning",
     "fullPaths": "Läs hela sökvägar",
@@ -1250,49 +1354,22 @@
     },
     "voiceCount": "{{count}} röster",
     "downloadProgress": "Förlopp för modellnedladdning",
-    "settingsTitle": "Text-till-tal",
     "speedLabel": "Hastighet",
     "pitchLabel": "Tonhöjd",
     "help": {
-      "model": "Välj en nedladdad text-till-tal-modell.",
-      "voice": "Välj en röst för den här modellen och förhandslyssna på den.",
+      "voice": "Välj en röst för den här modellen och lyssna på den.",
       "speed": "Justera hur snabbt texten läses upp.",
       "pitch": "Justera röstens tonhöjd i halvtoner.",
       "output": "Välj var uppläsningsljudet spelas upp.",
       "readCode": "Ta med inhägnade kodblock vid uppläsning.",
       "technicalReading": "Läser upp sökvägar, filnamn, flaggor och kodnamn i sin helhet med hjälp av din ordlistefil.",
       "fullPaths": "Läser varje mapp i en sökväg. Avstängt läses bara filnamnet.",
-      "fullLinks": "Läser hela webbadressen. Avstängt sägs bara webbplatsens namn."
-    },
-    "tabs": {
-      "settings": "Inställningar",
-      "history": "Historik",
-      "vocabulary": "Vokabulär"
+      "fullLinks": "Läser hela webbadressen. Avstängt sägs bara webbplatsens namn.",
+      "technicalOff": "Används inte när teknisk uppläsning är av."
     },
     "history": {
-      "title": "Historikinställningar",
       "reading": "Skrivna ord med det som sades",
-      "hint": "Dra över orden för att markera ett stycke och rätta hur det lästes.",
-      "empty": "Inget har lästs upp än. Uppläsningar du spelar upp visas här.",
-      "limit": {
-        "title": "Historikgräns",
-        "description": "Flest uppläsningar som sparas i historiken",
-        "entries": "uppläsningar"
-      },
-      "retention": {
-        "title": "Automatisk radering",
-        "description": "Radera även äldre uppläsningar automatiskt",
-        "keepNothing": "Spara aldrig",
-        "keepLimit": "Behåll de senaste {{count}}",
-        "days3": "Efter 3 dagar",
-        "weeks2": "Efter 2 veckor",
-        "months3": "Efter 3 månader"
-      },
-      "clear": {
-        "title": "Rensa historik",
-        "description": "Tar bort alla sparade uppläsningar. Din ordlista ändras inte.",
-        "confirmation": "Ta bort alla {{count}} sparade uppläsningar? Din ordlista ändras inte."
-      },
+      "readingHint": "Den skrivna texten överst och det som sades under. Dra över orden för att rätta hur de lästes.",
       "retentionConfirm": {
         "message_one": "Ta bort {{count}} sparad uppläsning nu? Din ordlista ändras inte.",
         "message": "Ta bort {{count}} sparade uppläsningar nu? Din ordlista ändras inte.",
@@ -1304,10 +1381,7 @@
         "written": "Skrivet",
         "spoken": "Uttalat",
         "kind": "Typ",
-        "voices": "Röster",
-        "match": "Matchning",
-        "enabled": "På",
-        "actions": "Åtgärder"
+        "match": "Matchning"
       },
       "kinds": {
         "symbol": "Symbol",
@@ -1315,10 +1389,9 @@
         "term": "Term",
         "acronym": "Akronym"
       },
-      "voices": {
-        "all": "Alla röster",
-        "except": "utom {{names}}",
-        "add": "+ röst"
+      "models": {
+        "all": "Alla modeller",
+        "except": "utom {{names}}"
       },
       "origins": {
         "builtin": "Inbyggd",
@@ -1331,7 +1404,6 @@
         "listen": "Lyssna",
         "delete": "Ta bort",
         "reset": "Återställ till standard",
-        "save": "Spara",
         "cancel": "Avbryt"
       },
       "match": {
@@ -1347,13 +1419,13 @@
       },
       "filter": "Sök i skrivet eller talat",
       "toggle": "Använd {{written}}",
-      "editTitle": "Redigera post",
       "fields": {
         "skip": "Hoppa över",
         "appliesTo": "Gäller för"
       },
-      "empty": "Inga poster matchar ditt filter.",
-      "deleteConfirmation": "Ta bort {{written}} från din vokabulär? Det går inte att ångra.",
+      "emptyQuery": "Inget matchar ”{{query}}”.",
+      "emptyFilters": "Inget matchar de här filtren.",
+      "clearFilters": "Rensa filter",
       "resetConfirm": "Återställ {{written}} till den inbyggda uppläsningen? Din post tas bort.",
       "errors": {
         "changed": "Vokabulärfilen ändrades på disken. Tabellen lästes in igen; gör din ändring på nytt.",
@@ -1361,7 +1433,7 @@
         "invalidEdit": "Posten kunde inte sparas: {{message}}",
         "tooLarge": "Vokabulärfilen skulle bli större än 1 MiB, så inget sparades.",
         "io": "Vokabulärfilen kunde inte skrivas: {{message}}",
-        "voicesChanged": "Vokabulären ändrades medan ändringen väntade, så röständringen tillämpades inte. Välj rösterna igen."
+        "voicesChanged": "Vokabulären ändrades medan ändringen väntade, så den tillämpades inte."
       },
       "problems": {
         "shadowed": "Gäller aldrig: en post med högre prioritet vinner alltid",
@@ -1382,35 +1454,50 @@
         "invalid": "Det går inte att spara: {{detail}}"
       },
       "check": {
-        "title": "Kontroll över alla röster",
+        "title": "Kontroll över alla modeller",
         "playAll": "Spela alla",
         "playing": "Spelar {{model}}",
-        "checking": "Kontrollerar varje röst...",
+        "checking": "Kontrollerar varje modell...",
         "heardRight": "rätt uppfattat",
         "missed": "fel uppfattat: {{heard}}",
         "failed": "kunde inte kontrollera: {{error}}",
         "row": "{{model}}: {{outcome}}",
-        "advisory": "Vissa röster läste inte detta rätt. Du kan ändå spara det.",
-        "saveAllAnyway": "Spara för alla röster ändå",
-        "savePassedOnly": "Spara bara för röster som klarade sig",
-        "pickOne": "Välj en röst",
+        "advisory": "Vissa modeller läste inte detta rätt. Du kan ändå spara det.",
+        "saveAllAnyway": "Spara för alla modeller ändå",
+        "savePassedOnly": "Spara bara för modeller som klarade sig",
+        "pickOne": "Välj en modell",
         "dictating": "Diktering pågår. Kontrollera igen när den är klar.",
         "transcribeFailed": "Tal-till-text kunde inte transkribera rösten."
       },
       "filters": {
-        "voice": "Röst",
+        "model": "Modell",
         "kind": "Typ",
         "source": "Källa",
         "all": "Alla",
         "changed": "Ändrad av dig",
-        "onlyProblems": "Endast problem"
+        "problems": "Problem"
       },
       "defaultLabel": "standard:",
-      "defaultLabelFor": "standard för {{voices}}:"
+      "defaultLabelFor": "standard för {{voices}}:",
+      "dialog": {
+        "editTitle": "Redigera {{written}}",
+        "context": "{{written}}, uttalas nu som {{spoken}}.",
+        "overrides": "Din post ersätter det inbyggda uttalet {{default}}.",
+        "builtinDelete": "Inbyggda poster kan stängas av, inte tas bort.",
+        "deleteConfirm": "Ta bort {{written}}? Dina andra poster behålls.",
+        "deleteAction": "Ta bort post",
+        "conflict": "Ordlistefilen ändrades på disken och lästes in igen. Kontrollera posten och spara sedan igen.",
+        "refused": "Ordlistan har ändrats och den här posten kan inte längre sparas som den är. Kontrollera Gäller för, eller avbryt och lägg till den igen.",
+        "scopeRefused": "De här modellerna kan inte ändras för den här posten."
+      },
+      "acronymStylePerModel": "Akronymstil per modell",
+      "invalid": {
+        "builtinUsed": "Inbyggda uppläsningar används tills filen är åtgärdad.",
+        "reload": "Läs in igen",
+        "openFolder": "Öppna mappen"
+      }
     },
     "correction": {
-      "add": "Lägg till korrigering",
-      "start": "Lägg till en korrigering",
       "writtenText": "Skriven text",
       "next": "Nästa",
       "title": "Korrigera en uppläsning",
@@ -1421,12 +1508,11 @@
       "deriving": "Räknar ut regeln...",
       "exactOnly": "Bara exakt den här texten",
       "chooseScope": "Välj var den gäller",
-      "scopeRequired": "Välj Alla röster eller en röst innan du sparar.",
-      "acronymStyle": "Akronymstil per röst",
+      "scopeRequiredModels": "Välj Alla modeller eller en modell innan du sparar.",
       "style": {
         "spaced": "Separata bokstäver (C L I)",
         "capitals": "Versaler (CLI)",
-        "inherit": "Samma som alla röster"
+        "inheritModels": "Samma som alla modeller"
       },
       "reach": {
         "extension": "gäller varje {{extension}}-fil",
@@ -1447,5 +1533,67 @@
         "transcribeFailed": "Tal till text kunde inte transkribera det du sa."
       }
     }
+  },
+  "history": {
+    "change": "Ändra",
+    "changeLabel": "Ändra hur historiken behålls",
+    "transcribeFile": "Transkribera fil",
+    "notKept": "Historiken behålls inte.",
+    "empty": {
+      "dictation": "Inga dikteringar än.",
+      "dictationHint": "Tryck på <dictate/> för att diktera eller <cleanup/> för att diktera med upprensning.",
+      "dictationHintDictate": "Tryck på <keys/> för att diktera.",
+      "dictationHintCleanup": "Tryck på <keys/> för att diktera med upprensning.",
+      "read": "Inget har lästs upp än.",
+      "readHint": "Kopiera lite text och tryck på <keys/>."
+    },
+    "summary": {
+      "dictation": {
+        "never": "Alla poster behålls. Poster med stjärna behålls.",
+        "none": "Inga poster behålls. Poster med stjärna och transkriberade filer behålls.",
+        "latest_one": "Den senaste posten behålls. Poster med stjärna behålls.",
+        "latest": "De senaste {{count}} posterna behålls. Poster med stjärna behålls.",
+        "days3": "Poster som är äldre än 3 dagar tas bort. Poster med stjärna behålls.",
+        "weeks2": "Poster som är äldre än 2 veckor tas bort. Poster med stjärna behålls.",
+        "months3": "Poster som är äldre än 3 månader tas bort. Poster med stjärna behålls."
+      },
+      "read": {
+        "latest_one": "Den senaste posten behålls.",
+        "latest": "De senaste {{count}} posterna behålls.",
+        "days3_one": "Den senaste posten behålls, ingen äldre än 3 dagar.",
+        "days3": "De senaste {{count}} posterna behålls, ingen äldre än 3 dagar.",
+        "weeks2_one": "Den senaste posten behålls, ingen äldre än 2 veckor.",
+        "weeks2": "De senaste {{count}} posterna behålls, ingen äldre än 2 veckor.",
+        "months3_one": "Den senaste posten behålls, ingen äldre än 3 månader.",
+        "months3": "De senaste {{count}} posterna behålls, ingen äldre än 3 månader."
+      }
+    },
+    "clear": {
+      "action": "Rensa historik",
+      "dictationConfirm_one": "Ta bort {{count}} post och {{recordings}}? Poster med stjärna behålls.",
+      "dictationConfirm": "Ta bort {{count}} poster och {{recordings}}? Poster med stjärna behålls.",
+      "recordings_one": "{{count}} inspelning",
+      "recordings": "{{count}} inspelningar",
+      "readConfirm_one": "Ta bort {{count}} post? Din ordlista ändras inte.",
+      "readConfirm": "Ta bort {{count}} poster? Din ordlista ändras inte.",
+      "nothing": "Det finns inget att rensa."
+    },
+    "row": {
+      "open": "Visa post",
+      "close": "Dölj post"
+    },
+    "copy": "Kopiera text",
+    "copyCleaned": "Kopiera rensad text",
+    "copyOriginal": "Kopiera original",
+    "star": "Stjärnmärk",
+    "unstar": "Ta bort stjärna",
+    "retranscribe": "Transkribera igen",
+    "cancelTranscription": "Avbryt transkribering",
+    "delete": "Ta bort",
+    "cleanedWith": "Rensad med {{model}}.",
+    "cleaned": "Rensad text",
+    "original": "Ursprunglig transkription",
+    "diffNote": "Visar skillnaderna mot den ursprungliga transkriptionen.",
+    "noCleanup": "Ingen rensning"
   }
 }

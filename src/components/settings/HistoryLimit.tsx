@@ -5,6 +5,7 @@ import { createLimitField, MAX_LIMIT } from "../../lib/utils/limitField";
 import {
   currentKeep,
   dictationChangeDeletes,
+  dictationLimitRow,
   routeChange,
   type DictationKeep,
 } from "../../lib/utils/retention";
@@ -13,12 +14,10 @@ import { Input } from "../ui/Input";
 import { SettingContainer } from "../ui/SettingContainer";
 
 interface HistoryLimitProps {
-  descriptionMode?: "tooltip" | "inline";
   grouped?: boolean;
 }
 
 export const HistoryLimit: React.FC<HistoryLimitProps> = ({
-  descriptionMode = "inline",
   grouped = false,
 }) => {
   const { t } = useTranslation();
@@ -56,11 +55,17 @@ export const HistoryLimit: React.FC<HistoryLimitProps> = ({
     return { field, confirm };
   }, []);
 
+  const limitRow = dictationLimitRow(keep.period);
   return (
     <SettingContainer
-      title={t("settings.debug.historyLimit.title")}
-      description={t("settings.debug.historyLimit.description")}
-      descriptionMode={descriptionMode}
+      title={t("settings.dictationHistory.limitTitle")}
+      description={
+        limitRow.reasonKey
+          ? t(limitRow.reasonKey)
+          : t("settings.dictationHistory.limitHelp")
+      }
+      descriptionMode={limitRow.disabled ? "inline" : "tooltip"}
+      disabled={limitRow.disabled}
       grouped={grouped}
       layout={pending ? "stacked" : "horizontal"}
     >
@@ -87,11 +92,11 @@ export const HistoryLimit: React.FC<HistoryLimitProps> = ({
               if (event.key === "Enter") event.preventDefault();
               field.key(event.key);
             }}
-            disabled={isUpdating("history_limit")}
+            disabled={limitRow.disabled || isUpdating("history_limit")}
             className="w-20"
           />
           <span className="text-sm text-text">
-            {t("settings.debug.historyLimit.entries")}
+            {t("settings.dictationHistory.limitUnit")}
           </span>
         </div>
       )}

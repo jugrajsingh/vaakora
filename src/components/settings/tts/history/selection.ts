@@ -1,4 +1,5 @@
 import type { ReadHistoryEntry } from "@/bindings";
+import { openEntry } from "@/lib/utils/historyPresentation";
 import {
   selectionText,
   snapSelection,
@@ -67,4 +68,71 @@ export function correctionFor(
     spokenAs,
     readingModel: entry.model_id,
   };
+}
+
+export type CorrectionTarget = ReturnType<typeof correctionFor>;
+
+/** The open read, the words selected in it, and the correction a selection opened. */
+export interface ReadView {
+  open: number | null;
+  selection: ReadSelection | null;
+  correction: CorrectionTarget | null;
+}
+
+export const NO_READ_VIEW: ReadView = {
+  open: null,
+  selection: null,
+  correction: null,
+};
+
+export type ReadViewAction =
+  | { type: "loaded"; ids: readonly number[] }
+  | { type: "cleared" }
+  | { type: "toggle"; id: number }
+  | {
+      type: "select";
+      entry: ReadHistoryEntry;
+      tokens: readonly Token[];
+      range: TokenSelection;
+    }
+  | { type: "closeCorrection" };
+
+/**
+ * One read is open at a time. A list reload drops the open read once it is gone and Clear history
+ * drops it at once (ids restart after a clear); the correction is its own snapshot and only
+ * closeCorrection ends it.
+ */
+export function readView(state: ReadView, action: ReadViewAction): ReadView {
+  switch (action.type) {
+    case "loaded": {
+      const open = openEntry(state.open, action.ids);
+      const selection =
+        state.selection && state.selection.entry === open
+          ? state.selection
+          : null;
+      return { ...state, open, selection };
+    }
+    case "cleared":
+      return { ...state, open: null, selection: null };
+    case "toggle":
+      return {
+        ...state,
+        open: state.open === action.id ? null : action.id,
+        selection: null,
+      };
+    case "select":
+      return state.open === action.entry.id
+        ? {
+            ...state,
+            selection: { entry: action.entry.id, range: action.range },
+            correction: correctionFor(
+              action.entry,
+              action.tokens,
+              action.range,
+            ),
+          }
+        : state;
+    case "closeCorrection":
+      return { ...state, selection: null, correction: null };
+  }
 }

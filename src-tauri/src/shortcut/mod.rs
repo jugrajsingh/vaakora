@@ -215,6 +215,7 @@ fn change_binding_with(
 }
 
 /// Clear an optional dictation shortcut while preserving another assigned binding.
+// Read aloud is also accepted, with no last-shortcut rule (policy::clear_binding_with).
 #[tauri::command]
 #[specta::specta]
 pub fn clear_binding(app: AppHandle, id: String) -> Result<ShortcutBinding, String> {

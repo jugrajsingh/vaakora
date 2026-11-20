@@ -11,10 +11,7 @@ import {
 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import {
-  createRowConfirm,
-  InlineConfirm,
-} from "@/components/shared/InlineConfirm";
+import { InlineConfirm } from "@/components/shared/InlineConfirm";
 import { formatModelSize } from "@/lib/utils/format";
 import { useTranslation } from "react-i18next";
 import type { TtsModelInfo, Device, RunOn } from "@/bindings";
@@ -59,45 +56,6 @@ export interface ModelCardProps {
   confirmDelete: () => void;
   cancelDelete: () => void;
 }
-/** Delete only asks (`actions.delete`); the question's red action deletes. */
-export function modelDeleteHandlers(
-  row: Pick<ReturnType<typeof rowActions>, "delete">,
-  props: Pick<ModelCardProps, "confirmDelete" | "cancelDelete">,
-) {
-  return {
-    press: () => row.delete(),
-    confirm: () => props.confirmDelete(),
-    cancel: () => props.cancelDelete(),
-  };
-}
-/**
- * The Models page's card callbacks: Delete only asks, `confirmDelete` removes the asked model once,
- * and `prune` drops the question when that model is no longer downloaded.
- */
-export function modelCardCallbacks(deps: {
-  use: (id: string) => void;
-  download: (id: string) => void;
-  remove: (id: string) => void;
-  show: (id: string | null) => void;
-  downloaded: (id: string) => boolean;
-}) {
-  const question = createRowConfirm<string>({
-    show: deps.show,
-    present: deps.downloaded,
-    apply: deps.remove,
-  });
-  const actions: TtsRowCallbacks = {
-    use: deps.use,
-    download: deps.download,
-    delete: question.ask,
-  };
-  return {
-    actions,
-    confirmDelete: question.confirm,
-    cancelDelete: question.cancel,
-    prune: question.prune,
-  };
-}
 export function applyModelUse(
   row: Pick<ReturnType<typeof rowActions>, "canUse" | "use">,
 ): void {
@@ -121,7 +79,6 @@ export function ModelCard({
 }: ModelCardProps) {
   const { t } = useTranslation();
   const row = rowActions(model, state, actions, tokenSet);
-  const deletion = modelDeleteHandlers(row, { confirmDelete, cancelDelete });
   const size = formatModelSize(model.size_bytes / 1e6);
   const rating = completeRating(model);
   const invalidNpu =
@@ -198,8 +155,8 @@ export function ModelCard({
                 ...(row.isActive ? [t("tts.deleteConfirmSelected")] : []),
               ].join(" ")}
               action={t("tts.deleteConfirmAction")}
-              onCancel={deletion.cancel}
-              onConfirm={deletion.confirm}
+              onCancel={cancelDelete}
+              onConfirm={confirmDelete}
             />
           </div>
         ) : (
@@ -248,7 +205,7 @@ export function ModelCard({
                 variant="ghost"
                 size="sm"
                 disabled={!row.canDelete}
-                onClick={deletion.press}
+                onClick={row.delete}
                 className="flex items-center gap-1.5 text-logo-primary/85 hover:text-logo-primary hover:bg-logo-primary/10"
               >
                 <Trash2 className="w-3.5 h-3.5" />

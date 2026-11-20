@@ -1,11 +1,8 @@
-import type {
-  EntryKey,
-  EntryRow,
-  Rule,
-  Section,
-  TermMatch,
-  TtsModelInfo,
-} from "@/bindings";
+import type { Rule, Section, TermMatch, TtsModelInfo } from "@/bindings";
+import type { EntryDraft } from "./entryPlan";
+import { scopesOf, type RowGroup } from "./groups";
+
+type Scope = string | null;
 
 export interface EntryForm {
   written: string;
@@ -14,24 +11,29 @@ export interface EntryForm {
   skip: boolean;
   matching: TermMatch;
   caseSensitive: boolean;
-  model: string | null;
+  /** The checked Applies to choices; `null` is all models. */
+  scopes: Scope[];
 }
 
 export const SECTIONS: Section[] = ["symbol", "extension", "term", "acronym"];
 /** The two match choices the editor offers; a row's own other choice stays listed. */
 export const EDITOR_MATCHES: TermMatch[] = ["whole", "anywhere"];
 
-export function initialForm(row: EntryRow | null): EntryForm {
+/** A new entry is a whole-word, case-sensitive term for all models; a group is read as it is. */
+export function initialForm(
+  group: RowGroup | null,
+  modelIds: readonly string[],
+): EntryForm {
   const term =
-    row && typeof row.matching !== "string" ? row.matching.term : null;
+    group && typeof group.matching !== "string" ? group.matching.term : null;
   return {
-    written: row?.id.entry.key ?? "",
-    section: row?.id.entry.section ?? "term",
-    spoken: row?.spoken ?? "",
-    skip: row?.skip ?? false,
+    written: group?.written ?? "",
+    section: group?.section ?? "term",
+    spoken: group?.spoken ?? "",
+    skip: group?.skip ?? false,
     matching: term?.matching ?? "whole",
     caseSensitive: term?.case ?? true,
-    model: row?.id.entry.model ?? null,
+    scopes: group ? scopesOf(group, modelIds) : [null],
   };
 }
 
@@ -43,13 +45,11 @@ export function formComplete(form: EntryForm) {
   return form.spoken.trim() !== "";
 }
 
-/** The edit's entry, rule and previous key; only an owner row's key is replaced by a rename. */
-export function formSubmission(form: EntryForm, initial: EntryRow | null) {
-  const entry: EntryKey = {
-    section: form.section,
-    model: form.model,
-    key: form.written.trim(),
-  };
+/** The draft a save plans from; `opened` is the entry's scopes when the dialog opened. */
+export function entryDraft(
+  form: EntryForm,
+  opened: readonly Scope[],
+): EntryDraft {
   const spoken = form.spoken.trim();
   const rule: Rule =
     form.section === "term"
@@ -63,40 +63,13 @@ export function formSubmission(form: EntryForm, initial: EntryRow | null) {
           matching: null,
           case: null,
         };
-  const previous = initial?.id.origin === "owner" ? initial.id.entry : null;
-  return { entry, rule, previous };
-}
-
-/**
- * An edit of a row shown from several table rows: the rule goes to every member's scope and
- * each owner member's old key is replaced. The scope field is not used.
- */
-export function membersSubmission(
-  form: EntryForm,
-  members: readonly EntryRow[],
-) {
-  const { entry, rule } = formSubmission(form, null);
   return {
-    entries: members.map((member) => ({
-      ...entry,
-      model: member.id.entry.model,
-    })),
+    section: form.section,
+    written: form.written.trim(),
     rule,
-    previous: members.map((member) =>
-      member.id.origin === "owner" ? member.id.entry : null,
-    ),
+    scopes: form.scopes,
+    opened,
   };
-}
-
-/** The voices a check covers for rows that show as one: every downloaded voice, or the named ones. */
-export function membersModels(
-  members: readonly EntryRow[],
-  models: readonly TtsModelInfo[],
-) {
-  if (members.some((member) => member.id.entry.model === null)) {
-    return models.filter((model) => model.downloaded).map((model) => model.id);
-  }
-  return [...new Set(members.flatMap((member) => member.id.entry.model ?? []))];
 }
 
 /**
@@ -109,13 +82,16 @@ export function checkText(form: EntryForm) {
   return form.spoken.trim();
 }
 
-/** All voices, every downloaded model, and the row's own model even when it is not downloaded. */
-export function scopeChoices(
+/** The models Applies to lists: every downloaded one, then each model in `scopes` that is not. */
+export function appliesToChoices(
   models: readonly TtsModelInfo[],
-  current: string | null,
-) {
+  scopes: readonly Scope[],
+): string[] {
   const ids = models
-    .filter((model) => model.downloaded || model.id === current)
+    .filter((model) => model.downloaded)
     .map((model) => model.id);
-  return current !== null && !ids.includes(current) ? [...ids, current] : ids;
+  const absent = scopes.filter(
+    (scope): scope is string => scope !== null && !ids.includes(scope),
+  );
+  return [...ids, ...new Set(absent)];
 }

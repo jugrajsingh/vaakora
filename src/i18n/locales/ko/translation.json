@@ -36,6 +36,19 @@
     "debug": "디버그",
     "about": "정보"
   },
+  "nav": {
+    "dictation": "받아쓰기",
+    "readAloud": "소리 내어 읽기",
+    "models": "모델",
+    "settings": "설정",
+    "history": "히스토리",
+    "cleanup": "정리",
+    "vocabulary": "어휘",
+    "general": "일반",
+    "advanced": "고급",
+    "about": "정보",
+    "debug": "디버그"
+  },
   "onboarding": {
     "customModelDescription": "공식 지원되지 않음",
     "migration": {
@@ -345,6 +358,52 @@
     "lockedWhileTranscribing": "히스토리의 받아쓰기가 끝나면 모델을 변경할 수 있습니다."
   },
   "settings": {
+    "groups": {
+      "shortcuts": "단축키",
+      "model": "모델",
+      "languages": "언어",
+      "microphone": "마이크",
+      "output": "출력",
+      "text": "텍스트",
+      "overlay": "오버레이",
+      "history": "히스토리",
+      "playback": "재생",
+      "textHandling": "텍스트 처리",
+      "sound": "사운드",
+      "appearance": "모양",
+      "startup": "시작",
+      "models": "모델",
+      "dictationEngine": "받아쓰기 엔진",
+      "experimental": "실험적",
+      "provider": "제공자",
+      "instructions": "지침",
+      "localModel": "로컬 모델"
+    },
+    "jobModel": {
+      "manage": "모델 관리",
+      "choose": "모델 선택",
+      "loading": "모델 로딩 중",
+      "empty": {
+        "dictation": "아직 받아쓰기 모델이 없습니다.",
+        "readAloud": "아직 소리 내어 읽기 모델이 없습니다."
+      },
+      "help": {
+        "dictation": "다운로드한 받아쓰기 모델을 선택합니다.",
+        "readAloud": "다운로드한 소리 내어 읽기 모델을 선택합니다."
+      }
+    },
+    "rows": {
+      "unloadIdle": "유휴 모델 언로드",
+      "runOn": "받아쓰기 모델 실행 위치"
+    },
+    "shortcuts": {
+      "dictate": "받아쓰기",
+      "dictateWithCleanup": "정리하며 받아쓰기",
+      "cancel": "취소",
+      "readAloud": "소리 내어 읽기",
+      "activation": "활성화",
+      "activationHelp": "받아쓰기 단축키용"
+    },
     "modelSettings": {
       "title": "{{model}} 설정"
     },
@@ -363,9 +422,6 @@
             "name": "음성 텍스트 변환 단축키",
             "description": "음성을 녹음하고 테스트로 변환하는 키보드 단축키입니다."
           },
-          "transcribe_raw": {
-            "name": "원본 단축키"
-          },
           "cancel": {
             "name": "취소 단축키",
             "description": "현재 녹음을 취소하는 키보드 단축키입니다."
@@ -375,7 +431,6 @@
             "description": "선택 사항: 항상 AI 후처리를 적용하는 전용 단축키입니다."
           },
           "read_aloud": {
-            "name": "소리 내어 읽기 단축키",
             "description": "팝업을 열고 복사한 텍스트를 소리 내어 읽습니다."
           }
         },
@@ -487,11 +542,13 @@
         "title": "출력 장치",
         "description": "피드백 사운드를 위한 오디오 출력 장치를 선택하세요",
         "placeholder": "출력 장치 선택...",
-        "loading": "로딩 중..."
+        "loading": "로딩 중...",
+        "offReason": "오디오 피드백이 꺼져 있으면 사용되지 않습니다."
       },
       "volume": {
         "title": "볼륨",
-        "description": "오디오 피드백 사운드의 볼륨 조절"
+        "description": "오디오 피드백 사운드의 볼륨 조절",
+        "offReason": "오디오 피드백이 꺼져 있으면 사용되지 않습니다."
       }
     },
     "advanced": {
@@ -657,9 +714,6 @@
       }
     },
     "postProcessing": {
-      "provider": {
-        "title": "제공자"
-      },
       "api": {
         "title": "API",
         "provider": {
@@ -722,7 +776,6 @@
         "noCleanupModel": "후처리 모델 없음",
         "s1Description": "스타일, 구조, 맥락 설정을 사용합니다.",
         "plainDescription": "선택한 Handy 프롬프트를 사용합니다.",
-        "groupTitle": "로컬 모델",
         "size": "{{size}} MiB",
         "downloaded": "다운로드됨",
         "use": "사용",
@@ -768,25 +821,37 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0에 조건 하나가 추가됩니다: 이 모델은 항상 \"Superwhisper\"의 \"S1-mini\"로, 대소문자를 정확히 이대로 표기해야 합니다."
         },
-        "promptRequired": "프롬프트 그룹에서 비어 있지 않은 Handy 프롬프트를 선택하세요. 선택하기 전까지는 후처리를 건너뛰고 원본 텍스트 변환 결과를 사용합니다.",
+        "promptRequired": "지침 그룹에서 비어 있지 않은 Handy 프롬프트를 선택하세요. 선택하기 전까지는 후처리를 건너뛰고 원본 텍스트 변환 결과를 사용합니다.",
         "promptHidden": "이 모델은 자체 고정 프롬프트와 위의 스타일, 구조, 맥락 설정을 사용하므로 프롬프트 편집기가 숨겨집니다."
+      }
+    },
+    "cleanup": {
+      "enable": {
+        "label": "받아쓰기 정리",
+        "description": "'정리하며 받아쓰기' 단축키를 추가합니다. 이 단축키로 받아쓴 텍스트는 붙여넣기 전에 정리됩니다."
+      },
+      "sentTo": "받아쓰기 내용은 정리를 위해 {{host}}(으)로 전송됩니다.",
+      "prompt": {
+        "edit": "편집",
+        "new": "새 프롬프트",
+        "editTitle": "{{name}} 편집",
+        "newTitle": "새 프롬프트",
+        "delete": "삭제",
+        "deleteConfirm": "{{name}}을(를) 삭제할까요? 이미 이 프롬프트로 정리된 받아쓰기는 바뀌지 않습니다.",
+        "deleteAction": "프롬프트 삭제",
+        "lastPrompt": "프롬프트를 하나 이상 남겨 두세요.",
+        "saveFailed": "프롬프트를 저장하지 못했습니다.",
+        "createFirst": "새 프롬프트를 눌러 첫 정리 지침을 작성하세요."
       }
     },
     "history": {
       "title": "히스토리",
-      "cleaned": "후처리됨",
-      "cleanedWith": "{{model}}(으)로 후처리됨",
-      "raw": "원본",
-      "copyRaw": "원본 텍스트 복사",
-      "copyPostProcessed": "후처리된 텍스트 복사",
       "compare": {
         "title": "비교 보기",
         "diff": "차이점",
         "side_by_side": "나란히",
         "stacked": "세로로"
       },
-      "clearHistory": "히스토리 지우기",
-      "clearConfirmation": "별표 없는 히스토리 항목 {{count}}개와 녹음 {{recordings}}개를 삭제할까요? 별표 표시된 항목과 해당 녹음은 유지됩니다.",
       "openFolder": "녹음 폴더 열기",
       "loading": "히스토리 로딩 중...",
       "empty": "아직 변환된 내용이 없습니다. 녹음을 시작하여 히스토리를 만드세요!",
@@ -799,6 +864,7 @@
       "deleteConfirm": "이 항목과 녹음을 삭제할까요?",
       "deleteConfirmAction": "항목 삭제",
       "retranscribe": "다시 전사",
+      "retranscribeError": "이 항목을 다시 전사할 수 없습니다.",
       "cancelTranscription": "전사 취소",
       "transcribing": "전사 중...",
       "transcriptionFailed": "전사에 실패했습니다. 재시도 아이콘을 사용하여 다시 전사할 수 있습니다.",
@@ -820,6 +886,38 @@
         "weeks2": "2주가 지난 별표 없는 항목과 녹음을 삭제할까요? 별표 항목과 변환한 파일은 유지됩니다.",
         "months3": "3개월이 지난 별표 없는 항목과 녹음을 삭제할까요? 별표 항목과 변환한 파일은 유지됩니다.",
         "action": "항목 삭제"
+      }
+    },
+    "dictationHistory": {
+      "limitTitle": "최근 항목 유지",
+      "limitUnit": "항목",
+      "limitHelp": "'최근 항목 유지'가 보관할 항목 수입니다.",
+      "limitTimeLimit": "기간 제한과 함께는 사용되지 않습니다.",
+      "autoDeleteTitle": "자동 삭제",
+      "autoDeleteHelp": "별표 항목과 전사된 파일은 자동으로 삭제되지 않습니다.",
+      "options": {
+        "never": "끔(모두 유지)",
+        "preserveLimit": "최근 {{count}}개 유지",
+        "days3": "3일보다 오래된 항목",
+        "weeks2": "2주보다 오래된 항목",
+        "months3": "3개월보다 오래된 항목"
+      },
+      "folderTitle": "녹음 폴더",
+      "folderOpen": "열기"
+    },
+    "readAloudHistory": {
+      "keepTitle": "기록 유지",
+      "keepHelp": "텍스트만, 오디오 없음.",
+      "limitTitle": "최근 항목 유지",
+      "limitUnit": "항목",
+      "limitHelp": "'기록 유지'가 보관할 항목 수입니다.",
+      "limitOff": "기록이 꺼져 있으면 사용되지 않습니다.",
+      "options": {
+        "keepNothing": "유지하지 않음",
+        "keepLimit": "최근 {{count}}개 유지",
+        "days3": "최근 {{count}}개 유지, 3일보다 오래된 항목 제외",
+        "weeks2": "최근 {{count}}개 유지, 2주보다 오래된 항목 제외",
+        "months3": "최근 {{count}}개 유지, 3개월보다 오래된 항목 제외"
       }
     },
     "debug": {
@@ -1034,6 +1132,14 @@
     "noOptionsFound": "옵션을 찾을 수 없습니다",
     "cancel": "취소"
   },
+  "editor": {
+    "save": "저장",
+    "discard": {
+      "message": "변경 사항을 버릴까요?",
+      "keep": "계속 편집",
+      "action": "버리기"
+    }
+  },
   "errors": {
     "readAloudBusyPastingTitle": "Read Aloud Is Busy Pasting",
     "readAloudBusyPasting": "Handy is still pasting. Try Read aloud again after the paste finishes.",
@@ -1189,7 +1295,6 @@
       "finished": "완료",
       "error": "오류"
     },
-    "modelsTitle": "텍스트 음성 변환 모델",
     "modelsSubtitle": "음성 모델을 선택하세요. 속도 수치는 개발자의 컴퓨터에서 측정한 값이며, 사용자의 컴퓨터에서는 다를 수 있습니다.",
     "downloaded": "다운로드됨",
     "availableToDownload": "다운로드 가능",
@@ -1213,11 +1318,10 @@
     "saveToken": "토큰 설정",
     "model": "모델",
     "voice": "음성",
-    "preview": "음성 미리 듣기",
-    "speed": "속도: {{value}}x",
+    "preview": "듣기",
     "pitch": "피치: {{value}} 반음",
-    "output": "출력 장치",
-    "sameAsHandy": "Handy와 동일",
+    "output": "소리 내어 읽기 출력 장치",
+    "sameAsHandy": "{{device}}와 동일",
     "readCode": "코드 블록 읽기",
     "technicalReading": "기술 용어 읽기",
     "fullPaths": "전체 경로 읽기",
@@ -1250,49 +1354,22 @@
     },
     "voiceCount": "음성 {{count}}개",
     "downloadProgress": "모델 다운로드 진행률",
-    "settingsTitle": "텍스트 음성 변환",
     "speedLabel": "속도",
     "pitchLabel": "피치",
     "help": {
-      "model": "다운로드한 텍스트 음성 변환 모델을 선택합니다.",
-      "voice": "이 모델의 음성을 선택하고 미리 들어 보세요.",
+      "voice": "이 모델의 음성을 선택하고 들어 보세요.",
       "speed": "텍스트를 읽는 속도를 조정합니다.",
       "pitch": "음성 피치를 반음 단위로 조정합니다.",
       "output": "소리 내어 읽기 오디오를 재생할 위치를 선택합니다.",
       "readCode": "읽을 때 코드 블록을 포함합니다.",
       "technicalReading": "어휘 파일을 사용해 경로, 파일 이름, 플래그, 코드 이름을 생략 없이 읽습니다.",
       "fullPaths": "경로의 모든 폴더를 읽습니다. 끄면 파일 이름만 읽습니다.",
-      "fullLinks": "웹 주소 전체를 읽습니다. 끄면 사이트 이름만 말합니다."
-    },
-    "tabs": {
-      "settings": "설정",
-      "history": "기록",
-      "vocabulary": "어휘"
+      "fullLinks": "웹 주소 전체를 읽습니다. 끄면 사이트 이름만 말합니다.",
+      "technicalOff": "기술 용어 읽기가 꺼져 있으면 사용되지 않습니다."
     },
     "history": {
-      "title": "기록 설정",
       "reading": "쓰인 단어와 읽어 준 내용",
-      "hint": "단어 위로 드래그해 구간을 선택하고 읽는 방식을 수정하세요.",
-      "empty": "아직 소리 내어 읽은 내용이 없습니다. 재생한 읽기가 여기에 표시됩니다.",
-      "limit": {
-        "title": "기록 한도",
-        "description": "기록에 보관할 최대 읽기 수",
-        "entries": "개"
-      },
-      "retention": {
-        "title": "자동 삭제",
-        "description": "오래된 읽기도 자동으로 삭제",
-        "keepNothing": "보관 안 함",
-        "keepLimit": "최근 {{count}}개 유지",
-        "days3": "3일 후",
-        "weeks2": "2주 후",
-        "months3": "3개월 후"
-      },
-      "clear": {
-        "title": "기록 지우기",
-        "description": "저장된 모든 읽기를 삭제합니다. 어휘는 바뀌지 않습니다.",
-        "confirmation": "저장된 읽기 {{count}}개를 모두 삭제할까요? 어휘는 바뀌지 않습니다."
-      },
+      "readingHint": "위에는 쓰인 텍스트, 아래에는 실제로 읽힌 내용이 표시됩니다. 단어 위로 드래그해 읽는 방식을 수정하세요.",
       "retentionConfirm": {
         "message_one": "저장된 읽기 {{count}}개를 지금 삭제할까요? 어휘는 바뀌지 않습니다.",
         "message": "저장된 읽기 {{count}}개를 지금 삭제할까요? 어휘는 바뀌지 않습니다.",
@@ -1304,10 +1381,7 @@
         "written": "표기",
         "spoken": "발음",
         "kind": "종류",
-        "voices": "음성",
-        "match": "일치",
-        "enabled": "켜짐",
-        "actions": "작업"
+        "match": "일치"
       },
       "kinds": {
         "symbol": "기호",
@@ -1315,10 +1389,9 @@
         "term": "용어",
         "acronym": "약어"
       },
-      "voices": {
-        "all": "모든 음성",
-        "except": "{{names}} 제외",
-        "add": "+ 음성"
+      "models": {
+        "all": "모든 모델",
+        "except": "{{names}} 제외"
       },
       "origins": {
         "builtin": "기본 제공",
@@ -1331,7 +1404,6 @@
         "listen": "듣기",
         "delete": "삭제",
         "reset": "기본값으로 초기화",
-        "save": "저장",
         "cancel": "취소"
       },
       "match": {
@@ -1347,13 +1419,13 @@
       },
       "filter": "표기 또는 읽기 검색",
       "toggle": "{{written}} 사용",
-      "editTitle": "항목 편집",
       "fields": {
         "skip": "건너뛰기",
         "appliesTo": "적용 대상"
       },
-      "empty": "필터와 일치하는 항목이 없습니다.",
-      "deleteConfirmation": "{{written}}을(를) 내 어휘에서 삭제할까요? 되돌릴 수 없습니다.",
+      "emptyQuery": "「{{query}}」와(과) 일치하는 항목이 없습니다.",
+      "emptyFilters": "이 필터와 일치하는 항목이 없습니다.",
+      "clearFilters": "필터 지우기",
       "resetConfirm": "{{written}}을(를) 기본 제공 읽기로 초기화할까요? 내 항목이 삭제됩니다.",
       "errors": {
         "changed": "어휘 파일이 디스크에서 변경되었습니다. 표를 다시 불러왔으니 수정을 다시 해 주세요.",
@@ -1361,7 +1433,7 @@
         "invalidEdit": "이 항목을 저장하지 못했습니다: {{message}}",
         "tooLarge": "어휘 파일이 1 MiB를 넘게 되어 아무것도 저장하지 않았습니다.",
         "io": "어휘 파일을 쓰지 못했습니다: {{message}}",
-        "voicesChanged": "대기하는 동안 어휘가 바뀌어 음성 변경이 적용되지 않았습니다. 음성을 다시 선택하세요."
+        "voicesChanged": "대기하는 동안 어휘가 바뀌어 변경이 적용되지 않았습니다."
       },
       "problems": {
         "shadowed": "적용되지 않음: 우선순위가 높은 항목이 항상 우선합니다",
@@ -1382,35 +1454,50 @@
         "invalid": "저장할 수 없습니다: {{detail}}"
       },
       "check": {
-        "title": "모든 음성에서 확인",
+        "title": "모든 모델에서 확인",
         "playAll": "모두 재생",
         "playing": "{{model}} 재생 중",
-        "checking": "각 음성을 확인하는 중...",
+        "checking": "각 모델을 확인하는 중...",
         "heardRight": "올바르게 들림",
         "missed": "잘못 들림: {{heard}}",
         "failed": "확인할 수 없음: {{error}}",
         "row": "{{model}}: {{outcome}}",
-        "advisory": "일부 음성이 이것을 올바르게 읽지 않았습니다. 그래도 저장할 수 있습니다.",
-        "saveAllAnyway": "그래도 모든 음성에 저장",
-        "savePassedOnly": "통과한 음성에만 저장",
-        "pickOne": "음성 하나 선택",
+        "advisory": "일부 모델이 이것을 올바르게 읽지 않았습니다. 그래도 저장할 수 있습니다.",
+        "saveAllAnyway": "그래도 모든 모델에 저장",
+        "savePassedOnly": "통과한 모델에만 저장",
+        "pickOne": "모델 하나 선택",
         "dictating": "받아쓰기가 진행 중입니다. 끝나면 다시 확인하세요.",
         "transcribeFailed": "음성 인식이 음성을 받아쓰지 못했습니다."
       },
       "filters": {
-        "voice": "음성",
+        "model": "모델",
         "kind": "종류",
         "source": "출처",
         "all": "전체",
         "changed": "내가 변경함",
-        "onlyProblems": "문제 있는 항목만"
+        "problems": "문제"
       },
       "defaultLabel": "기본값:",
-      "defaultLabelFor": "{{voices}}의 기본값:"
+      "defaultLabelFor": "{{voices}}의 기본값:",
+      "dialog": {
+        "editTitle": "{{written}} 편집",
+        "context": "{{written}}, 지금은 {{spoken}}(으)로 읽습니다.",
+        "overrides": "내 항목이 기본 제공 읽기 {{default}}보다 우선합니다.",
+        "builtinDelete": "기본 제공 항목은 끌 수 있지만 삭제할 수는 없습니다.",
+        "deleteConfirm": "{{written}}을(를) 삭제할까요? 다른 항목은 유지됩니다.",
+        "deleteAction": "항목 삭제",
+        "conflict": "어휘 파일이 디스크에서 변경되어 다시 불러왔습니다. 항목을 확인한 다음 다시 저장하세요.",
+        "refused": "어휘가 변경되어 이 항목을 지금 상태로는 더 이상 저장할 수 없습니다. 적용 대상을 확인하거나, 취소하고 다시 추가하세요.",
+        "scopeRefused": "이 항목에서는 이 모델들을 변경할 수 없습니다."
+      },
+      "acronymStylePerModel": "모델별 약어 스타일",
+      "invalid": {
+        "builtinUsed": "수정될 때까지 기본 제공 읽기가 사용됩니다.",
+        "reload": "다시 불러오기",
+        "openFolder": "폴더 열기"
+      }
     },
     "correction": {
-      "add": "수정 추가",
-      "start": "수정 추가",
       "writtenText": "작성된 텍스트",
       "next": "다음",
       "title": "읽기 수정",
@@ -1421,12 +1508,11 @@
       "deriving": "규칙을 찾는 중...",
       "exactOnly": "정확히 이 텍스트만",
       "chooseScope": "적용 대상 선택",
-      "scopeRequired": "저장하기 전에 모든 음성 또는 음성 하나를 선택하세요.",
-      "acronymStyle": "음성별 약어 스타일",
+      "scopeRequiredModels": "저장하기 전에 모든 모델 또는 모델 하나를 선택하세요.",
       "style": {
         "spaced": "글자 따로 (C L I)",
         "capitals": "대문자 (CLI)",
-        "inherit": "모든 음성과 동일"
+        "inheritModels": "모든 모델과 동일"
       },
       "reach": {
         "extension": "모든 {{extension}} 파일에 적용",
@@ -1447,5 +1533,67 @@
         "transcribeFailed": "음성 인식이 말한 내용을 받아쓰지 못했습니다."
       }
     }
+  },
+  "history": {
+    "change": "변경",
+    "changeLabel": "기록 보관 방식 변경",
+    "transcribeFile": "파일 받아쓰기",
+    "notKept": "기록이 보관되지 않습니다.",
+    "empty": {
+      "dictation": "아직 받아쓰기가 없습니다.",
+      "dictationHint": "<dictate/>를 누르면 받아쓰기, <cleanup/>를 누르면 정리하며 받아쓰기를 합니다.",
+      "dictationHintDictate": "<keys/>를 눌러 받아쓰기를 시작하세요.",
+      "dictationHintCleanup": "<keys/>를 눌러 정리하며 받아쓰기를 시작하세요.",
+      "read": "아직 읽은 내용이 없습니다.",
+      "readHint": "텍스트를 복사하고 <keys/>를 누르세요."
+    },
+    "summary": {
+      "dictation": {
+        "never": "모든 항목을 보관합니다. 별표 표시된 항목은 유지됩니다.",
+        "none": "항목을 보관하지 않습니다. 별표 표시된 항목과 받아쓴 파일은 유지됩니다.",
+        "latest_one": "최근 항목을 보관합니다. 별표 표시된 항목은 유지됩니다.",
+        "latest": "최근 {{count}}개 항목을 보관합니다. 별표 표시된 항목은 유지됩니다.",
+        "days3": "3일보다 오래된 항목을 삭제합니다. 별표 표시된 항목은 유지됩니다.",
+        "weeks2": "2주보다 오래된 항목을 삭제합니다. 별표 표시된 항목은 유지됩니다.",
+        "months3": "3개월보다 오래된 항목을 삭제합니다. 별표 표시된 항목은 유지됩니다."
+      },
+      "read": {
+        "latest_one": "최근 항목을 보관합니다.",
+        "latest": "최근 {{count}}개 항목을 보관합니다.",
+        "days3_one": "최근 항목을 보관하며, 3일보다 오래된 항목은 없습니다.",
+        "days3": "최근 {{count}}개 항목을 보관하며, 3일보다 오래된 항목은 없습니다.",
+        "weeks2_one": "최근 항목을 보관하며, 2주보다 오래된 항목은 없습니다.",
+        "weeks2": "최근 {{count}}개 항목을 보관하며, 2주보다 오래된 항목은 없습니다.",
+        "months3_one": "최근 항목을 보관하며, 3개월보다 오래된 항목은 없습니다.",
+        "months3": "최근 {{count}}개 항목을 보관하며, 3개월보다 오래된 항목은 없습니다."
+      }
+    },
+    "clear": {
+      "action": "기록 지우기",
+      "dictationConfirm_one": "항목 {{count}}개와 {{recordings}}을(를) 삭제할까요? 별표 표시된 항목은 유지됩니다.",
+      "dictationConfirm": "항목 {{count}}개와 {{recordings}}을(를) 삭제할까요? 별표 표시된 항목은 유지됩니다.",
+      "recordings_one": "녹음 {{count}}개",
+      "recordings": "녹음 {{count}}개",
+      "readConfirm_one": "항목 {{count}}개를 삭제할까요? 어휘는 바뀌지 않습니다.",
+      "readConfirm": "항목 {{count}}개를 삭제할까요? 어휘는 바뀌지 않습니다.",
+      "nothing": "지울 항목이 없습니다."
+    },
+    "row": {
+      "open": "항목 보기",
+      "close": "항목 숨기기"
+    },
+    "copy": "텍스트 복사",
+    "copyCleaned": "정리된 텍스트 복사",
+    "copyOriginal": "원본 복사",
+    "star": "별표",
+    "unstar": "별표 해제",
+    "retranscribe": "다시 전사",
+    "cancelTranscription": "전사 취소",
+    "delete": "삭제",
+    "cleanedWith": "{{model}}(으)로 정리됨.",
+    "cleaned": "정리된 텍스트",
+    "original": "원본 전사",
+    "diffNote": "원본 전사와의 차이를 표시합니다.",
+    "noCleanup": "정리 안 함"
   }
 }

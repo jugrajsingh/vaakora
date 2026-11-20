@@ -61,6 +61,41 @@ describe("ReadingView", () => {
     assert.match(tokenMarkup(html, "Open"), /data-changed="false"/);
     assert.doesNotMatch(tokenMarkup(html, "Open"), /bg-warning-wash/);
   });
+  it("marks a changed word without colour alone", () => {
+    const html = render(null);
+    const changed = tokenMarkup(html, "README.md");
+    const [written, spoken] = [
+      changed.match(/<span class="([^"]*)">README\.md<\/span>/)?.[1],
+      changed.match(/<span class="([^"]*)">README dot markdown<\/span>/)?.[1],
+    ];
+    assert.ok(written && spoken, "both lines of the changed token");
+    assert.ok(written.split(/\s+/).includes("border-b-2"));
+    assert.ok(written.split(/\s+/).includes("border-warning"));
+    assert.ok(spoken.split(/\s+/).includes("underline"));
+    assert.ok(spoken.split(/\s+/).includes("underline-offset-2"));
+    const plain = tokenMarkup(html, "Open");
+    assert.doesNotMatch(plain, /border-warning|underline/);
+  });
+  it("lets a long token wrap inside the column", () => {
+    const html = render(null);
+    for (const word of ["Open", "README.md"]) {
+      const markup = tokenMarkup(html, word);
+      const lines = [...markup.matchAll(/<span class="([^"]*)">/g)].map(
+        (match) => match[1].split(/\s+/),
+      );
+      const owned = lines.filter((classes) =>
+        classes.some((name) => name === "text-sm" || name === "text-xs"),
+      );
+      assert.equal(owned.length, 2, `two lines of ${word}`);
+      for (const classes of owned) {
+        assert.ok(classes.includes("max-w-full"), classes.join(" "));
+        assert.ok(
+          classes.includes("[overflow-wrap:anywhere]"),
+          classes.join(" "),
+        );
+      }
+    }
+  });
   it("marks a skipped word", () => {
     const html = tokenMarkup(render(null), "ABC-123");
     assert.match(html, /line-through/);

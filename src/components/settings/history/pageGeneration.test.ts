@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import type { HistoryEntry, PaginatedHistory, Result } from "@/bindings";
-import en from "../../../i18n/locales/en/translation.json";
+import type {
+  HistoryClearSummary,
+  HistoryEntry,
+  PaginatedHistory,
+  Result,
+} from "@/bindings";
 import {
   PageGeneration,
-  createHistoryActions,
+  createCompareViewAction,
+  createHistoryClear,
   createHistoryPageLoader,
   reloadHistoryOnUpdate,
   mergeHistoryEntries,
@@ -12,6 +17,7 @@ import {
   createHistoryScrollAnchor,
   createHistoryEntryActions,
   retryHistoryWithAnchor,
+  sameSummary,
 } from "./pageGeneration";
 const gate = new PageGeneration();
 const beforeClear = gate.current();
@@ -520,61 +526,128 @@ await assert.rejects(
 assert.equal(retryBusy, false);
 console.log("history viewport seam: all assertions passed");
 
-let confirmation = false;
-let clearCalls = 0;
-let actionReloads = 0;
-let summaryCalls = 0;
-let clearing = false;
-let changing = false;
-let mode:
-  | "ok"
-  | "summary"
-  | "dialog"
-  | "clear"
-  | "reload"
-  | "command"
-  | "refresh" = "ok";
-const viewCalls: string[] = [];
-const summaryWait =
-  deferred<Result<{ entries: number; recordings: number }, string>>();
-let waitForSummary = false;
-const viewWait = deferred<void>();
-let waitForView = false;
-const actions = createHistoryActions({
-  getSummary: async (keepSaved) => {
-    assert.equal(keepSaved, true);
-    summaryCalls++;
-    if (waitForSummary) return summaryWait.promise;
-    return mode === "summary"
-      ? { status: "error", error: "summary failed" }
-      : { status: "ok", data: { entries: 5, recordings: 3 } };
+const clearCalls: string[] = [];
+let summaryResult: Result<HistoryClearSummary, string> = {
+  status: "ok",
+  data: { entries: 5, recordings: 3 },
+};
+let newestResult: Result<PaginatedHistory, string> = {
+  status: "ok",
+  data: { entries: [row(9)], has_more: true },
+};
+let clearResult: Result<HistoryClearSummary, string> = {
+  status: "ok",
+  data: { entries: 5, recordings: 3 },
+};
+let reloadFails = false;
+const historyClear = createHistoryClear({
+  getEntries: async (cursor, limit) => {
+    clearCalls.push(`entries ${cursor} ${limit}`);
+    return newestResult;
   },
-  confirm: async (summary) => {
-    assert.deepEqual(summary, { entries: 5, recordings: 3 });
-    assert.equal(clearing, true);
-    if (mode === "dialog") throw new Error("dialog failed");
-    return confirmation;
+  getSummary: async (keepSaved) => {
+    clearCalls.push(`summary ${keepSaved}`);
+    return summaryResult;
   },
   clear: async (keepSaved) => {
-    assert.equal(keepSaved, true);
-    clearCalls++;
-    return mode === "clear"
-      ? { status: "error", error: "clear failed" }
-      : { status: "ok", data: { entries: 5, recordings: 3 } };
+    clearCalls.push(`clear ${keepSaved}`);
+    return clearResult;
   },
   reload: async () => {
-    actionReloads++;
-    if (mode === "reload") throw new Error("reload failed");
+    clearCalls.push("reload");
+    if (reloadFails) throw new Error("reload failed");
   },
+  setError: (value) => {
+    error = value;
+    clearCalls.push(`error ${value}`);
+  },
+});
+
+// dictation_clear_counts_with_starred_kept
+error = "earlier failure";
+assert.deepEqual(await historyClear.count(), {
+  entries: 5,
+  recordings: 3,
+  newest: 9,
+});
+assert.deepEqual(
+  clearCalls,
+  ["error null", "entries null 1", "summary true"],
+  "dictation_clear_counts_with_starred_kept: newest entry first, then the unstarred count",
+);
+newestResult = { status: "ok", data: { entries: [], has_more: false } };
+summaryResult = { status: "ok", data: { entries: 0, recordings: 0 } };
+assert.deepEqual(await historyClear.count(), {
+  entries: 0,
+  recordings: 0,
+  newest: null,
+});
+summaryResult = { status: "error", error: "summary failed" };
+assert.equal(await historyClear.count(), null);
+assert.equal(error, "summary failed");
+summaryResult = { status: "ok", data: { entries: 5, recordings: 3 } };
+newestResult = { status: "error", error: "entries failed" };
+clearCalls.length = 0;
+assert.equal(await historyClear.count(), null);
+assert.equal(error, "entries failed");
+assert.ok(
+  !clearCalls.includes("summary true"),
+  "dictation_clear_counts_with_starred_kept: no count without the newest entry",
+);
+newestResult = { status: "ok", data: { entries: [row(9)], has_more: true } };
+console.log("dictation_clear_counts_with_starred_kept: passed");
+
+// dictation_clear_reloads_after_clearing
+clearCalls.length = 0;
+error = null;
+await historyClear.clear();
+assert.deepEqual(clearCalls, ["clear true", "reload"]);
+assert.equal(error, null);
+clearCalls.length = 0;
+clearResult = { status: "error", error: "clear failed" };
+await historyClear.clear();
+assert.deepEqual(
+  clearCalls,
+  ["clear true", "error clear failed"],
+  "dictation_clear_reloads_after_clearing: a failed clear does not reload",
+);
+clearResult = { status: "ok", data: { entries: 5, recordings: 3 } };
+reloadFails = true;
+clearCalls.length = 0;
+await historyClear.clear();
+assert.deepEqual(clearCalls, ["clear true", "reload", "error reload failed"]);
+reloadFails = false;
+console.log("dictation_clear_reloads_after_clearing: passed");
+
+// dictation_clear_compares_entries_and_recordings
+const asked = { entries: 5, recordings: 3, newest: 9 };
+assert.equal(sameSummary(asked, { ...asked }), true);
+assert.equal(sameSummary(asked, { ...asked, entries: 6 }), false);
+assert.equal(
+  sameSummary(asked, { ...asked, recordings: 4 }),
+  false,
+  "dictation_clear_compares_entries_and_recordings: a new recording asks again",
+);
+assert.equal(
+  sameSummary(asked, { ...asked, newest: 10 }),
+  false,
+  "dictation_clear_compares_entries_and_recordings: one added, the oldest pruned",
+);
+assert.equal(sameSummary(asked, { ...asked, newest: null }), false);
+console.log("dictation_clear_compares_entries_and_recordings: passed");
+
+let changing = false;
+let mode: "ok" | "command" | "refresh" = "ok";
+const viewCalls: string[] = [];
+const viewWait = deferred<void>();
+let waitForView = false;
+const changeView = createCompareViewAction({
   changeCompareView: async (view) => {
     viewCalls.push(view);
     assert.equal(changing, true);
     if (waitForView) await viewWait.promise;
     if (mode === "command" || mode === "refresh")
       throw new Error(`${mode} failed`);
-  },
-  setClearing: (value) => {
-    clearing = value;
   },
   setChangingView: (value) => {
     changing = value;
@@ -583,95 +656,41 @@ const actions = createHistoryActions({
     error = value;
   },
 });
-await actions.clearHistory();
-assert.equal(clearCalls, 0);
-assert.equal(actionReloads, 0);
-assert.equal(clearing, false);
-confirmation = true;
-waitForSummary = true;
-const busyClear = actions.clearHistory();
-assert.equal(clearing, true);
-await actions.clearHistory();
-assert.equal(summaryCalls, 2);
-assert.equal(clearCalls, 0);
-summaryWait.resolve({ status: "ok", data: { entries: 5, recordings: 3 } });
-await busyClear;
-waitForSummary = false;
-assert.equal(clearCalls, 1);
-assert.equal(actionReloads, 1);
-assert.equal(clearing, false);
-for (const failureMode of ["summary", "dialog", "clear", "reload"] as const) {
-  mode = failureMode;
-  const previousClears: number = clearCalls;
-  const previousReloads: number = actionReloads;
-  await actions.clearHistory();
-  assert.equal(error, `${failureMode} failed`);
-  assert.equal(clearing, false);
-  assert.equal(
-    clearCalls - previousClears,
-    failureMode === "clear" || failureMode === "reload" ? 1 : 0,
-  );
-  assert.equal(
-    actionReloads - previousReloads,
-    failureMode === "reload" ? 1 : 0,
-  );
-}
 mode = "ok";
-await actions.changeView("invalid");
+await changeView("invalid");
 assert.deepEqual(viewCalls, []);
 waitForView = true;
-const busyView = actions.changeView("stacked");
+const busyView = changeView("stacked");
 assert.equal(changing, true);
-await actions.changeView("diff");
-assert.deepEqual(viewCalls, ["stacked"]);
+const ignoredView = changeView("diff");
+const callsWhileBusy = [...viewCalls];
 viewWait.resolve();
 await busyView;
+await ignoredView;
+assert.deepEqual(callsWhileBusy, ["stacked"]);
 assert.equal(changing, false);
 waitForView = false;
 for (const failureMode of ["command", "refresh"] as const) {
   mode = failureMode;
-  await actions.changeView("side_by_side");
+  await changeView("side_by_side");
   assert.equal(error, `${failureMode} failed`);
   assert.equal(changing, false);
 }
 mode = "ok";
-await actions.changeView("diff");
+await changeView("diff");
 assert.equal(error, null);
 
 const pageSource = readFileSync(
   new URL("./HistorySettings.tsx", import.meta.url),
   "utf8",
 );
-const dialogSource = pageSource.match(
-  /confirm: \(summary\) =>([\s\S]*?)\n\s*setClearing,/u,
-)?.[1];
-assert.ok(dialogSource, "Clear History confirmation must be present");
-const dialogKeys = Array.from(
-  dialogSource.matchAll(/\bt\("([^"]+)"/gu),
-  (match) => match[1],
+assert.ok(
+  !pageSource.includes("@tauri-apps/plugin-dialog"),
+  "HistorySettings imports nothing from the dialog plugin",
 );
-assert.equal(
-  dialogKeys.length,
-  4,
-  "Audit the message, title, OK and Cancel translations",
+assert.match(
+  pageSource,
+  /<ClearHistory\b[\s\S]*?same=\{sameSummary\}/u,
+  "the dictation Clear history compares with sameSummary",
 );
-function englishValue(key: string): unknown {
-  let value: unknown = en;
-  for (const part of key.split(".")) {
-    if (typeof value !== "object" || value === null || !(part in value))
-      return undefined;
-    value = (value as Record<string, unknown>)[part];
-  }
-  return value;
-}
-for (const key of dialogKeys) {
-  assert.equal(
-    typeof englishValue(key),
-    "string",
-    `Missing English dialog translation: ${key}`,
-  );
-}
-const cancelKey = dialogSource.match(/cancelLabel:\s*t\("([^"]+)"\)/u)?.[1];
-assert.ok(cancelKey, "Clear History cancel label must use a translation");
-assert.equal(englishValue(cancelKey), "Cancel");
 console.log("pageGeneration: all assertions passed");

@@ -1,62 +1,65 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   AcronymStyle,
   Edit,
-  EntryKey,
   EntryRow,
-  Rule,
   TtsModelInfo,
   VocabularyTable as VocabularyData,
 } from "@/bindings";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { createRowConfirm } from "@/components/shared/InlineConfirm";
 import { AcronymStyles } from "./AcronymStyles";
 import { CorrectionBox } from "./CorrectionBox";
 import { CorrectionStart } from "./CorrectionStart";
-import { visibleFailures, type Failure } from "./actions";
-import { filterGroups, type Filters } from "./filter";
+import { visibleFailures, type Failure, type SaveResult } from "./actions";
+import { EntryDialog } from "./EntryDialog";
 import {
-  groupRows,
-  type RowGroup,
-  switchPlanFor,
-  voiceChangePlan,
-  voiceEdits,
-  voiceOptions,
-} from "./groups";
-import { RowEditor } from "./RowEditor";
+  deletePlan,
+  entryEdits,
+  resetPlan,
+  type EntryDraft,
+  type EntryPlan,
+} from "./entryPlan";
+import { emptyState, filterGroups, NO_FILTERS, type Filters } from "./filter";
+import { groupRows, scopesOf, switchPlanFor, type RowGroup } from "./groups";
 import { VocabularyFilters } from "./VocabularyFilters";
 import { VocabularyTable } from "./VocabularyTable";
 
 /**
- * An open editor: the row being edited (null for a new entry), every table row that shows as that
- * one row, and the table revision it came from.
+ * An open entry dialog: the group it edits (null for Add entry) as it was when the dialog opened,
+ * the revision its saves are based on, and the line it shows.
  */
-export interface Draft {
-  initial: EntryRow | null;
-  members: readonly EntryRow[];
+export interface EntryOpen {
+  group: RowGroup | null;
   base: string;
+  notice: Failure | null;
 }
 
-/** A Reset to default waiting for its confirmation, with the table revision it was pressed on. */
-interface PendingReset {
-  group: RowGroup;
-  base: string;
+/** The dialog after a save, delete or reset: closed when saved, else open with what happened. */
+export function dialogOutcome(
+  open: EntryOpen,
+  result: SaveResult,
+): EntryOpen | null {
+  switch (result.status) {
+    case "saved":
+      return null;
+    case "conflict":
+      return {
+        ...open,
+        base: result.revision,
+        notice: { key: "tts.vocabulary.dialog.conflict" },
+      };
+    case "refused":
+      return { ...open, notice: { key: "tts.vocabulary.dialog.refused" } };
+    case "failed":
+      return { ...open, notice: result.failure };
+  }
 }
 
-/** The shown row with this key still offers Reset to default. */
-export function resetOffered(
-  visible: readonly RowGroup[],
-  readOnly: boolean,
-  key: string,
-): boolean {
-  return (
-    !readOnly &&
-    visible.some((group) => group.key === key && group.overriding.length > 0)
-  );
-}
+/** The dialog's identity; a rebase keeps it, so the typed form survives a conflict. */
+export const entryDialogKey = (open: EntryOpen) => open.group?.key ?? "new";
 
 /** An open correction: the text the owner chose and what a read says for it. */
 export interface Correction {
@@ -65,18 +68,14 @@ export interface Correction {
 }
 
 export interface VocabularyActions {
-  reset: (rows: readonly EntryRow[], base: string) => unknown;
-  remove: (rows: readonly EntryRow[], base: string) => unknown;
   applyPlan: (
     plan: (latest: VocabularyData) => Edit[] | null,
     base: string,
   ) => unknown;
-  put: (
-    entries: readonly EntryKey[],
-    rule: Rule,
-    previous: readonly (EntryKey | null)[],
+  saveEntry: (
+    plan: (latest: VocabularyData) => EntryPlan,
     base: string,
-  ) => Promise<boolean>;
+  ) => Promise<SaveResult>;
   listen: (row: EntryRow) => unknown;
   setAcronymStyle: (
     model: string | null,
@@ -93,105 +92,142 @@ export function VocabularyView({
   failure,
   filters,
   setFilters,
-  draft,
-  setDraft,
+  editing,
+  setEditing,
   correction,
   setCorrection,
   readingModel,
   actions,
+  reload,
+  openFolder,
 }: {
   table: VocabularyData;
   models: readonly TtsModelInfo[];
   failure: Failure | null;
   filters: Filters;
   setFilters: (filters: Filters) => void;
-  draft: Draft | null;
-  setDraft: (draft: Draft | null) => void;
-  /** The correction box when open, or `starting` the text prompt before it. */
+  editing: EntryOpen | null;
+  setEditing: Dispatch<SetStateAction<EntryOpen | null>>;
+  /** The correction dialog when open, or `starting` the text dialog before it. */
   correction: Correction | "starting" | null;
   setCorrection: (correction: Correction | "starting" | null) => void;
   /** The selected voice model, which a correction is read with. */
   readingModel: string;
   actions: VocabularyActions;
+  /** Reads the vocabulary file again. */
+  reload: () => void;
+  /** Opens the folder that holds the vocabulary file. */
+  openFolder: () => void;
 }) {
   const { t } = useTranslation();
   const readOnly = table.file_error !== null;
-  const shown = visibleFailures(table.file_error, failure);
-  const finish = async (
-    open: Draft,
-    entries: readonly EntryKey[],
-    rule: Rule,
-    previous: readonly (EntryKey | null)[],
-  ) => {
-    if (await actions.put(entries, rule, previous, open.base)) setDraft(null);
-  };
+  // visibleFailures lists a file error first; the invalid-file block below shows that one.
+  const shown = visibleFailures(table.file_error, failure).slice(
+    readOnly ? 1 : 0,
+  );
+  const [busy, setBusy] = useState(false);
   const modelIds = models.map((model) => model.id);
   const groups = groupRows(table.rows, modelIds);
   const visible = filterGroups(groups, filters);
-  const [pendingReset, setPendingReset] = useState<PendingReset | null>(null);
-  const latest = useRef({ reset: actions.reset, visible, readOnly });
-  latest.current = { reset: actions.reset, visible, readOnly };
-  const resetConfirm = useMemo(
-    () =>
-      createRowConfirm<PendingReset>({
-        show: setPendingReset,
-        present: ({ group }) =>
-          resetOffered(
-            latest.current.visible,
-            latest.current.readOnly,
-            group.key,
-          ),
-        apply: ({ group, base }) =>
-          void latest.current.reset(group.overriding, base),
-      }),
-    [],
-  );
-  const resetting = pendingReset?.group.key ?? null;
-  useEffect(() => resetConfirm.prune());
+  const open = (group: RowGroup | null) =>
+    setEditing({ group, base: table.revision, notice: null });
+  /** Runs one dialog save; its outcome reaches the dialog only if that one is still open. */
+  const settle = async (
+    current: EntryOpen,
+    plan: (latest: VocabularyData) => EntryPlan,
+  ) => {
+    setBusy(true);
+    try {
+      const result = await actions.saveEntry(plan, current.base);
+      setEditing((now) =>
+        now === current ? dialogOutcome(current, result) : now,
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  const save = (current: EntryOpen, draft: EntryDraft) =>
+    settle(current, (latest) =>
+      entryEdits(latest.rows, modelIds, current.group?.key ?? null, draft),
+    );
+  /** Delete or Reset to default of the dialog's group, at the scopes it opened with. */
+  const removeWith = (current: EntryOpen, plan: typeof deletePlan) => {
+    const { group } = current;
+    if (!group) return;
+    const opened = scopesOf(group, modelIds);
+    void settle(current, (latest) =>
+      plan(latest.rows, modelIds, group.key, opened),
+    );
+  };
+  const empty = emptyState(filters);
   return (
-    <section className="max-w-3xl w-full mx-auto space-y-4">
+    <section className="w-full max-w-3xl min-w-0 space-y-4">
+      <div className="sticky top-0 z-10 space-y-2 bg-background py-2">
+        <div className="flex items-center gap-2">
+          <Input
+            type="search"
+            className="flex-grow"
+            aria-label={t("tts.vocabulary.filter")}
+            placeholder={t("tts.vocabulary.filter")}
+            value={filters.query}
+            onChange={(event) =>
+              setFilters({ ...filters, query: event.target.value })
+            }
+          />
+          <Button
+            variant="secondary"
+            disabled={
+              readOnly ||
+              editing !== null ||
+              correction !== null ||
+              readingModel === ""
+            }
+            onClick={() => setCorrection("starting")}
+          >
+            {t("tts.correction.title")}
+          </Button>
+          <Button
+            disabled={readOnly || editing !== null || correction !== null}
+            onClick={() => open(null)}
+          >
+            {t("tts.vocabulary.buttons.add")}
+          </Button>
+        </div>
+        <VocabularyFilters
+          filters={filters}
+          models={models}
+          setFilters={setFilters}
+        />
+      </div>
+      {readOnly && (
+        <div
+          role="alert"
+          className="space-y-2 rounded-lg bg-error-wash p-4 text-sm"
+        >
+          <p className="text-error">
+            {t("tts.vocabulary.errors.fileInvalid", {
+              message: table.file_error,
+            })}
+          </p>
+          <p className="font-mono break-all text-ink-2">{table.path}</p>
+          <p className="text-ink-2">
+            {t("tts.vocabulary.invalid.builtinUsed")}
+          </p>
+          <div className="flex gap-2">
+            <Button size="sm" variant="secondary" onClick={reload}>
+              {t("tts.vocabulary.invalid.reload")}
+            </Button>
+            <Button size="sm" variant="secondary" onClick={openFolder}>
+              {t("tts.vocabulary.invalid.openFolder")}
+            </Button>
+          </div>
+        </div>
+      )}
       {shown.map(({ key, message }) => (
         <div role="alert" key={key}>
           <Alert>{t(key, { message })}</Alert>
         </div>
       ))}
-      <div className="flex items-center gap-2">
-        <Input
-          type="search"
-          className="flex-grow"
-          aria-label={t("tts.vocabulary.filter")}
-          placeholder={t("tts.vocabulary.filter")}
-          value={filters.query}
-          onChange={(event) =>
-            setFilters({ ...filters, query: event.target.value })
-          }
-        />
-        <Button
-          variant="secondary"
-          disabled={
-            readOnly ||
-            draft !== null ||
-            correction !== null ||
-            readingModel === ""
-          }
-          onClick={() => setCorrection("starting")}
-        >
-          {t("tts.correction.add")}
-        </Button>
-        <Button
-          disabled={readOnly || draft !== null || correction !== null}
-          onClick={() =>
-            setDraft({ initial: null, members: [], base: table.revision })
-          }
-        >
-          {t("tts.vocabulary.buttons.add")}
-        </Button>
-      </div>
-      <VocabularyFilters
-        filters={filters}
-        models={models}
-        setFilters={setFilters}
-      />
       {correction === "starting" && (
         <CorrectionStart
           speak={(written) => actions.speak(written, readingModel)}
@@ -210,64 +246,47 @@ export function VocabularyView({
           onClose={() => setCorrection(null)}
         />
       )}
-      {draft !== null && (
-        <RowEditor
-          key={draft.initial ? JSON.stringify(draft.initial.id) : "new"}
-          initial={draft.initial}
-          members={draft.members}
+      {editing !== null && (
+        <EntryDialog
+          key={entryDialogKey(editing)}
+          group={editing.group}
+          rows={table.rows}
+          modelIds={modelIds}
           models={models}
           styles={table.acronym_styles}
-          submit={(entries, rule, previous) =>
-            void finish(draft, entries, rule, previous)
-          }
-          cancel={() => setDraft(null)}
+          notice={editing.notice}
+          fileError={table.file_error}
+          busy={busy}
+          save={(draft) => void save(editing, draft)}
+          remove={() => removeWith(editing, deletePlan)}
+          reset={() => removeWith(editing, resetPlan)}
+          close={() => setEditing(null)}
         />
       )}
       {visible.length === 0 ? (
-        <p className="text-sm text-ink-3 px-4">{t("tts.vocabulary.empty")}</p>
+        <div className="space-y-2 py-6 text-center text-sm text-ink-3">
+          <p>{t(empty.key, { query: empty.query })}</p>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setFilters(NO_FILTERS)}
+          >
+            {t("tts.vocabulary.clearFilters")}
+          </Button>
+        </div>
       ) : (
         <VocabularyTable
           groups={visible}
           models={models}
           readOnly={readOnly}
-          editLocked={draft !== null || correction !== null}
-          voiceOptions={(group) => voiceOptions(group, groups, modelIds)}
-          changeVoice={(group, voice) => {
-            if (!voiceEdits(group, voice, groups, modelIds)) return;
-            const selected = voiceOptions(group, groups, modelIds).some(
-              (option) => option.voice === voice && option.selected,
-            );
-            void actions.applyPlan(
-              (latest) =>
-                voiceChangePlan(
-                  latest.rows,
-                  modelIds,
-                  group.key,
-                  voice,
-                  selected,
-                ),
-              table.revision,
-            );
-          }}
           toggle={(group) =>
             void actions.applyPlan(
               (latest) => switchPlanFor(latest.rows, modelIds, group.key),
               table.revision,
             )
           }
-          edit={(group) =>
-            setDraft({
-              initial: group.members[0],
-              members: group.members,
-              base: table.revision,
-            })
-          }
+          edit={open}
           listen={(group) => void actions.listen(group.members[0])}
-          remove={(group) => void actions.remove(group.members, table.revision)}
-          reset={(group) => resetConfirm.ask({ group, base: table.revision })}
-          resetting={resetting}
-          confirmReset={resetConfirm.confirm}
-          cancelReset={resetConfirm.cancel}
         />
       )}
       <AcronymStyles
