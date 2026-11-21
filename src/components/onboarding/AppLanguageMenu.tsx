@@ -121,7 +121,7 @@ export const AppLanguageMenu: React.FC<AppLanguageMenuProps> = ({
             show();
           }
         }}
-        className={`flex cursor-pointer items-center gap-[6px] rounded-lg px-[8px] py-[4px] text-small transition-colors hover:bg-wash hover:text-text focus:outline-none focus-visible:bg-wash focus-visible:text-text ${
+        className={`flex cursor-pointer items-center gap-[6px] rounded-lg px-[8px] py-[4px] text-small transition-colors hover:bg-wash hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary focus-visible:bg-wash focus-visible:text-text ${
           open ? "bg-wash text-text" : "text-ink-2"
         }`}
       >
@@ -156,7 +156,7 @@ export const AppLanguageMenu: React.FC<AppLanguageMenuProps> = ({
           aria-label={t("onboarding.welcome.appLanguage")}
           aria-activedescendant={`${id}-${active}`}
           onKeyDown={onListKeyDown}
-          className="absolute end-0 top-[calc(100%+6px)] z-50 max-h-[372px] w-[208px] origin-top-right animate-drop overflow-y-auto overscroll-contain rounded-card border border-line-strong bg-background p-[5px] shadow-[0_14px_36px_-10px_rgb(0_0_0/0.35),0_2px_6px_rgb(0_0_0/0.08)] outline-none rtl:origin-top-left"
+          className="absolute end-0 top-[calc(100%+6px)] z-50 max-h-[372px] w-[208px] origin-top-right animate-drop overflow-y-auto overscroll-contain rounded-card border border-line-strong bg-background p-[5px] shadow-[0_14px_36px_-10px_color-mix(in_srgb,var(--color-shadow)_35%,transparent),0_2px_6px_color-mix(in_srgb,var(--color-shadow)_8%,transparent)] outline-none focus-visible:ring-2 focus-visible:ring-logo-primary rtl:origin-top-left"
         >
           {SUPPORTED_LANGUAGES.map((l, i) => {
             const selected = l.code === value;

@@ -81,7 +81,7 @@ export function ManagerTableView({
         data-model-toolbar=""
         className="sticky top-0 z-10 flex flex-wrap items-center gap-2 bg-background py-2"
       >
-        <label className="flex h-[30px] min-w-0 flex-1 basis-[160px] cursor-text items-center gap-[8px] rounded-control border border-line px-[8px] focus-within:ring-1 focus-within:ring-logo-primary">
+        <label className="flex h-[30px] min-w-0 flex-1 basis-[160px] cursor-text items-center gap-[8px] rounded-control border border-line px-[8px] focus-within:ring-2 focus-within:ring-logo-primary">
           <Search
             size={14}
             aria-hidden="true"
@@ -266,7 +266,7 @@ export function RoleLegend(props: RoleLegendProps): React.JSX.Element {
         <div
           role="dialog"
           aria-label={t("models.legend.open")}
-          className="absolute end-0 top-[28px] z-30 w-[300px] max-w-[calc(100vw-32px)] animate-rise rounded-card border border-line-strong bg-background p-[14px] text-start text-small leading-[1.45] shadow-[0_12px_32px_-12px_rgba(0,0,0,0.35)]"
+          className="absolute end-0 top-[28px] z-30 w-[300px] max-w-[calc(100vw-32px)] animate-rise rounded-card border border-line-strong bg-background p-[14px] text-start text-small leading-[1.45] shadow-[0_12px_32px_-12px_color-mix(in_srgb,var(--color-shadow)_35%,transparent)]"
         >
           <RoleLegendBody {...props} />
         </div>

@@ -102,7 +102,7 @@ export function ReadHistoryRows({
               title={t("history.copy")}
               aria-label={t("history.copy")}
               onClick={() => void copyRead(entry)}
-              className="p-1.5 rounded-md flex items-center justify-center text-ink-2 hover:text-logo-primary transition-colors cursor-pointer"
+              className="p-1.5 rounded-md flex items-center justify-center text-ink-2 hover:text-logo-primary transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
             >
               <Copy width={16} height={16} />
             </button>
@@ -234,6 +234,7 @@ export function ReadHistoryTab({
           nothing={t("history.clear.nothing")}
           clear={actions.clear}
           disabled={!entries?.length}
+          listEmpty={entries?.length === 0}
         />
       </HistoryToolbar>
       {failure && (

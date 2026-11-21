@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import i18next from "i18next";
@@ -80,4 +81,24 @@ test("strip_keys_select_and_focus", () => {
   calls.length = 0;
   assert.equal(stripKey("a", tabs, "history", false, deps), false);
   assert.deepEqual(calls, []);
+});
+
+test("strip_is_a_whole_pixel_tall_at_the_root_font_size", () => {
+  const root = Number(
+    /:root\s*{[^}]*?font-size:\s*(\d+)px/.exec(
+      readFileSync(new URL("../../App.css", import.meta.url), "utf8"),
+    )?.[1],
+  );
+  assert.ok(root > 0, "App.css sets the root font size in px");
+  const classes = render().match(/role="tablist"[^>]*class="([^"]*)"/)?.[1];
+  assert.ok(classes, "the tablist has classes");
+  const token = classes.split(" ").find((c) => /^h-/.test(c));
+  assert.ok(token, "the tablist has a height class");
+  const px = token.match(/^h-\[(\d+(?:\.\d+)?)px\]$/);
+  const step = token.match(/^h-(\d+(?:\.\d+)?)$/);
+  const height = px ? Number(px[1]) : Number(step?.[1]) * 0.25 * root;
+  assert.ok(
+    Number.isInteger(height),
+    `${token} is ${height} px at a ${root} px root; the scroll pane below starts on a half pixel`,
+  );
 });

@@ -261,12 +261,13 @@ pub(super) fn select_with_store(
     chosen: Selection,
     downloaded: bool,
     session: &super::session::ReadAloudSession,
-    read: impl FnOnce() -> crate::settings::AppSettings + Send + 'static,
+    read: impl Fn() -> crate::settings::AppSettings + Send + 'static,
     write: impl FnOnce(crate::settings::AppSettings) -> Result<(), String> + Send + 'static,
 ) -> Result<(), String> {
     let model = chosen.model_id.clone();
     log::info!("TTS selection requested: {model}");
-    let result = if !downloaded {
+    // A model that is not downloaded may stay selected, but never become selected.
+    let result = if !downloaded && read().tts_model_id != model {
         Err("tts.errors.notDownloaded".into())
     } else {
         session.select_and_wait(

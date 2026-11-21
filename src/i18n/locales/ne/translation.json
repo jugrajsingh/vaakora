@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "ताइवानी मन्डारिनका लागि अनुकूलित। कोड-स्विचिङ समर्थन।"
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "अंग्रेजी डिक्टेसनका लागि उत्कृष्ट सर्वांगीण विकल्प"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "धेरै युरोपेली भाषामा छिटो र सही ट्रान्सक्रिप्सन"
+      },
+      "canary-180m-flash": {
+        "description": "सानो, छिटो र जुनसुकै हार्डवेयरमा राम्रोसँग चल्छ"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "धेरै भाषामा निरन्तर बलियो, ग्रीक र पोलिशका लागि उत्कृष्ट"
+      },
+      "whisper-medium": {
+        "description": "सबैभन्दा फराकिलो भाषा समर्थन, तर अलि ढिलो चल्न सक्छ"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "बहुभाषी, इटालियन र स्पेनिशमा धेरै सही। Apple Silicon वा अलग GPU मा उत्कृष्ट"
+      },
+      "parakeet-ultra": {
+        "description": "२५ युरोपेली भाषामा उत्कृष्ट शुद्धता"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "छिटो र सही, उत्कृष्ट बहुभाषी विकल्प"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "अंग्रेजीका लागि मात्र उत्कृष्ट मोडेल, जुनसुकै हार्डवेयरमा चल्छ"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "चिनियाँ, क्यान्टोनिज र अंग्रेजीसहित एसियाली भाषाका लागि उत्कृष्ट"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "जापानीका लागि उत्कृष्ट, थाई, इन्डोनेसियाली र मलयमा राम्रो"
+      },
+      "canary-1b-v2": {
+        "description": "युरोपेली भाषाका लागि सबैभन्दा सही सानो मोडेल"
+      },
+      "canary-qwen-2_5b": {
+        "description": "धेरै सही अंग्रेजी। GPU बिना ढिलो।"
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "अरबी र अरबी/अंग्रेजी बोल्नेहरूका लागि उत्कृष्ट"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "मन्डारिन, अंग्रेजी र जापानीका लागि राम्रो"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "रुसी मात्र।"
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "रुसी डिक्टेसनका लागि उत्कृष्ट। अंग्रेजी भरपर्दो नहुन सक्छ।"
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "अत्यन्तै छिटो अंग्रेजी ट्रान्सक्रिप्सन, GPU मा उत्कृष्ट"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "सही, अनुवाद समर्थनसहित। GPU सँग उत्कृष्ट"
+      },
+      "medasr": {
+        "description": "नोट डिक्टेट गर्ने चिकित्सकहरूका लागि। सामान्य बोलीमा कमजोर"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "सानो अंग्रेजी मोडेल, CPU मा पनि लगभग तुरुन्तै"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "बैठकमा एकअर्कामाथि बोल्नेहरूका लागि, एकल डिक्टेसनका लागि होइन"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "धेरै भाषामा उच्च शुद्धता। Apple Silicon वा GPU मा उत्कृष्ट"
+      },
+      "SenseVoiceSmall": {
+        "description": "जुनसुकै मेसिनमा तुरुन्तै मन्डारिन, जापानी, कोरियाली। क्यान्टोनिज कमजोर"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "सही, अनुवाद समर्थनसहित। Apple Silicon वा GPU मा उत्कृष्ट।"
+      },
+      "whisper-small": {
+        "description": "अपेक्षाकृत सानो मोडेलमा फराकिलो भाषा समर्थन।"
+      },
+      "whisper-large-v3-turbo": {
+        "description": "धेरै भाषामा सही। GPU बिना ढिलो"
+      },
+      "Breeze-ASR-25": {
+        "description": "अंग्रेजी मिसिएको ताइवानी मन्डारिन। परम्परागत लिपि, विराम चिह्न छैन"
+      },
+      "whisper-large-v3": {
+        "description": "अधिकांश भाषा प्रयोगयोग्य शुद्धतासहित। Apple Silicon वा GPU मा उत्कृष्ट।"
+      },
+      "canary-1b": {
+        "description": "4 भाषामा स्पिच-टु-टेक्स्ट, अनुवाद सहित।"
+      },
+      "canary-1b-flash": {
+        "description": "4 भाषामा स्पिच-टु-टेक्स्ट, अनुवाद सहित।"
+      },
+      "gigaam-v3-ctc": {
+        "description": "रुसी स्पिच-टु-टेक्स्ट, टाइमस्ट्याम्प सहित।"
+      },
+      "gigaam-v3-rnnt": {
+        "description": "रुसी स्पिच-टु-टेक्स्ट, टाइमस्ट्याम्प सहित।"
+      },
+      "granite-4_0-1b-speech": {
+        "description": "6 भाषामा स्पिच-टु-टेक्स्ट, अनुवाद सहित।"
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "5 भाषामा स्पिच-टु-टेक्स्ट।"
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "5 भाषामा स्पिच-टु-टेक्स्ट, टाइमस्ट्याम्प सहित।"
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट।"
+      },
+      "moonshine-base": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट।"
+      },
+      "moonshine-base-ar": {
+        "description": "अरबी स्पिच-टु-टेक्स्ट।"
+      },
+      "moonshine-base-ja": {
+        "description": "जापानी स्पिच-टु-टेक्स्ट।"
+      },
+      "moonshine-base-ko": {
+        "description": "कोरियाली स्पिच-टु-टेक्स्ट।"
+      },
+      "moonshine-base-uk": {
+        "description": "युक्रेनी स्पिच-टु-टेक्स्ट।"
+      },
+      "moonshine-base-vi": {
+        "description": "भियतनामी स्पिच-टु-टेक्स्ट।"
+      },
+      "moonshine-base-zh": {
+        "description": "चिनियाँ स्पिच-टु-टेक्स्ट।"
+      },
+      "moonshine-streaming-medium": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट, स्ट्रिमिङ सहित।"
+      },
+      "moonshine-streaming-small": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट, स्ट्रिमिङ सहित।"
+      },
+      "moonshine-streaming-tiny": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट, स्ट्रिमिङ सहित।"
+      },
+      "moonshine-tiny": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट।"
+      },
+      "moonshine-tiny-ar": {
+        "description": "अरबी स्पिच-टु-टेक्स्ट।"
+      },
+      "moonshine-tiny-ja": {
+        "description": "जापानी स्पिच-टु-टेक्स्ट।"
+      },
+      "moonshine-tiny-ko": {
+        "description": "कोरियाली स्पिच-टु-टेक्स्ट।"
+      },
+      "moonshine-tiny-uk": {
+        "description": "युक्रेनी स्पिच-टु-टेक्स्ट।"
+      },
+      "moonshine-tiny-vi": {
+        "description": "भियतनामी स्पिच-टु-टेक्स्ट।"
+      },
+      "moonshine-tiny-zh": {
+        "description": "चिनियाँ स्पिच-टु-टेक्स्ट।"
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "2 भाषामा स्पिच-टु-टेक्स्ट, टाइमस्ट्याम्प सहित।"
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट, स्ट्रिमिङ, टाइमस्ट्याम्प सहित।"
+      },
+      "orukeet": {
+        "description": "25 भाषामा स्पिच-टु-टेक्स्ट, स्वचालित भाषा पहिचान, टाइमस्ट्याम्प सहित।"
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट, टाइमस्ट्याम्प सहित।"
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट, टाइमस्ट्याम्प सहित।"
+      },
+      "parakeet-primeline": {
+        "description": "25 भाषामा स्पिच-टु-टेक्स्ट, स्वचालित भाषा पहिचान, टाइमस्ट्याम्प सहित।"
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट, टाइमस्ट्याम्प सहित।"
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट, टाइमस्ट्याम्प सहित।"
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट, टाइमस्ट्याम्प सहित।"
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट, टाइमस्ट्याम्प सहित।"
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "8 भाषामा स्पिच-टु-टेक्स्ट, अनुवाद, स्वचालित भाषा पहिचान सहित।"
+      },
+      "whisper-base": {
+        "description": "99 भाषामा स्पिच-टु-टेक्स्ट, अनुवाद, स्वचालित भाषा पहिचान, टाइमस्ट्याम्प सहित।"
+      },
+      "whisper-base_en": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट, टाइमस्ट्याम्प सहित।"
+      },
+      "whisper-large": {
+        "description": "99 भाषामा स्पिच-टु-टेक्स्ट, अनुवाद, स्वचालित भाषा पहिचान, टाइमस्ट्याम्प सहित।"
+      },
+      "whisper-large-v2": {
+        "description": "99 भाषामा स्पिच-टु-टेक्स्ट, अनुवाद, स्वचालित भाषा पहिचान, टाइमस्ट्याम्प सहित।"
+      },
+      "whisper-medium_en": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट, टाइमस्ट्याम्प सहित।"
+      },
+      "whisper-small_en": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट, टाइमस्ट्याम्प सहित।"
+      },
+      "whisper-tiny": {
+        "description": "99 भाषामा स्पिच-टु-टेक्स्ट, अनुवाद, स्वचालित भाषा पहिचान, टाइमस्ट्याम्प सहित।"
+      },
+      "whisper-tiny_en": {
+        "description": "अंग्रेजी स्पिच-टु-टेक्स्ट, टाइमस्ट्याम्प सहित।"
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "अडियो फिडब्याक आवाजको भोल्युम मिलाउनुहोस्",
         "offReason": "अडियो फिडब्याक बन्द हुँदा प्रयोग हुँदैन।"
       },
-      "feedbackOutputDevice": "फिडब्याक आउटपुट डिभाइस"
+      "feedbackOutputDevice": "फिडब्याक आउटपुट डिभाइस",
+      "previewTheme": "ध्वनि विषयवस्तुको पूर्वावलोकन (सुरु, त्यसपछि बन्द ध्वनि बज्छ)"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "प्लेब्याकको स्थान",
+    "moreInformation": "थप जानकारी",
+    "play": "प्ले गर्नुहोस्",
+    "pause": "रोक्नुहोस्",
+    "copyToClipboard": "क्लिपबोर्डमा प्रतिलिपि गर्नुहोस्",
+    "notAvailable": "उपलब्ध छैन",
+    "selectAnOption": "एउटा विकल्प छान्नुहोस्...",
     "resetSetting": "{{setting}}लाई पूर्वनिर्धारित मानमा रिसेट गर्नुहोस्",
     "loading": "लोड गरिँदैछ...",
     "delete": "मेटाउनुहोस्",

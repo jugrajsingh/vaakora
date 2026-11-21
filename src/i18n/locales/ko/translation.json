@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "대만 만다린에 최적화. 코드 스위칭 지원."
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "영어 받아쓰기에 가장 좋은 만능 선택"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "여러 유럽 언어를 빠르고 정확하게 받아쓰기"
+      },
+      "canary-180m-flash": {
+        "description": "아주 작고 빠르며 어떤 하드웨어에서도 잘 동작"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "여러 언어에서 꾸준히 강력하며 그리스어와 폴란드어에 최적"
+      },
+      "whisper-medium": {
+        "description": "가장 폭넓은 언어 지원, 다만 다소 느릴 수 있음"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "다국어 지원, 이탈리아어와 스페인어에서 매우 정확. Apple Silicon 또는 외장 GPU에서 최적"
+      },
+      "parakeet-ultra": {
+        "description": "유럽 25개 언어에서 최고의 정확도"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "빠르고 정확한 훌륭한 다국어 선택"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "영어 전용의 뛰어난 모델, 어떤 하드웨어에서도 동작"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "중국어, 광둥어, 영어를 포함한 아시아 언어에 최적"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "일본어에 최적, 태국어, 인도네시아어, 말레이어에도 우수"
+      },
+      "canary-1b-v2": {
+        "description": "유럽 언어용으로 가장 정확한 소형 모델"
+      },
+      "canary-qwen-2_5b": {
+        "description": "매우 정확한 영어. GPU가 없으면 느립니다."
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "아랍어와 아랍어·영어 사용자에게 최적"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "중국어(표준어), 영어, 일본어에 적합"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "러시아어 전용."
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "러시아어 받아쓰기에 최적. 영어는 부정확할 수 있습니다."
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "매우 빠른 영어 받아쓰기, GPU에서 최적"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "정확하며 번역 지원. GPU와 함께 쓰면 최적"
+      },
+      "medasr": {
+        "description": "메모를 구술하는 의료인용. 일반 음성에는 약함"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "아주 작은 영어 모델, CPU에서도 거의 즉시 동작"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "회의에서 말이 겹치는 화자용, 혼자 받아쓰기에는 부적합"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "여러 언어에서 최고 수준의 정확도. Apple Silicon 또는 GPU에서 최적"
+      },
+      "SenseVoiceSmall": {
+        "description": "어떤 기기에서도 중국어(표준어), 일본어, 한국어를 즉시 인식. 광둥어는 약함"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "정확하며 번역 지원. Apple Silicon 또는 GPU에서 최적."
+      },
+      "whisper-small": {
+        "description": "비교적 작은 모델로 폭넓은 언어 지원."
+      },
+      "whisper-large-v3-turbo": {
+        "description": "여러 언어에서 정확. GPU가 없으면 느림"
+      },
+      "Breeze-ASR-25": {
+        "description": "영어가 섞인 대만 표준 중국어. 번체, 문장부호 없음"
+      },
+      "whisper-large-v3": {
+        "description": "대부분의 언어에서 쓸 만한 정확도. Apple Silicon 또는 GPU에서 최적."
+      },
+      "canary-1b": {
+        "description": "4개 언어 음성 인식, 번역 지원."
+      },
+      "canary-1b-flash": {
+        "description": "4개 언어 음성 인식, 번역 지원."
+      },
+      "gigaam-v3-ctc": {
+        "description": "러시아어 음성 인식, 타임스탬프 지원."
+      },
+      "gigaam-v3-rnnt": {
+        "description": "러시아어 음성 인식, 타임스탬프 지원."
+      },
+      "granite-4_0-1b-speech": {
+        "description": "6개 언어 음성 인식, 번역 지원."
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "5개 언어 음성 인식."
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "5개 언어 음성 인식, 타임스탬프 지원."
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "영어 음성 인식."
+      },
+      "moonshine-base": {
+        "description": "영어 음성 인식."
+      },
+      "moonshine-base-ar": {
+        "description": "아랍어 음성 인식."
+      },
+      "moonshine-base-ja": {
+        "description": "일본어 음성 인식."
+      },
+      "moonshine-base-ko": {
+        "description": "한국어 음성 인식."
+      },
+      "moonshine-base-uk": {
+        "description": "우크라이나어 음성 인식."
+      },
+      "moonshine-base-vi": {
+        "description": "베트남어 음성 인식."
+      },
+      "moonshine-base-zh": {
+        "description": "중국어 음성 인식."
+      },
+      "moonshine-streaming-medium": {
+        "description": "영어 음성 인식, 스트리밍 지원."
+      },
+      "moonshine-streaming-small": {
+        "description": "영어 음성 인식, 스트리밍 지원."
+      },
+      "moonshine-streaming-tiny": {
+        "description": "영어 음성 인식, 스트리밍 지원."
+      },
+      "moonshine-tiny": {
+        "description": "영어 음성 인식."
+      },
+      "moonshine-tiny-ar": {
+        "description": "아랍어 음성 인식."
+      },
+      "moonshine-tiny-ja": {
+        "description": "일본어 음성 인식."
+      },
+      "moonshine-tiny-ko": {
+        "description": "한국어 음성 인식."
+      },
+      "moonshine-tiny-uk": {
+        "description": "우크라이나어 음성 인식."
+      },
+      "moonshine-tiny-vi": {
+        "description": "베트남어 음성 인식."
+      },
+      "moonshine-tiny-zh": {
+        "description": "중국어 음성 인식."
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "2개 언어 음성 인식, 타임스탬프 지원."
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "영어 음성 인식, 스트리밍, 타임스탬프 지원."
+      },
+      "orukeet": {
+        "description": "25개 언어 음성 인식, 자동 언어 감지, 타임스탬프 지원."
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "영어 음성 인식, 타임스탬프 지원."
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "영어 음성 인식, 타임스탬프 지원."
+      },
+      "parakeet-primeline": {
+        "description": "25개 언어 음성 인식, 자동 언어 감지, 타임스탬프 지원."
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "영어 음성 인식, 타임스탬프 지원."
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "영어 음성 인식, 타임스탬프 지원."
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "영어 음성 인식, 타임스탬프 지원."
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "영어 음성 인식, 타임스탬프 지원."
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "8개 언어 음성 인식, 번역, 자동 언어 감지 지원."
+      },
+      "whisper-base": {
+        "description": "99개 언어 음성 인식, 번역, 자동 언어 감지, 타임스탬프 지원."
+      },
+      "whisper-base_en": {
+        "description": "영어 음성 인식, 타임스탬프 지원."
+      },
+      "whisper-large": {
+        "description": "99개 언어 음성 인식, 번역, 자동 언어 감지, 타임스탬프 지원."
+      },
+      "whisper-large-v2": {
+        "description": "99개 언어 음성 인식, 번역, 자동 언어 감지, 타임스탬프 지원."
+      },
+      "whisper-medium_en": {
+        "description": "영어 음성 인식, 타임스탬프 지원."
+      },
+      "whisper-small_en": {
+        "description": "영어 음성 인식, 타임스탬프 지원."
+      },
+      "whisper-tiny": {
+        "description": "99개 언어 음성 인식, 번역, 자동 언어 감지, 타임스탬프 지원."
+      },
+      "whisper-tiny_en": {
+        "description": "영어 음성 인식, 타임스탬프 지원."
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "오디오 피드백 사운드의 볼륨 조절",
         "offReason": "오디오 피드백이 꺼져 있으면 사용되지 않습니다."
       },
-      "feedbackOutputDevice": "피드백 소리 출력 장치"
+      "feedbackOutputDevice": "피드백 소리 출력 장치",
+      "previewTheme": "사운드 테마 미리 듣기 (시작음 다음 정지음 재생)"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "재생 위치",
+    "moreInformation": "추가 정보",
+    "play": "재생",
+    "pause": "일시 중지",
+    "copyToClipboard": "클립보드에 복사",
+    "notAvailable": "사용할 수 없음",
+    "selectAnOption": "옵션 선택...",
     "resetSetting": "{{setting}} 기본값으로 초기화",
     "loading": "로딩 중...",
     "delete": "삭제",

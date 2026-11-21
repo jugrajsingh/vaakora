@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import i18next from "i18next";
 import { I18nextProvider } from "react-i18next";
 import en from "../../../i18n/locales/en/translation.json";
+import de from "../../../i18n/locales/de/translation.json";
 const {
   mock,
   describe,
@@ -25,10 +26,13 @@ mock.module("@/components/ui/Button", () => ({
     return RealButton(props);
   },
 }));
-const store = { extraModelId: null as string | null };
+const store = {
+  modelId: null as string | null,
+  extraModelId: null as string | null,
+};
 mock.module("../onboardingStore", () => ({
   useOnboardingStore: () => ({
-    modelId: null,
+    modelId: store.modelId,
     extraModelId: store.extraModelId,
     downloadId: null,
     set() {},
@@ -110,7 +114,12 @@ const fixture = (
     startDownload: () => undefined,
   }) as unknown as Models;
 
-const render = (models: Models, showAll = false, opened: string[] = []) => {
+const render = (
+  models: Models,
+  showAll = false,
+  opened: string[] = [],
+  instance: typeof i18n = i18n,
+) => {
   buttons.length = 0;
   const list: List = {
     showAll,
@@ -126,7 +135,7 @@ const render = (models: Models, showAll = false, opened: string[] = []) => {
     },
   };
   return renderToStaticMarkup(
-    <I18nextProvider i18n={i18n}>
+    <I18nextProvider i18n={instance}>
       <ModelView
         models={models}
         onBack={() => undefined}
@@ -421,5 +430,53 @@ describe("finish line", () => {
       !flow.includes("onDone={finish}"),
       "the click event must not become the destination",
     );
+  });
+});
+
+describe("extra card description", () => {
+  it("extra_card_description_follows_the_app_language", async () => {
+    const { translationKeyId } = await import("@/lib/utils/modelTranslation");
+    const german = i18next.createInstance();
+    await german.init({
+      lng: "de",
+      resources: { de: { translation: de } },
+      interpolation: { escapeValue: false },
+    });
+    const extra = CURATED_ASR[1];
+    const key = translationKeyId(extra.id);
+    const words = (file: typeof en) =>
+      (file.onboarding.models as Record<string, { description?: string }>)[key]
+        ?.description;
+    const row: Row = {
+      model: offered[0],
+      role: "pick",
+      missing: [],
+      error: null,
+      wait: 1,
+    };
+    const models = fixture(
+      [{ model: offered[0], role: "pick" }],
+      [row, { ...row, model: extra, role: null }],
+      true,
+    );
+    store.modelId = extra.id;
+    store.extraModelId = extra.id;
+    try {
+      const inGerman = render(models, false, [], german);
+      assert.ok(words(de), "de has the extra model's description");
+      assert.ok(inGerman.includes(escapeHtml(words(de) ?? "")), "de text");
+      assert.ok(!inGerman.includes("A model the table lists"), "no English");
+      const inEnglish = render(models);
+      assert.ok(inEnglish.includes(escapeHtml(words(en) ?? "")), "en text");
+    } finally {
+      store.modelId = null;
+      store.extraModelId = null;
+    }
+  });
+
+  it("extra_card_takes_its_line_from_the_translated_description", () => {
+    const screen = source("./Model.tsx");
+    assert.ok(screen.includes("getTranslatedModelDescription("));
+    assert.ok(!screen.includes("row.model.description"));
   });
 });

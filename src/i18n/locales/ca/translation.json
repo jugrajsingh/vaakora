@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "Optimitzat per al xinès mandarí de Taiwan. Admet l'alternança de llengües."
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "La millor opció general per al dictat en anglès"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "Transcripció ràpida i precisa en molts idiomes europeus"
+      },
+      "canary-180m-flash": {
+        "description": "Diminut, ràpid i funciona bé en qualsevol maquinari"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "Sempre sòlid en molts idiomes, el millor per al grec i el polonès"
+      },
+      "whisper-medium": {
+        "description": "El suport d'idiomes més ampli, però pot anar una mica lent"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "Multilingüe, molt precís en italià i castellà. Millor a Apple Silicon o GPU dedicades"
+      },
+      "parakeet-ultra": {
+        "description": "La millor precisió en 25 idiomes europeus"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "Ràpid i precís, una gran opció multilingüe en general"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "Excel·lent model només per a l'anglès, funciona en qualsevol maquinari"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "El millor per al xinès, el cantonès i les llengües asiàtiques amb anglès"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "El millor per al japonès, bo en tailandès, indonesi i malai"
+      },
+      "canary-1b-v2": {
+        "description": "El model petit més precís per als idiomes europeus"
+      },
+      "canary-qwen-2_5b": {
+        "description": "Anglès molt precís. Lent sense GPU."
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "El millor per a l'àrab i per a parlants d'àrab i anglès"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "Bo per al mandarí, l'anglès i el japonès"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "Només rus."
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "El millor per al dictat en rus. L'anglès pot no ser fiable."
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "Transcripció en anglès extremadament ràpida, millor amb GPU"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "Precís i amb suport de traducció. Millor amb GPU"
+      },
+      "medasr": {
+        "description": "Per a clínics que dicten notes. Fluix amb la parla general"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "Model diminut d'anglès, gairebé instantani fins i tot a la CPU"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "Per a parlants que se superposen en reunions, no per al dictat en solitari"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "Màxima precisió en molts idiomes. Millor a Apple Silicon o amb GPU"
+      },
+      "SenseVoiceSmall": {
+        "description": "Mandarí, japonès i coreà a l'instant en qualsevol màquina. Cantonès fluix"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "Precís i amb suport de traducció. Millor a Apple Silicon o amb GPU."
+      },
+      "whisper-small": {
+        "description": "Ampli suport d'idiomes en un model relativament petit."
+      },
+      "whisper-large-v3-turbo": {
+        "description": "Precís en molts idiomes. Lent sense GPU"
+      },
+      "Breeze-ASR-25": {
+        "description": "Mandarí de Taiwan amb anglès barrejat. Escriptura tradicional, sense puntuació"
+      },
+      "whisper-large-v3": {
+        "description": "La majoria d'idiomes amb una precisió utilitzable. Millor a Apple Silicon o amb GPU."
+      },
+      "canary-1b": {
+        "description": "Veu a text en 4 idiomes amb traducció."
+      },
+      "canary-1b-flash": {
+        "description": "Veu a text en 4 idiomes amb traducció."
+      },
+      "gigaam-v3-ctc": {
+        "description": "Veu a text en rus amb marques de temps."
+      },
+      "gigaam-v3-rnnt": {
+        "description": "Veu a text en rus amb marques de temps."
+      },
+      "granite-4_0-1b-speech": {
+        "description": "Veu a text en 6 idiomes amb traducció."
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "Veu a text en 5 idiomes."
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "Veu a text en 5 idiomes amb marques de temps."
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "Veu a text en anglès."
+      },
+      "moonshine-base": {
+        "description": "Veu a text en anglès."
+      },
+      "moonshine-base-ar": {
+        "description": "Veu a text en àrab."
+      },
+      "moonshine-base-ja": {
+        "description": "Veu a text en japonès."
+      },
+      "moonshine-base-ko": {
+        "description": "Veu a text en coreà."
+      },
+      "moonshine-base-uk": {
+        "description": "Veu a text en ucraïnès."
+      },
+      "moonshine-base-vi": {
+        "description": "Veu a text en vietnamita."
+      },
+      "moonshine-base-zh": {
+        "description": "Veu a text en xinès."
+      },
+      "moonshine-streaming-medium": {
+        "description": "Veu a text en anglès amb streaming."
+      },
+      "moonshine-streaming-small": {
+        "description": "Veu a text en anglès amb streaming."
+      },
+      "moonshine-streaming-tiny": {
+        "description": "Veu a text en anglès amb streaming."
+      },
+      "moonshine-tiny": {
+        "description": "Veu a text en anglès."
+      },
+      "moonshine-tiny-ar": {
+        "description": "Veu a text en àrab."
+      },
+      "moonshine-tiny-ja": {
+        "description": "Veu a text en japonès."
+      },
+      "moonshine-tiny-ko": {
+        "description": "Veu a text en coreà."
+      },
+      "moonshine-tiny-uk": {
+        "description": "Veu a text en ucraïnès."
+      },
+      "moonshine-tiny-vi": {
+        "description": "Veu a text en vietnamita."
+      },
+      "moonshine-tiny-zh": {
+        "description": "Veu a text en xinès."
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "Veu a text en 2 idiomes amb marques de temps."
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "Veu a text en anglès amb streaming, marques de temps."
+      },
+      "orukeet": {
+        "description": "Veu a text en 25 idiomes amb detecció automàtica d'idioma, marques de temps."
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "Veu a text en anglès amb marques de temps."
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "Veu a text en anglès amb marques de temps."
+      },
+      "parakeet-primeline": {
+        "description": "Veu a text en 25 idiomes amb detecció automàtica d'idioma, marques de temps."
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "Veu a text en anglès amb marques de temps."
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "Veu a text en anglès amb marques de temps."
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "Veu a text en anglès amb marques de temps."
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "Veu a text en anglès amb marques de temps."
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "Veu a text en 8 idiomes amb traducció, detecció automàtica d'idioma."
+      },
+      "whisper-base": {
+        "description": "Veu a text en 99 idiomes amb traducció, detecció automàtica d'idioma, marques de temps."
+      },
+      "whisper-base_en": {
+        "description": "Veu a text en anglès amb marques de temps."
+      },
+      "whisper-large": {
+        "description": "Veu a text en 99 idiomes amb traducció, detecció automàtica d'idioma, marques de temps."
+      },
+      "whisper-large-v2": {
+        "description": "Veu a text en 99 idiomes amb traducció, detecció automàtica d'idioma, marques de temps."
+      },
+      "whisper-medium_en": {
+        "description": "Veu a text en anglès amb marques de temps."
+      },
+      "whisper-small_en": {
+        "description": "Veu a text en anglès amb marques de temps."
+      },
+      "whisper-tiny": {
+        "description": "Veu a text en 99 idiomes amb traducció, detecció automàtica d'idioma, marques de temps."
+      },
+      "whisper-tiny_en": {
+        "description": "Veu a text en anglès amb marques de temps."
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "Ajusta el volum dels avisos sonors",
         "offReason": "No s'utilitza quan els avisos sonors estan desactivats."
       },
-      "feedbackOutputDevice": "Dispositiu de sortida dels avisos sonors"
+      "feedbackOutputDevice": "Dispositiu de sortida dels avisos sonors",
+      "previewTheme": "Previsualitza el tema de so (reprodueix l'inici i després l'aturada)"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "Posició de reproducció",
+    "moreInformation": "Més informació",
+    "play": "Reprodueix",
+    "pause": "Pausa",
+    "copyToClipboard": "Copia al porta-retalls",
+    "notAvailable": "No disponible",
+    "selectAnOption": "Seleccioneu una opció...",
     "resetSetting": "Restableix {{setting}} al valor predeterminat",
     "loading": "S'està carregant...",
     "delete": "Suprimeix",

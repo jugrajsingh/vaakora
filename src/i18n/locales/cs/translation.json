@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "Optimalizováno pro tchajwanskou mandarínštinu. Podpora přepínání jazyků."
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "Nejlepší univerzální volba pro diktování v angličtině"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "Rychlý a přesný přepis v mnoha evropských jazycích"
+      },
+      "canary-180m-flash": {
+        "description": "Drobný, rychlý a dobře běží na jakémkoli hardwaru"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "Trvale silný v mnoha jazycích, nejlepší pro řečtinu a polštinu"
+      },
+      "whisper-medium": {
+        "description": "Nejširší podpora jazyků, ale může běžet trochu pomalu"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "Vícejazyčný, velmi přesný v italštině a španělštině. Nejlepší na Apple Silicon nebo samostatných GPU"
+      },
+      "parakeet-ultra": {
+        "description": "Nejlepší přesnost v 25 evropských jazycích"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "Rychlý a přesný, skvělá vícejazyčná volba"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "Výborný model jen pro angličtinu, běží na jakémkoli hardwaru"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "Nejlepší pro čínštinu, kantonštinu a asijské jazyky s angličtinou"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "Nejlepší pro japonštinu, dobrý v thajštině, indonéštině a malajštině"
+      },
+      "canary-1b-v2": {
+        "description": "Nejpřesnější malý model pro evropské jazyky"
+      },
+      "canary-qwen-2_5b": {
+        "description": "Velmi přesná angličtina. Bez GPU pomalý."
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "Nejlepší pro arabštinu a pro mluvčí arabštiny a angličtiny"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "Dobrý pro mandarínštinu, angličtinu a japonštinu"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "Pouze ruština."
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "Nejlepší pro diktování v ruštině. Angličtina může být nespolehlivá."
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "Extrémně rychlý anglický přepis, nejlepší na GPU"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "Přesný s podporou překladu. Nejlepší s GPU"
+      },
+      "medasr": {
+        "description": "Pro lékaře diktující poznámky. Slabý u běžné řeči"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "Drobný anglický model, téměř okamžitý i na CPU"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "Pro překrývající se mluvčí na poradách, ne pro samostatné diktování"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "Špičková přesnost napříč jazyky. Nejlepší na Apple Silicon nebo s GPU"
+      },
+      "SenseVoiceSmall": {
+        "description": "Okamžitá mandarínština, japonština a korejština na jakémkoli počítači. Slabá kantonština"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "Přesný s podporou překladu. Nejlepší na Apple Silicon nebo s GPU."
+      },
+      "whisper-small": {
+        "description": "Široká podpora jazyků v poměrně malém modelu."
+      },
+      "whisper-large-v3-turbo": {
+        "description": "Přesný v mnoha jazycích. Bez GPU pomalý"
+      },
+      "Breeze-ASR-25": {
+        "description": "Tchajwanská mandarínština s příměsí angličtiny. Tradiční písmo, bez interpunkce"
+      },
+      "whisper-large-v3": {
+        "description": "Většina jazyků s použitelnou přesností. Nejlepší na Apple Silicon nebo s GPU."
+      },
+      "canary-1b": {
+        "description": "Převod řeči na text v 4 jazycích s překladem."
+      },
+      "canary-1b-flash": {
+        "description": "Převod řeči na text v 4 jazycích s překladem."
+      },
+      "gigaam-v3-ctc": {
+        "description": "Převod řeči na text v ruštině s časovými značkami."
+      },
+      "gigaam-v3-rnnt": {
+        "description": "Převod řeči na text v ruštině s časovými značkami."
+      },
+      "granite-4_0-1b-speech": {
+        "description": "Převod řeči na text v 6 jazycích s překladem."
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "Převod řeči na text v 5 jazycích."
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "Převod řeči na text v 5 jazycích s časovými značkami."
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "Převod řeči na text v angličtině."
+      },
+      "moonshine-base": {
+        "description": "Převod řeči na text v angličtině."
+      },
+      "moonshine-base-ar": {
+        "description": "Převod řeči na text v arabštině."
+      },
+      "moonshine-base-ja": {
+        "description": "Převod řeči na text v japonštině."
+      },
+      "moonshine-base-ko": {
+        "description": "Převod řeči na text v korejštině."
+      },
+      "moonshine-base-uk": {
+        "description": "Převod řeči na text v ukrajinštině."
+      },
+      "moonshine-base-vi": {
+        "description": "Převod řeči na text v vietnamštině."
+      },
+      "moonshine-base-zh": {
+        "description": "Převod řeči na text v čínštině."
+      },
+      "moonshine-streaming-medium": {
+        "description": "Převod řeči na text v angličtině s streamováním."
+      },
+      "moonshine-streaming-small": {
+        "description": "Převod řeči na text v angličtině s streamováním."
+      },
+      "moonshine-streaming-tiny": {
+        "description": "Převod řeči na text v angličtině s streamováním."
+      },
+      "moonshine-tiny": {
+        "description": "Převod řeči na text v angličtině."
+      },
+      "moonshine-tiny-ar": {
+        "description": "Převod řeči na text v arabštině."
+      },
+      "moonshine-tiny-ja": {
+        "description": "Převod řeči na text v japonštině."
+      },
+      "moonshine-tiny-ko": {
+        "description": "Převod řeči na text v korejštině."
+      },
+      "moonshine-tiny-uk": {
+        "description": "Převod řeči na text v ukrajinštině."
+      },
+      "moonshine-tiny-vi": {
+        "description": "Převod řeči na text v vietnamštině."
+      },
+      "moonshine-tiny-zh": {
+        "description": "Převod řeči na text v čínštině."
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "Převod řeči na text v 2 jazycích s časovými značkami."
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "Převod řeči na text v angličtině s streamováním, časovými značkami."
+      },
+      "orukeet": {
+        "description": "Převod řeči na text v 25 jazycích s automatickou detekcí jazyka, časovými značkami."
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "Převod řeči na text v angličtině s časovými značkami."
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "Převod řeči na text v angličtině s časovými značkami."
+      },
+      "parakeet-primeline": {
+        "description": "Převod řeči na text v 25 jazycích s automatickou detekcí jazyka, časovými značkami."
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "Převod řeči na text v angličtině s časovými značkami."
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "Převod řeči na text v angličtině s časovými značkami."
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "Převod řeči na text v angličtině s časovými značkami."
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "Převod řeči na text v angličtině s časovými značkami."
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "Převod řeči na text v 8 jazycích s překladem, automatickou detekcí jazyka."
+      },
+      "whisper-base": {
+        "description": "Převod řeči na text v 99 jazycích s překladem, automatickou detekcí jazyka, časovými značkami."
+      },
+      "whisper-base_en": {
+        "description": "Převod řeči na text v angličtině s časovými značkami."
+      },
+      "whisper-large": {
+        "description": "Převod řeči na text v 99 jazycích s překladem, automatickou detekcí jazyka, časovými značkami."
+      },
+      "whisper-large-v2": {
+        "description": "Převod řeči na text v 99 jazycích s překladem, automatickou detekcí jazyka, časovými značkami."
+      },
+      "whisper-medium_en": {
+        "description": "Převod řeči na text v angličtině s časovými značkami."
+      },
+      "whisper-small_en": {
+        "description": "Převod řeči na text v angličtině s časovými značkami."
+      },
+      "whisper-tiny": {
+        "description": "Převod řeči na text v 99 jazycích s překladem, automatickou detekcí jazyka, časovými značkami."
+      },
+      "whisper-tiny_en": {
+        "description": "Převod řeči na text v angličtině s časovými značkami."
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "Upravte hlasitost zvukové odezvy",
         "offReason": "Nepoužívá se, když je zvuková odezva vypnutá."
       },
-      "feedbackOutputDevice": "Výstupní zařízení zvukové odezvy"
+      "feedbackOutputDevice": "Výstupní zařízení zvukové odezvy",
+      "previewTheme": "Přehrát ukázku zvukového motivu (přehraje začátek, potom konec)"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "Pozice přehrávání",
+    "moreInformation": "Další informace",
+    "play": "Přehrát",
+    "pause": "Pozastavit",
+    "copyToClipboard": "Kopírovat do schránky",
+    "notAvailable": "Není k dispozici",
+    "selectAnOption": "Vyberte možnost...",
     "resetSetting": "Obnovit výchozí hodnotu: {{setting}}",
     "loading": "Načítání...",
     "delete": "Smazat",

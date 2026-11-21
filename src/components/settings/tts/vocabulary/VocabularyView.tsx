@@ -163,10 +163,10 @@ export function VocabularyView({
   return (
     <section className="w-full max-w-3xl min-w-0 space-y-4">
       <div className="sticky top-0 z-10 space-y-2 bg-background py-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Input
             type="search"
-            className="flex-grow"
+            className="min-w-0 flex-1 basis-[120px]"
             aria-label={t("tts.vocabulary.filter")}
             placeholder={t("tts.vocabulary.filter")}
             value={filters.query}
@@ -176,6 +176,7 @@ export function VocabularyView({
           />
           <Button
             variant="secondary"
+            className="whitespace-nowrap"
             disabled={
               readOnly ||
               editing !== null ||
@@ -187,6 +188,7 @@ export function VocabularyView({
             {t("tts.correction.title")}
           </Button>
           <Button
+            className="whitespace-nowrap"
             disabled={readOnly || editing !== null || correction !== null}
             onClick={() => open(null)}
           >

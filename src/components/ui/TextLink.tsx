@@ -6,7 +6,7 @@ export const TextLink: React.FC<
 > = ({ className = "", type = "button", ...props }) => (
   <button
     type={type}
-    className={`py-[2px] text-small text-ink-2 underline decoration-line underline-offset-[3px] cursor-pointer hover:text-text hover:decoration-current ${className}`}
+    className={`py-[2px] text-small text-ink-2 underline decoration-line underline-offset-[3px] cursor-pointer hover:text-text hover:decoration-current focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${className}`}
     {...props}
   />
 );

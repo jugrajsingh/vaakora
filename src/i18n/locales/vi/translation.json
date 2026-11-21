@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "Tối ưu hóa cho tiếng Quan Thoại Đài Loan. Hỗ trợ chuyển đổi ngôn ngữ."
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "Lựa chọn toàn diện tốt nhất để đọc chính tả tiếng Anh"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "Phiên âm nhanh và chính xác cho nhiều ngôn ngữ châu Âu"
+      },
+      "canary-180m-flash": {
+        "description": "Nhỏ gọn, nhanh và chạy tốt trên mọi phần cứng"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "Ổn định mạnh ở nhiều ngôn ngữ, tốt nhất cho tiếng Hy Lạp và tiếng Ba Lan"
+      },
+      "whisper-medium": {
+        "description": "Hỗ trợ nhiều ngôn ngữ nhất, nhưng có thể chạy hơi chậm"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "Đa ngôn ngữ, rất chính xác với tiếng Ý và tiếng Tây Ban Nha. Tốt nhất trên Apple Silicon hoặc GPU rời"
+      },
+      "parakeet-ultra": {
+        "description": "Độ chính xác tốt nhất trên 25 ngôn ngữ châu Âu"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "Nhanh và chính xác, lựa chọn đa ngôn ngữ tuyệt vời"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "Mô hình tiếng Anh xuất sắc, chạy trên mọi phần cứng"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "Tốt nhất cho tiếng Trung, tiếng Quảng Đông và các ngôn ngữ châu Á kèm tiếng Anh"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "Tốt nhất cho tiếng Nhật, khá với tiếng Thái, Indonesia, Malaysia"
+      },
+      "canary-1b-v2": {
+        "description": "Mô hình nhỏ chính xác nhất cho các ngôn ngữ châu Âu"
+      },
+      "canary-qwen-2_5b": {
+        "description": "Tiếng Anh rất chính xác. Chậm nếu không có GPU."
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "Tốt nhất cho tiếng Ả Rập và người nói tiếng Ả Rập lẫn tiếng Anh"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "Tốt cho tiếng Quan Thoại, tiếng Anh, tiếng Nhật"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "Chỉ tiếng Nga."
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "Tốt nhất để đọc chính tả tiếng Nga. Tiếng Anh có thể không đáng tin."
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "Phiên âm tiếng Anh cực nhanh, tốt nhất trên GPU"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "Chính xác, hỗ trợ dịch. Tốt nhất với GPU"
+      },
+      "medasr": {
+        "description": "Dành cho bác sĩ đọc ghi chú. Kém với giọng nói thông thường"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "Mô hình tiếng Anh nhỏ gọn, gần như tức thì ngay cả trên CPU"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "Dành cho nhiều người nói chồng lên nhau trong cuộc họp, không dành cho đọc chính tả một mình"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "Độ chính xác hàng đầu ở nhiều ngôn ngữ. Tốt nhất trên Apple Silicon hoặc GPU"
+      },
+      "SenseVoiceSmall": {
+        "description": "Tiếng Quan Thoại, Nhật, Hàn tức thì trên mọi máy. Tiếng Quảng Đông yếu"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "Chính xác, hỗ trợ dịch. Tốt nhất trên Apple Silicon hoặc GPU."
+      },
+      "whisper-small": {
+        "description": "Hỗ trợ nhiều ngôn ngữ trong một mô hình tương đối nhỏ."
+      },
+      "whisper-large-v3-turbo": {
+        "description": "Chính xác ở nhiều ngôn ngữ. Chậm nếu không có GPU"
+      },
+      "Breeze-ASR-25": {
+        "description": "Tiếng Quan Thoại Đài Loan xen tiếng Anh. Chữ phồn thể, không dấu câu"
+      },
+      "whisper-large-v3": {
+        "description": "Hầu hết các ngôn ngữ với độ chính xác dùng được. Tốt nhất trên Apple Silicon hoặc GPU."
+      },
+      "canary-1b": {
+        "description": "Chuyển giọng nói thành văn bản cho 4 ngôn ngữ kèm dịch."
+      },
+      "canary-1b-flash": {
+        "description": "Chuyển giọng nói thành văn bản cho 4 ngôn ngữ kèm dịch."
+      },
+      "gigaam-v3-ctc": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Nga kèm dấu thời gian."
+      },
+      "gigaam-v3-rnnt": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Nga kèm dấu thời gian."
+      },
+      "granite-4_0-1b-speech": {
+        "description": "Chuyển giọng nói thành văn bản cho 6 ngôn ngữ kèm dịch."
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "Chuyển giọng nói thành văn bản cho 5 ngôn ngữ."
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "Chuyển giọng nói thành văn bản cho 5 ngôn ngữ kèm dấu thời gian."
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh."
+      },
+      "moonshine-base": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh."
+      },
+      "moonshine-base-ar": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Ả Rập."
+      },
+      "moonshine-base-ja": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Nhật."
+      },
+      "moonshine-base-ko": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Hàn."
+      },
+      "moonshine-base-uk": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Ukraina."
+      },
+      "moonshine-base-vi": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Việt."
+      },
+      "moonshine-base-zh": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Trung."
+      },
+      "moonshine-streaming-medium": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh kèm phát trực tuyến."
+      },
+      "moonshine-streaming-small": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh kèm phát trực tuyến."
+      },
+      "moonshine-streaming-tiny": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh kèm phát trực tuyến."
+      },
+      "moonshine-tiny": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh."
+      },
+      "moonshine-tiny-ar": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Ả Rập."
+      },
+      "moonshine-tiny-ja": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Nhật."
+      },
+      "moonshine-tiny-ko": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Hàn."
+      },
+      "moonshine-tiny-uk": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Ukraina."
+      },
+      "moonshine-tiny-vi": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Việt."
+      },
+      "moonshine-tiny-zh": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Trung."
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "Chuyển giọng nói thành văn bản cho 2 ngôn ngữ kèm dấu thời gian."
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh kèm phát trực tuyến, dấu thời gian."
+      },
+      "orukeet": {
+        "description": "Chuyển giọng nói thành văn bản cho 25 ngôn ngữ kèm tự động nhận diện ngôn ngữ, dấu thời gian."
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh kèm dấu thời gian."
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh kèm dấu thời gian."
+      },
+      "parakeet-primeline": {
+        "description": "Chuyển giọng nói thành văn bản cho 25 ngôn ngữ kèm tự động nhận diện ngôn ngữ, dấu thời gian."
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh kèm dấu thời gian."
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh kèm dấu thời gian."
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh kèm dấu thời gian."
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh kèm dấu thời gian."
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "Chuyển giọng nói thành văn bản cho 8 ngôn ngữ kèm dịch, tự động nhận diện ngôn ngữ."
+      },
+      "whisper-base": {
+        "description": "Chuyển giọng nói thành văn bản cho 99 ngôn ngữ kèm dịch, tự động nhận diện ngôn ngữ, dấu thời gian."
+      },
+      "whisper-base_en": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh kèm dấu thời gian."
+      },
+      "whisper-large": {
+        "description": "Chuyển giọng nói thành văn bản cho 99 ngôn ngữ kèm dịch, tự động nhận diện ngôn ngữ, dấu thời gian."
+      },
+      "whisper-large-v2": {
+        "description": "Chuyển giọng nói thành văn bản cho 99 ngôn ngữ kèm dịch, tự động nhận diện ngôn ngữ, dấu thời gian."
+      },
+      "whisper-medium_en": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh kèm dấu thời gian."
+      },
+      "whisper-small_en": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh kèm dấu thời gian."
+      },
+      "whisper-tiny": {
+        "description": "Chuyển giọng nói thành văn bản cho 99 ngôn ngữ kèm dịch, tự động nhận diện ngôn ngữ, dấu thời gian."
+      },
+      "whisper-tiny_en": {
+        "description": "Chuyển giọng nói thành văn bản tiếng Anh kèm dấu thời gian."
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "Điều chỉnh âm lượng của âm thanh phản hồi",
         "offReason": "Không dùng khi phản hồi âm thanh đang tắt."
       },
-      "feedbackOutputDevice": "Thiết bị đầu ra cho phản hồi âm thanh"
+      "feedbackOutputDevice": "Thiết bị đầu ra cho phản hồi âm thanh",
+      "previewTheme": "Nghe thử chủ đề âm thanh (phát âm bắt đầu rồi âm dừng)"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "Vị trí phát",
+    "moreInformation": "Thông tin thêm",
+    "play": "Phát",
+    "pause": "Tạm dừng",
+    "copyToClipboard": "Sao chép vào bảng nhớ tạm",
+    "notAvailable": "Không có sẵn",
+    "selectAnOption": "Chọn một tùy chọn...",
     "resetSetting": "Đặt lại {{setting}} về mặc định",
     "loading": "Đang tải...",
     "delete": "Xóa",

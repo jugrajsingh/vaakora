@@ -44,17 +44,38 @@ export function clearButtonState({
   isRecording,
   isUpdating,
   disabled,
+  bound,
 }: {
   enabled: boolean;
   id: string;
   isRecording: boolean;
   isUpdating: boolean;
   disabled: boolean;
+  bound: boolean;
 }): { visible: boolean; disabled: boolean } {
   return {
-    visible: canClearShortcut(id, enabled),
+    visible: canClearShortcut(id, enabled) && bound,
     disabled: disabled || isRecording || isUpdating,
   };
+}
+
+/** Clears a shortcut; `onCleared` runs only after it was cleared, `onError` only when it was refused. */
+export async function clearShortcut({
+  clear,
+  onCleared,
+  onError,
+}: {
+  clear: () => Promise<void>;
+  onCleared: () => void;
+  onError: (error: unknown) => void;
+}): Promise<void> {
+  try {
+    await clear();
+  } catch (error: unknown) {
+    onError(error);
+    return;
+  }
+  onCleared();
 }
 
 const IN_USE = /shortcut\.in_use:([A-Za-z0-9_-]+)/;

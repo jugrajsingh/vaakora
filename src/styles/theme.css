@@ -20,6 +20,11 @@
   --dark-color-logo-primary: #f28cbb;
   --dark-color-background-ui: #da5893;
 
+  /* Drop shadows: every box-shadow, drop-shadow and Tailwind shadow takes this
+     colour at its own alpha. */
+  --light-color-shadow: #000;
+  --dark-color-shadow: #000;
+
   /* The logo's pink: the wordmark, the recording overlay and onboarding's demo. */
   --light-color-logo-pastel: #faa2ca;
   --dark-color-logo-pastel: var(--dark-color-logo-primary);
@@ -91,11 +96,13 @@
   /* Demo's recording pill ring and shadow. */
   --light-demo-pill-shadow:
     0 0 0 1px color-mix(in srgb, var(--color-background-ui) 16%, transparent),
-    0 10px 26px -10px rgba(0, 0, 0, 0.35);
+    0 10px 26px -10px
+      color-mix(in srgb, var(--light-color-shadow) 35%, transparent);
   --dark-demo-pill-shadow:
     0 0 0 1px
       color-mix(in srgb, var(--dark-color-logo-primary) 20%, transparent),
-    0 10px 26px -10px rgba(0, 0, 0, 0.6);
+    0 10px 26px -10px
+      color-mix(in srgb, var(--dark-color-shadow) 60%, transparent);
 
   /* Status tints for the box behind a status color. */
   --light-color-moss-wash: color-mix(
@@ -143,6 +150,7 @@
   --color-error: var(--light-color-error);
   --color-moss: var(--light-color-moss);
   --color-plum: var(--light-color-plum);
+  --color-shadow: var(--light-color-shadow);
   --demo-pill-shadow: var(--light-demo-pill-shadow);
   --color-demo-window: var(--light-color-demo-window);
   --color-demo-lid: var(--light-color-demo-lid);
@@ -179,6 +187,7 @@
     --color-error: var(--dark-color-error);
     --color-moss: var(--dark-color-moss);
     --color-plum: var(--dark-color-plum);
+    --color-shadow: var(--dark-color-shadow);
     --demo-pill-shadow: var(--dark-demo-pill-shadow);
     --color-demo-window: var(--dark-color-demo-window);
     --color-demo-lid: var(--dark-color-demo-lid);
@@ -214,6 +223,7 @@
   --color-error: var(--light-color-error);
   --color-moss: var(--light-color-moss);
   --color-plum: var(--light-color-plum);
+  --color-shadow: var(--light-color-shadow);
   --demo-pill-shadow: var(--light-demo-pill-shadow);
   --color-demo-window: var(--light-color-demo-window);
   --color-demo-lid: var(--light-color-demo-lid);
@@ -238,6 +248,7 @@
   --color-error: var(--dark-color-error);
   --color-moss: var(--dark-color-moss);
   --color-plum: var(--dark-color-plum);
+  --color-shadow: var(--dark-color-shadow);
   --demo-pill-shadow: var(--dark-demo-pill-shadow);
   --color-demo-window: var(--dark-color-demo-window);
   --color-demo-lid: var(--dark-color-demo-lid);

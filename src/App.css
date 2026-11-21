@@ -16,6 +16,7 @@
   --color-moss: var(--color-moss);
   --color-plum: var(--color-plum);
   --color-plum-pick: var(--color-plum-pick);
+  --color-shadow: var(--color-shadow);
   --color-demo-window: var(--color-demo-window);
   --color-mascot-line: var(--color-mascot-line);
   --color-wash: var(--color-wash);
@@ -49,6 +50,15 @@
   --font-cjk-subset:
     "Handy CJK Subset", -apple-system, "Segoe UI Variable Text", "Segoe UI",
     system-ui, sans-serif;
+
+  /* Tailwind's shadow steps in use, rebuilt on the shadow token with their
+     default offsets and 0.1 alpha. */
+  --shadow-lg:
+    0 10px 15px -3px color-mix(in srgb, var(--color-shadow) 10%, transparent),
+    0 4px 6px -4px color-mix(in srgb, var(--color-shadow) 10%, transparent);
+  --shadow-xl:
+    0 20px 25px -5px color-mix(in srgb, var(--color-shadow) 10%, transparent),
+    0 8px 10px -6px color-mix(in srgb, var(--color-shadow) 10%, transparent);
 
   --text-title: 26px; /* screen titles */
   --text-name: 15px; /* the model name on Model's Full card */

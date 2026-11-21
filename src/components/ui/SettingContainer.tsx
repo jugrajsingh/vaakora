@@ -70,12 +70,10 @@ export const SettingContainer: React.FC<SettingContainerProps> = ({
   }
 
   // Horizontal layout (default)
-  const horizontalContainerClasses = `${
-    grouped
-      ? "flex items-center justify-between min-h-12 px-4 p-2"
-      : "flex items-center justify-between min-h-12 px-4 p-2 rounded-lg border border-line"
-  }${grow ? " gap-4" : ""}`;
-  const titleClasses = grow ? "max-w-2/3 shrink-0" : "max-w-2/3";
+  const horizontalContainerClasses = grouped
+    ? "flex items-center justify-between gap-4 min-h-12 px-4 p-2"
+    : "flex items-center justify-between gap-4 min-h-12 px-4 p-2 rounded-lg border border-line";
+  const titleClasses = grow ? "max-w-2/3 shrink-0" : "max-w-2/3 min-w-0";
   const controlClasses = grow
     ? "relative flex min-w-0 flex-1 justify-end"
     : "relative";

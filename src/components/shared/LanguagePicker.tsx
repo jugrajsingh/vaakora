@@ -62,7 +62,7 @@ export const LanguageChip: React.FC<LanguageChipProps> = ({
         aria-label={removeLabel}
         onMouseDown={(e) => e.preventDefault()}
         onClick={onRemove}
-        className={`group ${soft} cursor-pointer ps-2.5 pe-1.5 transition-colors hover:bg-line`}
+        className={`group ${soft} cursor-pointer ps-2.5 pe-1.5 transition-colors hover:bg-line focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary`}
       >
         {name}
         <span className="grid size-[14px] place-items-center text-ink-3 transition-colors group-hover:text-text">
@@ -86,7 +86,7 @@ export const LanguageChip: React.FC<LanguageChipProps> = ({
         e.preventDefault();
         onRemove();
       }}
-      className="group inline-flex h-[28px] cursor-pointer items-center gap-[6px] rounded-full border-[1.5px] border-line-strong bg-background ps-[12px] pe-[6px] text-small font-semibold text-text hover:border-ink-3"
+      className="group inline-flex h-[28px] cursor-pointer items-center gap-[6px] rounded-full border-[1.5px] border-line-strong bg-background ps-[12px] pe-[6px] text-small font-semibold text-text hover:border-ink-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
     >
       {name}
       <span className="grid size-[18px] place-items-center rounded-full leading-none text-ink-2 group-hover:bg-line">
@@ -115,7 +115,7 @@ export const LanguageOption: React.FC<LanguageOptionProps> = ({
   <button
     type="button"
     onClick={onPick}
-    className={`flex h-[46px] cursor-pointer flex-col justify-center rounded-[9px] px-[12px] text-start leading-[1.25] hover:bg-wash ${
+    className={`flex h-[46px] cursor-pointer flex-col justify-center rounded-[9px] px-[12px] text-start leading-[1.25] hover:bg-wash focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
       highlighted
         ? "border-[1.5px] border-line-strong bg-wash"
         : "border border-transparent"
@@ -257,7 +257,7 @@ export const LanguageSearchField: React.FC<{
     // Not a <label>: it would hand clicks to the first chip, which removes it.
     <div
       onClick={() => inputRef.current?.focus({ preventScroll: true })}
-      className={`flex min-h-[46px] cursor-text flex-wrap items-center gap-[4px] px-[8px] py-[7px] text-start ${className}`}
+      className={`flex min-h-[46px] cursor-text flex-wrap items-center gap-[4px] px-[8px] py-[7px] text-start focus-within:ring-2 focus-within:ring-logo-primary ${className}`}
     >
       {languages.map((code) => (
         <LanguageChip

@@ -303,7 +303,7 @@ export function EntryDialog({
             <label key={scope ?? ""} className={CHECKBOX}>
               <input
                 type="checkbox"
-                className="accent-logo-primary"
+                className="accent-logo-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
                 checked={form.scopes.includes(scope)}
                 onChange={() =>
                   setForm((current) => ({

@@ -31,7 +31,7 @@ function IconButton({
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`p-1.5 rounded-md flex items-center justify-center transition-colors cursor-pointer disabled:cursor-not-allowed disabled:text-text/20 ${active ? "text-logo-primary hover:text-logo-primary/80" : "text-text/50 hover:text-logo-primary"}`}
+      className={`p-1.5 rounded-md flex items-center justify-center transition-colors cursor-pointer disabled:cursor-not-allowed disabled:text-text/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${active ? "text-logo-primary hover:text-logo-primary/80" : "text-text/50 hover:text-logo-primary"}`}
     >
       {children}
     </button>

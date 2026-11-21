@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "台湾華語に最適化。コードスイッチングに対応。"
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "英語の音声入力に最適な万能モデル"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "多くのヨーロッパ言語で高速かつ高精度に文字起こしできます"
+      },
+      "canary-180m-flash": {
+        "description": "小型で高速、どんなハードウェアでも快適に動作します"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "多くの言語で安定して高性能。ギリシャ語とポーランド語に最適"
+      },
+      "whisper-medium": {
+        "description": "最も幅広い言語に対応しますが、やや遅くなる場合があります"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "多言語対応で、イタリア語とスペイン語の精度が非常に高いモデル。Apple Silicon または単体 GPU で最適"
+      },
+      "parakeet-ultra": {
+        "description": "ヨーロッパ25言語で最高の精度"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "高速かつ高精度で、多言語向けの優れた選択肢"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "英語専用の優れたモデル。どんなハードウェアでも動作します"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "中国語、広東語、英語を含むアジア言語に最適"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "日本語に最適で、タイ語、インドネシア語、マレー語にも強い"
+      },
+      "canary-1b-v2": {
+        "description": "ヨーロッパ言語向けで最も精度の高い小型モデル"
+      },
+      "canary-qwen-2_5b": {
+        "description": "非常に高精度な英語。GPU がないと低速です。"
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "アラビア語、およびアラビア語と英語を話す人に最適"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "中国語（普通話）、英語、日本語に適しています"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "ロシア語のみ。"
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "ロシア語の音声入力に最適。英語は不安定な場合があります。"
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "非常に高速な英語の文字起こし。GPU で最適"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "高精度で翻訳にも対応。GPU との併用で最適"
+      },
+      "medasr": {
+        "description": "メモを口述する臨床医向け。一般的な会話には不向き"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "超小型の英語モデル。CPU でもほぼ即時"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "会議で話者が重なる場面向け。一人での音声入力には不向き"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "多くの言語でトップクラスの精度。Apple Silicon または GPU で最適"
+      },
+      "SenseVoiceSmall": {
+        "description": "どのマシンでも中国語（普通話）、日本語、韓国語を即座に認識。広東語は弱め"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "高精度で翻訳にも対応。Apple Silicon または GPU で最適。"
+      },
+      "whisper-small": {
+        "description": "比較的小型のモデルで幅広い言語に対応。"
+      },
+      "whisper-large-v3-turbo": {
+        "description": "多くの言語で高精度。GPU がないと低速"
+      },
+      "Breeze-ASR-25": {
+        "description": "英語が混ざる台湾華語向け。繁体字で句読点なし"
+      },
+      "whisper-large-v3": {
+        "description": "ほとんどの言語で実用的な精度。Apple Silicon または GPU で最適。"
+      },
+      "canary-1b": {
+        "description": "4言語の音声文字起こし（翻訳対応）。"
+      },
+      "canary-1b-flash": {
+        "description": "4言語の音声文字起こし（翻訳対応）。"
+      },
+      "gigaam-v3-ctc": {
+        "description": "ロシア語の音声文字起こし（タイムスタンプ対応）。"
+      },
+      "gigaam-v3-rnnt": {
+        "description": "ロシア語の音声文字起こし（タイムスタンプ対応）。"
+      },
+      "granite-4_0-1b-speech": {
+        "description": "6言語の音声文字起こし（翻訳対応）。"
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "5言語の音声文字起こし。"
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "5言語の音声文字起こし（タイムスタンプ対応）。"
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "英語の音声文字起こし。"
+      },
+      "moonshine-base": {
+        "description": "英語の音声文字起こし。"
+      },
+      "moonshine-base-ar": {
+        "description": "アラビア語の音声文字起こし。"
+      },
+      "moonshine-base-ja": {
+        "description": "日本語の音声文字起こし。"
+      },
+      "moonshine-base-ko": {
+        "description": "韓国語の音声文字起こし。"
+      },
+      "moonshine-base-uk": {
+        "description": "ウクライナ語の音声文字起こし。"
+      },
+      "moonshine-base-vi": {
+        "description": "ベトナム語の音声文字起こし。"
+      },
+      "moonshine-base-zh": {
+        "description": "中国語の音声文字起こし。"
+      },
+      "moonshine-streaming-medium": {
+        "description": "英語の音声文字起こし（ストリーミング対応）。"
+      },
+      "moonshine-streaming-small": {
+        "description": "英語の音声文字起こし（ストリーミング対応）。"
+      },
+      "moonshine-streaming-tiny": {
+        "description": "英語の音声文字起こし（ストリーミング対応）。"
+      },
+      "moonshine-tiny": {
+        "description": "英語の音声文字起こし。"
+      },
+      "moonshine-tiny-ar": {
+        "description": "アラビア語の音声文字起こし。"
+      },
+      "moonshine-tiny-ja": {
+        "description": "日本語の音声文字起こし。"
+      },
+      "moonshine-tiny-ko": {
+        "description": "韓国語の音声文字起こし。"
+      },
+      "moonshine-tiny-uk": {
+        "description": "ウクライナ語の音声文字起こし。"
+      },
+      "moonshine-tiny-vi": {
+        "description": "ベトナム語の音声文字起こし。"
+      },
+      "moonshine-tiny-zh": {
+        "description": "中国語の音声文字起こし。"
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "2言語の音声文字起こし（タイムスタンプ対応）。"
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "英語の音声文字起こし（ストリーミング、タイムスタンプ対応）。"
+      },
+      "orukeet": {
+        "description": "25言語の音声文字起こし（言語の自動検出、タイムスタンプ対応）。"
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "英語の音声文字起こし（タイムスタンプ対応）。"
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "英語の音声文字起こし（タイムスタンプ対応）。"
+      },
+      "parakeet-primeline": {
+        "description": "25言語の音声文字起こし（言語の自動検出、タイムスタンプ対応）。"
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "英語の音声文字起こし（タイムスタンプ対応）。"
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "英語の音声文字起こし（タイムスタンプ対応）。"
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "英語の音声文字起こし（タイムスタンプ対応）。"
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "英語の音声文字起こし（タイムスタンプ対応）。"
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "8言語の音声文字起こし（翻訳、言語の自動検出対応）。"
+      },
+      "whisper-base": {
+        "description": "99言語の音声文字起こし（翻訳、言語の自動検出、タイムスタンプ対応）。"
+      },
+      "whisper-base_en": {
+        "description": "英語の音声文字起こし（タイムスタンプ対応）。"
+      },
+      "whisper-large": {
+        "description": "99言語の音声文字起こし（翻訳、言語の自動検出、タイムスタンプ対応）。"
+      },
+      "whisper-large-v2": {
+        "description": "99言語の音声文字起こし（翻訳、言語の自動検出、タイムスタンプ対応）。"
+      },
+      "whisper-medium_en": {
+        "description": "英語の音声文字起こし（タイムスタンプ対応）。"
+      },
+      "whisper-small_en": {
+        "description": "英語の音声文字起こし（タイムスタンプ対応）。"
+      },
+      "whisper-tiny": {
+        "description": "99言語の音声文字起こし（翻訳、言語の自動検出、タイムスタンプ対応）。"
+      },
+      "whisper-tiny_en": {
+        "description": "英語の音声文字起こし（タイムスタンプ対応）。"
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "オーディオフィードバックの音量を調整",
         "offReason": "オーディオフィードバックがオフのときは使用されません。"
       },
-      "feedbackOutputDevice": "フィードバック音の出力デバイス"
+      "feedbackOutputDevice": "フィードバック音の出力デバイス",
+      "previewTheme": "サウンドテーマをプレビュー（開始音、続いて停止音を再生）"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "再生位置",
+    "moreInformation": "詳細情報",
+    "play": "再生",
+    "pause": "一時停止",
+    "copyToClipboard": "クリップボードにコピー",
+    "notAvailable": "利用できません",
+    "selectAnOption": "オプションを選択...",
     "resetSetting": "{{setting}}を既定値に戻す",
     "loading": "読み込み中…",
     "delete": "削除",

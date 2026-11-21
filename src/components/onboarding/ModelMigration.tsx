@@ -415,7 +415,7 @@ const MigrationRow: React.FC<MigrationRowProps> = ({
           onToggle(retired.id);
         }
       }}
-      className={`flex items-center gap-[14px] py-[14px] [&+&]:border-t [&+&]:border-line ${
+      className={`flex items-center gap-[14px] py-[14px] [&+&]:border-t [&+&]:border-line focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
         toggleable ? "cursor-pointer" : ""
       }`}
     >

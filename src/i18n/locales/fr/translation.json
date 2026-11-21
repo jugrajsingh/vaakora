@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "Optimisé pour le mandarin taïwanais. Prise en charge de l'alternance codique."
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "Le meilleur choix polyvalent pour la dictée en anglais"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "Transcription rapide et précise dans de nombreuses langues européennes"
+      },
+      "canary-180m-flash": {
+        "description": "Minuscule, rapide et performant sur n'importe quel matériel"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "Constamment solide dans de nombreuses langues, idéal pour le grec et le polonais"
+      },
+      "whisper-medium": {
+        "description": "La plus large prise en charge des langues, mais peut être un peu lent"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "Multilingue, très précis en italien et en espagnol. Idéal sur Apple Silicon ou GPU dédiés"
+      },
+      "parakeet-ultra": {
+        "description": "Meilleure précision sur 25 langues européennes"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "Rapide et précis, un excellent choix multilingue"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "Excellent modèle réservé à l'anglais, fonctionne sur n'importe quel matériel"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "Idéal pour le chinois, le cantonais et les langues asiatiques avec l'anglais"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "Idéal pour le japonais, bon en thaï, indonésien et malais"
+      },
+      "canary-1b-v2": {
+        "description": "Le modèle compact le plus précis pour les langues européennes"
+      },
+      "canary-qwen-2_5b": {
+        "description": "Anglais très précis. Lent sans GPU."
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "Idéal pour l'arabe et pour les locuteurs d'arabe et d'anglais"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "Bon pour le mandarin, l'anglais et le japonais"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "Russe uniquement."
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "Idéal pour la dictée en russe. L'anglais peut être peu fiable."
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "Transcription anglaise extrêmement rapide, idéale sur GPU"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "Précis, avec prise en charge de la traduction. Idéal avec un GPU"
+      },
+      "medasr": {
+        "description": "Pour les cliniciens qui dictent des notes. Faible sur la parole générale"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "Minuscule modèle anglais, quasi instantané même sur CPU"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "Pour les interlocuteurs qui se chevauchent en réunion, pas pour la dictée en solo"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "Précision maximale dans de nombreuses langues. Idéal sur Apple Silicon ou avec un GPU"
+      },
+      "SenseVoiceSmall": {
+        "description": "Mandarin, japonais et coréen instantanés sur n'importe quelle machine. Cantonais faible"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "Précis, avec prise en charge de la traduction. Idéal sur Apple Silicon ou avec un GPU."
+      },
+      "whisper-small": {
+        "description": "Large prise en charge des langues dans un modèle relativement petit."
+      },
+      "whisper-large-v3-turbo": {
+        "description": "Précis dans de nombreuses langues. Lent sans GPU"
+      },
+      "Breeze-ASR-25": {
+        "description": "Mandarin de Taïwan avec de l'anglais mêlé. Écriture traditionnelle, sans ponctuation"
+      },
+      "whisper-large-v3": {
+        "description": "La plupart des langues avec une précision exploitable. Idéal sur Apple Silicon ou avec un GPU."
+      },
+      "canary-1b": {
+        "description": "Reconnaissance vocale en 4 langues avec traduction."
+      },
+      "canary-1b-flash": {
+        "description": "Reconnaissance vocale en 4 langues avec traduction."
+      },
+      "gigaam-v3-ctc": {
+        "description": "Reconnaissance vocale en russe avec horodatage."
+      },
+      "gigaam-v3-rnnt": {
+        "description": "Reconnaissance vocale en russe avec horodatage."
+      },
+      "granite-4_0-1b-speech": {
+        "description": "Reconnaissance vocale en 6 langues avec traduction."
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "Reconnaissance vocale en 5 langues."
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "Reconnaissance vocale en 5 langues avec horodatage."
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "Reconnaissance vocale en anglais."
+      },
+      "moonshine-base": {
+        "description": "Reconnaissance vocale en anglais."
+      },
+      "moonshine-base-ar": {
+        "description": "Reconnaissance vocale en arabe."
+      },
+      "moonshine-base-ja": {
+        "description": "Reconnaissance vocale en japonais."
+      },
+      "moonshine-base-ko": {
+        "description": "Reconnaissance vocale en coréen."
+      },
+      "moonshine-base-uk": {
+        "description": "Reconnaissance vocale en ukrainien."
+      },
+      "moonshine-base-vi": {
+        "description": "Reconnaissance vocale en vietnamien."
+      },
+      "moonshine-base-zh": {
+        "description": "Reconnaissance vocale en chinois."
+      },
+      "moonshine-streaming-medium": {
+        "description": "Reconnaissance vocale en anglais avec streaming."
+      },
+      "moonshine-streaming-small": {
+        "description": "Reconnaissance vocale en anglais avec streaming."
+      },
+      "moonshine-streaming-tiny": {
+        "description": "Reconnaissance vocale en anglais avec streaming."
+      },
+      "moonshine-tiny": {
+        "description": "Reconnaissance vocale en anglais."
+      },
+      "moonshine-tiny-ar": {
+        "description": "Reconnaissance vocale en arabe."
+      },
+      "moonshine-tiny-ja": {
+        "description": "Reconnaissance vocale en japonais."
+      },
+      "moonshine-tiny-ko": {
+        "description": "Reconnaissance vocale en coréen."
+      },
+      "moonshine-tiny-uk": {
+        "description": "Reconnaissance vocale en ukrainien."
+      },
+      "moonshine-tiny-vi": {
+        "description": "Reconnaissance vocale en vietnamien."
+      },
+      "moonshine-tiny-zh": {
+        "description": "Reconnaissance vocale en chinois."
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "Reconnaissance vocale en 2 langues avec horodatage."
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "Reconnaissance vocale en anglais avec streaming, horodatage."
+      },
+      "orukeet": {
+        "description": "Reconnaissance vocale en 25 langues avec détection automatique de la langue, horodatage."
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "Reconnaissance vocale en anglais avec horodatage."
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "Reconnaissance vocale en anglais avec horodatage."
+      },
+      "parakeet-primeline": {
+        "description": "Reconnaissance vocale en 25 langues avec détection automatique de la langue, horodatage."
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "Reconnaissance vocale en anglais avec horodatage."
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "Reconnaissance vocale en anglais avec horodatage."
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "Reconnaissance vocale en anglais avec horodatage."
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "Reconnaissance vocale en anglais avec horodatage."
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "Reconnaissance vocale en 8 langues avec traduction, détection automatique de la langue."
+      },
+      "whisper-base": {
+        "description": "Reconnaissance vocale en 99 langues avec traduction, détection automatique de la langue, horodatage."
+      },
+      "whisper-base_en": {
+        "description": "Reconnaissance vocale en anglais avec horodatage."
+      },
+      "whisper-large": {
+        "description": "Reconnaissance vocale en 99 langues avec traduction, détection automatique de la langue, horodatage."
+      },
+      "whisper-large-v2": {
+        "description": "Reconnaissance vocale en 99 langues avec traduction, détection automatique de la langue, horodatage."
+      },
+      "whisper-medium_en": {
+        "description": "Reconnaissance vocale en anglais avec horodatage."
+      },
+      "whisper-small_en": {
+        "description": "Reconnaissance vocale en anglais avec horodatage."
+      },
+      "whisper-tiny": {
+        "description": "Reconnaissance vocale en 99 langues avec traduction, détection automatique de la langue, horodatage."
+      },
+      "whisper-tiny_en": {
+        "description": "Reconnaissance vocale en anglais avec horodatage."
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "Ajuster le volume du signal sonore",
         "offReason": "Inutilisé lorsque le signal sonore est désactivé."
       },
-      "feedbackOutputDevice": "Périphérique de sortie du signal sonore"
+      "feedbackOutputDevice": "Périphérique de sortie du signal sonore",
+      "previewTheme": "Prévisualiser le thème sonore (joue le début puis l'arrêt)"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "Position de lecture",
+    "moreInformation": "Plus d'informations",
+    "play": "Lire",
+    "pause": "Mettre en pause",
+    "copyToClipboard": "Copier dans le presse-papiers",
+    "notAvailable": "Non disponible",
+    "selectAnOption": "Sélectionnez une option...",
     "resetSetting": "Rétablir la valeur par défaut de {{setting}}",
     "loading": "Chargement...",
     "delete": "Supprimer",

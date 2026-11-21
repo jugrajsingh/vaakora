@@ -59,7 +59,7 @@ export function RunOnControl({
         <label className="flex items-center gap-1.5">
           <span className="sr-only">{t("tts.runOn")}</span>
           <select
-            className="rounded-lg border border-line bg-background px-2 py-1 text-xs text-text focus:outline-none focus:border-logo-primary"
+            className="rounded-lg border border-line bg-background px-2 py-1 text-xs text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary focus:border-logo-primary"
             value={value}
             disabled={!downloaded}
             onChange={(event) => {

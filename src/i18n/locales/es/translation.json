@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "Optimizado para mandarín taiwanés. Soporte para cambio de código."
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "La mejor opción general para dictado en inglés"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "Transcripción rápida y precisa en muchos idiomas europeos"
+      },
+      "canary-180m-flash": {
+        "description": "Diminuto, rápido y funciona bien en cualquier hardware"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "Muy sólido de forma constante en muchos idiomas, el mejor para griego y polaco"
+      },
+      "whisper-medium": {
+        "description": "El mayor soporte de idiomas, pero puede ir algo lento"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "Multilingüe, muy preciso en italiano y español. Mejor en Apple Silicon o GPU dedicadas"
+      },
+      "parakeet-ultra": {
+        "description": "La mejor precisión en 25 idiomas europeos"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "Rápido y preciso, una gran opción multilingüe en general"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "Excelente modelo solo para inglés, funciona en cualquier hardware"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "El mejor para chino, cantonés y lenguas asiáticas con inglés"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "El mejor para japonés, bueno en tailandés, indonesio y malayo"
+      },
+      "canary-1b-v2": {
+        "description": "El modelo pequeño más preciso para idiomas europeos"
+      },
+      "canary-qwen-2_5b": {
+        "description": "Inglés muy preciso. Lento sin GPU."
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "El mejor para árabe y para hablantes de árabe e inglés"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "Bueno para mandarín, inglés y japonés"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "Solo ruso."
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "El mejor para dictado en ruso. El inglés puede no ser fiable."
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "Transcripción en inglés extremadamente rápida, mejor con GPU"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "Preciso y con soporte de traducción. Mejor con GPU"
+      },
+      "medasr": {
+        "description": "Para médicos que dictan notas. Flojo con el habla general"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "Modelo diminuto de inglés, casi instantáneo incluso en CPU"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "Para hablantes que se solapan en reuniones, no para dictado individual"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "Máxima precisión en muchos idiomas. Mejor en Apple Silicon o con GPU"
+      },
+      "SenseVoiceSmall": {
+        "description": "Mandarín, japonés y coreano al instante en cualquier equipo. Cantonés flojo"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "Preciso y con soporte de traducción. Mejor en Apple Silicon o con GPU."
+      },
+      "whisper-small": {
+        "description": "Amplio soporte de idiomas en un modelo relativamente pequeño."
+      },
+      "whisper-large-v3-turbo": {
+        "description": "Preciso en muchos idiomas. Lento sin GPU"
+      },
+      "Breeze-ASR-25": {
+        "description": "Mandarín de Taiwán con inglés mezclado. Escritura tradicional, sin puntuación"
+      },
+      "whisper-large-v3": {
+        "description": "La mayoría de los idiomas con una precisión utilizable. Mejor en Apple Silicon o con GPU."
+      },
+      "canary-1b": {
+        "description": "Voz a texto en 4 idiomas con traducción."
+      },
+      "canary-1b-flash": {
+        "description": "Voz a texto en 4 idiomas con traducción."
+      },
+      "gigaam-v3-ctc": {
+        "description": "Voz a texto en ruso con marcas de tiempo."
+      },
+      "gigaam-v3-rnnt": {
+        "description": "Voz a texto en ruso con marcas de tiempo."
+      },
+      "granite-4_0-1b-speech": {
+        "description": "Voz a texto en 6 idiomas con traducción."
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "Voz a texto en 5 idiomas."
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "Voz a texto en 5 idiomas con marcas de tiempo."
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "Voz a texto en inglés."
+      },
+      "moonshine-base": {
+        "description": "Voz a texto en inglés."
+      },
+      "moonshine-base-ar": {
+        "description": "Voz a texto en árabe."
+      },
+      "moonshine-base-ja": {
+        "description": "Voz a texto en japonés."
+      },
+      "moonshine-base-ko": {
+        "description": "Voz a texto en coreano."
+      },
+      "moonshine-base-uk": {
+        "description": "Voz a texto en ucraniano."
+      },
+      "moonshine-base-vi": {
+        "description": "Voz a texto en vietnamita."
+      },
+      "moonshine-base-zh": {
+        "description": "Voz a texto en chino."
+      },
+      "moonshine-streaming-medium": {
+        "description": "Voz a texto en inglés con streaming."
+      },
+      "moonshine-streaming-small": {
+        "description": "Voz a texto en inglés con streaming."
+      },
+      "moonshine-streaming-tiny": {
+        "description": "Voz a texto en inglés con streaming."
+      },
+      "moonshine-tiny": {
+        "description": "Voz a texto en inglés."
+      },
+      "moonshine-tiny-ar": {
+        "description": "Voz a texto en árabe."
+      },
+      "moonshine-tiny-ja": {
+        "description": "Voz a texto en japonés."
+      },
+      "moonshine-tiny-ko": {
+        "description": "Voz a texto en coreano."
+      },
+      "moonshine-tiny-uk": {
+        "description": "Voz a texto en ucraniano."
+      },
+      "moonshine-tiny-vi": {
+        "description": "Voz a texto en vietnamita."
+      },
+      "moonshine-tiny-zh": {
+        "description": "Voz a texto en chino."
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "Voz a texto en 2 idiomas con marcas de tiempo."
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "Voz a texto en inglés con streaming, marcas de tiempo."
+      },
+      "orukeet": {
+        "description": "Voz a texto en 25 idiomas con detección automática de idioma, marcas de tiempo."
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "Voz a texto en inglés con marcas de tiempo."
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "Voz a texto en inglés con marcas de tiempo."
+      },
+      "parakeet-primeline": {
+        "description": "Voz a texto en 25 idiomas con detección automática de idioma, marcas de tiempo."
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "Voz a texto en inglés con marcas de tiempo."
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "Voz a texto en inglés con marcas de tiempo."
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "Voz a texto en inglés con marcas de tiempo."
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "Voz a texto en inglés con marcas de tiempo."
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "Voz a texto en 8 idiomas con traducción, detección automática de idioma."
+      },
+      "whisper-base": {
+        "description": "Voz a texto en 99 idiomas con traducción, detección automática de idioma, marcas de tiempo."
+      },
+      "whisper-base_en": {
+        "description": "Voz a texto en inglés con marcas de tiempo."
+      },
+      "whisper-large": {
+        "description": "Voz a texto en 99 idiomas con traducción, detección automática de idioma, marcas de tiempo."
+      },
+      "whisper-large-v2": {
+        "description": "Voz a texto en 99 idiomas con traducción, detección automática de idioma, marcas de tiempo."
+      },
+      "whisper-medium_en": {
+        "description": "Voz a texto en inglés con marcas de tiempo."
+      },
+      "whisper-small_en": {
+        "description": "Voz a texto en inglés con marcas de tiempo."
+      },
+      "whisper-tiny": {
+        "description": "Voz a texto en 99 idiomas con traducción, detección automática de idioma, marcas de tiempo."
+      },
+      "whisper-tiny_en": {
+        "description": "Voz a texto en inglés con marcas de tiempo."
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "Ajusta el volumen de los sonidos de retroalimentación de audio",
         "offReason": "No se usa cuando la retroalimentación de audio está desactivada."
       },
-      "feedbackOutputDevice": "Dispositivo de salida de la retroalimentación de audio"
+      "feedbackOutputDevice": "Dispositivo de salida de la retroalimentación de audio",
+      "previewTheme": "Previsualizar el tema de sonido (reproduce inicio y luego parada)"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "Posición de reproducción",
+    "moreInformation": "Más información",
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "copyToClipboard": "Copiar al portapapeles",
+    "notAvailable": "No disponible",
+    "selectAnOption": "Selecciona una opción...",
     "resetSetting": "Restablecer {{setting}} al valor predeterminado",
     "loading": "Cargando...",
     "delete": "Eliminar",

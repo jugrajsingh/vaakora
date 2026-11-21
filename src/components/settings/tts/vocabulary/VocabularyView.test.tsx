@@ -4,6 +4,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import i18next from "i18next";
 import { I18nextProvider } from "react-i18next";
+import de from "../../../../i18n/locales/de/translation.json";
 import en from "../../../../i18n/locales/en/translation.json";
 import type { Edit, EntryRow, VocabularyTable } from "@/bindings";
 import type { SaveResult } from "./actions";
@@ -107,6 +108,7 @@ const settle = (next: SetEditing, current: Editing) =>
   typeof next === "function" ? next(current) : next;
 
 function render(options: {
+  language?: typeof i18n;
   revision: string;
   editing?: EntryOpen | null;
   correction?: Correction | "starting" | null;
@@ -158,7 +160,7 @@ function render(options: {
   buttons.length = 0;
   chips.length = 0;
   const html = renderToStaticMarkup(
-    <I18nextProvider i18n={i18n}>
+    <I18nextProvider i18n={options.language ?? i18n}>
       <VocabularyView
         table={table}
         models={models}
@@ -521,6 +523,30 @@ describe("VocabularyView, toolbar and states", () => {
       buttons.map((props) => props.children),
       ["Correct a reading", "Add entry"],
     );
+  });
+  it("toolbar_fits_in_german", async () => {
+    const german = i18next.createInstance();
+    await german.init({ lng: "de", resources: { de: { translation: de } } });
+    const { html } = render({ revision: "rev-render", language: german });
+    assert.match(html, /placeholder="Einträge suchen"/);
+    assert.deepEqual(
+      buttons.map((props) => props.children),
+      ["Aussprache korrigieren", "Eintrag hinzufügen"],
+    );
+    for (const props of buttons) {
+      assert.ok(
+        props.className?.split(" ").includes("whitespace-nowrap"),
+        `${props.children} keeps one line`,
+      );
+    }
+    const toolbar = html.match(
+      /<div class="flex ([^"]*)"><input [^>]*type="search"[^>]*>/,
+    );
+    assert.ok(toolbar, "the toolbar row holds the search field first");
+    assert.ok(toolbar[1].split(" ").includes("flex-wrap"), toolbar[1]);
+    const input = toolbar[0].slice(toolbar[0].indexOf("<input"));
+    const field = /class="([^"]*)"/.exec(input)?.[1] ?? "";
+    assert.ok(field.split(" ").includes("min-w-0"), field);
   });
   it("filters_offer_model_kind_source_and_a_problems_chip", () => {
     const { html, filterChanges } = render({ revision: "rev-render" });

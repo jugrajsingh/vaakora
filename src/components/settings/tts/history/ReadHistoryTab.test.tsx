@@ -258,6 +258,25 @@ describe("ReadHistoryStateLine", () => {
   });
 });
 
+describe("ReadHistoryTab clear", () => {
+  it("clear_is_off_with_the_reason_only_for_a_loaded_empty_list", () => {
+    settings = {};
+    const html = renderToStaticMarkup(
+      <I18nextProvider i18n={i18n}>
+        <ReadHistoryTab models={[]} changeRetention={() => {}} />
+      </I18nextProvider>,
+    );
+    assert.ok(html.includes("Clear history"));
+    assert.ok(!html.includes("Nothing to clear."), "not loaded yet");
+    const source = readFileSync(
+      new URL("./ReadHistoryTab.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.ok(source.includes("disabled={!entries?.length}"));
+    assert.ok(source.includes("listEmpty={entries?.length === 0}"));
+  });
+});
+
 const FIRST: ReadHistoryEntry = {
   id: 1,
   timestamp: 1_700_000_000,

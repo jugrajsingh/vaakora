@@ -1,10 +1,11 @@
 import {
   clearButtonState,
+  clearShortcut,
   shortcutErrorText,
   shortcutNameKey,
 } from "@/lib/utils/shortcutPresentation";
 import { notify } from "@/stores/noticeStore";
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatKeyCombination } from "../../lib/utils/keyboard";
 import { ResetButton } from "../ui/ResetButton";
@@ -40,8 +41,18 @@ export const ShortcutInput: React.FC<ShortcutInputProps> = ({
     osType,
   );
   const shortcutRef = useRef<HTMLDivElement | null>(null);
+  const resetRef = useRef<HTMLButtonElement | null>(null);
+  // Set once Clear removed the key; Clear is gone then, so focus goes to Reset.
+  const [cleared, setCleared] = useState(false);
+  const updating = isUpdating(`binding_${shortcutId}`);
 
   const bindings = getSetting("bindings") || {};
+
+  useEffect(() => {
+    if (!cleared || updating) return;
+    resetRef.current?.focus();
+    setCleared(false);
+  }, [cleared, updating]);
 
   usePressAway(capturing, shortcutRef, cancel);
 
@@ -99,20 +110,21 @@ export const ShortcutInput: React.FC<ShortcutInputProps> = ({
     enabled,
     id: shortcutId,
     isRecording: capturing,
-    isUpdating: isUpdating(`binding_${shortcutId}`),
+    isUpdating: updating,
     disabled,
+    bound: Boolean(binding.current_binding),
   });
-  const handleClear = async () => {
-    try {
-      await clearBinding(shortcutId);
-    } catch (error: unknown) {
-      notify({
-        title: t("settings.general.shortcut.errors.set", {
-          error: shortcutErrorText(String(error), t),
+  const handleClear = () =>
+    clearShortcut({
+      clear: () => clearBinding(shortcutId),
+      onCleared: () => setCleared(true),
+      onError: (error) =>
+        notify({
+          title: t("settings.general.shortcut.errors.set", {
+            error: shortcutErrorText(String(error), t),
+          }),
         }),
-      });
-    }
-  };
+    });
   const translatedName = t(shortcutNameKey(shortcutId), binding.name);
   const translatedDescription = t(
     `settings.general.shortcut.bindings.${shortcutId}.description`,
@@ -149,16 +161,17 @@ export const ShortcutInput: React.FC<ShortcutInputProps> = ({
           </div>
         )}
         <ResetButton
+          ref={resetRef}
           ariaLabel={t("common.resetSetting", { setting: translatedName })}
           onClick={() => resetBinding(shortcutId)}
-          disabled={isUpdating(`binding_${shortcutId}`)}
+          disabled={updating}
         />
         {clearState.visible && (
           <button
             type="button"
             disabled={clearState.disabled}
             onClick={() => void handleClear()}
-            className="px-2 py-1 text-sm disabled:opacity-50"
+            className="px-2 py-1 text-sm disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
           >
             {t("common.clear")}
           </button>

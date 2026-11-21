@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AcronymStyle, AcronymStyleRow, TtsModelInfo } from "@/bindings";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -34,9 +35,15 @@ export function AcronymStyles({
     })),
   ];
   return (
-    <details className="bg-background border border-line rounded-lg p-4">
-      <summary className="text-sm font-medium cursor-pointer">
+    <details className="group bg-background border border-line rounded-lg p-4">
+      <summary className="list-none [&::-webkit-details-marker]:hidden flex cursor-pointer items-center justify-between gap-2 rounded-md text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary">
         {t("tts.vocabulary.acronymStylePerModel")}
+        <ChevronDown
+          width={16}
+          height={16}
+          aria-hidden="true"
+          className="text-ink-2 transition-transform group-open:rotate-180"
+        />
       </summary>
       <div className="grid mt-2 grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
         {shown.map((row) => (

@@ -1703,6 +1703,112 @@ pub(super) mod tests {
     }
     mod model_selection {
         use super::*;
+        #[derive(Clone)]
+        struct ReadEngine(mpsc::Sender<Selection>);
+        impl Worker for ReadEngine {
+            fn request(&mut self, _: Ticket, _: &str, selection: &Selection) -> Result<(), String> {
+                self.0.send(selection.clone()).unwrap();
+                Ok(())
+            }
+            fn poll(&mut self) -> Option<Completion> {
+                None
+            }
+            fn cancel(&mut self, _: Ticket) {}
+            fn selection_changed(&mut self) {}
+        }
+        fn stored(model_id: &str) -> crate::settings::AppSettings {
+            crate::settings::AppSettings {
+                tts_model_id: model_id.into(),
+                ..crate::settings::get_default_settings()
+            }
+        }
+        #[test]
+        fn same_model_options_save_without_download() {
+            let reading = actor(Arc::new(Mutex::new(SharedAudio::default())));
+            let chosen = Selection {
+                technical: false,
+                read_code: true,
+                full_links: true,
+                speed: 1.3,
+                ..selection()
+            };
+            let saved = Arc::new(Mutex::new(None));
+            let store = saved.clone();
+            let result = super::super::super::commands::select_with_store(
+                chosen.clone(),
+                false,
+                &reading,
+                || stored("supertonic-3"),
+                move |settings| {
+                    *store.lock().unwrap() = Some(settings);
+                    Ok(())
+                },
+            );
+            assert_eq!(result, Ok(()));
+            let settings = saved.lock().unwrap().take().unwrap();
+            assert!(!settings.tts_technical_reading);
+            assert!(settings.tts_read_code_blocks);
+            assert!(settings.tts_full_links);
+            assert_eq!(settings.tts_speed, 1.3);
+            assert_eq!(settings.tts_model_id, "supertonic-3");
+            assert_eq!(super::super::super::service::selection(&settings), chosen);
+            assert!(reading.shutdown());
+        }
+        #[test]
+        fn switch_to_missing_model_is_still_refused() {
+            let reading = actor(Arc::new(Mutex::new(SharedAudio::default())));
+            let result = super::super::super::commands::select_with_store(
+                selection(),
+                false,
+                &reading,
+                || stored("kokoro-82m-int8"),
+                |_| panic!("a switch to a missing model must not persist"),
+            );
+            assert_eq!(result, Err("tts.errors.notDownloaded".into()));
+            assert!(reading.shutdown());
+        }
+        #[test]
+        fn options_saved_without_download_reach_the_session() {
+            let (sent, requests) = mpsc::channel();
+            let reading = ReadAloudSession::spawn_with(
+                manager(),
+                ReadEngine(sent),
+                Audio::default,
+                Selection {
+                    technical: true,
+                    read_code: false,
+                    ..selection()
+                },
+                None,
+                Arc::new(|_| {}),
+            );
+            let chosen = Selection {
+                technical: false,
+                read_code: true,
+                ..selection()
+            };
+            super::super::super::commands::select_with_store(
+                chosen.clone(),
+                false,
+                &reading,
+                || stored("supertonic-3"),
+                |_| Ok(()),
+            )
+            .unwrap();
+            reading
+                .send(SessionCommand::Replace {
+                    text: "Read the saved options.".into(),
+                    client_revision: None,
+                    autoplay: true,
+                })
+                .unwrap();
+            assert_eq!(
+                requests.recv_timeout(Duration::from_secs(3)).unwrap(),
+                chosen
+            );
+            reading.pause_and_wait().unwrap();
+            assert!(reading.shutdown());
+        }
         #[test]
         fn missing_model_returns_visible_error_without_persisting() {
             let reading = actor(Arc::new(Mutex::new(SharedAudio::default())));
@@ -1771,24 +1877,6 @@ pub(super) mod tests {
                 selection()
             );
             let (chosen, requests) = mpsc::channel();
-            #[derive(Clone)]
-            struct ReadEngine(mpsc::Sender<Selection>);
-            impl Worker for ReadEngine {
-                fn request(
-                    &mut self,
-                    _: Ticket,
-                    _: &str,
-                    selection: &Selection,
-                ) -> Result<(), String> {
-                    self.0.send(selection.clone()).unwrap();
-                    Ok(())
-                }
-                fn poll(&mut self) -> Option<Completion> {
-                    None
-                }
-                fn cancel(&mut self, _: Ticket) {}
-                fn selection_changed(&mut self) {}
-            }
             let restarted = ReadAloudSession::spawn_with(
                 manager(),
                 ReadEngine(chosen.clone()),

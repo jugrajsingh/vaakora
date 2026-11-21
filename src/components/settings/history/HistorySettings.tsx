@@ -50,7 +50,7 @@ import {
   InlineConfirm,
   useRowConfirm,
 } from "@/components/shared/InlineConfirm";
-import { ClearHistory } from "@/components/shared/ClearHistory";
+import { ClearHistory, clearDisabled } from "@/components/shared/ClearHistory";
 import {
   HISTORY_ROW_GRID,
   HistoryRow,
@@ -391,9 +391,15 @@ export const HistorySettings: React.FC<{ changeRetention: () => void }> = ({
     }
   };
 
+  const failed = actionError !== null && entries.length === 0;
+  const clearing = clearDisabled({
+    loading,
+    failed,
+    entries: entries.length,
+  });
   const state = historyState({
     loading,
-    failed: actionError !== null && entries.length === 0,
+    failed,
     count: entries.length + reads.length,
     kept: summary.kept,
   });
@@ -471,7 +477,8 @@ export const HistorySettings: React.FC<{ changeRetention: () => void }> = ({
           }
           nothing={t("history.clear.nothing")}
           clear={clear.clear}
-          disabled={loading}
+          disabled={clearing.disabled}
+          listEmpty={clearing.empty}
         />
       </HistoryToolbar>
       {actionError && (

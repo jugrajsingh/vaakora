@@ -50,7 +50,7 @@ export function TabStrip<T extends string>({
     <div
       role="tablist"
       aria-label={label}
-      className="flex h-10 items-stretch gap-1"
+      className="flex h-[38px] items-stretch gap-1"
     >
       {tabs.map((tab) => (
         <button

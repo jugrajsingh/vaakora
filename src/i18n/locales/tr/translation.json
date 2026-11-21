@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "Tayvan Mandarin Çincesi için optimize edilmiş. Dil değiştirme desteği."
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "İngilizce dikte için en iyi genel seçim"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "Birçok Avrupa dilinde hızlı ve doğru transkripsiyon"
+      },
+      "canary-180m-flash": {
+        "description": "Minik, hızlı ve her donanımda iyi çalışır"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "Birçok dilde istikrarlı biçimde güçlü, Yunanca ve Lehçe için en iyisi"
+      },
+      "whisper-medium": {
+        "description": "En geniş dil desteği, ancak biraz yavaş çalışabilir"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "Çok dilli, İtalyanca ve İspanyolcada çok doğru. Apple Silicon veya ayrı GPU'larda en iyisi"
+      },
+      "parakeet-ultra": {
+        "description": "25 Avrupa dilinde en iyi doğruluk"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "Hızlı ve doğru, harika bir çok dilli seçim"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "Yalnızca İngilizce için mükemmel model, her donanımda çalışır"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "Çince, Kantonca ve İngilizceyle birlikte Asya dilleri için en iyisi"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "Japonca için en iyisi, Tayca, Endonezce ve Malayca'da iyi"
+      },
+      "canary-1b-v2": {
+        "description": "Avrupa dilleri için en doğru küçük model"
+      },
+      "canary-qwen-2_5b": {
+        "description": "Çok doğru İngilizce. GPU olmadan yavaş."
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "Arapça ve Arapça ile İngilizce konuşanlar için en iyisi"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "Mandarin, İngilizce ve Japonca için iyi"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "Yalnızca Rusça."
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "Rusça dikte için en iyisi. İngilizce güvenilmez olabilir."
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "Son derece hızlı İngilizce transkripsiyon, GPU'da en iyisi"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "Doğru, çeviri desteğiyle. GPU ile en iyisi"
+      },
+      "medasr": {
+        "description": "Not dikte eden klinisyenler için. Genel konuşmada zayıf"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "Minik İngilizce model, CPU'da bile neredeyse anında"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "Toplantılarda üst üste konuşanlar için, tek kişilik dikte için değil"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "Birçok dilde üst düzey doğruluk. Apple Silicon veya GPU'da en iyisi"
+      },
+      "SenseVoiceSmall": {
+        "description": "Her makinede anında Mandarin, Japonca ve Korece. Kantonca zayıf"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "Doğru, çeviri desteğiyle. Apple Silicon veya GPU'da en iyisi."
+      },
+      "whisper-small": {
+        "description": "Nispeten küçük bir modelde geniş dil desteği."
+      },
+      "whisper-large-v3-turbo": {
+        "description": "Birçok dilde doğru. GPU olmadan yavaş"
+      },
+      "Breeze-ASR-25": {
+        "description": "Arada İngilizce geçen Tayvan Mandarini. Geleneksel yazı, noktalama yok"
+      },
+      "whisper-large-v3": {
+        "description": "Çoğu dilde kullanılabilir doğruluk. Apple Silicon veya GPU'da en iyisi."
+      },
+      "canary-1b": {
+        "description": "4 dilde konuşmadan metne, çeviri desteğiyle."
+      },
+      "canary-1b-flash": {
+        "description": "4 dilde konuşmadan metne, çeviri desteğiyle."
+      },
+      "gigaam-v3-ctc": {
+        "description": "Rusça konuşmadan metne, zaman damgaları desteğiyle."
+      },
+      "gigaam-v3-rnnt": {
+        "description": "Rusça konuşmadan metne, zaman damgaları desteğiyle."
+      },
+      "granite-4_0-1b-speech": {
+        "description": "6 dilde konuşmadan metne, çeviri desteğiyle."
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "5 dilde konuşmadan metne."
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "5 dilde konuşmadan metne, zaman damgaları desteğiyle."
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "İngilizce konuşmadan metne."
+      },
+      "moonshine-base": {
+        "description": "İngilizce konuşmadan metne."
+      },
+      "moonshine-base-ar": {
+        "description": "Arapça konuşmadan metne."
+      },
+      "moonshine-base-ja": {
+        "description": "Japonca konuşmadan metne."
+      },
+      "moonshine-base-ko": {
+        "description": "Korece konuşmadan metne."
+      },
+      "moonshine-base-uk": {
+        "description": "Ukraynaca konuşmadan metne."
+      },
+      "moonshine-base-vi": {
+        "description": "Vietnamca konuşmadan metne."
+      },
+      "moonshine-base-zh": {
+        "description": "Çince konuşmadan metne."
+      },
+      "moonshine-streaming-medium": {
+        "description": "İngilizce konuşmadan metne, akış desteğiyle."
+      },
+      "moonshine-streaming-small": {
+        "description": "İngilizce konuşmadan metne, akış desteğiyle."
+      },
+      "moonshine-streaming-tiny": {
+        "description": "İngilizce konuşmadan metne, akış desteğiyle."
+      },
+      "moonshine-tiny": {
+        "description": "İngilizce konuşmadan metne."
+      },
+      "moonshine-tiny-ar": {
+        "description": "Arapça konuşmadan metne."
+      },
+      "moonshine-tiny-ja": {
+        "description": "Japonca konuşmadan metne."
+      },
+      "moonshine-tiny-ko": {
+        "description": "Korece konuşmadan metne."
+      },
+      "moonshine-tiny-uk": {
+        "description": "Ukraynaca konuşmadan metne."
+      },
+      "moonshine-tiny-vi": {
+        "description": "Vietnamca konuşmadan metne."
+      },
+      "moonshine-tiny-zh": {
+        "description": "Çince konuşmadan metne."
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "2 dilde konuşmadan metne, zaman damgaları desteğiyle."
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "İngilizce konuşmadan metne, akış, zaman damgaları desteğiyle."
+      },
+      "orukeet": {
+        "description": "25 dilde konuşmadan metne, otomatik dil algılama, zaman damgaları desteğiyle."
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "İngilizce konuşmadan metne, zaman damgaları desteğiyle."
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "İngilizce konuşmadan metne, zaman damgaları desteğiyle."
+      },
+      "parakeet-primeline": {
+        "description": "25 dilde konuşmadan metne, otomatik dil algılama, zaman damgaları desteğiyle."
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "İngilizce konuşmadan metne, zaman damgaları desteğiyle."
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "İngilizce konuşmadan metne, zaman damgaları desteğiyle."
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "İngilizce konuşmadan metne, zaman damgaları desteğiyle."
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "İngilizce konuşmadan metne, zaman damgaları desteğiyle."
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "8 dilde konuşmadan metne, çeviri, otomatik dil algılama desteğiyle."
+      },
+      "whisper-base": {
+        "description": "99 dilde konuşmadan metne, çeviri, otomatik dil algılama, zaman damgaları desteğiyle."
+      },
+      "whisper-base_en": {
+        "description": "İngilizce konuşmadan metne, zaman damgaları desteğiyle."
+      },
+      "whisper-large": {
+        "description": "99 dilde konuşmadan metne, çeviri, otomatik dil algılama, zaman damgaları desteğiyle."
+      },
+      "whisper-large-v2": {
+        "description": "99 dilde konuşmadan metne, çeviri, otomatik dil algılama, zaman damgaları desteğiyle."
+      },
+      "whisper-medium_en": {
+        "description": "İngilizce konuşmadan metne, zaman damgaları desteğiyle."
+      },
+      "whisper-small_en": {
+        "description": "İngilizce konuşmadan metne, zaman damgaları desteğiyle."
+      },
+      "whisper-tiny": {
+        "description": "99 dilde konuşmadan metne, çeviri, otomatik dil algılama, zaman damgaları desteğiyle."
+      },
+      "whisper-tiny_en": {
+        "description": "İngilizce konuşmadan metne, zaman damgaları desteğiyle."
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "Sesli geri bildirimlerin ses seviyesini ayarlayın",
         "offReason": "Sesli geri bildirim kapalıyken kullanılmaz."
       },
-      "feedbackOutputDevice": "Sesli geri bildirim çıkış cihazı"
+      "feedbackOutputDevice": "Sesli geri bildirim çıkış cihazı",
+      "previewTheme": "Ses temasını önizle (önce başlangıç, sonra bitiş sesini çalar)"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "Oynatma konumu",
+    "moreInformation": "Daha fazla bilgi",
+    "play": "Oynat",
+    "pause": "Duraklat",
+    "copyToClipboard": "Panoya kopyala",
+    "notAvailable": "Kullanılamıyor",
+    "selectAnOption": "Bir seçenek seçin...",
     "resetSetting": "{{setting}} ayarını varsayılan değere sıfırla",
     "loading": "Yükleniyor...",
     "delete": "Sil",

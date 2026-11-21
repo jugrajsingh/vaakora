@@ -186,7 +186,7 @@
   background: var(--color-demo-window);
   box-shadow:
     0 0 0 0.5px var(--color-line),
-    0 10px 30px rgb(40 20 50 / 0.16);
+    0 10px 30px color-mix(in srgb, var(--color-shadow) 16%, transparent);
 }
 .demo-screen:has(.is-task) .demo-app {
   top: 20px;
@@ -248,7 +248,9 @@
   height: 20px;
   margin: -1px 0 0 -1px; /* the arrow's tip sits on the point */
   pointer-events: none;
-  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.25));
+  filter: drop-shadow(
+    0 1px 1.5px color-mix(in srgb, var(--color-shadow) 25%, transparent)
+  );
 }
 .demo-pointer svg {
   display: block;

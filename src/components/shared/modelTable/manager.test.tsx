@@ -5,7 +5,11 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import i18next from "i18next";
 import { I18nextProvider } from "react-i18next";
-import { catalog } from "@handy-computer/models";
+import {
+  catalog,
+  languageIdentity,
+  type CatalogModel,
+} from "@handy-computer/models";
 import type {
   Device,
   DeviceRating,
@@ -42,6 +46,12 @@ import { languageName } from "@/lib/constants/languages";
 import { formatBytes, formatModelSize } from "@/lib/utils/format";
 import english from "@/i18n/locales/en/translation.json";
 import japanese from "@/i18n/locales/ja/translation.json";
+import german from "@/i18n/locales/de/translation.json";
+import {
+  getTranslatedModelDescription,
+  translationKeyId,
+} from "@/lib/utils/modelTranslation";
+import { toTableModel } from "./tableModel";
 import { Codes } from "./columns";
 import type { TableModel } from "./context";
 import { makeGrading } from "@/lib/models/grading";
@@ -1572,6 +1582,139 @@ describe("Models, Dictation rows", () => {
     );
     assert.ok(legend.includes("`models.legend.speedNote.${tier}`"));
     assert.ok(!legend.includes("settings.models.legend.speedNote"));
+  });
+});
+
+describe("Dictation model descriptions", () => {
+  const de = i18next.createInstance();
+  void de.init({
+    lng: "de",
+    resources: { de: { translation: german } },
+    interpolation: { escapeValue: false },
+  });
+  const tde = de.t.bind(de);
+  const germanText = (id: string): string | undefined =>
+    (german.onboarding.models as Record<string, { description?: string }>)[
+      translationKeyId(id)
+    ]?.description;
+  const v3 = catalog.getModel("parakeet-tdt-0.6b-v3");
+  if (!v3) throw new Error("catalog lacks parakeet-tdt-0.6b-v3");
+  const live = (m: CatalogModel, filename: string): ModelInfo => ({
+    ...info(null),
+    id: `${m.repository}/${filename}`,
+    name: m.name,
+    description: m.description,
+    filename,
+    source: { HuggingFace: { repo_id: m.repository, revision: m.revision } },
+  });
+
+  it("dictation_descriptions_are_translated", () => {
+    assert.equal(
+      translationKeyId("parakeet-tdt-0.6b-v3"),
+      "parakeet-tdt-0_6b-v3",
+    );
+    const want = germanText(v3.id);
+    assert.ok(want, "de has the key for a dotted catalog id");
+    const v3Info = live(v3, "parakeet-tdt-0.6b-v3-Q8_0.gguf");
+    assert.notEqual(want, v3.description);
+    assert.equal(getTranslatedModelDescription(v3Info, tde), want);
+    assert.equal(getTranslatedModelDescription(v3Info, t), v3.description);
+
+    const entry = toTableModel(v3Info, tde);
+    assert.equal(entry.description, want);
+    const row = renderToStaticMarkup(
+      <I18nextProvider i18n={de}>
+        <ManagerRow
+          {...rowProps({
+            model: dictationModel(entry, v3Info, { ...dictCtx, t: tde }),
+          })}
+        />
+      </I18nextProvider>,
+    );
+    assert.ok(
+      decode(row).includes(want),
+      "the Dictation row shows the de text",
+    );
+
+    const otherQuant = live(v3, "parakeet-tdt-0.6b-v3-Q4_K_M.gguf");
+    assert.equal(getTranslatedModelDescription(otherQuant, tde), want);
+
+    const unlisted: ModelInfo = {
+      ...v3Info,
+      id: "someone/unlisted-gguf/unlisted.gguf",
+      description: "My own English words",
+      source: {
+        HuggingFace: { repo_id: "someone/unlisted-gguf", revision: "x" },
+      },
+    };
+    assert.equal(
+      getTranslatedModelDescription(unlisted, tde),
+      "My own English words",
+    );
+    const custom: ModelInfo = { ...unlisted, id: "my-custom", is_custom: true };
+    assert.equal(
+      getTranslatedModelDescription(custom, tde),
+      tde("onboarding.customModelDescription"),
+    );
+  });
+
+  /** Mirrors generated_description in src-tauri/src/catalog/mod.rs. */
+  const generated = (m: CatalogModel): string => {
+    const features = [
+      ...(m.capabilities.translate ? ["translation"] : []),
+      ...(m.capabilities.languageDetection ? ["auto language detection"] : []),
+      ...(m.capabilities.streaming ? ["streaming"] : []),
+      ...(m.capabilities.timestamps ? ["timestamps"] : []),
+    ];
+    const languages = new Set(m.languages.map((l) => languageIdentity(l)));
+    const names: Record<string, string> = {
+      en: "English",
+      ar: "Arabic",
+      ja: "Japanese",
+      ko: "Korean",
+      ru: "Russian",
+      uk: "Ukrainian",
+      vi: "Vietnamese",
+      zh: "Chinese",
+    };
+    const only = [...languages][0] ?? "en";
+    const base =
+      languages.size > 1
+        ? `${languages.size}-language speech-to-text`
+        : `${names[only] ?? only} speech-to-text`;
+    return features.length
+      ? `${base} with ${features.join(", ")}.`
+      : `${base}.`;
+  };
+
+  it("every_catalog_description_has_a_key_in_every_locale", () => {
+    const offered = catalog.models.filter(
+      (m) => m.role === "asr" && !m.files[m.quant].filename.includes("/"),
+    );
+    assert.ok(offered.length > 60);
+    assert.equal(
+      new Set(offered.map((m) => translationKeyId(m.id))).size,
+      offered.length,
+      "sanitised ids stay distinct",
+    );
+    const dir = new URL("../../../i18n/locales/", import.meta.url);
+    const codes = readdirSync(dir).sort();
+    assert.equal(codes.length, 26);
+    for (const code of codes) {
+      const file = JSON.parse(
+        readFileSync(new URL(`${code}/translation.json`, dir), "utf8"),
+      );
+      for (const m of offered) {
+        const text = file.onboarding?.models?.[translationKeyId(m.id)]
+          ?.description as unknown;
+        assert.ok(
+          typeof text === "string" && text.length > 0,
+          `${code} lacks onboarding.models.${translationKeyId(m.id)}.description`,
+        );
+        if (code === "en")
+          assert.equal(text, m.description || generated(m), `en ${m.id}`);
+      }
+    }
   });
 });
 

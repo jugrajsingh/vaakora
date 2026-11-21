@@ -32,7 +32,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
   onSelect,
   className = "",
   menuClassName,
-  placeholder = "Select an option...",
+  placeholder,
   disabled = false,
   onOpen,
   placement,
@@ -113,7 +113,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
       <button
         type="button"
         ref={triggerRef}
-        className={`px-2 py-[5px] text-sm font-semibold bg-wash border border-line-strong rounded-md min-w-[200px] w-full text-start grid grid-cols-[1fr_auto] gap-2 items-center transition-all duration-150 focus-visible:ring-2 focus-visible:ring-logo-primary ${
+        className={`px-2 py-[5px] text-sm font-semibold bg-wash border border-line-strong rounded-md min-w-[200px] w-full text-start grid grid-cols-[1fr_auto] gap-2 items-center transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
           disabled
             ? "opacity-50 cursor-not-allowed"
             : `${hover} cursor-pointer ${tone === "neutral" ? "hover:border-ink-3" : "hover:border-logo-primary"}`
@@ -122,7 +122,9 @@ export const Dropdown: React.FC<DropdownProps> = ({
         disabled={disabled}
         aria-expanded={isOpen}
       >
-        <span className="truncate">{selectedOption?.label || placeholder}</span>
+        <span className="truncate">
+          {selectedOption?.label || (placeholder ?? t("common.selectAnOption"))}
+        </span>
         <svg
           className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "transform rotate-180" : ""}`}
           fill="none"
@@ -154,7 +156,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                 <button
                   key={option.value}
                   type="button"
-                  className={`flex w-full items-center gap-2 rounded-md px-2 text-sm text-start transition-colors duration-150 ${
+                  className={`flex w-full items-center gap-2 rounded-md px-2 text-sm text-start transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
                     option.description ? "py-2" : "py-1.5"
                   } ${isChosen ? chosen : "hover:bg-wash"} ${
                     option.disabled ? "opacity-50 cursor-not-allowed" : ""

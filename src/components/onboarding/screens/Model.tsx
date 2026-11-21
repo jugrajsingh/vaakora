@@ -32,6 +32,7 @@ import {
   ROLE_KEYS as PICK_ROLE_KEYS,
 } from "../../shared/modelTable/ModelTableRow";
 import { formatModelSize } from "@/lib/utils/format";
+import { getTranslatedModelDescription } from "@/lib/utils/modelTranslation";
 import { OnboardingShell, ScreenHeader, ScreenMain } from "../OnboardingShell";
 import { useOnboardingStore } from "../onboardingStore";
 import { useDownloadWords } from "../DownloadStatus";
@@ -157,6 +158,10 @@ export const ModelView: React.FC<ModelProps & { list: ModelList }> = ({
   const nameOf = (code: string) => languageName(code, ui);
   const sizeOf = (m: CatalogModel) =>
     formatModelSize(models.infoFor(m)?.size_mb);
+  const descriptionOf = (m: CatalogModel) => {
+    const info = models.infoFor(m);
+    return info ? getTranslatedModelDescription(info, t) : m.description;
+  };
   /** The offered models as the table shows them, by catalog id like the picks. */
   const entriesFor = (rows: ModelRow[]): TableModel[] =>
     rows.flatMap((row) => {
@@ -304,7 +309,7 @@ export const ModelView: React.FC<ModelProps & { list: ModelList }> = ({
         role="radio"
         aria-checked="true"
         tabIndex={0}
-        className="flex w-full min-w-0 flex-col items-stretch rounded-panel border-[1.5px] border-plum-pick bg-background px-5 py-4 text-start text-small text-text [view-transition-class:mf-row_mf-box]"
+        className="flex w-full min-w-0 flex-col items-stretch rounded-panel border-[1.5px] border-plum-pick bg-background px-5 py-4 text-start text-small text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary [view-transition-class:mf-row_mf-box]"
       >
         <span className="flex min-w-0 items-center gap-[10px] whitespace-nowrap">
           {mark(id, true)}
@@ -327,7 +332,7 @@ export const ModelView: React.FC<ModelProps & { list: ModelList }> = ({
           {!(dense && showsDownload(id)) && (
             <span {...vt(id, "d")} className="mt-[2px] text-ink-2">
               {role === "extra"
-                ? row.model.description
+                ? descriptionOf(row.model)
                 : t(`onboarding.model.lines.${ROLE_KEYS[role]}`)}
             </span>
           )}
@@ -407,7 +412,7 @@ export const ModelView: React.FC<ModelProps & { list: ModelList }> = ({
         {...vt(id)}
         data-vt-row=""
         onClick={() => choose(id, true)}
-        className={`relative grid w-full min-w-0 cursor-pointer grid-cols-[18px_minmax(0,1fr)_auto] items-center gap-x-[10px] rounded-card border-[1.5px] border-line bg-background px-5 text-start text-small leading-[1.5] text-text hover:border-ink-3 hover:bg-wash [view-transition-class:mf-row_mf-box] ${line ? "pt-[8px] pb-[15px]" : "py-[8px]"}`}
+        className={`relative grid w-full min-w-0 cursor-pointer grid-cols-[18px_minmax(0,1fr)_auto] items-center gap-x-[10px] rounded-card border-[1.5px] border-line bg-background px-5 text-start text-small leading-[1.5] text-text hover:border-ink-3 hover:bg-wash focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary [view-transition-class:mf-row_mf-box] ${line ? "pt-[8px] pb-[15px]" : "py-[8px]"}`}
       >
         {mark(id, false)}
         <span className="flex min-w-0 flex-col items-start">
@@ -454,7 +459,7 @@ export const ModelView: React.FC<ModelProps & { list: ModelList }> = ({
         {...vt(id)}
         data-vt-row=""
         onClick={() => choose(id, true)}
-        className={`relative flex w-full min-w-0 cursor-pointer items-center gap-[10px] whitespace-nowrap rounded-card border-[1.5px] border-line bg-background px-5 text-start text-small text-text hover:border-ink-3 hover:bg-wash [view-transition-class:mf-row_mf-box] ${line ? "pt-[8px] pb-[15px]" : "py-[8px]"}`}
+        className={`relative flex w-full min-w-0 cursor-pointer items-center gap-[10px] whitespace-nowrap rounded-card border-[1.5px] border-line bg-background px-5 text-start text-small text-text hover:border-ink-3 hover:bg-wash focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary [view-transition-class:mf-row_mf-box] ${line ? "pt-[8px] pb-[15px]" : "py-[8px]"}`}
       >
         {mark(id, false)}
         <b {...vt(id, "r")} className={`${roleBase} text-label text-text`}>
@@ -609,7 +614,7 @@ export const ModelView: React.FC<ModelProps & { list: ModelList }> = ({
           <button
             type="button"
             onClick={() => open()}
-            className="mt-[8px] flex h-[38px] flex-none cursor-pointer items-center gap-[8px] self-stretch rounded-card border-[1.5px] border-dashed border-line-strong px-[20px] text-start text-small font-semibold text-ink-2 hover:border-solid hover:bg-wash hover:text-text"
+            className="mt-[8px] flex h-[38px] flex-none cursor-pointer items-center gap-[8px] self-stretch rounded-card border-[1.5px] border-dashed border-line-strong px-[20px] text-start text-small font-semibold text-ink-2 hover:border-solid hover:bg-wash hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
           >
             {t("onboarding.model.showAll", { count: models.offered.length })}
             <Chevron />

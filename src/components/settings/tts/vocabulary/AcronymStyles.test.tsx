@@ -33,7 +33,36 @@ describe("AcronymStyles", () => {
       </I18nextProvider>,
     );
     assert.match(html, /^<details(?![^>]*\bopen\b)[^>]*>/);
-    assert.match(html, /<summary[^>]*>Acronym style per model<\/summary>/);
+    assert.match(html, /<summary[^>]*>Acronym style per model<svg/);
     assert.ok(html.includes("All models") && html.includes("Pocket TTS"));
+  });
+
+  it("summary_uses_the_shared_chevron", () => {
+    const html = renderToStaticMarkup(
+      <I18nextProvider i18n={i18n}>
+        <AcronymStyles
+          styles={[{ model: null, owner: null, effective: "spaced" }]}
+          models={models}
+          readOnly={false}
+          set={() => {}}
+        />
+      </I18nextProvider>,
+    );
+    const summary = /<summary([^>]*)>(.*?)<\/summary>/.exec(html);
+    assert.ok(summary, html);
+    const classes = (/class="([^"]*)"/.exec(summary[1])?.[1] ?? "").split(
+      /\s+/,
+    );
+    for (const wanted of [
+      "list-none",
+      "[&amp;::-webkit-details-marker]:hidden",
+      "focus:outline-none",
+      "focus-visible:ring-2",
+      "focus-visible:ring-logo-primary",
+    ]) {
+      assert.ok(classes.includes(wanted), `${wanted} in ${classes.join(" ")}`);
+    }
+    assert.match(summary[2], /<svg[^>]*aria-hidden="true"[^>]*>/);
+    assert.match(html, /^<details[^>]*class="[^"]*\bgroup\b/);
   });
 });

@@ -131,7 +131,7 @@ const LanguageMenu: React.FC<{
       }}
       className="absolute end-0 top-full z-50 mt-1 w-[248px] overflow-hidden rounded-lg border border-line bg-background text-start shadow-lg"
     >
-      <label className="flex items-center gap-2 border-b border-line px-3 text-ink-3">
+      <label className="flex items-center gap-2 border-b border-line px-3 text-ink-3 focus-within:ring-2 focus-within:ring-inset focus-within:ring-logo-primary">
         <SearchIcon />
         <input
           ref={inputRef}
@@ -166,7 +166,7 @@ const LanguageMenu: React.FC<{
               onClick={() => picker.toggle(l.code)}
               // Picked rows are only ticked: unlike Dropdown's one choice,
               // several fills would stack into stripes.
-              className={`flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm transition-colors disabled:cursor-default ${
+              className={`flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm transition-colors disabled:cursor-default focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
                 highlighted
                   ? "bg-wash"
                   : "hover:bg-wash disabled:hover:bg-transparent"
@@ -319,7 +319,7 @@ export const PreferredLanguages: React.FC<PreferredLanguagesProps> = ({
                 aria-expanded={open}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={toggleMenu}
-                className={`${moreClasses} cursor-pointer transition-colors hover:bg-line hover:text-text ${
+                className={`${moreClasses} cursor-pointer transition-colors hover:bg-line hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
                   open ? "bg-line text-text" : "bg-wash text-ink-2"
                 }`}
               >
@@ -338,7 +338,7 @@ export const PreferredLanguages: React.FC<PreferredLanguagesProps> = ({
             aria-expanded={open}
             onMouseDown={(e) => e.preventDefault()}
             onClick={toggleMenu}
-            className={`inline-flex h-[26px] shrink-0 cursor-pointer items-center justify-center gap-1 whitespace-nowrap rounded-md text-xs font-medium transition-colors hover:bg-wash hover:text-text ${
+            className={`inline-flex h-[26px] shrink-0 cursor-pointer items-center justify-center gap-1 whitespace-nowrap rounded-md text-xs font-medium transition-colors hover:bg-wash hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
               languages.length ? "w-[26px]" : "px-2"
             } ${open ? "bg-wash text-text" : "text-ink-2"}`}
           >

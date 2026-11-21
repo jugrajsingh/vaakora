@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "Zoptymalizowany dla tajwańskiego mandaryńskiego. Obsługa przełączania języków."
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "Najlepszy wybór ogólny do dyktowania po angielsku"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "Szybka i dokładna transkrypcja w wielu językach europejskich"
+      },
+      "canary-180m-flash": {
+        "description": "Maleńki, szybki i dobrze działa na każdym sprzęcie"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "Konsekwentnie mocny w wielu językach, najlepszy dla greckiego i polskiego"
+      },
+      "whisper-medium": {
+        "description": "Najszersza obsługa języków, ale może działać nieco wolno"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "Wielojęzyczny, bardzo dokładny we włoskim i hiszpańskim. Najlepszy na Apple Silicon lub dedykowanych GPU"
+      },
+      "parakeet-ultra": {
+        "description": "Najlepsza dokładność w 25 językach europejskich"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "Szybki i dokładny, świetny wielojęzyczny wybór"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "Doskonały model tylko do angielskiego, działa na każdym sprzęcie"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "Najlepszy dla chińskiego, kantońskiego i języków azjatyckich z angielskim"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "Najlepszy dla japońskiego, dobry w tajskim, indonezyjskim i malajskim"
+      },
+      "canary-1b-v2": {
+        "description": "Najdokładniejszy mały model dla języków europejskich"
+      },
+      "canary-qwen-2_5b": {
+        "description": "Bardzo dokładny angielski. Wolny bez GPU."
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "Najlepszy dla arabskiego oraz dla mówiących po arabsku i angielsku"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "Dobry dla mandaryńskiego, angielskiego i japońskiego"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "Tylko rosyjski."
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "Najlepszy do dyktowania po rosyjsku. Angielski może być zawodny."
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "Wyjątkowo szybka transkrypcja angielska, najlepsza na GPU"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "Dokładny, z obsługą tłumaczenia. Najlepszy z GPU"
+      },
+      "medasr": {
+        "description": "Dla lekarzy dyktujących notatki. Słaby przy mowie ogólnej"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "Maleńki model angielski, niemal natychmiastowy nawet na CPU"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "Dla nakładających się mówców na spotkaniach, nie do dyktowania solo"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "Najwyższa dokładność w wielu językach. Najlepszy na Apple Silicon lub z GPU"
+      },
+      "SenseVoiceSmall": {
+        "description": "Natychmiastowy mandaryński, japoński i koreański na każdym komputerze. Słaby kantoński"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "Dokładny, z obsługą tłumaczenia. Najlepszy na Apple Silicon lub z GPU."
+      },
+      "whisper-small": {
+        "description": "Szeroka obsługa języków w stosunkowo małym modelu."
+      },
+      "whisper-large-v3-turbo": {
+        "description": "Dokładny w wielu językach. Wolny bez GPU"
+      },
+      "Breeze-ASR-25": {
+        "description": "Tajwański mandaryński z domieszką angielskiego. Pismo tradycyjne, bez interpunkcji"
+      },
+      "whisper-large-v3": {
+        "description": "Większość języków z użyteczną dokładnością. Najlepszy na Apple Silicon lub z GPU."
+      },
+      "canary-1b": {
+        "description": "Zamiana mowy na tekst w 4 językach z tłumaczeniem."
+      },
+      "canary-1b-flash": {
+        "description": "Zamiana mowy na tekst w 4 językach z tłumaczeniem."
+      },
+      "gigaam-v3-ctc": {
+        "description": "Zamiana mowy na tekst w języku rosyjskim z znacznikami czasu."
+      },
+      "gigaam-v3-rnnt": {
+        "description": "Zamiana mowy na tekst w języku rosyjskim z znacznikami czasu."
+      },
+      "granite-4_0-1b-speech": {
+        "description": "Zamiana mowy na tekst w 6 językach z tłumaczeniem."
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "Zamiana mowy na tekst w 5 językach."
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "Zamiana mowy na tekst w 5 językach z znacznikami czasu."
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "Zamiana mowy na tekst w języku angielskim."
+      },
+      "moonshine-base": {
+        "description": "Zamiana mowy na tekst w języku angielskim."
+      },
+      "moonshine-base-ar": {
+        "description": "Zamiana mowy na tekst w języku arabskim."
+      },
+      "moonshine-base-ja": {
+        "description": "Zamiana mowy na tekst w języku japońskim."
+      },
+      "moonshine-base-ko": {
+        "description": "Zamiana mowy na tekst w języku koreańskim."
+      },
+      "moonshine-base-uk": {
+        "description": "Zamiana mowy na tekst w języku ukraińskim."
+      },
+      "moonshine-base-vi": {
+        "description": "Zamiana mowy na tekst w języku wietnamskim."
+      },
+      "moonshine-base-zh": {
+        "description": "Zamiana mowy na tekst w języku chińskim."
+      },
+      "moonshine-streaming-medium": {
+        "description": "Zamiana mowy na tekst w języku angielskim z strumieniowaniem."
+      },
+      "moonshine-streaming-small": {
+        "description": "Zamiana mowy na tekst w języku angielskim z strumieniowaniem."
+      },
+      "moonshine-streaming-tiny": {
+        "description": "Zamiana mowy na tekst w języku angielskim z strumieniowaniem."
+      },
+      "moonshine-tiny": {
+        "description": "Zamiana mowy na tekst w języku angielskim."
+      },
+      "moonshine-tiny-ar": {
+        "description": "Zamiana mowy na tekst w języku arabskim."
+      },
+      "moonshine-tiny-ja": {
+        "description": "Zamiana mowy na tekst w języku japońskim."
+      },
+      "moonshine-tiny-ko": {
+        "description": "Zamiana mowy na tekst w języku koreańskim."
+      },
+      "moonshine-tiny-uk": {
+        "description": "Zamiana mowy na tekst w języku ukraińskim."
+      },
+      "moonshine-tiny-vi": {
+        "description": "Zamiana mowy na tekst w języku wietnamskim."
+      },
+      "moonshine-tiny-zh": {
+        "description": "Zamiana mowy na tekst w języku chińskim."
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "Zamiana mowy na tekst w 2 językach z znacznikami czasu."
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "Zamiana mowy na tekst w języku angielskim z strumieniowaniem, znacznikami czasu."
+      },
+      "orukeet": {
+        "description": "Zamiana mowy na tekst w 25 językach z automatycznym wykrywaniem języka, znacznikami czasu."
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "Zamiana mowy na tekst w języku angielskim z znacznikami czasu."
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "Zamiana mowy na tekst w języku angielskim z znacznikami czasu."
+      },
+      "parakeet-primeline": {
+        "description": "Zamiana mowy na tekst w 25 językach z automatycznym wykrywaniem języka, znacznikami czasu."
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "Zamiana mowy na tekst w języku angielskim z znacznikami czasu."
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "Zamiana mowy na tekst w języku angielskim z znacznikami czasu."
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "Zamiana mowy na tekst w języku angielskim z znacznikami czasu."
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "Zamiana mowy na tekst w języku angielskim z znacznikami czasu."
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "Zamiana mowy na tekst w 8 językach z tłumaczeniem, automatycznym wykrywaniem języka."
+      },
+      "whisper-base": {
+        "description": "Zamiana mowy na tekst w 99 językach z tłumaczeniem, automatycznym wykrywaniem języka, znacznikami czasu."
+      },
+      "whisper-base_en": {
+        "description": "Zamiana mowy na tekst w języku angielskim z znacznikami czasu."
+      },
+      "whisper-large": {
+        "description": "Zamiana mowy na tekst w 99 językach z tłumaczeniem, automatycznym wykrywaniem języka, znacznikami czasu."
+      },
+      "whisper-large-v2": {
+        "description": "Zamiana mowy na tekst w 99 językach z tłumaczeniem, automatycznym wykrywaniem języka, znacznikami czasu."
+      },
+      "whisper-medium_en": {
+        "description": "Zamiana mowy na tekst w języku angielskim z znacznikami czasu."
+      },
+      "whisper-small_en": {
+        "description": "Zamiana mowy na tekst w języku angielskim z znacznikami czasu."
+      },
+      "whisper-tiny": {
+        "description": "Zamiana mowy na tekst w 99 językach z tłumaczeniem, automatycznym wykrywaniem języka, znacznikami czasu."
+      },
+      "whisper-tiny_en": {
+        "description": "Zamiana mowy na tekst w języku angielskim z znacznikami czasu."
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "Dostosuj głośność dźwięków informacyjnych",
         "offReason": "Nieużywane, gdy informacja dźwiękowa jest wyłączona."
       },
-      "feedbackOutputDevice": "Urządzenie wyjściowe informacji dźwiękowej"
+      "feedbackOutputDevice": "Urządzenie wyjściowe informacji dźwiękowej",
+      "previewTheme": "Odsłuchaj motyw dźwiękowy (odtwarza start, potem stop)"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "Pozycja odtwarzania",
+    "moreInformation": "Więcej informacji",
+    "play": "Odtwórz",
+    "pause": "Wstrzymaj",
+    "copyToClipboard": "Kopiuj do schowka",
+    "notAvailable": "Niedostępne",
+    "selectAnOption": "Wybierz opcję...",
     "resetSetting": "Przywróć wartość domyślną: {{setting}}",
     "loading": "Wczytywanie...",
     "delete": "Usuń",

@@ -124,7 +124,7 @@ export function HistoryToolbar({
           type="button"
           aria-label={t("history.changeLabel")}
           onClick={change}
-          className="text-logo-primary hover:underline cursor-pointer"
+          className="text-logo-primary hover:underline cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
         >
           {t("history.change")}
         </button>

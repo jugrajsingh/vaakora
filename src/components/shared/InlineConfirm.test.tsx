@@ -668,6 +668,50 @@ describe("ClearHistory", () => {
     view({ kind: "idle" }, true);
     assert.equal(buttons[0].autoFocus, true, "Cancel returns focus to it");
   });
+  it("clear_history_disabled_with_reason_when_empty", () => {
+    const view = (
+      state: ClearState<Counted>,
+      disabled: boolean,
+      empty?: boolean,
+    ) => {
+      buttons.length = 0;
+      return renderToStaticMarkup(
+        <I18nextProvider i18n={i18n}>
+          <ClearHistoryView<Counted>
+            state={state}
+            disabled={disabled}
+            listEmpty={empty}
+            refocus={false}
+            message={(counted) => `Delete ${counted.n} entries?`}
+            nothing={i18n.t("history.clear.nothing")}
+            press={() => {}}
+            confirm={() => {}}
+            cancel={() => {}}
+          />
+        </I18nextProvider>,
+      );
+    };
+    const status =
+      /<span role="status" class="text-xs text-ink-2">Nothing to clear\.<\/span>/g;
+    const empty = view({ kind: "idle" }, true, true);
+    assert.equal(buttons.length, 1);
+    assert.equal(buttons[0].disabled, true);
+    assert.equal(empty.match(status)?.length, 1, "the reason shows once");
+    assert.match(empty, /<div class="basis-full"><span role="status"/);
+    assert.equal(
+      view({ kind: "nothing" }, true, true).match(status)?.length,
+      1,
+      "the counted-nothing line and the empty reason are one line",
+    );
+    assert.equal(view({ kind: "idle" }, true).match(status), null);
+    assert.equal(view({ kind: "idle" }, true, false).match(status), null);
+    assert.equal(
+      view({ kind: "idle" }, false, true).match(status),
+      null,
+      "the reason shows only while the button is off",
+    );
+    assert.equal(buttons[0].disabled, false);
+  });
   it("clear_history_cancels_its_flow_on_unmount", () => {
     const source = readFileSync(
       new URL("./ClearHistory.tsx", import.meta.url),

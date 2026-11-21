@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "针对台湾国语优化。支持语码转换。"
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "英语听写的最佳全能之选"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "快速准确地转写多种欧洲语言"
+      },
+      "canary-180m-flash": {
+        "description": "体积小、速度快，在任何硬件上都运行良好"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "在多种语言中表现稳定出色，尤其适合希腊语和波兰语"
+      },
+      "whisper-medium": {
+        "description": "语言支持最广，但运行可能略慢"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "支持多语言，意大利语和西班牙语非常准确。在 Apple Silicon 或独立显卡上表现最佳"
+      },
+      "parakeet-ultra": {
+        "description": "25 种欧洲语言中准确度最高"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "快速准确，出色的多语言之选"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "出色的纯英语模型，可在任何硬件上运行"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "最适合中文、粤语以及夹杂英语的亚洲语言"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "最适合日语，对泰语、印尼语、马来语也表现良好"
+      },
+      "canary-1b-v2": {
+        "description": "欧洲语言中最准确的小型模型"
+      },
+      "canary-qwen-2_5b": {
+        "description": "英语非常准确。没有 GPU 时较慢。"
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "最适合阿拉伯语，以及说阿拉伯语和英语的用户"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "适合普通话、英语、日语"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "仅支持俄语。"
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "最适合俄语听写。英语可能不可靠。"
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "英语转写极快，在 GPU 上表现最佳"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "准确并支持翻译。配合 GPU 效果最佳"
+      },
+      "medasr": {
+        "description": "适合医生口述记录。对一般语音表现较差"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "小巧的英语模型，即使在 CPU 上也几乎即时"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "适合会议中说话重叠的多人场景，不适合单人听写"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "多种语言中准确度顶尖。在 Apple Silicon 或 GPU 上表现最佳"
+      },
+      "SenseVoiceSmall": {
+        "description": "在任何设备上即时识别普通话、日语、韩语。粤语较弱"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "准确并支持翻译。在 Apple Silicon 或 GPU 上表现最佳。"
+      },
+      "whisper-small": {
+        "description": "在相对较小的模型中提供广泛的语言支持。"
+      },
+      "whisper-large-v3-turbo": {
+        "description": "多种语言中准确。没有 GPU 时较慢"
+      },
+      "Breeze-ASR-25": {
+        "description": "夹杂英语的台湾国语。繁体字，无标点"
+      },
+      "whisper-large-v3": {
+        "description": "大多数语言都有可用的准确度。在 Apple Silicon 或 GPU 上表现最佳。"
+      },
+      "canary-1b": {
+        "description": "4 种语言的语音转文字，支持翻译。"
+      },
+      "canary-1b-flash": {
+        "description": "4 种语言的语音转文字，支持翻译。"
+      },
+      "gigaam-v3-ctc": {
+        "description": "俄语语音转文字，支持时间戳。"
+      },
+      "gigaam-v3-rnnt": {
+        "description": "俄语语音转文字，支持时间戳。"
+      },
+      "granite-4_0-1b-speech": {
+        "description": "6 种语言的语音转文字，支持翻译。"
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "5 种语言的语音转文字。"
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "5 种语言的语音转文字，支持时间戳。"
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "英语语音转文字。"
+      },
+      "moonshine-base": {
+        "description": "英语语音转文字。"
+      },
+      "moonshine-base-ar": {
+        "description": "阿拉伯语语音转文字。"
+      },
+      "moonshine-base-ja": {
+        "description": "日语语音转文字。"
+      },
+      "moonshine-base-ko": {
+        "description": "韩语语音转文字。"
+      },
+      "moonshine-base-uk": {
+        "description": "乌克兰语语音转文字。"
+      },
+      "moonshine-base-vi": {
+        "description": "越南语语音转文字。"
+      },
+      "moonshine-base-zh": {
+        "description": "中文语音转文字。"
+      },
+      "moonshine-streaming-medium": {
+        "description": "英语语音转文字，支持流式传输。"
+      },
+      "moonshine-streaming-small": {
+        "description": "英语语音转文字，支持流式传输。"
+      },
+      "moonshine-streaming-tiny": {
+        "description": "英语语音转文字，支持流式传输。"
+      },
+      "moonshine-tiny": {
+        "description": "英语语音转文字。"
+      },
+      "moonshine-tiny-ar": {
+        "description": "阿拉伯语语音转文字。"
+      },
+      "moonshine-tiny-ja": {
+        "description": "日语语音转文字。"
+      },
+      "moonshine-tiny-ko": {
+        "description": "韩语语音转文字。"
+      },
+      "moonshine-tiny-uk": {
+        "description": "乌克兰语语音转文字。"
+      },
+      "moonshine-tiny-vi": {
+        "description": "越南语语音转文字。"
+      },
+      "moonshine-tiny-zh": {
+        "description": "中文语音转文字。"
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "2 种语言的语音转文字，支持时间戳。"
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "英语语音转文字，支持流式传输、时间戳。"
+      },
+      "orukeet": {
+        "description": "25 种语言的语音转文字，支持自动语言检测、时间戳。"
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "英语语音转文字，支持时间戳。"
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "英语语音转文字，支持时间戳。"
+      },
+      "parakeet-primeline": {
+        "description": "25 种语言的语音转文字，支持自动语言检测、时间戳。"
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "英语语音转文字，支持时间戳。"
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "英语语音转文字，支持时间戳。"
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "英语语音转文字，支持时间戳。"
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "英语语音转文字，支持时间戳。"
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "8 种语言的语音转文字，支持翻译、自动语言检测。"
+      },
+      "whisper-base": {
+        "description": "99 种语言的语音转文字，支持翻译、自动语言检测、时间戳。"
+      },
+      "whisper-base_en": {
+        "description": "英语语音转文字，支持时间戳。"
+      },
+      "whisper-large": {
+        "description": "99 种语言的语音转文字，支持翻译、自动语言检测、时间戳。"
+      },
+      "whisper-large-v2": {
+        "description": "99 种语言的语音转文字，支持翻译、自动语言检测、时间戳。"
+      },
+      "whisper-medium_en": {
+        "description": "英语语音转文字，支持时间戳。"
+      },
+      "whisper-small_en": {
+        "description": "英语语音转文字，支持时间戳。"
+      },
+      "whisper-tiny": {
+        "description": "99 种语言的语音转文字，支持翻译、自动语言检测、时间戳。"
+      },
+      "whisper-tiny_en": {
+        "description": "英语语音转文字，支持时间戳。"
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "调整音频反馈的音量",
         "offReason": "音频反馈关闭时不使用。"
       },
-      "feedbackOutputDevice": "反馈音输出设备"
+      "feedbackOutputDevice": "反馈音输出设备",
+      "previewTheme": "试听音效主题（依次播放开始音和停止音）"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "播放位置",
+    "moreInformation": "更多信息",
+    "play": "播放",
+    "pause": "暂停",
+    "copyToClipboard": "复制到剪贴板",
+    "notAvailable": "不可用",
+    "selectAnOption": "选择一个选项...",
     "resetSetting": "将{{setting}}重置为默认值",
     "loading": "加载中...",
     "delete": "删除",

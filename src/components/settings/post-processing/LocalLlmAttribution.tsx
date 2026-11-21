@@ -29,7 +29,7 @@ export const LocalLlmAttributionView = ({
   <div className="px-4 py-2 text-xs text-ink-3">
     <button
       type="button"
-      className="underline"
+      className="underline focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
       onClick={cardAction(model, open)}
     >
       {model.attribution}
@@ -37,7 +37,7 @@ export const LocalLlmAttributionView = ({
     <span aria-hidden="true">{" · "}</span>
     <button
       type="button"
-      className="underline"
+      className="underline focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
       onClick={licenseAction(model, open)}
     >
       {model.license}

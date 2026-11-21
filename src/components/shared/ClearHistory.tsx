@@ -80,9 +80,27 @@ export function createClearFlow<T>(deps: ClearDeps<T>): {
   };
 }
 
+/**
+ * Whether a history's Clear history is off and whether it is off because the loaded history is
+ * empty: empty only when loaded without a failure and with no entry, so a failed load keeps it on.
+ */
+export function clearDisabled({
+  loading,
+  failed,
+  entries,
+}: {
+  loading: boolean;
+  failed: boolean;
+  entries: number;
+}): { disabled: boolean; empty: boolean } {
+  const empty = !loading && !failed && entries === 0;
+  return { disabled: loading || empty, empty };
+}
+
 export function ClearHistoryView<T>({
   state,
   disabled,
+  listEmpty = false,
   refocus,
   message,
   nothing,
@@ -92,6 +110,8 @@ export function ClearHistoryView<T>({
 }: {
   state: ClearState<T>;
   disabled: boolean;
+  /** The loaded history has no entry; with `disabled`, `nothing` shows as the reason. */
+  listEmpty?: boolean;
   /** Focuses the button when it shows again after Cancel. */
   refocus: boolean;
   message: (counted: T) => string;
@@ -128,7 +148,7 @@ export function ClearHistoryView<T>({
       >
         {t("history.clear.action")}
       </Button>
-      {state.kind === "nothing" && (
+      {(state.kind === "nothing" || (disabled && listEmpty)) && (
         <div className="basis-full">
           <span role="status" className="text-xs text-ink-2">
             {nothing}
@@ -142,11 +162,13 @@ export function ClearHistoryView<T>({
 /** A history toolbar's Clear history: one flow per mount, cancelled when the page goes. */
 export function ClearHistory<T>({
   disabled,
+  listEmpty,
   message,
   nothing,
   ...deps
 }: Omit<ClearDeps<T>, "show"> & {
   disabled: boolean;
+  listEmpty?: boolean;
   message: (counted: T) => string;
   nothing: string;
 }): React.JSX.Element {
@@ -170,6 +192,7 @@ export function ClearHistory<T>({
     <ClearHistoryView
       state={state}
       disabled={disabled}
+      listEmpty={listEmpty}
       refocus={refocus}
       message={message}
       nothing={nothing}

@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "Geoptimaliseerd voor Taiwanees-Mandarijn. Ondersteunt codewisseling."
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "De beste algemene keuze voor Engels dicteren"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "Snelle en nauwkeurige transcriptie in veel Europese talen"
+      },
+      "canary-180m-flash": {
+        "description": "Klein, snel en draait goed op elke hardware"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "Consistent sterk in veel talen, het beste voor Grieks en Pools"
+      },
+      "whisper-medium": {
+        "description": "Breedste taalondersteuning, maar kan wat traag zijn"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "Meertalig, zeer nauwkeurig in Italiaans en Spaans. Het beste op Apple Silicon of aparte GPU's"
+      },
+      "parakeet-ultra": {
+        "description": "Beste nauwkeurigheid in 25 Europese talen"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "Snel en nauwkeurig, een geweldige meertalige keuze"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "Uitstekend model alleen voor Engels, draait op elke hardware"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "Het beste voor Chinees, Kantonees en Aziatische talen met Engels"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "Het beste voor Japans, goed in Thais, Indonesisch en Maleis"
+      },
+      "canary-1b-v2": {
+        "description": "Het nauwkeurigste kleine model voor Europese talen"
+      },
+      "canary-qwen-2_5b": {
+        "description": "Zeer nauwkeurig Engels. Traag zonder GPU."
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "Het beste voor Arabisch en voor sprekers van Arabisch en Engels"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "Goed voor Mandarijn, Engels en Japans"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "Alleen Russisch."
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "Het beste voor Russisch dicteren. Engels kan onbetrouwbaar zijn."
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "Extreem snelle Engelse transcriptie, het beste op een GPU"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "Nauwkeurig met ondersteuning voor vertalen. Het beste met een GPU"
+      },
+      "medasr": {
+        "description": "Voor artsen die notities dicteren. Zwak bij algemene spraak"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "Klein Engels model, vrijwel direct, zelfs op de CPU"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "Voor sprekers die door elkaar praten in vergaderingen, niet voor solo dicteren"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "Topnauwkeurigheid in veel talen. Het beste op Apple Silicon of een GPU"
+      },
+      "SenseVoiceSmall": {
+        "description": "Direct Mandarijn, Japans en Koreaans op elke machine. Zwak Kantonees"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "Nauwkeurig met ondersteuning voor vertalen. Het beste op Apple Silicon of een GPU."
+      },
+      "whisper-small": {
+        "description": "Brede taalondersteuning in een relatief klein model."
+      },
+      "whisper-large-v3-turbo": {
+        "description": "Nauwkeurig in veel talen. Traag zonder GPU"
+      },
+      "Breeze-ASR-25": {
+        "description": "Taiwanees Mandarijn met Engels erdoorheen. Traditioneel schrift, geen interpunctie"
+      },
+      "whisper-large-v3": {
+        "description": "De meeste talen met bruikbare nauwkeurigheid. Het beste op Apple Silicon of een GPU."
+      },
+      "canary-1b": {
+        "description": "Spraak-naar-tekst in 4 talen met vertaling."
+      },
+      "canary-1b-flash": {
+        "description": "Spraak-naar-tekst in 4 talen met vertaling."
+      },
+      "gigaam-v3-ctc": {
+        "description": "Russische spraak-naar-tekst met tijdstempels."
+      },
+      "gigaam-v3-rnnt": {
+        "description": "Russische spraak-naar-tekst met tijdstempels."
+      },
+      "granite-4_0-1b-speech": {
+        "description": "Spraak-naar-tekst in 6 talen met vertaling."
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "Spraak-naar-tekst in 5 talen."
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "Spraak-naar-tekst in 5 talen met tijdstempels."
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "Engelse spraak-naar-tekst."
+      },
+      "moonshine-base": {
+        "description": "Engelse spraak-naar-tekst."
+      },
+      "moonshine-base-ar": {
+        "description": "Arabische spraak-naar-tekst."
+      },
+      "moonshine-base-ja": {
+        "description": "Japanse spraak-naar-tekst."
+      },
+      "moonshine-base-ko": {
+        "description": "Koreaanse spraak-naar-tekst."
+      },
+      "moonshine-base-uk": {
+        "description": "Oekraïense spraak-naar-tekst."
+      },
+      "moonshine-base-vi": {
+        "description": "Vietnamese spraak-naar-tekst."
+      },
+      "moonshine-base-zh": {
+        "description": "Chinese spraak-naar-tekst."
+      },
+      "moonshine-streaming-medium": {
+        "description": "Engelse spraak-naar-tekst met streaming."
+      },
+      "moonshine-streaming-small": {
+        "description": "Engelse spraak-naar-tekst met streaming."
+      },
+      "moonshine-streaming-tiny": {
+        "description": "Engelse spraak-naar-tekst met streaming."
+      },
+      "moonshine-tiny": {
+        "description": "Engelse spraak-naar-tekst."
+      },
+      "moonshine-tiny-ar": {
+        "description": "Arabische spraak-naar-tekst."
+      },
+      "moonshine-tiny-ja": {
+        "description": "Japanse spraak-naar-tekst."
+      },
+      "moonshine-tiny-ko": {
+        "description": "Koreaanse spraak-naar-tekst."
+      },
+      "moonshine-tiny-uk": {
+        "description": "Oekraïense spraak-naar-tekst."
+      },
+      "moonshine-tiny-vi": {
+        "description": "Vietnamese spraak-naar-tekst."
+      },
+      "moonshine-tiny-zh": {
+        "description": "Chinese spraak-naar-tekst."
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "Spraak-naar-tekst in 2 talen met tijdstempels."
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "Engelse spraak-naar-tekst met streaming, tijdstempels."
+      },
+      "orukeet": {
+        "description": "Spraak-naar-tekst in 25 talen met automatische taalherkenning, tijdstempels."
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "Engelse spraak-naar-tekst met tijdstempels."
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "Engelse spraak-naar-tekst met tijdstempels."
+      },
+      "parakeet-primeline": {
+        "description": "Spraak-naar-tekst in 25 talen met automatische taalherkenning, tijdstempels."
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "Engelse spraak-naar-tekst met tijdstempels."
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "Engelse spraak-naar-tekst met tijdstempels."
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "Engelse spraak-naar-tekst met tijdstempels."
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "Engelse spraak-naar-tekst met tijdstempels."
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "Spraak-naar-tekst in 8 talen met vertaling, automatische taalherkenning."
+      },
+      "whisper-base": {
+        "description": "Spraak-naar-tekst in 99 talen met vertaling, automatische taalherkenning, tijdstempels."
+      },
+      "whisper-base_en": {
+        "description": "Engelse spraak-naar-tekst met tijdstempels."
+      },
+      "whisper-large": {
+        "description": "Spraak-naar-tekst in 99 talen met vertaling, automatische taalherkenning, tijdstempels."
+      },
+      "whisper-large-v2": {
+        "description": "Spraak-naar-tekst in 99 talen met vertaling, automatische taalherkenning, tijdstempels."
+      },
+      "whisper-medium_en": {
+        "description": "Engelse spraak-naar-tekst met tijdstempels."
+      },
+      "whisper-small_en": {
+        "description": "Engelse spraak-naar-tekst met tijdstempels."
+      },
+      "whisper-tiny": {
+        "description": "Spraak-naar-tekst in 99 talen met vertaling, automatische taalherkenning, tijdstempels."
+      },
+      "whisper-tiny_en": {
+        "description": "Engelse spraak-naar-tekst met tijdstempels."
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "Pas het volume van de geluidsfeedback aan",
         "offReason": "Niet gebruikt wanneer geluidsfeedback uit staat."
       },
-      "feedbackOutputDevice": "Afspeelapparaat voor geluidsfeedback"
+      "feedbackOutputDevice": "Afspeelapparaat voor geluidsfeedback",
+      "previewTheme": "Geluidsthema beluisteren (speelt start en daarna stop af)"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "Afspeelpositie",
+    "moreInformation": "Meer informatie",
+    "play": "Afspelen",
+    "pause": "Pauzeren",
+    "copyToClipboard": "Kopiëren naar klembord",
+    "notAvailable": "Niet beschikbaar",
+    "selectAnOption": "Selecteer een optie...",
     "resetSetting": "{{setting}} terugzetten naar de standaardwaarde",
     "loading": "Laden...",
     "delete": "Verwijderen",

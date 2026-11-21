@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "Optimiert für taiwanesisches Mandarin. Unterstützung für Code-Switching."
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "Beste Allround-Wahl für englisches Diktat"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "Schnelle und genaue Transkription in vielen europäischen Sprachen"
+      },
+      "canary-180m-flash": {
+        "description": "Winzig, schnell und läuft auf jeder Hardware gut"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "Durchweg stark in vielen Sprachen, am besten für Griechisch und Polnisch"
+      },
+      "whisper-medium": {
+        "description": "Breiteste Sprachunterstützung, kann aber etwas langsam laufen"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "Mehrsprachig, sehr genau in Italienisch und Spanisch. Am besten auf Apple Silicon oder dedizierten GPUs"
+      },
+      "parakeet-ultra": {
+        "description": "Beste Genauigkeit in 25 europäischen Sprachen"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "Schnell und genau, eine hervorragende mehrsprachige Wahl"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "Ausgezeichnetes Modell nur für Englisch, läuft auf jeder Hardware"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "Am besten für Chinesisch, Kantonesisch und asiatische Sprachen mit Englisch"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "Am besten für Japanisch, gut in Thai, Indonesisch und Malaiisch"
+      },
+      "canary-1b-v2": {
+        "description": "Das genaueste kleine Modell für europäische Sprachen"
+      },
+      "canary-qwen-2_5b": {
+        "description": "Sehr genaues Englisch. Ohne GPU langsam."
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "Am besten für Arabisch und für Sprecher von Arabisch und Englisch"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "Gut für Mandarin, Englisch und Japanisch"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "Nur Russisch."
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "Am besten für russisches Diktat. Englisch kann unzuverlässig sein."
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "Extrem schnelle englische Transkription, am besten auf der GPU"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "Genau und mit Übersetzungsunterstützung. Am besten mit GPU"
+      },
+      "medasr": {
+        "description": "Für Ärzte, die Notizen diktieren. Schwach bei allgemeiner Sprache"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "Winziges Englisch-Modell, selbst auf der CPU praktisch sofort"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "Für sich überlagernde Sprecher in Meetings, nicht für Diktat allein"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "Höchste Genauigkeit über viele Sprachen. Am besten auf Apple Silicon oder einer GPU"
+      },
+      "SenseVoiceSmall": {
+        "description": "Sofort Mandarin, Japanisch und Koreanisch auf jedem Rechner. Schwaches Kantonesisch"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "Genau und mit Übersetzungsunterstützung. Am besten auf Apple Silicon oder einer GPU."
+      },
+      "whisper-small": {
+        "description": "Breite Sprachunterstützung in einem relativ kleinen Modell."
+      },
+      "whisper-large-v3-turbo": {
+        "description": "Genau in vielen Sprachen. Ohne GPU langsam"
+      },
+      "Breeze-ASR-25": {
+        "description": "Taiwanisches Mandarin mit eingestreutem Englisch. Traditionelle Schrift, keine Interpunktion"
+      },
+      "whisper-large-v3": {
+        "description": "Die meisten Sprachen mit brauchbarer Genauigkeit. Am besten auf Apple Silicon oder einer GPU."
+      },
+      "canary-1b": {
+        "description": "Spracherkennung in 4 Sprachen mit Übersetzung."
+      },
+      "canary-1b-flash": {
+        "description": "Spracherkennung in 4 Sprachen mit Übersetzung."
+      },
+      "gigaam-v3-ctc": {
+        "description": "Russisch-Spracherkennung mit Zeitstempeln."
+      },
+      "gigaam-v3-rnnt": {
+        "description": "Russisch-Spracherkennung mit Zeitstempeln."
+      },
+      "granite-4_0-1b-speech": {
+        "description": "Spracherkennung in 6 Sprachen mit Übersetzung."
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "Spracherkennung in 5 Sprachen."
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "Spracherkennung in 5 Sprachen mit Zeitstempeln."
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "Englisch-Spracherkennung."
+      },
+      "moonshine-base": {
+        "description": "Englisch-Spracherkennung."
+      },
+      "moonshine-base-ar": {
+        "description": "Arabisch-Spracherkennung."
+      },
+      "moonshine-base-ja": {
+        "description": "Japanisch-Spracherkennung."
+      },
+      "moonshine-base-ko": {
+        "description": "Koreanisch-Spracherkennung."
+      },
+      "moonshine-base-uk": {
+        "description": "Ukrainisch-Spracherkennung."
+      },
+      "moonshine-base-vi": {
+        "description": "Vietnamesisch-Spracherkennung."
+      },
+      "moonshine-base-zh": {
+        "description": "Chinesisch-Spracherkennung."
+      },
+      "moonshine-streaming-medium": {
+        "description": "Englisch-Spracherkennung mit Streaming."
+      },
+      "moonshine-streaming-small": {
+        "description": "Englisch-Spracherkennung mit Streaming."
+      },
+      "moonshine-streaming-tiny": {
+        "description": "Englisch-Spracherkennung mit Streaming."
+      },
+      "moonshine-tiny": {
+        "description": "Englisch-Spracherkennung."
+      },
+      "moonshine-tiny-ar": {
+        "description": "Arabisch-Spracherkennung."
+      },
+      "moonshine-tiny-ja": {
+        "description": "Japanisch-Spracherkennung."
+      },
+      "moonshine-tiny-ko": {
+        "description": "Koreanisch-Spracherkennung."
+      },
+      "moonshine-tiny-uk": {
+        "description": "Ukrainisch-Spracherkennung."
+      },
+      "moonshine-tiny-vi": {
+        "description": "Vietnamesisch-Spracherkennung."
+      },
+      "moonshine-tiny-zh": {
+        "description": "Chinesisch-Spracherkennung."
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "Spracherkennung in 2 Sprachen mit Zeitstempeln."
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "Englisch-Spracherkennung mit Streaming, Zeitstempeln."
+      },
+      "orukeet": {
+        "description": "Spracherkennung in 25 Sprachen mit automatischer Spracherkennung, Zeitstempeln."
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "Englisch-Spracherkennung mit Zeitstempeln."
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "Englisch-Spracherkennung mit Zeitstempeln."
+      },
+      "parakeet-primeline": {
+        "description": "Spracherkennung in 25 Sprachen mit automatischer Spracherkennung, Zeitstempeln."
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "Englisch-Spracherkennung mit Zeitstempeln."
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "Englisch-Spracherkennung mit Zeitstempeln."
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "Englisch-Spracherkennung mit Zeitstempeln."
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "Englisch-Spracherkennung mit Zeitstempeln."
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "Spracherkennung in 8 Sprachen mit Übersetzung, automatischer Spracherkennung."
+      },
+      "whisper-base": {
+        "description": "Spracherkennung in 99 Sprachen mit Übersetzung, automatischer Spracherkennung, Zeitstempeln."
+      },
+      "whisper-base_en": {
+        "description": "Englisch-Spracherkennung mit Zeitstempeln."
+      },
+      "whisper-large": {
+        "description": "Spracherkennung in 99 Sprachen mit Übersetzung, automatischer Spracherkennung, Zeitstempeln."
+      },
+      "whisper-large-v2": {
+        "description": "Spracherkennung in 99 Sprachen mit Übersetzung, automatischer Spracherkennung, Zeitstempeln."
+      },
+      "whisper-medium_en": {
+        "description": "Englisch-Spracherkennung mit Zeitstempeln."
+      },
+      "whisper-small_en": {
+        "description": "Englisch-Spracherkennung mit Zeitstempeln."
+      },
+      "whisper-tiny": {
+        "description": "Spracherkennung in 99 Sprachen mit Übersetzung, automatischer Spracherkennung, Zeitstempeln."
+      },
+      "whisper-tiny_en": {
+        "description": "Englisch-Spracherkennung mit Zeitstempeln."
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "Lautstärke der Audio-Feedback-Töne anpassen",
         "offReason": "Wird nicht verwendet, wenn Audio-Feedback aus ist."
       },
-      "feedbackOutputDevice": "Ausgabegerät für Audio-Feedback"
+      "feedbackOutputDevice": "Ausgabegerät für Audio-Feedback",
+      "previewTheme": "Sound-Thema anhören (spielt Start, dann Stopp)"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "Wiedergabeposition",
+    "moreInformation": "Weitere Informationen",
+    "play": "Wiedergabe",
+    "pause": "Pause",
+    "copyToClipboard": "In die Zwischenablage kopieren",
+    "notAvailable": "Nicht verfügbar",
+    "selectAnOption": "Option auswählen...",
     "resetSetting": "{{setting}} auf den Standardwert zurücksetzen",
     "loading": "Wird geladen...",
     "delete": "Löschen",
@@ -1435,7 +1661,7 @@
         "symbol": "Überall",
         "acronym": "Ganzes Wort oder Namensteil"
       },
-      "filter": "In Geschriebenem oder Gesprochenem suchen",
+      "filter": "Einträge suchen",
       "toggle": "{{written}} verwenden",
       "fields": {
         "skip": "Überspringen",

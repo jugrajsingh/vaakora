@@ -223,6 +223,58 @@ function rules(css: string): [string, string][] {
   );
 }
 
+/** Shadow declarations in a source file: CSS `box-shadow` and `--*shadow*`
+ * values (not the `--light|dark-color-shadow` tokens themselves), `drop-shadow(...)`, `boxShadow:` lines and `shadow-[...]` classes. */
+function shadowDeclarations(file: string): { line: number; text: string }[] {
+  const raw = readFileSync(file, "utf8");
+  const text = file.endsWith(".css")
+    ? raw.replace(/\/\*[\s\S]*?\*\//g, (comment) =>
+        comment.replace(/[^\n]/g, " "),
+      )
+    : raw;
+  const out: { line: number; text: string }[] = [];
+  const add = (index: number, value: string) =>
+    out.push({
+      line: text.slice(0, index).split("\n").length,
+      text: value.replace(/\s+/g, " ").trim(),
+    });
+  const patterns = file.endsWith(".css")
+    ? [
+        /(?:box-shadow|--(?!(?:light|dark)-color-shadow:)[\w-]*shadow[\w-]*)\s*:\s*([^;}]*)/g,
+      ]
+    : [/boxShadow\s*:\s*([^\n]*)/g, /shadow-\[[^\]\s"'`]*\]/g];
+  for (const pattern of patterns) {
+    for (const match of text.matchAll(pattern)) {
+      add(match.index ?? 0, match[1] ?? match[0]);
+    }
+  }
+  for (const match of text.matchAll(/drop-shadow\(/g)) {
+    const start = (match.index ?? 0) + match[0].length;
+    let depth = 1;
+    let end = start;
+    for (; end < text.length && depth > 0; end++) {
+      if (text[end] === "(") depth++;
+      if (text[end] === ")") depth--;
+    }
+    add(match.index ?? 0, text.slice(start, end - 1));
+  }
+  return out;
+}
+
+const RAW_COLOUR =
+  /(?<![a-z])(?:rgba?|hsla?|oklch|oklab)\(|#[0-9a-fA-F]{3,8}\b/i;
+
+/** Raw colours inside a shadow property that are not drop shadows, keyed
+ * "file: declaration". */
+const NOT_A_SHADOW: Record<string, string> = {
+  "components/onboarding/screens/demo.css: inset 0 0 0 1px rgb(255 255 255 / 0.08)":
+    "white inset sheen on the demo laptop lid, not a shadow",
+  "components/onboarding/screens/demo.css: inset 0 1px 0 rgb(255 255 255 / 0.35)":
+    "white inset highlight on the demo key, not a shadow",
+};
+
+const SHADOW_STEPS = ["xs", "sm", "md", "lg", "xl", "2xl"];
+
 describe("theme tokens", () => {
   it("no_mid_gray_class_in_src", () => {
     const hits: string[] = [];
@@ -344,6 +396,77 @@ describe("theme tokens", () => {
         });
     }
     assert.deepEqual(hits, [], `raw palette classes at:\n${hits.join("\n")}`);
+  });
+
+  it("shadow_colour_is_one_token_pair", () => {
+    const root = declarations(block(THEME_CSS, ":root"));
+    assert.ok(root["light-color-shadow"], "no --light-color-shadow");
+    assert.ok(root["dark-color-shadow"], "no --dark-color-shadow");
+    const dark = block(THEME_CSS, "@media (prefers-color-scheme: dark)");
+    const mapped: [string, string][] = [
+      [block(THEME_CSS, ":root"), "light"],
+      [block(dark, ":root"), "dark"],
+      [block(THEME_CSS, ':root[data-theme="light"]'), "light"],
+      [block(THEME_CSS, ':root[data-theme="dark"]'), "dark"],
+    ];
+    for (const [body, theme] of mapped) {
+      assert.equal(
+        declarations(body)["color-shadow"],
+        `var(--${theme}-color-shadow)`,
+        `--color-shadow is not mapped to the ${theme} token`,
+      );
+    }
+    assert.match(
+      block(read("App.css"), "@theme inline"),
+      /--color-shadow: var\(--color-shadow\);/,
+      "--color-shadow is not registered with Tailwind",
+    );
+  });
+
+  it("tailwind_shadow_steps_in_use_take_the_token", () => {
+    const used = new Set<string>();
+    for (const file of walk(SRC_ROOT)) {
+      if (/\.test\.[jt]sx?$/.test(file)) continue;
+      for (const match of readFileSync(file, "utf8").matchAll(
+        /(?<![\w-])shadow-(xs|sm|md|lg|xl|2xl)(?![\w-])/g,
+      )) {
+        used.add(match[1]);
+      }
+    }
+    const theme = declarations(block(read("App.css"), "@theme"));
+    for (const step of SHADOW_STEPS) {
+      if (!used.has(step)) continue;
+      assert.match(
+        theme[`shadow-${step}`] ?? "",
+        /var\(--color-shadow\)/,
+        `shadow-${step} is used but App.css does not build it from --color-shadow`,
+      );
+    }
+  });
+
+  it("no_raw_colour_in_a_shadow", () => {
+    const hits: string[] = [];
+    const seen = new Set<string>();
+    for (const file of walk(SRC_ROOT)) {
+      if (/\.test\.[jt]sx?$/.test(file)) continue;
+      const name = relative(SRC_ROOT, file);
+      for (const { line, text } of shadowDeclarations(file)) {
+        if (!RAW_COLOUR.test(text)) continue;
+        const key = `${name}: ${text}`;
+        if (key in NOT_A_SHADOW) seen.add(key);
+        else hits.push(`${name}:${line} ${text}`);
+      }
+    }
+    assert.deepEqual(
+      hits,
+      [],
+      `shadow colour must come from --color-shadow:\n${hits.join("\n")}`,
+    );
+    assert.deepEqual(
+      Object.keys(NOT_A_SHADOW).filter((key) => !seen.has(key)),
+      [],
+      "stale NOT_A_SHADOW entries",
+    );
   });
 
   it("history_error_is_an_alert", () => {

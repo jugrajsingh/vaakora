@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "מותאם למנדרינית טאיוואנית. תמיכה במעבר בין שפות."
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "הבחירה הכללית הטובה ביותר להכתבה באנגלית"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "תמלול מהיר ומדויק בשפות אירופיות רבות"
+      },
+      "canary-180m-flash": {
+        "description": "קטנטן, מהיר ופועל היטב בכל חומרה"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "חזק באופן עקבי בשפות רבות, הטוב ביותר ליוונית ופולנית"
+      },
+      "whisper-medium": {
+        "description": "התמיכה הרחבה ביותר בשפות, אך עשוי לפעול לאט במקצת"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "רב־לשוני, מדויק מאוד באיטלקית ובספרדית. הטוב ביותר ב-Apple Silicon או ב-GPU ייעודי"
+      },
+      "parakeet-ultra": {
+        "description": "הדיוק הטוב ביותר ב-25 שפות אירופיות"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "מהיר ומדויק, בחירה רב־לשונית מצוינת"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "מודל מצוין לאנגלית בלבד, פועל בכל חומרה"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "הטוב ביותר לסינית, קנטונזית ושפות אסיה עם אנגלית"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "הטוב ביותר ליפנית, טוב בתאית, באינדונזית ובמלאית"
+      },
+      "canary-1b-v2": {
+        "description": "המודל הקטן המדויק ביותר לשפות אירופיות"
+      },
+      "canary-qwen-2_5b": {
+        "description": "אנגלית מדויקת מאוד. איטי ללא GPU."
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "הטוב ביותר לערבית ולדוברי ערבית ואנגלית"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "טוב למנדרינית, אנגלית ויפנית"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "רוסית בלבד."
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "הטוב ביותר להכתבה ברוסית. האנגלית עשויה להיות לא אמינה."
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "תמלול אנגלית מהיר במיוחד, הטוב ביותר על GPU"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "מדויק עם תמיכה בתרגום. הטוב ביותר עם GPU"
+      },
+      "medasr": {
+        "description": "לרופאים המכתיבים הערות. חלש בדיבור כללי"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "מודל אנגלי קטנטן, כמעט מיידי גם על CPU"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "לדוברים שמדברים בו־זמנית בפגישות, לא להכתבה לבד"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "דיוק מוביל בשפות רבות. הטוב ביותר ב-Apple Silicon או עם GPU"
+      },
+      "SenseVoiceSmall": {
+        "description": "מנדרינית, יפנית וקוריאנית באופן מיידי בכל מחשב. קנטונזית חלשה"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "מדויק עם תמיכה בתרגום. הטוב ביותר ב-Apple Silicon או עם GPU."
+      },
+      "whisper-small": {
+        "description": "תמיכה רחבה בשפות במודל קטן יחסית."
+      },
+      "whisper-large-v3-turbo": {
+        "description": "מדויק בשפות רבות. איטי ללא GPU"
+      },
+      "Breeze-ASR-25": {
+        "description": "מנדרינית טייוואנית עם אנגלית משולבת. כתב מסורתי, ללא סימני פיסוק"
+      },
+      "whisper-large-v3": {
+        "description": "רוב השפות בדיוק שמיש. הטוב ביותר ב-Apple Silicon או עם GPU."
+      },
+      "canary-1b": {
+        "description": "תמלול דיבור לטקסט ב-4 שפות עם תרגום."
+      },
+      "canary-1b-flash": {
+        "description": "תמלול דיבור לטקסט ב-4 שפות עם תרגום."
+      },
+      "gigaam-v3-ctc": {
+        "description": "תמלול דיבור לטקסט: רוסית עם חותמות זמן."
+      },
+      "gigaam-v3-rnnt": {
+        "description": "תמלול דיבור לטקסט: רוסית עם חותמות זמן."
+      },
+      "granite-4_0-1b-speech": {
+        "description": "תמלול דיבור לטקסט ב-6 שפות עם תרגום."
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "תמלול דיבור לטקסט ב-5 שפות."
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "תמלול דיבור לטקסט ב-5 שפות עם חותמות זמן."
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "תמלול דיבור לטקסט: אנגלית."
+      },
+      "moonshine-base": {
+        "description": "תמלול דיבור לטקסט: אנגלית."
+      },
+      "moonshine-base-ar": {
+        "description": "תמלול דיבור לטקסט: ערבית."
+      },
+      "moonshine-base-ja": {
+        "description": "תמלול דיבור לטקסט: יפנית."
+      },
+      "moonshine-base-ko": {
+        "description": "תמלול דיבור לטקסט: קוריאנית."
+      },
+      "moonshine-base-uk": {
+        "description": "תמלול דיבור לטקסט: אוקראינית."
+      },
+      "moonshine-base-vi": {
+        "description": "תמלול דיבור לטקסט: וייטנאמית."
+      },
+      "moonshine-base-zh": {
+        "description": "תמלול דיבור לטקסט: סינית."
+      },
+      "moonshine-streaming-medium": {
+        "description": "תמלול דיבור לטקסט: אנגלית עם סטרימינג."
+      },
+      "moonshine-streaming-small": {
+        "description": "תמלול דיבור לטקסט: אנגלית עם סטרימינג."
+      },
+      "moonshine-streaming-tiny": {
+        "description": "תמלול דיבור לטקסט: אנגלית עם סטרימינג."
+      },
+      "moonshine-tiny": {
+        "description": "תמלול דיבור לטקסט: אנגלית."
+      },
+      "moonshine-tiny-ar": {
+        "description": "תמלול דיבור לטקסט: ערבית."
+      },
+      "moonshine-tiny-ja": {
+        "description": "תמלול דיבור לטקסט: יפנית."
+      },
+      "moonshine-tiny-ko": {
+        "description": "תמלול דיבור לטקסט: קוריאנית."
+      },
+      "moonshine-tiny-uk": {
+        "description": "תמלול דיבור לטקסט: אוקראינית."
+      },
+      "moonshine-tiny-vi": {
+        "description": "תמלול דיבור לטקסט: וייטנאמית."
+      },
+      "moonshine-tiny-zh": {
+        "description": "תמלול דיבור לטקסט: סינית."
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "תמלול דיבור לטקסט ב-2 שפות עם חותמות זמן."
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "תמלול דיבור לטקסט: אנגלית עם סטרימינג, חותמות זמן."
+      },
+      "orukeet": {
+        "description": "תמלול דיבור לטקסט ב-25 שפות עם זיהוי שפה אוטומטי, חותמות זמן."
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "תמלול דיבור לטקסט: אנגלית עם חותמות זמן."
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "תמלול דיבור לטקסט: אנגלית עם חותמות זמן."
+      },
+      "parakeet-primeline": {
+        "description": "תמלול דיבור לטקסט ב-25 שפות עם זיהוי שפה אוטומטי, חותמות זמן."
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "תמלול דיבור לטקסט: אנגלית עם חותמות זמן."
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "תמלול דיבור לטקסט: אנגלית עם חותמות זמן."
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "תמלול דיבור לטקסט: אנגלית עם חותמות זמן."
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "תמלול דיבור לטקסט: אנגלית עם חותמות זמן."
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "תמלול דיבור לטקסט ב-8 שפות עם תרגום, זיהוי שפה אוטומטי."
+      },
+      "whisper-base": {
+        "description": "תמלול דיבור לטקסט ב-99 שפות עם תרגום, זיהוי שפה אוטומטי, חותמות זמן."
+      },
+      "whisper-base_en": {
+        "description": "תמלול דיבור לטקסט: אנגלית עם חותמות זמן."
+      },
+      "whisper-large": {
+        "description": "תמלול דיבור לטקסט ב-99 שפות עם תרגום, זיהוי שפה אוטומטי, חותמות זמן."
+      },
+      "whisper-large-v2": {
+        "description": "תמלול דיבור לטקסט ב-99 שפות עם תרגום, זיהוי שפה אוטומטי, חותמות זמן."
+      },
+      "whisper-medium_en": {
+        "description": "תמלול דיבור לטקסט: אנגלית עם חותמות זמן."
+      },
+      "whisper-small_en": {
+        "description": "תמלול דיבור לטקסט: אנגלית עם חותמות זמן."
+      },
+      "whisper-tiny": {
+        "description": "תמלול דיבור לטקסט ב-99 שפות עם תרגום, זיהוי שפה אוטומטי, חותמות זמן."
+      },
+      "whisper-tiny_en": {
+        "description": "תמלול דיבור לטקסט: אנגלית עם חותמות זמן."
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "כוונן את עוצמת צלילי המשוב",
         "offReason": "לא בשימוש כשהמשוב הקולי כבוי."
       },
-      "feedbackOutputDevice": "התקן פלט למשוב קולי"
+      "feedbackOutputDevice": "התקן פלט למשוב קולי",
+      "previewTheme": "תצוגה מקדימה של ערכת הצלילים (מנגן התחלה ואז עצירה)"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "מיקום ההשמעה",
+    "moreInformation": "מידע נוסף",
+    "play": "הפעלה",
+    "pause": "השהיה",
+    "copyToClipboard": "העתקה ללוח",
+    "notAvailable": "לא זמין",
+    "selectAnOption": "בחר אפשרות...",
     "resetSetting": "איפוס {{setting}} לערך ברירת המחדל",
     "loading": "טוען...",
     "delete": "מחק",

@@ -95,7 +95,8 @@ const selectStyles: StylesConfig<SelectOption, false> = {
     backgroundColor: "var(--color-background)",
     color: "var(--color-text)",
     border: "1px solid var(--color-line)",
-    boxShadow: "0 10px 30px rgba(15, 15, 15, 0.2)",
+    boxShadow:
+      "0 10px 30px color-mix(in srgb, var(--color-shadow) 20%, transparent)",
   }),
   option: (base, state) => ({
     ...base,

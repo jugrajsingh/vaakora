@@ -89,6 +89,16 @@ assert.ok(preparing[1].includes('value="1"'));
 assert.ok(preparing[1].includes('max="4"'));
 const select = render({}).match(/<select[^>]*>(.*?)<\/select>/);
 assert.ok(select, "Run on select");
+const selectClasses = (
+  /<select[^>]*class="([^"]*)"/.exec(render({}))?.[1] ?? ""
+).split(/\s+/);
+for (const wanted of [
+  "focus:outline-none",
+  "focus-visible:ring-2",
+  "focus-visible:ring-logo-primary",
+]) {
+  assert.ok(selectClasses.includes(wanted), `select ${wanted}`);
+}
 assert.ok(select[1].includes('<option value="auto"'));
 assert.ok(select[1].includes('<option value="npu"'));
 assert.ok(

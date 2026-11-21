@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "Dioptimalkan untuk Mandarin Taiwan. Mendukung alih kode."
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "Pilihan serba guna terbaik untuk dikte bahasa Inggris"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "Transkripsi cepat dan akurat di banyak bahasa Eropa"
+      },
+      "canary-180m-flash": {
+        "description": "Sangat kecil, cepat, dan berjalan baik di perangkat keras apa pun"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "Konsisten kuat di banyak bahasa, terbaik untuk bahasa Yunani dan Polandia"
+      },
+      "whisper-medium": {
+        "description": "Dukungan bahasa terluas, tetapi bisa agak lambat"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "Multibahasa, sangat akurat dalam bahasa Italia dan Spanyol. Terbaik di Apple Silicon atau GPU diskrit"
+      },
+      "parakeet-ultra": {
+        "description": "Akurasi terbaik di 25 bahasa Eropa"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "Cepat dan akurat, pilihan multibahasa yang bagus"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "Model khusus bahasa Inggris yang sangat baik, berjalan di perangkat keras apa pun"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "Terbaik untuk bahasa Mandarin, Kanton, dan bahasa Asia dengan bahasa Inggris"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "Terbaik untuk bahasa Jepang, bagus untuk Thai, Indonesia, dan Melayu"
+      },
+      "canary-1b-v2": {
+        "description": "Model kecil paling akurat untuk bahasa Eropa"
+      },
+      "canary-qwen-2_5b": {
+        "description": "Bahasa Inggris sangat akurat. Lambat tanpa GPU."
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "Terbaik untuk bahasa Arab dan penutur bahasa Arab dan Inggris"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "Bagus untuk bahasa Mandarin, Inggris, dan Jepang"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "Hanya bahasa Rusia."
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "Terbaik untuk dikte bahasa Rusia. Bahasa Inggris mungkin tidak andal."
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "Transkripsi bahasa Inggris yang sangat cepat, terbaik di GPU"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "Akurat dengan dukungan terjemahan. Terbaik dengan GPU"
+      },
+      "medasr": {
+        "description": "Untuk klinisi yang mendikte catatan. Lemah pada ucapan umum"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "Model bahasa Inggris yang sangat kecil, hampir instan bahkan di CPU"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "Untuk pembicara yang saling tumpang tindih dalam rapat, bukan untuk dikte sendiri"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "Akurasi teratas di berbagai bahasa. Terbaik di Apple Silicon atau GPU"
+      },
+      "SenseVoiceSmall": {
+        "description": "Bahasa Mandarin, Jepang, dan Korea secara instan di mesin apa pun. Bahasa Kanton lemah"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "Akurat dengan dukungan terjemahan. Terbaik di Apple Silicon atau GPU."
+      },
+      "whisper-small": {
+        "description": "Dukungan bahasa luas dalam model yang relatif kecil."
+      },
+      "whisper-large-v3-turbo": {
+        "description": "Akurat di banyak bahasa. Lambat tanpa GPU"
+      },
+      "Breeze-ASR-25": {
+        "description": "Mandarin Taiwan dengan campuran bahasa Inggris. Aksara tradisional, tanpa tanda baca"
+      },
+      "whisper-large-v3": {
+        "description": "Sebagian besar bahasa dengan akurasi yang dapat digunakan. Terbaik di Apple Silicon atau GPU."
+      },
+      "canary-1b": {
+        "description": "Ucapan ke teks dalam 4 bahasa dengan terjemahan."
+      },
+      "canary-1b-flash": {
+        "description": "Ucapan ke teks dalam 4 bahasa dengan terjemahan."
+      },
+      "gigaam-v3-ctc": {
+        "description": "Ucapan ke teks bahasa Rusia dengan stempel waktu."
+      },
+      "gigaam-v3-rnnt": {
+        "description": "Ucapan ke teks bahasa Rusia dengan stempel waktu."
+      },
+      "granite-4_0-1b-speech": {
+        "description": "Ucapan ke teks dalam 6 bahasa dengan terjemahan."
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "Ucapan ke teks dalam 5 bahasa."
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "Ucapan ke teks dalam 5 bahasa dengan stempel waktu."
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "Ucapan ke teks bahasa Inggris."
+      },
+      "moonshine-base": {
+        "description": "Ucapan ke teks bahasa Inggris."
+      },
+      "moonshine-base-ar": {
+        "description": "Ucapan ke teks bahasa Arab."
+      },
+      "moonshine-base-ja": {
+        "description": "Ucapan ke teks bahasa Jepang."
+      },
+      "moonshine-base-ko": {
+        "description": "Ucapan ke teks bahasa Korea."
+      },
+      "moonshine-base-uk": {
+        "description": "Ucapan ke teks bahasa Ukraina."
+      },
+      "moonshine-base-vi": {
+        "description": "Ucapan ke teks bahasa Vietnam."
+      },
+      "moonshine-base-zh": {
+        "description": "Ucapan ke teks bahasa Mandarin."
+      },
+      "moonshine-streaming-medium": {
+        "description": "Ucapan ke teks bahasa Inggris dengan streaming."
+      },
+      "moonshine-streaming-small": {
+        "description": "Ucapan ke teks bahasa Inggris dengan streaming."
+      },
+      "moonshine-streaming-tiny": {
+        "description": "Ucapan ke teks bahasa Inggris dengan streaming."
+      },
+      "moonshine-tiny": {
+        "description": "Ucapan ke teks bahasa Inggris."
+      },
+      "moonshine-tiny-ar": {
+        "description": "Ucapan ke teks bahasa Arab."
+      },
+      "moonshine-tiny-ja": {
+        "description": "Ucapan ke teks bahasa Jepang."
+      },
+      "moonshine-tiny-ko": {
+        "description": "Ucapan ke teks bahasa Korea."
+      },
+      "moonshine-tiny-uk": {
+        "description": "Ucapan ke teks bahasa Ukraina."
+      },
+      "moonshine-tiny-vi": {
+        "description": "Ucapan ke teks bahasa Vietnam."
+      },
+      "moonshine-tiny-zh": {
+        "description": "Ucapan ke teks bahasa Mandarin."
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "Ucapan ke teks dalam 2 bahasa dengan stempel waktu."
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "Ucapan ke teks bahasa Inggris dengan streaming, stempel waktu."
+      },
+      "orukeet": {
+        "description": "Ucapan ke teks dalam 25 bahasa dengan deteksi bahasa otomatis, stempel waktu."
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "Ucapan ke teks bahasa Inggris dengan stempel waktu."
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "Ucapan ke teks bahasa Inggris dengan stempel waktu."
+      },
+      "parakeet-primeline": {
+        "description": "Ucapan ke teks dalam 25 bahasa dengan deteksi bahasa otomatis, stempel waktu."
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "Ucapan ke teks bahasa Inggris dengan stempel waktu."
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "Ucapan ke teks bahasa Inggris dengan stempel waktu."
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "Ucapan ke teks bahasa Inggris dengan stempel waktu."
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "Ucapan ke teks bahasa Inggris dengan stempel waktu."
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "Ucapan ke teks dalam 8 bahasa dengan terjemahan, deteksi bahasa otomatis."
+      },
+      "whisper-base": {
+        "description": "Ucapan ke teks dalam 99 bahasa dengan terjemahan, deteksi bahasa otomatis, stempel waktu."
+      },
+      "whisper-base_en": {
+        "description": "Ucapan ke teks bahasa Inggris dengan stempel waktu."
+      },
+      "whisper-large": {
+        "description": "Ucapan ke teks dalam 99 bahasa dengan terjemahan, deteksi bahasa otomatis, stempel waktu."
+      },
+      "whisper-large-v2": {
+        "description": "Ucapan ke teks dalam 99 bahasa dengan terjemahan, deteksi bahasa otomatis, stempel waktu."
+      },
+      "whisper-medium_en": {
+        "description": "Ucapan ke teks bahasa Inggris dengan stempel waktu."
+      },
+      "whisper-small_en": {
+        "description": "Ucapan ke teks bahasa Inggris dengan stempel waktu."
+      },
+      "whisper-tiny": {
+        "description": "Ucapan ke teks dalam 99 bahasa dengan terjemahan, deteksi bahasa otomatis, stempel waktu."
+      },
+      "whisper-tiny_en": {
+        "description": "Ucapan ke teks bahasa Inggris dengan stempel waktu."
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "Sesuaikan volume suara umpan balik audio",
         "offReason": "Tidak digunakan saat umpan balik audio mati."
       },
-      "feedbackOutputDevice": "Perangkat keluaran umpan balik audio"
+      "feedbackOutputDevice": "Perangkat keluaran umpan balik audio",
+      "previewTheme": "Pratinjau tema suara (memutar mulai lalu berhenti)"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "Posisi pemutaran",
+    "moreInformation": "Informasi lainnya",
+    "play": "Putar",
+    "pause": "Jeda",
+    "copyToClipboard": "Salin ke papan klip",
+    "notAvailable": "Tidak tersedia",
+    "selectAnOption": "Pilih opsi...",
     "resetSetting": "Atur ulang {{setting}} ke nilai bawaan",
     "loading": "Memuat...",
     "delete": "Hapus",

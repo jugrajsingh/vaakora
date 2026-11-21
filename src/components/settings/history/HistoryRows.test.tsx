@@ -63,6 +63,9 @@ mock.module("@/components/ui/Button", () => ({
 const { CompareViewSetting, RecordingsFolderSetting } = await import(
   "./HistoryRows"
 );
+const { ClearHistoryView, clearDisabled } = await import(
+  "@/components/shared/ClearHistory"
+);
 const i18n = i18next.createInstance();
 await i18n.init({ lng: "en", resources: { en: { translation: en } } });
 
@@ -131,6 +134,58 @@ describe("HistoryRows", () => {
       i18n.t("history.notTranscribedLine", { action }),
       "This entry is not transcribed yet. Use Re-transcribe to transcribe it.",
     );
+  });
+
+  it("clear_history_follows_the_entries", () => {
+    const toolbar = (input: {
+      loading: boolean;
+      failed: boolean;
+      entries: number;
+    }) => {
+      const { disabled, empty } = clearDisabled(input);
+      const html = render(
+        <ClearHistoryView<number>
+          state={{ kind: "idle" }}
+          disabled={disabled}
+          listEmpty={empty}
+          refocus={false}
+          message={() => ""}
+          nothing={i18n.t("history.clear.nothing")}
+          press={() => {}}
+          confirm={() => {}}
+          cancel={() => {}}
+        />,
+      );
+      return { html, clear: buttons[0] };
+    };
+    const none = toolbar({ loading: false, failed: false, entries: 0 });
+    assert.equal(none.clear.children, "Clear history");
+    assert.equal(none.clear.disabled, true);
+    assert.equal(none.html.split("Nothing to clear.").length - 1, 1);
+    const one = toolbar({ loading: false, failed: false, entries: 1 });
+    assert.equal(one.clear.disabled, false, "an entry arrives: Clear is back");
+    assert.ok(!one.html.includes("Nothing to clear."));
+    const loading = toolbar({ loading: true, failed: false, entries: 0 });
+    assert.equal(loading.clear.disabled, true);
+    assert.ok(!loading.html.includes("Nothing to clear."), "not yet loaded");
+    const failed = toolbar({ loading: false, failed: true, entries: 0 });
+    assert.equal(failed.clear.disabled, false, "a failed load keeps Clear on");
+    assert.ok(!failed.html.includes("Nothing to clear."));
+    assert.deepEqual(
+      clearDisabled({ loading: true, failed: false, entries: 3 }),
+      {
+        disabled: true,
+        empty: false,
+      },
+    );
+    const source = readFileSync(
+      new URL("./HistorySettings.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.ok(source.includes("clearDisabled({"));
+    assert.ok(source.includes("disabled={clearing.disabled}"));
+    assert.ok(source.includes("listEmpty={clearing.empty}"));
+    assert.ok(!source.includes("disabled={loading}"));
   });
 
   it("history_header_lost_compare_and_folder", () => {

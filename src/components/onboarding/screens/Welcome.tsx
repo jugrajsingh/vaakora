@@ -144,7 +144,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ progress, onContinue }) => {
                     role="radio"
                     aria-checked={picked}
                     onClick={() => set({ script: s.id })}
-                    className={`inline-flex h-[34px] cursor-pointer items-center gap-[8px] rounded-control border-[1.5px] bg-background ps-[10px] pe-[14px] text-small font-semibold text-text ${
+                    className={`inline-flex h-[34px] cursor-pointer items-center gap-[8px] rounded-control border-[1.5px] bg-background ps-[10px] pe-[14px] text-small font-semibold text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
                       picked
                         ? "border-plum-pick"
                         : "border-line-strong hover:border-ink-3"

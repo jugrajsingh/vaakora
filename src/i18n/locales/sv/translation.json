@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "Optimerad för taiwanesisk mandarin. Stöd för kodväxling."
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "Det bästa allroundvalet för engelsk diktering"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "Snabb och exakt transkribering på många europeiska språk"
+      },
+      "canary-180m-flash": {
+        "description": "Pytteliten, snabb och fungerar bra på all hårdvara"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "Genomgående stark på många språk, bäst för grekiska och polska"
+      },
+      "whisper-medium": {
+        "description": "Bredast språkstöd, men kan vara lite långsam"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "Flerspråkig, mycket exakt på italienska och spanska. Bäst på Apple Silicon eller dedikerade GPU:er"
+      },
+      "parakeet-ultra": {
+        "description": "Bäst noggrannhet över 25 europeiska språk"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "Snabb och exakt, ett utmärkt flerspråkigt val"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "Utmärkt modell endast för engelska, fungerar på all hårdvara"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "Bäst för kinesiska, kantonesiska och asiatiska språk med engelska"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "Bäst för japanska, bra på thai, indonesiska och malajiska"
+      },
+      "canary-1b-v2": {
+        "description": "Den mest exakta lilla modellen för europeiska språk"
+      },
+      "canary-qwen-2_5b": {
+        "description": "Mycket exakt engelska. Långsam utan GPU."
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "Bäst för arabiska och för arabisk- och engelsktalande"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "Bra för mandarin, engelska och japanska"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "Endast ryska."
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "Bäst för rysk diktering. Engelska kan vara opålitlig."
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "Extremt snabb engelsk transkribering, bäst på GPU"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "Exakt med stöd för översättning. Bäst med GPU"
+      },
+      "medasr": {
+        "description": "För läkare som dikterar anteckningar. Svag på allmänt tal"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "Pytteliten engelsk modell, nästan ögonblicklig även på CPU"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "För talare som pratar i mun på varandra på möten, inte för ensam diktering"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "Toppnoggrannhet över många språk. Bäst på Apple Silicon eller en GPU"
+      },
+      "SenseVoiceSmall": {
+        "description": "Omedelbar mandarin, japanska och koreanska på vilken dator som helst. Svag kantonesiska"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "Exakt med stöd för översättning. Bäst på Apple Silicon eller en GPU."
+      },
+      "whisper-small": {
+        "description": "Brett språkstöd i en relativt liten modell."
+      },
+      "whisper-large-v3-turbo": {
+        "description": "Exakt på många språk. Långsam utan GPU"
+      },
+      "Breeze-ASR-25": {
+        "description": "Taiwanesisk mandarin med engelska inblandad. Traditionell skrift, ingen interpunktion"
+      },
+      "whisper-large-v3": {
+        "description": "De flesta språk med användbar noggrannhet. Bäst på Apple Silicon eller en GPU."
+      },
+      "canary-1b": {
+        "description": "Tal till text på 4 språk med översättning."
+      },
+      "canary-1b-flash": {
+        "description": "Tal till text på 4 språk med översättning."
+      },
+      "gigaam-v3-ctc": {
+        "description": "Tal till text på ryska med tidsstämplar."
+      },
+      "gigaam-v3-rnnt": {
+        "description": "Tal till text på ryska med tidsstämplar."
+      },
+      "granite-4_0-1b-speech": {
+        "description": "Tal till text på 6 språk med översättning."
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "Tal till text på 5 språk."
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "Tal till text på 5 språk med tidsstämplar."
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "Tal till text på engelska."
+      },
+      "moonshine-base": {
+        "description": "Tal till text på engelska."
+      },
+      "moonshine-base-ar": {
+        "description": "Tal till text på arabiska."
+      },
+      "moonshine-base-ja": {
+        "description": "Tal till text på japanska."
+      },
+      "moonshine-base-ko": {
+        "description": "Tal till text på koreanska."
+      },
+      "moonshine-base-uk": {
+        "description": "Tal till text på ukrainska."
+      },
+      "moonshine-base-vi": {
+        "description": "Tal till text på vietnamesiska."
+      },
+      "moonshine-base-zh": {
+        "description": "Tal till text på kinesiska."
+      },
+      "moonshine-streaming-medium": {
+        "description": "Tal till text på engelska med streaming."
+      },
+      "moonshine-streaming-small": {
+        "description": "Tal till text på engelska med streaming."
+      },
+      "moonshine-streaming-tiny": {
+        "description": "Tal till text på engelska med streaming."
+      },
+      "moonshine-tiny": {
+        "description": "Tal till text på engelska."
+      },
+      "moonshine-tiny-ar": {
+        "description": "Tal till text på arabiska."
+      },
+      "moonshine-tiny-ja": {
+        "description": "Tal till text på japanska."
+      },
+      "moonshine-tiny-ko": {
+        "description": "Tal till text på koreanska."
+      },
+      "moonshine-tiny-uk": {
+        "description": "Tal till text på ukrainska."
+      },
+      "moonshine-tiny-vi": {
+        "description": "Tal till text på vietnamesiska."
+      },
+      "moonshine-tiny-zh": {
+        "description": "Tal till text på kinesiska."
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "Tal till text på 2 språk med tidsstämplar."
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "Tal till text på engelska med streaming, tidsstämplar."
+      },
+      "orukeet": {
+        "description": "Tal till text på 25 språk med automatisk språkidentifiering, tidsstämplar."
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "Tal till text på engelska med tidsstämplar."
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "Tal till text på engelska med tidsstämplar."
+      },
+      "parakeet-primeline": {
+        "description": "Tal till text på 25 språk med automatisk språkidentifiering, tidsstämplar."
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "Tal till text på engelska med tidsstämplar."
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "Tal till text på engelska med tidsstämplar."
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "Tal till text på engelska med tidsstämplar."
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "Tal till text på engelska med tidsstämplar."
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "Tal till text på 8 språk med översättning, automatisk språkidentifiering."
+      },
+      "whisper-base": {
+        "description": "Tal till text på 99 språk med översättning, automatisk språkidentifiering, tidsstämplar."
+      },
+      "whisper-base_en": {
+        "description": "Tal till text på engelska med tidsstämplar."
+      },
+      "whisper-large": {
+        "description": "Tal till text på 99 språk med översättning, automatisk språkidentifiering, tidsstämplar."
+      },
+      "whisper-large-v2": {
+        "description": "Tal till text på 99 språk med översättning, automatisk språkidentifiering, tidsstämplar."
+      },
+      "whisper-medium_en": {
+        "description": "Tal till text på engelska med tidsstämplar."
+      },
+      "whisper-small_en": {
+        "description": "Tal till text på engelska med tidsstämplar."
+      },
+      "whisper-tiny": {
+        "description": "Tal till text på 99 språk med översättning, automatisk språkidentifiering, tidsstämplar."
+      },
+      "whisper-tiny_en": {
+        "description": "Tal till text på engelska med tidsstämplar."
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "Justera volymen för ljudåterkopplingsljud",
         "offReason": "Används inte när ljudåterkoppling är av."
       },
-      "feedbackOutputDevice": "Utenhet för ljudåterkoppling"
+      "feedbackOutputDevice": "Utenhet för ljudåterkoppling",
+      "previewTheme": "Förhandslyssna på ljudtema (spelar start och sedan stopp)"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "Uppspelningsposition",
+    "moreInformation": "Mer information",
+    "play": "Spela upp",
+    "pause": "Pausa",
+    "copyToClipboard": "Kopiera till Urklipp",
+    "notAvailable": "Inte tillgängligt",
+    "selectAnOption": "Välj ett alternativ...",
     "resetSetting": "Återställ {{setting}} till standardvärdet",
     "loading": "Laddar...",
     "delete": "Ta bort",

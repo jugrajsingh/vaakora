@@ -82,6 +82,225 @@
       "breeze-asr": {
         "name": "Breeze ASR",
         "description": "針對臺灣華語最佳化。支援語碼轉換。"
+      },
+      "parakeet-unified-en-0_6b": {
+        "description": "英語聽寫的最佳全方位選擇"
+      },
+      "nemotron-3_5-asr-streaming-0_6b": {
+        "description": "快速且準確地轉錄多種歐洲語言"
+      },
+      "canary-180m-flash": {
+        "description": "體積小、速度快，在任何硬體上都運作良好"
+      },
+      "cohere-transcribe-03-2026": {
+        "description": "在多種語言中表現穩定出色，特別適合希臘語和波蘭語"
+      },
+      "whisper-medium": {
+        "description": "語言支援最廣，但執行速度可能稍慢"
+      },
+      "Voxtral-Mini-4B-Realtime-2602": {
+        "description": "支援多語言，義大利語和西班牙語非常準確。在 Apple Silicon 或獨立顯示卡上表現最佳"
+      },
+      "parakeet-ultra": {
+        "description": "25 種歐洲語言中準確度最高"
+      },
+      "parakeet-tdt-0_6b-v3": {
+        "description": "快速準確，出色的多語言選擇"
+      },
+      "parakeet-tdt-0_6b-v2": {
+        "description": "出色的純英語模型，可在任何硬體上執行"
+      },
+      "Qwen3-ASR-0_6B": {
+        "description": "最適合中文、粵語以及夾雜英語的亞洲語言"
+      },
+      "Fun-ASR-MLT-Nano-2512": {
+        "description": "最適合日語，對泰語、印尼語、馬來語也表現良好"
+      },
+      "canary-1b-v2": {
+        "description": "歐洲語言中最準確的小型模型"
+      },
+      "canary-qwen-2_5b": {
+        "description": "英語非常準確。沒有 GPU 時較慢。"
+      },
+      "cohere-transcribe-arabic-07-2026": {
+        "description": "最適合阿拉伯語，以及說阿拉伯語和英語的使用者"
+      },
+      "Fun-ASR-Nano-2512": {
+        "description": "適合國語、英語、日語"
+      },
+      "gigaam-v3-e2e-ctc": {
+        "description": "僅支援俄語。"
+      },
+      "gigaam-v3-e2e-rnnt": {
+        "description": "最適合俄語聽寫。英語可能不可靠。"
+      },
+      "granite-speech-5_0-470m-turboctc": {
+        "description": "英語轉錄極快，在 GPU 上表現最佳"
+      },
+      "granite-speech-4_1-2b": {
+        "description": "準確並支援翻譯。搭配 GPU 效果最佳"
+      },
+      "medasr": {
+        "description": "適合醫師口述記錄。對一般語音表現較差"
+      },
+      "parakeet-tdt_ctc-110m": {
+        "description": "小巧的英語模型，即使在 CPU 上也幾乎即時"
+      },
+      "multitalker-parakeet-streaming-0_6b-v1": {
+        "description": "適合會議中說話重疊的多人情境，不適合單人聽寫"
+      },
+      "Qwen3-ASR-1_7B": {
+        "description": "多種語言中準確度頂尖。在 Apple Silicon 或 GPU 上表現最佳"
+      },
+      "SenseVoiceSmall": {
+        "description": "在任何裝置上即時辨識國語、日語、韓語。粵語較弱"
+      },
+      "Voxtral-Mini-3B-2507": {
+        "description": "準確並支援翻譯。在 Apple Silicon 或 GPU 上表現最佳。"
+      },
+      "whisper-small": {
+        "description": "在相對較小的模型中提供廣泛的語言支援。"
+      },
+      "whisper-large-v3-turbo": {
+        "description": "多種語言中準確。沒有 GPU 時較慢"
+      },
+      "Breeze-ASR-25": {
+        "description": "夾雜英語的臺灣國語。繁體字，無標點"
+      },
+      "whisper-large-v3": {
+        "description": "大多數語言都有可用的準確度。在 Apple Silicon 或 GPU 上表現最佳。"
+      },
+      "canary-1b": {
+        "description": "4 種語言的語音轉文字，支援翻譯。"
+      },
+      "canary-1b-flash": {
+        "description": "4 種語言的語音轉文字，支援翻譯。"
+      },
+      "gigaam-v3-ctc": {
+        "description": "俄語語音轉文字，支援時間戳記。"
+      },
+      "gigaam-v3-rnnt": {
+        "description": "俄語語音轉文字，支援時間戳記。"
+      },
+      "granite-4_0-1b-speech": {
+        "description": "6 種語言的語音轉文字，支援翻譯。"
+      },
+      "granite-speech-4_1-2b-nar": {
+        "description": "5 種語言的語音轉文字。"
+      },
+      "granite-speech-4_1-2b-plus": {
+        "description": "5 種語言的語音轉文字，支援時間戳記。"
+      },
+      "granite-speech-5_0-470m-turboctc-nc": {
+        "description": "英語語音轉文字。"
+      },
+      "moonshine-base": {
+        "description": "英語語音轉文字。"
+      },
+      "moonshine-base-ar": {
+        "description": "阿拉伯語語音轉文字。"
+      },
+      "moonshine-base-ja": {
+        "description": "日語語音轉文字。"
+      },
+      "moonshine-base-ko": {
+        "description": "韓語語音轉文字。"
+      },
+      "moonshine-base-uk": {
+        "description": "烏克蘭語語音轉文字。"
+      },
+      "moonshine-base-vi": {
+        "description": "越南語語音轉文字。"
+      },
+      "moonshine-base-zh": {
+        "description": "中文語音轉文字。"
+      },
+      "moonshine-streaming-medium": {
+        "description": "英語語音轉文字，支援串流。"
+      },
+      "moonshine-streaming-small": {
+        "description": "英語語音轉文字，支援串流。"
+      },
+      "moonshine-streaming-tiny": {
+        "description": "英語語音轉文字，支援串流。"
+      },
+      "moonshine-tiny": {
+        "description": "英語語音轉文字。"
+      },
+      "moonshine-tiny-ar": {
+        "description": "阿拉伯語語音轉文字。"
+      },
+      "moonshine-tiny-ja": {
+        "description": "日語語音轉文字。"
+      },
+      "moonshine-tiny-ko": {
+        "description": "韓語語音轉文字。"
+      },
+      "moonshine-tiny-uk": {
+        "description": "烏克蘭語語音轉文字。"
+      },
+      "moonshine-tiny-vi": {
+        "description": "越南語語音轉文字。"
+      },
+      "moonshine-tiny-zh": {
+        "description": "中文語音轉文字。"
+      },
+      "MOSS-Transcribe-Diarize": {
+        "description": "2 種語言的語音轉文字，支援時間戳記。"
+      },
+      "nemotron-speech-streaming-en-0_6b": {
+        "description": "英語語音轉文字，支援串流、時間戳記。"
+      },
+      "orukeet": {
+        "description": "25 種語言的語音轉文字，支援自動語言偵測、時間戳記。"
+      },
+      "parakeet-ctc-0_6b": {
+        "description": "英語語音轉文字，支援時間戳記。"
+      },
+      "parakeet-ctc-1_1b": {
+        "description": "英語語音轉文字，支援時間戳記。"
+      },
+      "parakeet-primeline": {
+        "description": "25 種語言的語音轉文字，支援自動語言偵測、時間戳記。"
+      },
+      "parakeet-rnnt-0_6b": {
+        "description": "英語語音轉文字，支援時間戳記。"
+      },
+      "parakeet-rnnt-1_1b": {
+        "description": "英語語音轉文字，支援時間戳記。"
+      },
+      "parakeet-tdt_ctc-1_1b": {
+        "description": "英語語音轉文字，支援時間戳記。"
+      },
+      "parakeet-tdt-1_1b": {
+        "description": "英語語音轉文字，支援時間戳記。"
+      },
+      "Voxtral-Small-24B-2507": {
+        "description": "8 種語言的語音轉文字，支援翻譯、自動語言偵測。"
+      },
+      "whisper-base": {
+        "description": "99 種語言的語音轉文字，支援翻譯、自動語言偵測、時間戳記。"
+      },
+      "whisper-base_en": {
+        "description": "英語語音轉文字，支援時間戳記。"
+      },
+      "whisper-large": {
+        "description": "99 種語言的語音轉文字，支援翻譯、自動語言偵測、時間戳記。"
+      },
+      "whisper-large-v2": {
+        "description": "99 種語言的語音轉文字，支援翻譯、自動語言偵測、時間戳記。"
+      },
+      "whisper-medium_en": {
+        "description": "英語語音轉文字，支援時間戳記。"
+      },
+      "whisper-small_en": {
+        "description": "英語語音轉文字，支援時間戳記。"
+      },
+      "whisper-tiny": {
+        "description": "99 種語言的語音轉文字，支援翻譯、自動語言偵測、時間戳記。"
+      },
+      "whisper-tiny_en": {
+        "description": "英語語音轉文字，支援時間戳記。"
       }
     },
     "errors": {
@@ -560,7 +779,8 @@
         "description": "調整聲音回饋的音量",
         "offReason": "聲音回饋關閉時不使用。"
       },
-      "feedbackOutputDevice": "回饋音輸出裝置"
+      "feedbackOutputDevice": "回饋音輸出裝置",
+      "previewTheme": "試聽音效主題（依序播放開始音與停止音）"
     },
     "advanced": {
       "groups": {
@@ -1138,6 +1358,12 @@
   },
   "common": {
     "playbackPosition": "播放位置",
+    "moreInformation": "更多資訊",
+    "play": "播放",
+    "pause": "暫停",
+    "copyToClipboard": "複製到剪貼簿",
+    "notAvailable": "無法使用",
+    "selectAnOption": "選擇一個選項...",
     "resetSetting": "將{{setting}}重設為預設值",
     "loading": "載入中...",
     "delete": "刪除",

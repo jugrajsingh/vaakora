@@ -299,7 +299,7 @@ export const ModelTable: React.FC<ModelTableProps> = ({
                     press();
                   }
                 }}
-                className="h-full min-w-0 flex-1 bg-transparent text-body text-text outline-none placeholder:text-ink-3 [&::-webkit-search-cancel-button]:appearance-none"
+                className="-mx-[4px] h-full min-w-0 flex-1 rounded-control bg-transparent px-[4px] text-body text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-logo-primary placeholder:text-ink-3 [&::-webkit-search-cancel-button]:appearance-none"
               />
             </label>
             <span

@@ -4,6 +4,7 @@ import i18next from "i18next";
 import {
   canClearShortcut,
   clearButtonState,
+  clearShortcut,
   generalShortcutRows,
   shortcutErrorText,
   shortcutNameKey,
@@ -95,6 +96,7 @@ for (const id of ["transcribe", "transcribe_with_post_process", "cancel"]) {
               isRecording,
               isUpdating,
               disabled,
+              bound: true,
             }),
             {
               visible: enabled && id !== "cancel",
@@ -105,6 +107,61 @@ for (const id of ["transcribe", "transcribe_with_post_process", "cancel"]) {
       }
     }
   }
+}
+// clear_shows_only_for_a_bound_shortcut
+const shown = (id: string, enabled: boolean, bound: boolean) =>
+  clearButtonState({
+    id,
+    enabled,
+    bound,
+    isRecording: false,
+    isUpdating: false,
+    disabled: false,
+  }).visible;
+assert.equal(shown("read_aloud", true, false), false);
+assert.equal(shown("read_aloud", true, true), true);
+assert.equal(shown("read_aloud", false, false), false);
+assert.equal(shown("transcribe", true, false), false);
+assert.equal(shown("transcribe", true, true), true);
+assert.equal(shown("transcribe", false, true), false);
+assert.equal(shown("transcribe_with_post_process", false, true), false);
+assert.equal(shown("cancel", true, true), false);
+// clear_moves_focus_to_reset_only_when_cleared
+{
+  const events: string[] = [];
+  await clearShortcut({
+    clear: async () => {
+      events.push("clear");
+    },
+    onCleared: () => events.push("cleared"),
+    onError: () => events.push("error"),
+  });
+  assert.deepEqual(events, ["clear", "cleared"]);
+  const refused: unknown[] = [];
+  await clearShortcut({
+    clear: async () => {
+      throw new Error("shortcut.cannot_clear:transcribe");
+    },
+    onCleared: () => events.push("wrongly cleared"),
+    onError: (error) => refused.push(String(error)),
+  });
+  assert.deepEqual(events, ["clear", "cleared"]);
+  assert.deepEqual(refused, ["Error: shortcut.cannot_clear:transcribe"]);
+}
+{
+  const input = readFileSync(
+    new URL("../../components/settings/ShortcutInput.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.ok(input.includes("bound: Boolean(binding.current_binding),"));
+  assert.ok(input.includes("onCleared: () => setCleared(true),"));
+  assert.ok(input.includes("ref={resetRef}"));
+  assert.ok(input.includes("resetRef.current?.focus();"));
+  const reset = readFileSync(
+    new URL("../../components/ui/ResetButton.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.ok(reset.includes("ref={ref}"), "Reset takes the focus Clear leaves");
 }
 const { default: en } = await import("../../i18n/locales/en/translation.json");
 await i18next.init({

@@ -210,7 +210,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         <div className="relative" ref={dropdownRef}>
           <button
             type="button"
-            className={`px-2 py-1 text-sm font-semibold bg-wash border border-line-strong rounded min-w-[200px] text-start flex items-center justify-between transition-all duration-150 ${
+            className={`px-2 py-1 text-sm font-semibold bg-wash border border-line-strong rounded min-w-[200px] text-start flex items-center justify-between transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
               isUpdating("selected_language")
                 ? "opacity-50 cursor-not-allowed"
                 : "hover:bg-logo-primary/10 cursor-pointer hover:border-logo-primary"
@@ -285,7 +285,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                           <button
                             type="button"
                             onClick={detector.download}
-                            className="group flex w-full items-center justify-between gap-2 px-2 py-1 text-sm text-ink-3 transition-colors duration-150 hover:bg-logo-primary/10 hover:text-text"
+                            className="group flex w-full items-center justify-between gap-2 px-2 py-1 text-sm text-ink-3 transition-colors duration-150 hover:bg-logo-primary/10 hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
                           >
                             <span className="truncate">{language.label}</span>
                             <LanguageDetectorDownload
@@ -314,7 +314,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                       <button
                         key={language.value}
                         type="button"
-                        className={`w-full px-2 py-1 text-sm text-start transition-colors duration-150 ${
+                        className={`w-full px-2 py-1 text-sm text-start transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
                           selectedLanguage === language.value
                             ? "bg-logo-primary/20 text-logo-primary font-semibold"
                             : "hover:bg-logo-primary/10"
