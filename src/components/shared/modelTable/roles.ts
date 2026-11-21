@@ -367,6 +367,23 @@ export function nextOpen(
   return current !== null && ids.includes(current) ? current : null;
 }
 
+/** Reports an open row that left the list (`null`) once per hiding; `undefined` means nothing to report. */
+export function createOpenSync(): (
+  openId: string | null,
+  ids: readonly string[],
+) => string | null | undefined {
+  let reported: string | null = null;
+  return (openId, ids) => {
+    if (openId === null || ids.includes(openId)) {
+      reported = null;
+      return undefined;
+    }
+    if (reported === openId) return undefined;
+    reported = openId;
+    return null;
+  };
+}
+
 /** A filter chip: pressed, it keeps only the models that pass `test`. */
 export interface Chip {
   key: string;

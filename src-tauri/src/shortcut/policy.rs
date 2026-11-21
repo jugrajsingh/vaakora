@@ -1,5 +1,10 @@
 use crate::settings::{AppSettings, KeyboardImplementation, ShortcutBinding};
 
+// Refusal codes. A refusal's text ends in `(<code>:<binding id>)`, and the frontend
+// (`shortcutErrorText` in `src/lib/utils/shortcutPresentation.ts`) maps the code to a
+// translated sentence. Codes: `shortcut.in_use` (the id is the binding that holds the keys)
+// and `shortcut.cannot_clear` (the id is the binding that was asked to clear).
+
 /// Supplies settings and native registration operations to the shortcut entry points.
 pub trait RegistrationContext {
     type HandyKeys: HandyKeysRegistration;
@@ -138,7 +143,7 @@ pub(crate) fn reject_duplicate(settings: &AppSettings, id: &str, raw: &str) -> R
             == Some(&candidate)
         {
             return Err(format!(
-                "Shortcut is already assigned to '{}' ({other_id})",
+                "Shortcut is already assigned to '{}' (shortcut.in_use:{other_id})",
                 other.name
             ));
         }
@@ -167,7 +172,11 @@ pub(crate) fn clear_binding_with(
                 return Err("At least one dictation shortcut must remain assigned".into());
             }
         }
-        _ => return Err(format!("The '{id}' shortcut cannot be cleared")),
+        _ => {
+            return Err(format!(
+                "The '{id}' shortcut cannot be cleared (shortcut.cannot_clear:{id})"
+            ))
+        }
     }
     let mut binding = settings
         .bindings
@@ -229,14 +238,14 @@ mod tests {
                 " ALT + CTRL + D "
             )
             .unwrap_err()
-            .contains("transcribe"));
+            .contains("(shortcut.in_use:transcribe)"));
             assert!(reject_duplicate(&settings, "cancel", "alt+ctrl+d").is_err());
             assert!(reject_duplicate(&settings, "transcribe", "ctrl+alt+d").is_ok());
             assert!(reject_duplicate(&settings, "read_aloud", "alt+ctrl+d").is_err());
             let read_aloud = settings.bindings["read_aloud"].current_binding.clone();
             assert!(reject_duplicate(&settings, "transcribe", &read_aloud)
                 .unwrap_err()
-                .contains("read_aloud"));
+                .contains("(shortcut.in_use:read_aloud)"));
         }
     }
     #[test]
@@ -246,7 +255,8 @@ mod tests {
         assert!(clear_binding_with(&mut settings, "cancel", |_| {
             panic!("cancel must not be unregistered by a clear")
         })
-        .is_err());
+        .unwrap_err()
+        .contains("(shortcut.cannot_clear:cancel)"));
         clear_binding_with(&mut settings, "transcribe", |_| Ok(())).unwrap();
         assert!(
             clear_binding_with(&mut settings, "transcribe_with_post_process", |_| Ok(())).is_err()
@@ -856,7 +866,7 @@ pub(crate) mod command_path_tests {
             let before = context.stored();
             assert!(change_post_process_enabled_with(&context, true, || {})
                 .unwrap_err()
-                .contains("transcribe"));
+                .contains("(shortcut.in_use:transcribe)"));
             assert!(!context.persisted().post_process_enabled);
             assert_eq!(context.stored(), before);
             assert!(context.operations.borrow().is_empty());

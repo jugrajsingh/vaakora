@@ -144,6 +144,18 @@ describe("ReadHistoryTab", () => {
     assert.match(clear, /class="[^"]*\bshrink-0\b/);
   });
 
+  it("summary_keeps_its_width", () => {
+    settings = {};
+    const summary = renderTab().match(
+      /<p class="([^"]*)">Keeps the latest/,
+    )?.[1];
+    assert.ok(summary, "the summary paragraph");
+    const classes = summary.split(/\s+/);
+    for (const name of ["flex-1", "basis-[20rem]"]) {
+      assert.ok(classes.includes(name), `${name} in "${summary}"`);
+    }
+  });
+
   it("change_button_calls_change", () => {
     let changed = 0;
     let tree: React.ReactElement | null = null;
@@ -198,7 +210,7 @@ describe("ReadHistoryStateLine", () => {
     const html = line("empty");
     assert.ok(html.includes("Nothing read yet."));
     assert.equal(html.match(/role="img"/g)?.length, 1);
-    assert.ok(html.includes('aria-label="⊞ + Alt + R"'), html);
+    assert.ok(html.includes('aria-label="Super + Alt + R"'), html);
     assert.ok(html.includes("Copy some text and press "));
     assert.match(html, /^<div class="[^"]*\bpy-10\b[^"]*\btext-center\b/);
     assert.ok(!html.includes("italic"));
@@ -476,9 +488,9 @@ describe("read copy", () => {
       titled,
     );
     assert.deepEqual(notices, [
-      { title: en.settings.history.copyError },
-      { title: en.settings.history.copyError },
-      { title: en.settings.history.copyError },
+      { title: en.tts.history.copyFailed },
+      { title: en.tts.history.copyFailed },
+      { title: en.tts.history.copyFailed },
     ]);
   });
 });

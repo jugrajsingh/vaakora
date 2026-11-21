@@ -1743,8 +1743,14 @@ pub(crate) mod tests {
     }
 
     /// Manager over the real backend; its fake binary appends a line per spawn to the returned file.
+    /// With `hangs`, the backend's start deadline reads a clock that advances an hour per hanging
+    /// spawn (`hangs` maps the spawn count to the hang count), so only a hang can reach the deadline.
     #[cfg(unix)]
-    fn real_backend_harness(script: &str, start_timeout: Duration) -> (Harness, PathBuf) {
+    fn real_backend_harness(
+        script: &str,
+        start_timeout: Duration,
+        hangs: Option<fn(usize) -> u32>,
+    ) -> (Harness, PathBuf) {
         let mut h = harness();
         let root = h._dir.path().to_path_buf();
         let spawns = root.join("spawns");
@@ -1753,8 +1759,15 @@ pub(crate) mod tests {
             log = spawns.display()
         );
         let binary = crate::local_llm::llama_server::tests::fake_binary(&root, &script);
+        let mut backend = crate::local_llm::llama_server::LlamaServerBackend::with_binary(binary);
+        if let Some(hangs) = hangs {
+            backend = backend.with_clock(crate::local_llm::llama_server::tests::spawn_log_clock(
+                spawns.clone(),
+                hangs,
+            ));
+        }
         let mut manager = LocalLlmManager::new(
-            Box::new(crate::local_llm::llama_server::LlamaServerBackend::with_binary(binary)),
+            Box::new(backend),
             Some(root),
             ManagerHooks {
                 idle_inputs: Box::new(|| IdleInputs {
@@ -1784,7 +1797,8 @@ pub(crate) mod tests {
     fn retry_crash_then_hang_streak_is_sticky() {
         let (h, spawns) = real_backend_harness(
             "if [ $((run % 2)) -eq 1 ]; then exit 1; fi\nexec sleep 30",
-            Duration::from_secs(2),
+            Duration::from_secs(60),
+            Some(|spawns| spawns as u32 / 2),
         );
         for _ in 0..MAX_FAILED_STARTS {
             let result = h.manager.ensure_started(&h.settings);
@@ -1811,7 +1825,8 @@ pub(crate) mod tests {
     fn retry_probe_that_crashes_spawns_one_child() {
         let (h, spawns) = real_backend_harness(
             "if [ \"$run\" -gt 3 ]; then exit 1; fi\nexec sleep 30",
-            Duration::from_secs(2),
+            Duration::from_secs(60),
+            Some(|spawns| spawns.min(3) as u32),
         );
         for _ in 0..MAX_FAILED_STARTS {
             assert_eq!(
@@ -1838,7 +1853,7 @@ pub(crate) mod tests {
     #[cfg(unix)]
     #[test]
     fn retry_probe_that_hangs_spawns_one_child() {
-        let (h, spawns) = real_backend_harness("exec sleep 30", Duration::from_secs(2));
+        let (h, spawns) = real_backend_harness("exec sleep 30", Duration::from_secs(2), None);
         for _ in 0..MAX_FAILED_STARTS {
             assert_eq!(
                 h.manager.ensure_started(&h.settings),

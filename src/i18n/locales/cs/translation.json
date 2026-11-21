@@ -3,29 +3,29 @@
     "settings": "Nastavení...",
     "checkUpdates": "Zkontrolovat aktualizace...",
     "copyLastTranscript": "Zkopírovat poslední přepis",
-    "unloadModel": "Uvolnit model přepisu",
-    "cleanup": "Model následného zpracování",
+    "unloadModel": "Uvolnit model diktování",
+    "cleanup": "Model úpravy textu",
     "cleanupReady": "připraven",
     "cleanupNotLoaded": "nenačten",
     "cleanupLoading": "načítá se",
-    "cleanupError": "chyba",
-    "noCleanupModel": "Žádný model následného zpracování",
-    "unloadPostProcessingModel": "Uvolnit model následného zpracování",
+    "cleanupError": "selhalo",
+    "noCleanupModel": "Žádný model úpravy textu",
+    "unloadPostProcessingModel": "Uvolnit model úpravy textu",
     "model": "Model",
-    "transcriptionModel": "Model přepisu",
+    "transcriptionModel": "Model diktování",
     "quit": "Ukončit",
     "cancel": "Zrušit",
     "secureInputWarning": "⚠ Zkratky blokuje Secure Input",
     "language": "Jazyk",
     "autoLanguage": "Automaticky",
     "otherLanguages": "Další jazyky",
-    "ttsModel": "Model převodu textu na řeč",
-    "ttsUnload": "Uvolnit model převodu textu na řeč",
-    "ttsStarting": "Spouští se",
-    "ttsReady": "Načten",
+    "ttsModel": "Model čtení nahlas",
+    "ttsUnload": "Uvolnit model čtení nahlas",
+    "ttsStarting": "Načítá se",
+    "ttsReady": "Připraven",
     "ttsStopping": "Zastavuje se",
     "ttsFailed": "Selhalo",
-    "ttsUnloaded": "Uvolněn"
+    "ttsUnloaded": "Nenačten"
   },
   "sidebar": {
     "general": "Obecné",
@@ -236,6 +236,9 @@
       "highFiveLabel": "Plácnout si",
       "atLogin": "Spustit Handy po přihlášení",
       "finish": "Hotovo",
+      "readAloud": "Chcete-li si text poslechnout, zkopírujte ho a stiskněte <keys/>.",
+      "readAloudUnbound": "Chcete-li si text poslechnout, nastavte jeho zkratku v Nastavení, Obecné.",
+      "chooseReadAloudModel": "Vyberte model pro čtení nahlas",
       "panel": {
         "name": "Handy",
         "ready": "Připraveno",
@@ -338,7 +341,6 @@
     "alreadyAdded_other": "{{languages}} jsou již přidány."
   },
   "modelSelector": {
-    "status": "Stav modelu: {{modelName}}",
     "size": "{{size}} MiB",
     "custom": "Vlastní",
     "streaming": "Streaming",
@@ -408,7 +410,9 @@
       "readAloud": "Čtení nahlas",
       "activation": "Aktivace",
       "activationHelp": "Pro zkratky diktování",
-      "cancelLinuxHelp": "Na Linuxu zkratka pro zrušení diktování nezastaví, protože zkratky registrované během diktování tam nejsou spolehlivé. Použijte X na překryvu, Zrušit v nabídce oznamovací oblasti nebo spusťte handy --cancel."
+      "cancelLinuxHelp": "Na Linuxu zkratka pro zrušení diktování nezastaví, protože zkratky registrované během diktování tam nejsou spolehlivé. Použijte X na překryvu, Zrušit v nabídce oznamovací oblasti nebo spusťte handy --cancel.",
+      "inUse": "Už používá {{name}}",
+      "cannotClear": "{{name}} nelze vymazat"
     },
     "modelSettings": {
       "title": "Nastavení {{model}}"
@@ -555,7 +559,8 @@
         "title": "Hlasitost",
         "description": "Upravte hlasitost zvukové odezvy",
         "offReason": "Nepoužívá se, když je zvuková odezva vypnutá."
-      }
+      },
+      "feedbackOutputDevice": "Výstupní zařízení zvukové odezvy"
     },
     "advanced": {
       "groups": {
@@ -779,20 +784,19 @@
         "createFirst": "Klikněte nahoře na 'Vytvořit nový prompt' a vytvořte svůj první prompt pro následné zpracování."
       },
       "localLlm": {
-        "noCleanupModel": "Žádný model následného zpracování",
         "s1Description": "Používá ovládání stylu, struktury a kontextu.",
-        "plainDescription": "Používá vybraný prompt Handy.",
+        "plainDescription": "Používá vámi vybraný prompt.",
         "status": {
           "title": "Stav",
-          "description": "Model se načte při spuštění diktování s následným zpracováním a uvolní se po uplynutí časového limitu uvolnění modelu.",
+          "description": "Model se načte při spuštění diktování s úpravou textu a uvolní se po uplynutí časového limitu uvolnění modelu.",
           "notLoaded": "Nenačten",
           "loading": "Načítá se",
           "ready": "Připraven",
-          "error": "Chyba: {{reason}}"
+          "error": "Selhalo: {{reason}}"
         },
         "styling": {
           "title": "Styl",
-          "description": "Jak formálně text po zpracování působí.",
+          "description": "Jak formálně upravený text zní.",
           "options": {
             "casual": "Neformální",
             "semi_casual": "Spíše neformální",
@@ -819,7 +823,7 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 s jednou podmínkou navíc: model musí být vždy uváděn jako \"S1-mini\" od \"Superwhisper\", přesně s tímto psaním velkých a malých písmen."
         },
-        "promptRequired": "Ve skupině Pokyny vyberte neprázdný prompt Handy. Do té doby se následné zpracování přeskakuje a použije se nezpracovaný přepis.",
+        "promptRequired": "Ve skupině Pokyny vyberte neprázdný prompt. Do té doby se úprava textu přeskakuje a použije se původní přepis.",
         "promptHidden": "Tento model používá vlastní pevný prompt a výše uvedená nastavení Styl, Struktura a Kontext, proto je editor promptů skrytý."
       }
     },
@@ -1072,6 +1076,10 @@
         "title": "Verze",
         "description": "Aktuální verze Handy"
       },
+      "updates": {
+        "title": "Aktualizace",
+        "description": "Zkontrolujte, zda je dostupná novější verze"
+      },
       "whatsNewUpdates": {
         "label": "Zobrazovat novinky",
         "description": "Zobrazovat poznámky k vydání po aktualizacích Handy"
@@ -1113,7 +1121,17 @@
     "portableUpdateMessage": "Přenosné instalace nelze aktualizovat automaticky. Níže stáhněte instalátor pro svůj systém, spusťte jej a nainstalujte do stejné složky — vaše složka Data/ (nastavení, modely, nahrávky) zůstane na místě.",
     "portableUpdateButton": "Stáhnout instalátor",
     "portableUpdateBrowseMessage": "Přenosné instalace nelze aktualizovat automaticky. Stáhněte nejnovější verzi pro svůj systém z GitHub Releases a nainstalujte ji do stejné složky — vaše složka Data/ (nastavení, modely, nahrávky) zůstane na místě.",
-    "portableUpdateBrowseButton": "Otevřít GitHub Releases"
+    "portableUpdateBrowseButton": "Otevřít GitHub Releases",
+    "activity": {
+      "ready": "Připraveno",
+      "recording": "Nahrávání",
+      "transcribing": "Přepisuji",
+      "cleaningUp": "Čištění textu",
+      "reading": "Čtení",
+      "downloading": "Stahování {{name}} {{percent}} %",
+      "languageDetector": "detektor jazyka",
+      "downloadingMany": "Stahování modelů: {{count}}"
+    }
   },
   "whatsNew": {
     "title": "Novinky v Handy v{{version}}"
@@ -1140,7 +1158,7 @@
   },
   "errors": {
     "readAloudBusyPastingTitle": "Čtení nahlas čeká na dokončení vkládání",
-    "readAloudBusyPasting": "Handy stále vkládá text. Zkuste čtení nahlas znovu po dokončení vkládání.",
+    "readAloudBusyPasting": "Stále se vkládá text. Zkuste čtení nahlas znovu po dokončení vkládání.",
     "readAloudUnavailableTitle": "Čtení nahlas není k dispozici",
     "readAloudClipboardUnreadableTitle": "Schránku nelze přečíst",
     "readAloudClipboardUnreadable": "Text ze schránky se nepodařilo přečíst.",
@@ -1245,17 +1263,15 @@
       "audio": "Výstupní zařízení se nepodařilo otevřít.",
       "text": "Tento text se nepodařilo připravit.",
       "clock": "Časování přehrávání selhalo.",
-      "worker": "Pracovní proces převodu textu na řeč se zastavil.",
-      "unavailable": "Převod textu na řeč není dostupný.",
-      "notReady": "Převod textu na řeč se stále spouští.",
-      "generic": "Převod textu na řeč selhal.",
-      "memory": "Je vyžadována alespoň 1 GiB volné paměti.",
+      "worker": "Pracovní proces čtení nahlas se zastavil.",
+      "notReady": "Čtení nahlas se stále načítá.",
+      "generic": "Něco se nepovedlo.",
+      "memory": "Je potřeba alespoň 1,1 GB volné paměti.",
       "gatedToken": "Hlasy Pocket vyžadují token Hugging Face a přijaté podmínky hlasů.",
-      "model": "Vyberte dostupný model převodu textu na řeč.",
       "device": "Toto zařízení není dostupné.",
       "npuDriverTooOld": "Ovladač NPU je příliš starý. Aktualizujte jej nebo vyberte jiné zařízení.",
       "selection": "Výběr se nepodařilo použít.",
-      "busy": "Operace převodu textu na řeč už běží.",
+      "busy": "Jiná akce čtení nahlas stále běží.",
       "cancelled": "Čtení bylo zrušeno.",
       "clipboard": "Text ze schránky se nepodařilo přečíst.",
       "deviceNotSupported": "Tento model vybrané zařízení nepodporuje.",
@@ -1268,16 +1284,16 @@
       "invalidRatings": "Hodnocení modelů chybí nebo je neplatné.",
       "invalidVoice": "Vyberte hlas pro vybraný model.",
       "outputUnavailable": "Výstupní zařízení není dostupné.",
-      "path": "Adresář úložiště převodu textu na řeč není dostupný.",
+      "path": "Složka úložiště čtení nahlas není dostupná.",
       "prepareFailed": "Vybrané zařízení nedokázalo tento model připravit.",
-      "protocol": "Pracovní proces převodu textu na řeč vrátil neplatnou odpověď.",
-      "registry": "Registr modelů převodu textu na řeč je neplatný.",
-      "settings": "Nastavení převodu textu na řeč se nepodařilo uložit.",
-      "start": "Pracovní proces převodu textu na řeč se nepodařilo spustit.",
-      "starting": "Pracovní proces převodu textu na řeč se spouští.",
+      "protocol": "Pracovní proces čtení nahlas vrátil neplatnou odpověď.",
+      "registry": "Seznam modelů čtení nahlas je neplatný.",
+      "settings": "Nastavení čtení nahlas se nepodařilo uložit.",
+      "start": "Pracovní proces čtení nahlas se nepodařilo spustit.",
+      "starting": "Pracovní proces čtení nahlas se načítá.",
       "tokenRejected": "Token Hugging Face byl odmítnut. Zkontrolujte přístup k podmínkám hlasů Pocket.",
       "tokenRequired": "Před stažením hlasů nastavte token Hugging Face a přijměte podmínky hlasů Pocket.",
-      "unknownModel": "Vybraný model převodu textu na řeč není znám.",
+      "unknownModel": "Vybraný model čtení nahlas není známý.",
       "window": "Okno čtení nahlas se nepodařilo otevřít.",
       "accessDenied": "Přístup k souborům modelu byl odepřen.",
       "localIo": "Soubory modelu se nepodařilo přečíst nebo zapsat.",
@@ -1324,7 +1340,7 @@
     "preview": "Poslechnout",
     "pitch": "Výška tónu: {{value}} půltónů",
     "output": "Výstupní zařízení pro čtení nahlas",
-    "sameAsHandy": "Stejné jako {{device}}",
+    "sameAsHandy": "Stejné jako výstupní zařízení zvukové odezvy",
     "readCode": "Číst bloky kódu",
     "technicalReading": "Technické čtení",
     "fullPaths": "Číst celé cesty",
@@ -1340,9 +1356,9 @@
     "status": {
       "failed": "Selhalo",
       "ready": "Připraven",
-      "starting": "Spouští se",
+      "starting": "Načítá se",
       "stopping": "Zastavuje se",
-      "unloaded": "Uvolněn"
+      "unloaded": "Nenačten"
     },
     "previewSentence": "Reading clearly, one phrase at a time.",
     "description": {
@@ -1372,10 +1388,11 @@
       "reading": "Psaná slova s tím, co bylo řečeno",
       "readingHint": "Nahoře je psaný text, pod ním to, co zaznělo. Tažením přes slova opravíte, jak byla přečtena.",
       "retentionConfirm": {
-        "message_one": "Smazat nyní {{count}} uložené čtení? Slovník se nezmění.",
-        "message": "Smazat nyní uložená čtení ({{count}})? Slovník se nezmění.",
-        "action": "Smazat čtení"
-      }
+        "message_one": "Smazat nyní {{count}} záznam? Slovník se nezmění.",
+        "message": "Smazat nyní záznamy ({{count}})? Slovník se nezmění.",
+        "action": "Smazat záznamy"
+      },
+      "copyFailed": "Text se nepodařilo zkopírovat do schránky."
     },
     "vocabulary": {
       "columns": {
@@ -1432,7 +1449,7 @@
         "changed": "Soubor slovníku se na disku změnil. Tabulka byla načtena znovu; proveďte úpravu znovu.",
         "fileInvalid": "Váš soubor slovníku obsahuje chybu, proto jej zde nelze upravovat: {{message}}",
         "invalidEdit": "Položku se nepodařilo uložit: {{message}}",
-        "tooLarge": "Soubor slovníku by byl větší než 1 MiB, proto se nic neuložilo.",
+        "tooLarge": "Soubor slovníku by byl větší než 1 MB, proto se nic neuložilo.",
         "io": "Soubor slovníku se nepodařilo zapsat: {{message}}",
         "voicesChanged": "Slovník se během čekání změnil, proto se změna neprovedla."
       },
@@ -1451,7 +1468,7 @@
       "derive": {
         "unchanged": "Vyslovená slova se nezměnila, není co ukládat.",
         "severalWords": "Změna se týká více než jednoho psaného slova. Opravujte jedno slovo po druhém.",
-        "notExplained": "Žádné jediné pravidlo nezpůsobí, že se text čte takto.",
+        "notExplained": "Žádný jednotlivý záznam nezpůsobí, že se text čte takto.",
         "invalid": "Nelze uložit: {{detail}}"
       },
       "check": {
@@ -1468,7 +1485,7 @@
         "savePassedOnly": "Uložit jen pro modely, které prošly",
         "pickOne": "Vybrat jeden model",
         "dictating": "Probíhá diktování. Zkontrolujte znovu, až skončí.",
-        "transcribeFailed": "Převod řeči na text nedokázal přepsat hlas."
+        "transcribeFailed": "Model diktování nedokázal hlas přepsat."
       },
       "filters": {
         "model": "Model",
@@ -1506,7 +1523,7 @@
       "spokenAs": "Vyslovuje se jako",
       "shouldSay": "Mělo by říkat",
       "savesAs": "Uloží se jako",
-      "deriving": "Hledám pravidlo...",
+      "deriving": "Hledám záznam...",
       "exactOnly": "Jen přesně tento text",
       "chooseScope": "Vyberte, kde platí",
       "scopeRequiredModels": "Před uložením zvolte Všechny modely nebo jeden model.",
@@ -1531,7 +1548,7 @@
         "stopped": "Mikrofon se zastavil dříve, než byla vaše slova slyšet, takže se nic nevyplnilo.",
         "reading": "Čtení nahlas je otevřené. Zavřete ho a pak použijte mikrofon.",
         "failed": "Mikrofon se nepodařilo spustit.",
-        "transcribeFailed": "Převod řeči na text nedokázal přepsat, co jste řekli."
+        "transcribeFailed": "Model diktování nedokázal přepsat, co jste řekli."
       }
     }
   },
@@ -1595,7 +1612,9 @@
     "cleaned": "Upravený text",
     "original": "Původní přepis",
     "diffNote": "Zobrazeny rozdíly oproti původnímu přepisu.",
-    "noCleanup": "Bez úpravy"
+    "noCleanup": "Bez úpravy",
+    "failedLine": "Tento záznam se nepodařilo přepsat. Zkuste to znovu pomocí „{{action}}“.",
+    "notTranscribedLine": "Tento záznam ještě není přepsaný. Přepište ho pomocí „{{action}}“."
   },
   "models": {
     "tags": {
@@ -1677,7 +1696,13 @@
     "heads": {
       "score": "Skóre",
       "speed": "Rychlost",
-      "size": "Velikost"
+      "size": "Velikost",
+      "short": {
+        "score": "Skóre",
+        "speed": "Rych.",
+        "size": "Velik.",
+        "all": "Vše"
+      }
     },
     "legend": {
       "open": "Co znamenají sloupce",

@@ -50,18 +50,30 @@ export function markPress(
   }
 }
 
+/** Sentences joined as the language writes them: Japanese and Chinese put no space between sentences. */
+export function joinSentences(
+  parts: readonly string[],
+  language: string,
+): string {
+  return parts.join(/^(ja|zh)/.test(language) ? "" : " ");
+}
+
 /** The delete question: what goes and what it frees, the consequence when it is the selected model, and what is kept. */
 export function deleteMessage(
   t: TFunction,
   m: { name: string; size: string | null; selected: boolean; role: ModelRole },
+  language: string,
 ): string {
-  return [
-    m.size === null
-      ? t("models.delete.askUnknownSize", { name: m.name })
-      : t("models.delete.ask", { name: m.name, size: m.size }),
-    ...(m.selected ? [t(`models.delete.selected.${m.role}`)] : []),
-    t(`models.delete.kept.${m.role}`),
-  ].join(" ");
+  return joinSentences(
+    [
+      m.size === null
+        ? t("models.delete.askUnknownSize", { name: m.name })
+        : t("models.delete.ask", { name: m.name, size: m.size }),
+      ...(m.selected ? [t(`models.delete.selected.${m.role}`)] : []),
+      t(`models.delete.kept.${m.role}`),
+    ],
+    language,
+  );
 }
 
 /** A delete question as asked: the model, and whether it was the selected one. */

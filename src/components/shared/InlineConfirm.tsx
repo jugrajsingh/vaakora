@@ -126,15 +126,105 @@ export function rowToRefocus(
   return closed !== null && next === null ? closed : null;
 }
 
-/** The first enabled button that a closed `<details>` does not hide. */
+/** The first enabled control that a closed `<details>` does not hide. */
 export function returnTarget<
   T extends { disabled: boolean; closest(selector: string): unknown },
->(buttons: Iterable<T>): T | undefined {
-  for (const button of buttons) {
-    if (!button.disabled && !button.closest("details:not([open])"))
-      return button;
+>(controls: Iterable<T>): T | undefined {
+  for (const control of controls) {
+    if (!control.disabled && !control.closest("details:not([open])"))
+      return control;
   }
   return undefined;
+}
+
+/** Buttons plus the fields a confirmation can replace (a number field, a drop-down). */
+export const CONTROL_TARGETS = "button, input, select, textarea";
+
+export interface FocusTarget {
+  disabled: boolean;
+  closest(selector: string): unknown;
+  focus(): void;
+}
+export interface FocusRow {
+  dataset: { confirmRow?: string };
+  querySelectorAll(selector: string): Iterable<FocusTarget>;
+}
+export interface FocusRoot extends FocusRow {
+  querySelectorAll(selector: "[data-confirm-row]"): Iterable<FocusRow>;
+  querySelectorAll(selector: string): Iterable<FocusTarget>;
+}
+
+function findRow(root: FocusRoot, key: string): FocusRow | undefined {
+  return [root, ...root.querySelectorAll("[data-confirm-row]")].find(
+    (row) => row.dataset.confirmRow === key,
+  );
+}
+
+/**
+ * Gives focus to the first enabled `selector` match of the row whose question just closed,
+ * unless another row's question opened. Returns whether something took focus.
+ */
+export function refocusRow(
+  previous: string | null,
+  asking: string | null,
+  root: FocusRoot | null,
+  selector: string,
+): boolean {
+  const key = rowToRefocus(previous, asking);
+  if (key === null || !root) return false;
+  const target = returnTarget(
+    findRow(root, key)?.querySelectorAll(selector) ?? [],
+  );
+  target?.focus();
+  return target !== undefined;
+}
+
+/**
+ * One render's refocus: returns the row still owed focus. A closed question owes its row; a
+ * row whose control is disabled (a change being saved remounts it disabled) stays owed until
+ * the control is enabled again. The debt ends when focus lands, another question opens, the
+ * row is gone, or focus is on something outside the row (`free` is false).
+ */
+export function refocusStep(
+  owed: string | null,
+  previous: string | null,
+  asking: string | null,
+  free: boolean,
+  root: FocusRoot | null,
+  selector: string,
+): string | null {
+  const key = asking === null ? (rowToRefocus(previous, asking) ?? owed) : null;
+  if (key === null || !free || !root || !findRow(root, key)) return null;
+  return refocusRow(key, null, root, selector) ? null : key;
+}
+
+/**
+ * Puts focus back on the control a question replaced once it closes. Put the returned ref on
+ * the element that holds the rows (or is the row); each row carries `data-confirm-row={key}`.
+ */
+export function useRefocusOnClose<E extends HTMLElement = HTMLDivElement>(
+  asking: string | null,
+  selector: string,
+): React.RefObject<E> {
+  const rowsRef = useRef<E>(null);
+  const previous = useRef(asking);
+  const owed = useRef<string | null>(null);
+  useEffect(() => {
+    const root = rowsRef.current;
+    const active = document.activeElement;
+    const free =
+      !active || active === document.body || !!root?.contains(active);
+    owed.current = refocusStep(
+      owed.current,
+      previous.current,
+      asking,
+      free,
+      root as FocusRoot | null,
+      selector,
+    );
+    previous.current = asking;
+  });
+  return rowsRef;
 }
 
 export interface RowConfirm<K> {
@@ -172,21 +262,10 @@ export function useRowConfirm<
   );
   useEffect(() => pending.prune());
   useEffect(() => pending.cancel, [pending]);
-  const rowsRef = useRef<E>(null);
-  const previous = useRef(asking);
-  useEffect(() => {
-    const key = rowToRefocus(
-      previous.current === null ? null : String(previous.current),
-      asking === null ? null : String(asking),
-    );
-    previous.current = asking;
-    if (key === null || !rowsRef.current) return;
-    const row = [
-      rowsRef.current,
-      ...rowsRef.current.querySelectorAll<HTMLElement>("[data-confirm-row]"),
-    ].find((element) => element.dataset.confirmRow === key);
-    if (row) returnTarget(row.querySelectorAll("button"))?.focus();
-  }, [asking]);
+  const rowsRef = useRefocusOnClose<E>(
+    asking === null ? null : String(asking),
+    "button",
+  );
   return {
     asking,
     ask: pending.ask,

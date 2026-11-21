@@ -52,7 +52,7 @@ export const OutputDeviceSelector: React.FC<OutputDeviceSelectorProps> =
 
       return (
         <SettingContainer
-          title={t("settings.sound.outputDevice.title")}
+          title={t("settings.sound.feedbackOutputDevice")}
           description={
             disabled && disabledReason
               ? disabledReason
@@ -84,7 +84,7 @@ export const OutputDeviceSelector: React.FC<OutputDeviceSelectorProps> =
             />
             <ResetButton
               ariaLabel={t("common.resetSetting", {
-                setting: t("settings.sound.outputDevice.title"),
+                setting: t("settings.sound.feedbackOutputDevice"),
               })}
               onClick={handleReset}
               disabled={

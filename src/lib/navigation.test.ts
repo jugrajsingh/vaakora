@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import en from "../i18n/locales/en/translation.json";
 import {
+  afterOnboarding,
   DESTINATIONS,
   FIRST_LOCATION,
   LINKS,
@@ -17,6 +18,7 @@ import {
   rovingTarget,
   visibleTabs,
   type GroupId,
+  type Link,
   type Location,
 } from "./navigation";
 
@@ -311,6 +313,21 @@ describe("navigation model", () => {
     assert.deepEqual(reveals, ["dictationHistory", "readAloudHistory"]);
   });
 
+  it("tray_update_check_opens_about", () => {
+    assert.deepEqual(LINKS.about, { destination: "settings", tab: "about" });
+    assert.deepEqual(normalizeLocation(LINKS.about, false), {
+      destination: "settings",
+      tab: "about",
+    });
+    const app = readFileSync(new URL("../App.tsx", import.meta.url), "utf8");
+    assert.ok(
+      /const unlisten = listen\("check-for-updates", \(\) => \{\s*requestManualCheck\(\);\s*navigation\.navigate\(LINKS\.about\);\s*\}\);\s*return \(\) => \{\s*void unlisten\.then\(\(stop\) => stop\(\)\);\s*\};\s*\}, \[navigation\]\);/u.test(
+        app,
+      ),
+      "App registers the tray listener, flags the check, opens About and unlistens in the effect cleanup",
+    );
+  });
+
   it("rovingTarget_moves_and_wraps", () => {
     assert.equal(rovingTarget(4, 0, "ArrowDown", "vertical", false), 1);
     assert.equal(rovingTarget(4, 0, "ArrowUp", "vertical", false), 3);
@@ -363,5 +380,24 @@ describe("navigation model", () => {
       const [, key] = labelKey(id).split(".");
       assert.equal(typeof strings[key], "string", labelKey(id));
     }
+  });
+
+  it("after_onboarding_closes_then_navigates", () => {
+    const record = (then: Link | undefined) => {
+      const calls: string[] = [];
+      afterOnboarding(then, {
+        close: () => calls.push("close"),
+        navigate: (to) => calls.push(`navigate:${to.destination}/${to.tab}`),
+      });
+      return calls;
+    };
+    assert.deepEqual(record(LINKS.readAloudModels), [
+      "close",
+      "navigate:models/readAloud",
+    ]);
+    assert.deepEqual(record(undefined), ["close"]);
+    const app = readFileSync(new URL("../App.tsx", import.meta.url), "utf8");
+    assert.equal(app.split("afterOnboarding(then, {").length - 1, 2);
+    assert.ok(!app.includes("onComplete={() => setOnboardingPreview(null)}"));
   });
 });

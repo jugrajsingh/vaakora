@@ -209,7 +209,9 @@ export function VocabularyView({
               message: table.file_error,
             })}
           </p>
-          <p className="font-mono break-all text-ink-2">{table.path}</p>
+          <p dir="ltr" className="font-mono break-all text-ink-2">
+            {table.path}
+          </p>
           <p className="text-ink-2">
             {t("tts.vocabulary.invalid.builtinUsed")}
           </p>

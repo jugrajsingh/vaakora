@@ -2,6 +2,7 @@ use crate::input;
 use crate::notices::{Notice, NoticeSource};
 use crate::settings;
 use crate::settings::{OverlayPosition, OverlayStyle};
+use crate::tray::DictationActivity;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Mutex, MutexGuard};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -798,6 +799,7 @@ pub fn show_transcribing_overlay(app_handle: &AppHandle) {
 
 /// Shows the processing overlay window
 pub fn show_processing_overlay(app_handle: &AppHandle) {
+    crate::tray::emit_activity(app_handle, DictationActivity::CleaningUp);
     show_overlay_state(app_handle, "processing");
 }
 

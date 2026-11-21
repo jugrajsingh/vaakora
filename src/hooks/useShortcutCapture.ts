@@ -6,6 +6,7 @@ import { notify } from "@/stores/noticeStore";
 import { commands } from "@/bindings";
 import { SECURE_INPUT_HELP_URL } from "@/components/SecureInputWarning";
 import { useSettings } from "@/hooks/useSettings";
+import { shortcutErrorText } from "@/lib/utils/shortcutPresentation";
 import {
   getKeyName,
   MODIFIERS,
@@ -75,7 +76,7 @@ export const useShortcutCapture = (
         console.error("Failed to change binding:", error);
         notify({
           title: t("settings.general.shortcut.errors.set", {
-            error: String(error),
+            error: shortcutErrorText(String(error), t),
           }),
         });
       }
@@ -105,7 +106,7 @@ export const useShortcutCapture = (
         } else {
           notify({
             title: t("settings.general.shortcut.errors.set", {
-              error: result.error,
+              error: shortcutErrorText(String(result.error), t),
             }),
           });
         }

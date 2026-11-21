@@ -54,9 +54,9 @@ export function HistoryCompare({
             <React.Fragment key={index}>
               {index > 0 && " "}
               {token.kind === "removed" ? (
-                <del className="text-red-500">{token.text}</del>
+                <del className="text-error">{token.text}</del>
               ) : token.kind === "added" ? (
-                <mark className="bg-green-500/20 text-text">{token.text}</mark>
+                <mark className="bg-moss-wash text-text">{token.text}</mark>
               ) : (
                 <span>{token.text}</span>
               )}

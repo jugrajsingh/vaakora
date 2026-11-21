@@ -7,6 +7,7 @@ import { SettingContainer } from "../../ui/SettingContainer";
 import { Button } from "../../ui/Button";
 import { AppDataDirectory } from "../AppDataDirectory";
 import { ShowWhatsNewOnUpdate } from "../ShowWhatsNewOnUpdate";
+import UpdateChecker from "../../update-checker";
 import { LogDirectory } from "../debug";
 
 export const AboutSettings: React.FC = () => {
@@ -45,6 +46,17 @@ export const AboutSettings: React.FC = () => {
         >
           {/* eslint-disable-next-line i18next/no-literal-string */}
           <span className="text-sm font-mono">v{version}</span>
+        </SettingContainer>
+
+        <SettingContainer
+          title={t("settings.about.updates.title")}
+          description={t("settings.about.updates.description")}
+          grouped={true}
+          layout="stacked"
+        >
+          <div data-row="updates" className="text-sm">
+            <UpdateChecker />
+          </div>
         </SettingContainer>
 
         <ShowWhatsNewOnUpdate descriptionMode="tooltip" grouped={true} />

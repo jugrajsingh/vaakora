@@ -86,6 +86,41 @@ export function revealScrollTop(
   return null;
 }
 
+export interface RevealBox {
+  top: number;
+  bottom: number;
+}
+
+/** Scrolls the settings scroller so an opened row shows below the sticky `toolbar`; no scroller, no scroll. */
+export function revealIn(
+  row: {
+    getBoundingClientRect(): RevealBox;
+    closest(selector: string): {
+      scrollTop: number;
+      getBoundingClientRect(): RevealBox;
+      querySelector(
+        selector: string,
+      ): { getBoundingClientRect(): RevealBox } | null;
+    } | null;
+  } | null,
+  toolbar: string,
+): void {
+  const scroller = row?.closest("[data-settings-scroll]");
+  if (!row || !scroller) return;
+  const box = scroller.getBoundingClientRect();
+  const scrollTop = revealScrollTop(
+    {
+      top:
+        scroller.querySelector(toolbar)?.getBoundingClientRect().bottom ??
+        box.top,
+      bottom: box.bottom,
+      scrollTop: scroller.scrollTop,
+    },
+    row.getBoundingClientRect(),
+  );
+  if (scrollTop !== null) scroller.scrollTop = scrollTop;
+}
+
 export type HistoryState = "loading" | "failed" | "notKept" | "empty" | "list";
 
 /** What a history page shows: loading, then any entries, then a failure, not kept, empty. */

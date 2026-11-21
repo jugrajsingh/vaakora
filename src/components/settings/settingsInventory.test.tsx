@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import i18next from "i18next";
@@ -16,7 +17,11 @@ const {
 } = createRequire(import.meta.url)("bun:test");
 
 mock.module("@/i18n", () => ({ default: i18next }));
-mock.module("@tauri-apps/plugin-os", () => ({ type: () => "windows" }));
+mock.module("@tauri-apps/plugin-os", () => ({
+  type: () => "windows",
+  arch: () => "x86_64",
+  platform: () => "windows",
+}));
 mock.module("@tauri-apps/api/app", () => ({ getVersion: async () => "0.0.0" }));
 mock.module("@tauri-apps/plugin-opener", () => ({ openUrl: async () => {} }));
 const stored: Record<string, unknown> = {
@@ -27,6 +32,7 @@ const stored: Record<string, unknown> = {
 mock.module("@/hooks/useSettings", () => ({
   useSettings: () => ({
     audioFeedbackEnabled: true,
+    updateChecksLocked: true,
     getSetting: (key: string) => stored[key],
   }),
 }));
@@ -276,5 +282,189 @@ describe("settings inventory", () => {
     for (const name of EXPERIMENTAL_ROWS) {
       assert.ok(!advanced.some((g) => g.rows.includes(name)), name);
     }
+  });
+
+  it("about_shows_update_state", () => {
+    const html = markup(<AboutSettings />);
+    const about = en.settings.about;
+    const version = html.indexOf(">" + about.version.title + "<");
+    const updates = html.indexOf(">" + about.updates.title + "<");
+    const marker = html.indexOf('data-row="updates"');
+    const whatsNew = html.indexOf('data-row="ShowWhatsNewOnUpdate"');
+    assert.ok(version >= 0, "Version row is rendered");
+    assert.ok(
+      version < updates && updates < marker && marker < whatsNew,
+      "Updates row follows Version and precedes the next row",
+    );
+    assert.equal(
+      rows(<AboutSettings />).filter((row) => row === "updates").length,
+      1,
+    );
+    const row = html.slice(marker, whatsNew);
+    assert.ok(row.includes("Update checks are off"), "off state is shown");
+    assert.ok(!row.includes("Check for updates"), "no check button when off");
+    const footer = readFileSync(
+      new URL("../footer/Footer.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.ok(!footer.includes("UpdateChecker"), "Footer has no UpdateChecker");
+    assert.ok(!footer.includes("getVersion"), "Footer has no version");
+  });
+
+  it("fork_strings_follow_terms", () => {
+    const read = (path: string): unknown =>
+      path
+        .split(".")
+        .reduce<unknown>((node, key) => (node as never)?.[key], en);
+    const wanted: Record<string, string> = {
+      "tray.transcriptionModel": "Dictation model",
+      "tray.unloadModel": "Unload dictation model",
+      "tray.cleanup": "Cleanup model",
+      "tray.noCleanupModel": "No cleanup model",
+      "tray.unloadPostProcessingModel": "Unload cleanup model",
+      "tray.cleanupError": "failed",
+      "tray.ttsModel": "Read-aloud model",
+      "tray.ttsUnload": "Unload read-aloud model",
+      "tray.ttsStarting": "Loading",
+      "tray.ttsReady": "Ready",
+      "tray.ttsUnloaded": "Not loaded",
+      "tts.status.starting": "Loading",
+      "tts.status.unloaded": "Not loaded",
+      "settings.postProcessing.localLlm.plainDescription":
+        "Uses your selected prompt.",
+      "settings.postProcessing.localLlm.status.description":
+        "The model loads when a dictation with cleanup starts and unloads after the model unload timeout.",
+      "settings.postProcessing.localLlm.status.error": "Failed: {{reason}}",
+      "settings.postProcessing.localLlm.styling.description":
+        "How formal the cleaned text reads.",
+      "settings.postProcessing.localLlm.promptRequired":
+        "Select a non-empty prompt in the Instructions group. Until then, cleanup is skipped and the original transcript is used.",
+      "tts.errors.worker": "The read-aloud worker stopped.",
+      "tts.errors.notReady": "Read aloud is still loading.",
+      "tts.errors.generic": "Something went wrong.",
+      "tts.errors.busy": "Another read-aloud action is still running.",
+      "tts.errors.path": "The read-aloud storage folder is unavailable.",
+      "tts.errors.protocol":
+        "The read-aloud worker returned an invalid response.",
+      "tts.errors.registry": "The read-aloud model list is invalid.",
+      "tts.errors.settings": "The read-aloud settings could not be saved.",
+      "tts.errors.start": "The read-aloud worker could not start.",
+      "tts.errors.starting": "The read-aloud worker is loading.",
+      "tts.errors.unknownModel": "The selected read-aloud model is unknown.",
+      "tts.errors.memory": "At least 1.1 GB of available memory is required.",
+      "tts.vocabulary.errors.tooLarge":
+        "The vocabulary file would be larger than 1 MB, so nothing was saved.",
+      "tts.vocabulary.check.transcribeFailed":
+        "The dictation model could not transcribe the voice.",
+      "tts.correction.microphone.transcribeFailed":
+        "The dictation model could not transcribe what you said.",
+      "tts.vocabulary.derive.notExplained":
+        "No single entry makes the text read this way.",
+      "tts.correction.deriving": "Working out the entry...",
+      "tts.history.retentionConfirm.message_one":
+        "Delete {{count}} entry now? Your vocabulary is not changed.",
+      "tts.history.retentionConfirm.message":
+        "Delete {{count}} entries now? Your vocabulary is not changed.",
+      "tts.history.retentionConfirm.action": "Delete entries",
+      "errors.vocabularyInvalidTitle": "Vocabulary file has an error",
+      "errors.readAloudBusyPasting":
+        "Still pasting. Try Read aloud again after the paste finishes.",
+      "history.failedLine":
+        "This entry could not be transcribed. Use {{action}} to try again.",
+      "history.notTranscribedLine":
+        "This entry is not transcribed yet. Use {{action}} to transcribe it.",
+      "tts.history.copyFailed": "Could not copy the text to the clipboard.",
+      "settings.sound.feedbackOutputDevice": "Feedback output device",
+      "tts.sameAsHandy": "Same as the feedback output device",
+      "settings.shortcuts.inUse": "Already used by {{name}}",
+      "settings.shortcuts.cannotClear": "{{name}} cannot be cleared",
+    };
+    for (const [key, value] of Object.entries(wanted)) {
+      assert.equal(read(key), value, key);
+    }
+    // Upstream keys on rows the redesign moved: casing only, en only.
+    const casing: Record<string, string> = {
+      "tray.checkUpdates": "Check for updates...",
+      "tray.copyLastTranscript": "Copy last transcript",
+      "tray.otherLanguages": "Other languages",
+      "settings.sound.audioFeedback.label": "Audio feedback",
+      "settings.advanced.lazyStreamClose.label":
+        "Keep mic open between transcriptions",
+      "settings.advanced.airpodsMode.label": "AirPods mode",
+      "settings.advanced.pasteMethod.options.externalScript": "External script",
+      "settings.advanced.clipboardHandling.options.dontModify":
+        "Don't modify clipboard",
+      "settings.advanced.clipboardHandling.options.copyToClipboard":
+        "Copy to clipboard",
+      "settings.advanced.languageDetection.title": "Limit Auto to my languages",
+      "settings.advanced.vadBackend.title": "Voice activity backend",
+      "settings.advanced.chineseScript.options.asTranscribed": "As transcribed",
+      "settings.postProcessing.api.apiFormat.title": "API format",
+      "settings.postProcessing.api.apiKey.title": "API key",
+      "settings.postProcessing.prompts.selectedPrompt.title": "Selected prompt",
+      "settings.postProcessing.prompts.promptLabel": "Prompt label",
+      "settings.postProcessing.prompts.promptInstructions":
+        "Prompt instructions",
+      "settings.about.appDataDirectory.title": "App data directory",
+      "settings.about.sourceCode.title": "Source code",
+      "settings.about.supportDevelopment.title": "Support development",
+    };
+    for (const [key, value] of Object.entries(casing)) {
+      assert.equal(read(key), value, key);
+    }
+    // Retired fork keys are gone from every locale.
+    const root = new URL("../../i18n/locales/", import.meta.url);
+    const languages = readdirSync(root);
+    assert.equal(languages.length, 26);
+    const forbidden =
+      /post-?processing|post-processed|text-to-speech|speech-to-text|\bTTS\b|MiB|GiB|stored reads?|retry icon/i;
+    const scoped = [
+      "tray",
+      "tts.errors",
+      "tts.status",
+      "settings.postProcessing.localLlm",
+      "tts.history.retentionConfirm",
+    ];
+    const leaves = (node: unknown, path: string): [string, string][] =>
+      typeof node === "string"
+        ? [[path, node]]
+        : Object.entries(node as Record<string, unknown>).flatMap(
+            ([key, child]) => leaves(child, `${path}.${key}`),
+          );
+    for (const language of languages) {
+      const locale = JSON.parse(
+        readFileSync(new URL(`${language}/translation.json`, root), "utf8"),
+      );
+      const value = (path: string) =>
+        path
+          .split(".")
+          .reduce<unknown>((node, key) => (node as never)?.[key], locale);
+      assert.ok(!String(value("tts.sameAsHandy")).includes("{{"), language);
+      assert.equal(value("tts.errors.unavailable"), undefined, language);
+      assert.equal(value("tts.errors.model"), undefined, language);
+      for (const key of Object.keys(wanted)) {
+        const text = value(key);
+        assert.equal(typeof text, "string", `${language} ${key}`);
+        assert.notEqual(text, "", `${language} ${key}`);
+        if (language !== "en") {
+          assert.notEqual(text, wanted[key], `${language} ${key}`);
+        }
+        if (/\{\{[a-z]+\}\}/.test(wanted[key])) {
+          for (const variable of wanted[key].match(/\{\{[a-z]+\}\}/g) ?? []) {
+            assert.ok(String(text).includes(variable), `${language} ${key}`);
+          }
+        }
+      }
+      for (const scope of language === "en" ? scoped : []) {
+        for (const [path, text] of leaves(value(scope), scope)) {
+          assert.ok(!forbidden.test(text), `${language} ${path}: ${text}`);
+        }
+      }
+    }
+    const sources = (file: string) =>
+      readFileSync(new URL(file, import.meta.url), "utf8");
+    const output = sources("./OutputDeviceSelector.tsx");
+    assert.ok(output.includes("settings.sound.feedbackOutputDevice"));
+    assert.ok(!output.includes("settings.sound.outputDevice.title"));
   });
 });

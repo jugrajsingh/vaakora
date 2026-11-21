@@ -83,16 +83,21 @@ export function cleanupAskedFor(
   t: TFunction,
   info: Pick<LocalLlmModelInfo, "id" | "display_name" | "size_bytes">,
   selected: boolean,
+  language: string,
 ): CleanupAsked {
   return {
     id: info.id,
     selected,
-    message: deleteMessage(t, {
-      name: info.display_name,
-      size: formatBytes(info.size_bytes),
-      selected,
-      role: "cleanup",
-    }),
+    message: deleteMessage(
+      t,
+      {
+        name: info.display_name,
+        size: formatBytes(info.size_bytes),
+        selected,
+        role: "cleanup",
+      },
+      language,
+    ),
   };
 }
 
@@ -195,7 +200,12 @@ export function CleanupRows({
     if (info === undefined) return null;
     const ask = () =>
       act.ask(
-        cleanupAskedFor(t, info, info.downloaded && info.id === selectedId),
+        cleanupAskedFor(
+          t,
+          info,
+          info.downloaded && info.id === selectedId,
+          i18n.language,
+        ),
       );
     const row = createLocalLlmRowActions(info, state, {
       onSelect: act.select,

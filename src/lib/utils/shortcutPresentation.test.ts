@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
-import { readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import i18next from "i18next";
 import {
   canClearShortcut,
   clearButtonState,
   generalShortcutRows,
+  shortcutErrorText,
   shortcutNameKey,
 } from "./shortcutPresentation";
 
@@ -122,6 +123,52 @@ assert.equal(
   shortcutNameKey("other"),
   "settings.general.shortcut.bindings.other.name",
 );
+// refusals_name_the_shortcut: the refusal reaches the UI as String(new Error(text)).
+const t = i18next.t.bind(i18next);
+const refused = (text: string) => shortcutErrorText(String(new Error(text)), t);
+assert.equal(
+  refused(
+    "Shortcut is already assigned to 'Raw' (shortcut.in_use:transcribe_with_post_process)",
+  ),
+  "Already used by Dictate with cleanup",
+);
+assert.equal(
+  refused(
+    "Shortcut is already assigned to 'Read' (shortcut.in_use:read_aloud)",
+  ),
+  "Already used by Read aloud",
+);
+assert.equal(
+  refused("Shortcut is already assigned to 'X' (shortcut.in_use:custom_id)"),
+  "Already used by custom_id",
+);
+assert.equal(
+  refused(
+    "The 'cancel' shortcut cannot be cleared (shortcut.cannot_clear:cancel)",
+  ),
+  `${en.settings.shortcuts.cancel} cannot be cleared`,
+);
+assert.equal(refused("boom"), "Error: boom");
+assert.equal(shortcutErrorText("boom", t), "boom");
+assert.equal(
+  shortcutErrorText("shortcut.in_use:cancel", t),
+  "Already used by Cancel",
+);
+const policySource = readFileSync(
+  new URL("../../../src-tauri/src/shortcut/policy.rs", import.meta.url),
+  "utf8",
+);
+assert.ok(policySource.includes("(shortcut.in_use:{other_id})"));
+assert.ok(policySource.includes("(shortcut.cannot_clear:{id})"));
+// Every place a shortcut refusal is shown maps it first.
+for (const [file, calls] of [
+  ["../../hooks/useShortcutCapture.ts", 2],
+  ["../../components/settings/ShortcutInput.tsx", 1],
+  ["../../stores/settingsStore.ts", 2],
+] as const) {
+  const source = readFileSync(new URL(file, import.meta.url), "utf8");
+  assert.equal(source.split("shortcutErrorText(").length - 1, calls, file);
+}
 const newDescription =
   "Adds the Dictate with cleanup shortcut. Text dictated with it is cleaned up before it is pasted.";
 assert.equal(en.settings.cleanup.enable.description, newDescription);

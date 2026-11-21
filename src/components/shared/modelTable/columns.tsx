@@ -38,6 +38,9 @@ export const rowGrid = (actions: boolean) =>
 export const CODE_CLASS =
   "text-tag font-semibold leading-[14px] tracking-[0.02em] text-ink-3 uppercase";
 
+/** A column head: one line, cut with an ellipsis instead of wrapping inside a word. */
+export const HEAD_CLASS = `${CODE_CLASS} block min-w-0 max-w-full truncate`;
+
 /** A part's view-transition name (onboarding's moves), or nothing. */
 export type VtName = (part?: string) => Record<string, string> | undefined;
 
@@ -64,12 +67,16 @@ export const Codes: React.FC<{ langs: string[]; vt?: VtName }> = ({
           </span>
         ))
       ) : (
-        <span className={CODE_CLASS} title={t("modelTable.accuracy")}>
-          {t("modelTable.allLanguages")}
+        <span className={HEAD_CLASS} title={t("modelTable.accuracy")}>
+          {t("models.heads.short.all")}
         </span>
       )}
-      <span className={CODE_CLASS}>{t("modelTable.speed")}</span>
-      <span className={CODE_CLASS}>{t("modelTable.size")}</span>
+      <span className={HEAD_CLASS} title={t("modelTable.speed")}>
+        {t("models.heads.short.speed")}
+      </span>
+      <span className={HEAD_CLASS} title={t("modelTable.size")}>
+        {t("models.heads.short.size")}
+      </span>
     </span>
   );
 };
@@ -263,6 +270,7 @@ export const Values: React.FC<{
       </SpeedTip>
       <span
         {...vt?.("s")}
+        dir="ltr"
         className="whitespace-nowrap text-label tabular-nums text-ink-3"
       >
         {sizeMb > 0 ? formatModelSize(sizeMb) : "—"}

@@ -1,5 +1,6 @@
 import {
   clearButtonState,
+  shortcutErrorText,
   shortcutNameKey,
 } from "@/lib/utils/shortcutPresentation";
 import { notify } from "@/stores/noticeStore";
@@ -107,7 +108,7 @@ export const ShortcutInput: React.FC<ShortcutInputProps> = ({
     } catch (error: unknown) {
       notify({
         title: t("settings.general.shortcut.errors.set", {
-          error: String(error),
+          error: shortcutErrorText(String(error), t),
         }),
       });
     }

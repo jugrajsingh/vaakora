@@ -1,17 +1,41 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useSyncExternalStore,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { check } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
-import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { arch, platform } from "@tauri-apps/plugin-os";
 import { ProgressBar } from "../shared";
 import { useSettings } from "../../hooks/useSettings";
+import { useSettingsStore } from "../../stores/settingsStore";
 import { commands } from "../../bindings";
 import {
   resolvePortableInstallerUrl,
   PORTABLE_RELEASES_URL,
 } from "./portableInstaller";
+import { runInstall } from "./installUpdate";
+import {
+  getUpdaterState,
+  mountCheck,
+  subscribeManualCheck,
+  subscribeUpdater,
+  takeManualCheck,
+  updateChecksAllowed,
+} from "./updaterStore";
+
+// Read from the store, not render state: the switch can change after this
+// component has gone, while an install call is still pending.
+function currentUpdateChecksAllowed(): boolean {
+  const { settings, updateChecksLocked } = useSettingsStore.getState();
+  return updateChecksAllowed(
+    settings?.update_checks_enabled,
+    updateChecksLocked,
+  );
+}
 
 interface UpdateCheckerProps {
   className?: string;
@@ -22,8 +46,8 @@ const UpdateChecker: React.FC<UpdateCheckerProps> = ({ className = "" }) => {
   // Update checking state
   const [isChecking, setIsChecking] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState(false);
-  const [isInstalling, setIsInstalling] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(0);
+  const { installing: isInstalling, progress: downloadProgress } =
+    useSyncExternalStore(subscribeUpdater, getUpdaterState, getUpdaterState);
   const [showUpToDate, setShowUpToDate] = useState(false);
   const [showPortableUpdateDialog, setShowPortableUpdateDialog] =
     useState(false);
@@ -39,17 +63,19 @@ const UpdateChecker: React.FC<UpdateCheckerProps> = ({ className = "" }) => {
   // Forced-off by system configuration (HANDY_DISABLE_UPDATER) overrides the
   // stored preference without persisting it, mirroring the backend's effective
   // updater state.
-  const updateChecksEnabled =
-    (settings?.update_checks_enabled ?? false) && updateChecksLocked === false;
+  const updateChecksEnabled = updateChecksAllowed(
+    settings?.update_checks_enabled,
+    updateChecksLocked,
+  );
 
   const upToDateTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const isManualCheckRef = useRef(false);
-  const downloadedBytesRef = useRef(0);
-  const contentLengthRef = useRef(0);
 
   useEffect(() => {
     // Wait for settings to load before doing anything
     if (!settingsLoaded) return;
+
+    const mountPlan = mountCheck();
 
     if (!updateChecksEnabled) {
       if (upToDateTimeoutRef.current) {
@@ -61,18 +87,21 @@ const UpdateChecker: React.FC<UpdateCheckerProps> = ({ className = "" }) => {
       return;
     }
 
-    checkForUpdates();
+    if (mountPlan !== "none") {
+      isManualCheckRef.current = mountPlan === "manual";
+      checkForUpdates();
+    }
 
     // Listen for update check events
-    const updateUnlisten = listen("check-for-updates", () => {
-      handleManualUpdateCheck();
+    const unsubscribe = subscribeManualCheck(() => {
+      if (takeManualCheck()) handleManualUpdateCheck();
     });
 
     return () => {
+      unsubscribe();
       if (upToDateTimeoutRef.current) {
         clearTimeout(upToDateTimeoutRef.current);
       }
-      updateUnlisten.then((fn) => fn());
     };
   }, [settingsLoaded, updateChecksEnabled]);
 
@@ -119,56 +148,14 @@ const UpdateChecker: React.FC<UpdateCheckerProps> = ({ className = "" }) => {
     checkForUpdates();
   };
 
-  const installUpdate = async () => {
-    if (!updateChecksEnabled) return;
-
-    const portable = await commands.isPortable();
-    if (portable) {
-      setShowPortableUpdateDialog(true);
-      return;
-    }
-
-    try {
-      setIsInstalling(true);
-      setDownloadProgress(0);
-      downloadedBytesRef.current = 0;
-      contentLengthRef.current = 0;
-      const update = await check();
-
-      if (!update) {
-        console.log("No update available during install attempt");
-        return;
-      }
-
-      await update.downloadAndInstall((event) => {
-        switch (event.event) {
-          case "Started":
-            downloadedBytesRef.current = 0;
-            contentLengthRef.current = event.data.contentLength ?? 0;
-            break;
-          case "Progress":
-            downloadedBytesRef.current += event.data.chunkLength;
-            const progress =
-              contentLengthRef.current > 0
-                ? Math.round(
-                    (downloadedBytesRef.current / contentLengthRef.current) *
-                      100,
-                  )
-                : 0;
-            setDownloadProgress(Math.min(progress, 100));
-            break;
-        }
-      });
-      await relaunch();
-    } catch (error) {
-      console.error("Failed to install update:", error);
-    } finally {
-      setIsInstalling(false);
-      setDownloadProgress(0);
-      downloadedBytesRef.current = 0;
-      contentLengthRef.current = 0;
-    }
-  };
+  const installUpdate = () =>
+    runInstall({
+      allowed: currentUpdateChecksAllowed,
+      isPortable: () => commands.isPortable(),
+      check,
+      relaunch,
+      showPortableDialog: () => setShowPortableUpdateDialog(true),
+    });
 
   // Update status functions
   const getUpdateStatusText = () => {
@@ -246,7 +233,7 @@ const UpdateChecker: React.FC<UpdateCheckerProps> = ({ className = "" }) => {
           <button
             onClick={getUpdateStatusAction()}
             disabled={isUpdateDisabled}
-            className={`transition-colors disabled:opacity-50 tabular-nums ${
+            className={`rounded transition-colors disabled:opacity-50 tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
               updateAvailable
                 ? "text-logo-primary hover:text-logo-primary font-medium"
                 : "text-ink-2 hover:text-text"

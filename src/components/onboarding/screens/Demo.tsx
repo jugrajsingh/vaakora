@@ -127,7 +127,7 @@ const DemoPill: React.FC<{ state: PillState; still: boolean }> = ({
                 ref={(el) => {
                   bars.current[i] = el;
                 }}
-                className="h-[3px] w-[4px] rounded-[2px] bg-logo-primary transition-[height] duration-[80ms] ease-linear"
+                className="h-[3px] w-[4px] rounded-[2px] bg-logo-pastel transition-[height] duration-[80ms] ease-linear"
               />
             ))}
           </span>

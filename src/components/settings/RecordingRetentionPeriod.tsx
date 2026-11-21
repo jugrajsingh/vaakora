@@ -12,7 +12,12 @@ import {
   routeChange,
   type DictationKeep,
 } from "../../lib/utils/retention";
-import { createPendingConfirm, InlineConfirm } from "../shared/InlineConfirm";
+import {
+  CONTROL_TARGETS,
+  createPendingConfirm,
+  InlineConfirm,
+  useRefocusOnClose,
+} from "../shared/InlineConfirm";
 
 interface RecordingRetentionPeriodProps {
   grouped?: boolean;
@@ -52,6 +57,10 @@ export const RecordingRetentionPeriodSelector: React.FC<RecordingRetentionPeriod
         },
       );
 
+    const rowsRef = useRefocusOnClose(
+      sentence ? "period" : null,
+      CONTROL_TARGETS,
+    );
     const retentionOptions = AUTO_DELETE_OPTIONS.map(({ value, key }) => ({
       value,
       label: t(key, { count: Number(historyLimit) }),
@@ -65,22 +74,24 @@ export const RecordingRetentionPeriodSelector: React.FC<RecordingRetentionPeriod
         grouped={grouped}
         layout={pending ? "stacked" : "horizontal"}
       >
-        {sentence ? (
-          <InlineConfirm
-            message={t(sentence.key, { count: sentence.count })}
-            action={t("settings.history.retentionConfirm.action")}
-            onCancel={confirm.cancel}
-            onConfirm={() => void confirm.confirm()}
-          />
-        ) : (
-          <Dropdown
-            options={retentionOptions}
-            selectedValue={selectedRetentionPeriod}
-            onSelect={handleRetentionPeriodSelect}
-            placeholder={t("settings.debug.recordingRetention.placeholder")}
-            disabled={isUpdating("recording_retention_period")}
-          />
-        )}
+        <div ref={rowsRef} data-confirm-row="period">
+          {sentence ? (
+            <InlineConfirm
+              message={t(sentence.key, { count: sentence.count })}
+              action={t("settings.history.retentionConfirm.action")}
+              onCancel={confirm.cancel}
+              onConfirm={() => void confirm.confirm()}
+            />
+          ) : (
+            <Dropdown
+              options={retentionOptions}
+              selectedValue={selectedRetentionPeriod}
+              onSelect={handleRetentionPeriodSelect}
+              placeholder={t("settings.debug.recordingRetention.placeholder")}
+              disabled={isUpdating("recording_retention_period")}
+            />
+          )}
+        </div>
       </SettingContainer>
     );
   });

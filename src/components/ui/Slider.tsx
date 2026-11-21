@@ -2,6 +2,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { SettingContainer } from "./SettingContainer";
 import { ResetButton } from "./ResetButton";
+import { getLanguageDirection } from "@/lib/utils/rtl";
+import { fillTowards } from "@/lib/utils/rangeFill";
 
 interface SliderProps {
   value: number;
@@ -36,7 +38,8 @@ export const Slider: React.FC<SliderProps> = ({
   onReset,
   isResetting = false,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const towards = fillTowards(getLanguageDirection(i18n.language));
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(parseFloat(e.target.value));
   };
@@ -61,9 +64,9 @@ export const Slider: React.FC<SliderProps> = ({
             value={value}
             onChange={handleChange}
             disabled={disabled}
-            className="flex-grow h-2 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-logo-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-grow h-2 rounded-lg appearance-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
-              background: `linear-gradient(to right, var(--color-background-ui) ${
+              background: `linear-gradient(to ${towards}, var(--color-background-ui) ${
                 ((value - min) / (max - min)) * 100
               }%, var(--color-line) ${((value - min) / (max - min)) * 100}%)`,
             }}

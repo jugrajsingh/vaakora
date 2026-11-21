@@ -1,3 +1,5 @@
+import type { TFunction } from "i18next";
+
 export type ShortcutRow =
   | "transcribe"
   | "transcribe_with_post_process"
@@ -53,4 +55,30 @@ export function clearButtonState({
     visible: canClearShortcut(id, enabled),
     disabled: disabled || isRecording || isUpdating,
   };
+}
+
+const IN_USE = /shortcut\.in_use:([A-Za-z0-9_-]+)/;
+const CANNOT_CLEAR = /shortcut\.cannot_clear:([A-Za-z0-9_-]+)/;
+
+function shortcutName(id: string, t: TFunction): string {
+  return t(shortcutNameKey(id), { defaultValue: id });
+}
+
+/**
+ * A shortcut refusal as a translated sentence. The backend ends its refusals in
+ * `(shortcut.in_use:<id>)` or `(shortcut.cannot_clear:<id>)` (src-tauri/src/shortcut/policy.rs);
+ * other text, with or without the "Error: " prefix of `String(error)`, passes through.
+ */
+export function shortcutErrorText(error: string, t: TFunction): string {
+  const inUse = IN_USE.exec(error);
+  if (inUse) {
+    return t("settings.shortcuts.inUse", { name: shortcutName(inUse[1], t) });
+  }
+  const cannotClear = CANNOT_CLEAR.exec(error);
+  if (cannotClear) {
+    return t("settings.shortcuts.cannotClear", {
+      name: shortcutName(cannotClear[1], t),
+    });
+  }
+  return error;
 }

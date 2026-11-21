@@ -33,6 +33,7 @@ import { MainPage } from "./components/MainPage";
 import { Sidebar } from "./components/Sidebar";
 import { PANEL_ID, TabStrip, tabId } from "./components/shared/TabStrip";
 import { WhatsNewGate } from "./components/whats-new";
+import { requestManualCheck } from "./components/update-checker/updaterStore";
 import { useSettings } from "./hooks/useSettings";
 import { useSettingsStore } from "./stores/settingsStore";
 import { commands } from "@/bindings";
@@ -41,6 +42,7 @@ import { NoticePanel } from "@/components/notices/NoticePanel";
 import { getLanguageDirection, initializeRTL } from "@/lib/utils/rtl";
 import {
   LINKS,
+  afterOnboarding,
   createNavigator,
   defaultStorage,
   firstTab,
@@ -121,6 +123,16 @@ function App() {
     const unlisten = listen("open-tts-models", () => {
       navigation.navigate(LINKS.readAloudModels);
       void commands.showMainWindowCommand();
+    });
+    return () => {
+      void unlisten.then((stop) => stop());
+    };
+  }, [navigation]);
+
+  useEffect(() => {
+    const unlisten = listen("check-for-updates", () => {
+      requestManualCheck();
+      navigation.navigate(LINKS.about);
     });
     return () => {
       void unlisten.then((stop) => stop());
@@ -304,7 +316,12 @@ function App() {
         <OnboardingFlow
           preview
           previewStep={onboardingPreview}
-          onComplete={() => setOnboardingPreview(null)}
+          onComplete={(then) =>
+            afterOnboarding(then, {
+              close: () => setOnboardingPreview(null),
+              navigate: navigation.navigate,
+            })
+          }
         />
         <button
           type="button"
@@ -316,7 +333,16 @@ function App() {
       </>
     );
   } else if (onboardingStep === "flow") {
-    content = <OnboardingFlow onComplete={() => setOnboardingStep("done")} />;
+    content = (
+      <OnboardingFlow
+        onComplete={(then) =>
+          afterOnboarding(then, {
+            close: () => setOnboardingStep("done"),
+            navigate: navigation.navigate,
+          })
+        }
+      />
+    );
   } else if (onboardingStep === "permissions") {
     content = (
       <ReturningPermissions
@@ -398,10 +424,7 @@ function App() {
           </div>
         </div>
         {/* Fixed footer at bottom */}
-        <Footer
-          onShowHistory={showHistory}
-          onOpenPostProcessing={() => navigation.navigate(LINKS.cleanup)}
-        />
+        <Footer navigate={navigation.navigate} />
         <FileDropOverlay onDropped={showHistory} />
       </div>
     );

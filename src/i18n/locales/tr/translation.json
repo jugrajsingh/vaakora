@@ -3,29 +3,29 @@
     "settings": "Ayarlar...",
     "checkUpdates": "Güncellemeleri Kontrol Et...",
     "copyLastTranscript": "Son Transkripti Kopyala",
-    "unloadModel": "Transkripsiyon modelini kaldır",
-    "cleanup": "Son işlem modeli",
+    "unloadModel": "Dikte modelini kaldır",
+    "cleanup": "Temizleme modeli",
     "cleanupReady": "hazır",
     "cleanupNotLoaded": "yüklenmedi",
     "cleanupLoading": "yükleniyor",
-    "cleanupError": "hata",
-    "noCleanupModel": "Son işlem modeli yok",
-    "unloadPostProcessingModel": "Son işlem modelini kaldır",
+    "cleanupError": "başarısız",
+    "noCleanupModel": "Temizleme modeli yok",
+    "unloadPostProcessingModel": "Temizleme modelini kaldır",
     "model": "Model",
-    "transcriptionModel": "Transkripsiyon modeli",
+    "transcriptionModel": "Dikte modeli",
     "quit": "Çıkış",
     "cancel": "İptal",
     "secureInputWarning": "⚠ Kısayollar Secure Input tarafından engelleniyor",
     "language": "Dil",
     "autoLanguage": "Otomatik",
     "otherLanguages": "Diğer Diller",
-    "ttsModel": "Metin okuma modeli",
-    "ttsUnload": "Metin okuma modelini kaldır",
-    "ttsStarting": "Başlatılıyor",
-    "ttsReady": "Yüklendi",
+    "ttsModel": "Sesli okuma modeli",
+    "ttsUnload": "Sesli okuma modelini kaldır",
+    "ttsStarting": "Yükleniyor",
+    "ttsReady": "Hazır",
     "ttsStopping": "Durduruluyor",
     "ttsFailed": "Başarısız",
-    "ttsUnloaded": "Kaldırıldı"
+    "ttsUnloaded": "Yüklenmedi"
   },
   "sidebar": {
     "general": "Genel",
@@ -236,6 +236,9 @@
       "highFiveLabel": "Çak bir beşlik",
       "atLogin": "Oturum açtığımda Handy'yi başlat",
       "finish": "Bitti",
+      "readAloud": "Bir metni sesli dinlemek için metni kopyalayın ve <keys/> tuşlarına basın.",
+      "readAloudUnbound": "Bir metni sesli dinlemek için kısayolunu Ayarlar, Genel bölümünde belirleyin.",
+      "chooseReadAloudModel": "Sesli okuma modeli seçin",
       "panel": {
         "name": "Handy",
         "ready": "Hazır",
@@ -338,7 +341,6 @@
     "alreadyAdded_other": "{{languages}} zaten ekli."
   },
   "modelSelector": {
-    "status": "Model durumu: {{modelName}}",
     "size": "{{size}} MiB",
     "custom": "Özel",
     "streaming": "Akış",
@@ -408,7 +410,9 @@
       "readAloud": "Sesli okuma",
       "activation": "Etkinleştirme",
       "activationHelp": "Dikte kısayolları için",
-      "cancelLinuxHelp": "Linux'ta iptal kısayolu bir dikteyi durdurmaz, çünkü dikte sırasında kaydedilen kısayollar orada güvenilir değildir. Ekran katmanındaki X'i, tepsi menüsündeki İptal'i kullanın veya handy --cancel komutunu çalıştırın."
+      "cancelLinuxHelp": "Linux'ta iptal kısayolu bir dikteyi durdurmaz, çünkü dikte sırasında kaydedilen kısayollar orada güvenilir değildir. Ekran katmanındaki X'i, tepsi menüsündeki İptal'i kullanın veya handy --cancel komutunu çalıştırın.",
+      "inUse": "Zaten {{name}} tarafından kullanılıyor",
+      "cannotClear": "{{name}} temizlenemez"
     },
     "modelSettings": {
       "title": "{{model}} Ayarları"
@@ -555,7 +559,8 @@
         "title": "Ses Seviyesi",
         "description": "Sesli geri bildirimlerin ses seviyesini ayarlayın",
         "offReason": "Sesli geri bildirim kapalıyken kullanılmaz."
-      }
+      },
+      "feedbackOutputDevice": "Sesli geri bildirim çıkış cihazı"
     },
     "advanced": {
       "groups": {
@@ -779,20 +784,19 @@
         "createFirst": "İlk son işlem promptunuzu oluşturmak için yukarıdaki “Yeni Prompt Oluştur” seçeneğine tıklayın."
       },
       "localLlm": {
-        "noCleanupModel": "Son işlem modeli yok",
         "s1Description": "Stil, yapı ve bağlam denetimlerini kullanır.",
-        "plainDescription": "Seçtiğiniz Handy promptunu kullanır.",
+        "plainDescription": "Seçtiğiniz promptu kullanır.",
         "status": {
           "title": "Durum",
-          "description": "Model, son işlemli bir dikte başladığında yüklenir ve model kaldırma zaman aşımından sonra kaldırılır.",
+          "description": "Model, temizlemeli bir dikte başladığında yüklenir ve model kaldırma zaman aşımından sonra kaldırılır.",
           "notLoaded": "Yüklenmedi",
           "loading": "Yükleniyor",
           "ready": "Hazır",
-          "error": "Hata: {{reason}}"
+          "error": "Başarısız: {{reason}}"
         },
         "styling": {
           "title": "Stil",
-          "description": "Son işlemden geçen metnin ne kadar resmi okunacağı.",
+          "description": "Temizlenen metnin ne kadar resmi okunduğu.",
           "options": {
             "casual": "Gündelik",
             "semi_casual": "Yarı gündelik",
@@ -819,7 +823,7 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 ve ek bir koşul: model her zaman \"Superwhisper\" tarafından \"S1-mini\" olarak, büyük ve küçük harfler tam olarak bu şekilde yazılarak anılmalıdır."
         },
-        "promptRequired": "Talimatlar grubunda boş olmayan bir Handy promptu seçin. Seçilene kadar son işlem atlanır ve ham transkript kullanılır.",
+        "promptRequired": "Talimatlar grubunda boş olmayan bir prompt seçin. Seçilene kadar temizleme atlanır ve özgün transkript kullanılır.",
         "promptHidden": "Bu model kendi sabit promptunu ve yukarıdaki Stil, Yapı ve Bağlam ayarlarını kullandığından prompt düzenleyici gizlidir."
       }
     },
@@ -1072,6 +1076,10 @@
         "title": "Sürüm",
         "description": "Handy'nin mevcut sürümü"
       },
+      "updates": {
+        "title": "Güncellemeler",
+        "description": "Daha yeni bir sürümün olup olmadığını denetleyin"
+      },
       "whatsNewUpdates": {
         "label": "Yenilikleri Göster",
         "description": "Handy güncellemelerinden sonra sürüm notlarını göster"
@@ -1113,7 +1121,17 @@
     "portableUpdateMessage": "Taşınabilir kurulumlar otomatik olarak güncellenemez. Aşağıdan sisteminize uygun yükleyiciyi indirin, çalıştırın ve aynı klasöre kurun — Data/ klasörünüz (ayarlar, modeller, kayıtlar) yerinde kalır.",
     "portableUpdateButton": "Yükleyiciyi indir",
     "portableUpdateBrowseMessage": "Taşınabilir kurulumlar otomatik olarak güncellenemez. Sisteminize uygun en son sürümü GitHub Releases’ten indirin ve aynı klasöre kurun — Data/ klasörünüz (ayarlar, modeller, kayıtlar) yerinde kalır.",
-    "portableUpdateBrowseButton": "GitHub Releases’i aç"
+    "portableUpdateBrowseButton": "GitHub Releases’i aç",
+    "activity": {
+      "ready": "Hazır",
+      "recording": "Kaydediliyor",
+      "transcribing": "Transkribe ediliyor",
+      "cleaningUp": "Temizleniyor",
+      "reading": "Okunuyor",
+      "downloading": "{{name}} indiriliyor %{{percent}}",
+      "languageDetector": "dil algılayıcı",
+      "downloadingMany": "{{count}} model indiriliyor"
+    }
   },
   "whatsNew": {
     "title": "Handy v{{version}} yenilikleri"
@@ -1140,7 +1158,7 @@
   },
   "errors": {
     "readAloudBusyPastingTitle": "Sesli okuma yapıştırmayla meşgul",
-    "readAloudBusyPasting": "Handy hâlâ yapıştırıyor. Yapıştırma bittikten sonra Sesli okumayı yeniden deneyin.",
+    "readAloudBusyPasting": "Yapıştırma hâlâ sürüyor. Yapıştırma bittikten sonra Sesli okumayı yeniden deneyin.",
     "readAloudUnavailableTitle": "Sesli okuma kullanılamıyor",
     "readAloudClipboardUnreadableTitle": "Pano okunamadı",
     "readAloudClipboardUnreadable": "Panodaki metin okunamadı.",
@@ -1172,7 +1190,7 @@
     "filePostProcessFailed": "Son işlem tamamlanmadı, bu yüzden metin olduğu gibi kaydedildi.",
     "fileTranscriptionFailedTitle": "Dosya transkripsiyonu başarısız oldu",
     "transcriptionFailedTitle": "Transkripsiyon başarısız oldu",
-    "vocabularyInvalidTitle": "Sözlük Dosyasında Hata Var",
+    "vocabularyInvalidTitle": "Sözlük dosyasında hata var",
     "vocabularyInvalid": "Sözlük dosyanız kullanılamadığı için sesli okuma yerleşik sözlüğü kullandı. Kendi girdilerinizi kullanmak için aşağıda belirtilen dosyayı düzeltin."
   },
   "notices": {
@@ -1245,17 +1263,15 @@
       "audio": "Çıkış cihazı açılamadı.",
       "text": "Bu metin hazırlanamadı.",
       "clock": "Oynatma zamanlaması başarısız oldu.",
-      "worker": "Metin okuma işçisi durdu.",
-      "unavailable": "Metin okuma kullanılamıyor.",
-      "notReady": "Metin okuma hâlâ başlatılıyor.",
-      "generic": "Metin okuma başarısız oldu.",
-      "memory": "En az 1 GiB kullanılabilir bellek gerekir.",
+      "worker": "Sesli okuma işçisi durdu.",
+      "notReady": "Sesli okuma hâlâ yükleniyor.",
+      "generic": "Bir şeyler ters gitti.",
+      "memory": "En az 1,1 GB kullanılabilir bellek gerekir.",
       "gatedToken": "Pocket sesleri için bir Hugging Face belirteci ve kabul edilmiş ses koşulları gerekir.",
-      "model": "Kullanılabilir bir metin okuma modeli seçin.",
       "device": "Bu cihaz kullanılamıyor.",
       "npuDriverTooOld": "NPU sürücüsü çok eski. Güncelleyin veya başka bir cihaz seçin.",
       "selection": "Seçim uygulanamadı.",
-      "busy": "Bir metin okuma işlemi zaten çalışıyor.",
+      "busy": "Başka bir sesli okuma eylemi hâlâ çalışıyor.",
       "cancelled": "Okuma iptal edildi.",
       "clipboard": "Pano metni okunamadı.",
       "deviceNotSupported": "Bu model seçilen cihazı desteklemiyor.",
@@ -1268,16 +1284,16 @@
       "invalidRatings": "Model puanları eksik veya geçersiz.",
       "invalidVoice": "Seçilen model için bir ses seçin.",
       "outputUnavailable": "Çıkış cihazı kullanılamıyor.",
-      "path": "Metin okuma depolama dizini kullanılamıyor.",
+      "path": "Sesli okuma depolama klasörü kullanılamıyor.",
       "prepareFailed": "Seçilen cihaz bu modeli hazırlayamadı.",
-      "protocol": "Metin okuma işçisi geçersiz bir yanıt döndürdü.",
-      "registry": "Metin okuma modeli kayıt defteri geçersiz.",
-      "settings": "Metin okuma ayarları kaydedilemedi.",
-      "start": "Metin okuma işçisi başlatılamadı.",
-      "starting": "Metin okuma işçisi başlatılıyor.",
+      "protocol": "Sesli okuma işçisi geçersiz bir yanıt döndürdü.",
+      "registry": "Sesli okuma model listesi geçersiz.",
+      "settings": "Sesli okuma ayarları kaydedilemedi.",
+      "start": "Sesli okuma işçisi başlatılamadı.",
+      "starting": "Sesli okuma işçisi yükleniyor.",
       "tokenRejected": "Hugging Face belirteci reddedildi. Pocket ses koşullarına erişimi denetleyin.",
       "tokenRequired": "Sesleri indirmeden önce bir Hugging Face belirteci ayarlayın ve Pocket ses koşullarını kabul edin.",
-      "unknownModel": "Seçilen metin okuma modeli bilinmiyor.",
+      "unknownModel": "Seçilen sesli okuma modeli bilinmiyor.",
       "window": "Sesli okuma penceresi açılamadı.",
       "accessDenied": "Model dosyalarına erişim reddedildi.",
       "localIo": "Model dosyaları okunamadı veya yazılamadı.",
@@ -1324,7 +1340,7 @@
     "preview": "Dinle",
     "pitch": "Perde: {{value}} yarım ton",
     "output": "Sesli okuma çıkış cihazı",
-    "sameAsHandy": "{{device}} ile aynı",
+    "sameAsHandy": "Sesli geri bildirim çıkış cihazı ile aynı",
     "readCode": "Kod bloklarını oku",
     "technicalReading": "Teknik okuma",
     "fullPaths": "Tam yolları oku",
@@ -1340,9 +1356,9 @@
     "status": {
       "failed": "Başarısız",
       "ready": "Hazır",
-      "starting": "Başlatılıyor",
+      "starting": "Yükleniyor",
       "stopping": "Durduruluyor",
-      "unloaded": "Kaldırıldı"
+      "unloaded": "Yüklenmedi"
     },
     "previewSentence": "Reading clearly, one phrase at a time.",
     "description": {
@@ -1372,10 +1388,11 @@
       "reading": "Yazılan sözcükler ve söylenenler",
       "readingHint": "Yazılan metin üstte, söylenenler altta. Nasıl okunduklarını düzeltmek için kelimelerin üzerinde sürükleyin.",
       "retentionConfirm": {
-        "message_one": "Kayıtlı {{count}} okuma şimdi silinsin mi? Sözlüğünüz değişmez.",
-        "message": "Kayıtlı {{count}} okuma şimdi silinsin mi? Sözlüğünüz değişmez.",
-        "action": "Okumaları sil"
-      }
+        "message_one": "{{count}} kayıt şimdi silinsin mi? Sözlüğünüz değişmez.",
+        "message": "{{count}} kayıt şimdi silinsin mi? Sözlüğünüz değişmez.",
+        "action": "Kayıtları sil"
+      },
+      "copyFailed": "Metin panoya kopyalanamadı."
     },
     "vocabulary": {
       "columns": {
@@ -1432,7 +1449,7 @@
         "changed": "Sözlük dosyası diskte değişti. Tablo yeniden yüklendi; değişikliğinizi tekrar yapın.",
         "fileInvalid": "Sözlük dosyanızda bir hata var, bu yüzden burada düzenlenemez: {{message}}",
         "invalidEdit": "Bu girdi kaydedilemedi: {{message}}",
-        "tooLarge": "Sözlük dosyası 1 MiB'tan büyük olacağı için hiçbir şey kaydedilmedi.",
+        "tooLarge": "Sözlük dosyası 1 MB'tan büyük olacağı için hiçbir şey kaydedilmedi.",
         "io": "Sözlük dosyası yazılamadı: {{message}}",
         "voicesChanged": "Bekleme sırasında sözlük değişti, bu yüzden değişiklik uygulanmadı."
       },
@@ -1451,7 +1468,7 @@
       "derive": {
         "unchanged": "Okunan sözcükler değişmedi, kaydedilecek bir şey yok.",
         "severalWords": "Değişiklik birden fazla yazılı sözcüğe dokunuyor. Her seferinde bir sözcüğü düzeltin.",
-        "notExplained": "Tek bir kural metnin bu şekilde okunmasını sağlamıyor.",
+        "notExplained": "Metnin bu şekilde okunmasını sağlayan tek bir kayıt yok.",
         "invalid": "Kaydedilemiyor: {{detail}}"
       },
       "check": {
@@ -1468,7 +1485,7 @@
         "savePassedOnly": "Yalnızca geçen modeller için kaydet",
         "pickOne": "Bir model seç",
         "dictating": "Dikte sürüyor. Bittiğinde yeniden kontrol edin.",
-        "transcribeFailed": "Konuşmadan metne dönüştürme sesi yazıya dökemedi."
+        "transcribeFailed": "Dikte modeli sesi yazıya dökemedi."
       },
       "filters": {
         "model": "Model",
@@ -1506,7 +1523,7 @@
       "spokenAs": "Şöyle okunuyor",
       "shouldSay": "Şöyle okunmalı",
       "savesAs": "Şu olarak kaydedilir",
-      "deriving": "Kural belirleniyor...",
+      "deriving": "Kayıt belirleniyor...",
       "exactOnly": "Yalnızca tam olarak bu metin",
       "chooseScope": "Nerede geçerli olacağını seçin",
       "scopeRequiredModels": "Kaydetmeden önce Tüm modeller'i veya tek bir modeli seçin.",
@@ -1531,7 +1548,7 @@
         "stopped": "Mikrofon sözleriniz duyulmadan durdu, bu yüzden hiçbir şey doldurulmadı.",
         "reading": "Sesli okuma açık. Kapatın, ardından mikrofonu kullanın.",
         "failed": "Mikrofon başlatılamadı.",
-        "transcribeFailed": "Konuşmayı metne dönüştürme söylediklerinizi yazıya dökemedi."
+        "transcribeFailed": "Dikte modeli söylediklerinizi yazıya dökemedi."
       }
     }
   },
@@ -1595,7 +1612,9 @@
     "cleaned": "Temizlenmiş metin",
     "original": "Orijinal transkripsiyon",
     "diffNote": "Orijinal transkripsiyondan farklar gösteriliyor.",
-    "noCleanup": "Temizleme yok"
+    "noCleanup": "Temizleme yok",
+    "failedLine": "Bu kayıt yazıya dökülemedi. Yeniden denemek için {{action}} seçeneğini kullanın.",
+    "notTranscribedLine": "Bu kayıt henüz yazıya dökülmedi. Yazıya dökmek için {{action}} seçeneğini kullanın."
   },
   "models": {
     "tags": {
@@ -1677,7 +1696,13 @@
     "heads": {
       "score": "Puan",
       "speed": "Hız",
-      "size": "Boyut"
+      "size": "Boyut",
+      "short": {
+        "score": "Puan",
+        "speed": "Hız",
+        "size": "Boyut",
+        "all": "Tümü"
+      }
     },
     "legend": {
       "open": "Sütunların anlamı",

@@ -20,6 +20,7 @@ import {
   deleteChecks,
   deleteMessage,
   dictationRow,
+  joinSentences,
   markPress,
   type DeleteAsk,
 } from "@/components/settings/models/managerRows";
@@ -34,12 +35,17 @@ import {
   type CleanupRowsProps,
 } from "@/components/settings/post-processing/CleanupRows";
 import { createLocalLlmRowActions } from "@/components/settings/post-processing/localLlmRowActions";
+import { HistoryRow } from "@/components/shared/HistoryList";
 import { createPendingConfirm } from "@/components/shared/InlineConfirm";
+import { revealingToggle } from "@/components/shared/useRevealOnOpen";
 import { languageName } from "@/lib/constants/languages";
 import { formatBytes, formatModelSize } from "@/lib/utils/format";
 import english from "@/i18n/locales/en/translation.json";
+import japanese from "@/i18n/locales/ja/translation.json";
+import { Codes } from "./columns";
 import type { TableModel } from "./context";
 import { makeGrading } from "@/lib/models/grading";
+import { GradeChip } from "@/components/shared/GradeChip";
 import {
   DictationCells,
   ManagerRow,
@@ -57,6 +63,7 @@ import {
 import {
   applyChips,
   cleanupModel,
+  createOpenSync,
   dictationModel,
   matchesQuery,
   nextOpen,
@@ -588,6 +595,91 @@ describe("nextOpen", () => {
   });
 });
 
+describe("createOpenSync", () => {
+  it("open_sync_reports_a_hidden_row_once", () => {
+    const sync = createOpenSync();
+    assert.equal(sync("x", ["x", "y"]), undefined);
+    assert.equal(sync("x", ["y"]), null);
+    assert.equal(sync("x", ["y"]), undefined, "the stale re-render");
+    assert.equal(sync(null, ["y"]), undefined);
+    assert.equal(sync("x", ["x"]), undefined);
+    assert.equal(sync("x", []), null);
+    assert.equal(sync(null, []), undefined);
+  });
+
+  it("open_sync_listed_row_clears_the_memory", () => {
+    const sync = createOpenSync();
+    assert.equal(sync("x", []), null);
+    assert.equal(sync("x", []), undefined);
+    assert.equal(sync("x", ["x"]), undefined, "listed again, still open");
+    assert.equal(sync("x", []), null, "hidden again reports again");
+    assert.equal(sync("y", []), null, "another hidden row reports");
+  });
+
+  it("manager_table_syncs_once", () => {
+    const table = readFileSync(
+      new URL("./ManagerTable.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.ok(table.includes("createOpenSync"));
+    assert.ok(!table.includes("open !== openId"));
+  });
+});
+
+describe("reveal on open", () => {
+  it("reveal_toggle_calls_through_and_marks_only_an_open", () => {
+    const calls: string[] = [];
+    const reveal = { current: false };
+    revealingToggle(false, reveal, () => calls.push("toggle"))();
+    assert.deepEqual(calls, ["toggle"]);
+    assert.equal(reveal.current, true, "opening reveals");
+    revealingToggle(true, reveal, () => calls.push("toggle"))();
+    assert.deepEqual(calls, ["toggle", "toggle"]);
+    assert.equal(reveal.current, false, "closing never reveals");
+  });
+
+  it("model_rows_reveal_when_opened", () => {
+    const row = readFileSync(
+      new URL("./ManagerRow.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(
+      row,
+      /useRevealOnOpen<HTMLDivElement>\(\s*props\.open,\s*props\.toggle,\s*"\[data-model-toolbar\]",?\s*\)/,
+    );
+    assert.match(row, /rowRef=\{reveal\.ref\}/);
+    assert.match(row, /toggle=\{reveal\.toggle\}/);
+    assert.match(row, /<div\s+ref=\{rowRef\}\s+data-row=\{model\.id\}/);
+    const history = readFileSync(
+      new URL("../HistoryList.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(
+      history,
+      /useRevealOnOpen<HTMLDivElement>\(\s*open,\s*onToggle,\s*"\[data-history-toolbar\]",?\s*\)/,
+    );
+    assert.ok(!history.includes("revealScrollTop("));
+  });
+
+  it("history_chevron_shows_a_focus_ring", () => {
+    const markup = html(
+      <HistoryRow
+        id={1}
+        open={false}
+        onToggle={() => {}}
+        when={{ short: "1 Jan", long: "1 January" }}
+        excerpt="Hello"
+        tag={null}
+      />,
+    );
+    const chevron = markup.match(/<button[^>]*aria-expanded[^>]*>/)?.[0] ?? "";
+    assert.match(
+      chevron,
+      /focus-visible:ring-2 focus-visible:ring-logo-primary/,
+    );
+  });
+});
+
 const model = (id: string, tags: ManagerModel["tags"]): ManagerModel => ({
   ...downloadedPocket,
   id,
@@ -857,7 +949,7 @@ describe("ManagerRow", () => {
     assert.match(measured, /title="Speed: 3\.5, measured on/);
     const heads = html(<RoleHeads />);
     assert.deepEqual(
-      [...heads.matchAll(/<span class="[^"]*">([^<]+)<\/span>/g)].map(
+      [...heads.matchAll(/<span [^>]*class="[^"]*"[^>]*>([^<]+)<\/span>/g)].map(
         ([, head]) => head,
       ),
       ["Score", "Speed", "Size"],
@@ -1099,6 +1191,98 @@ describe("ManagerRow", () => {
   });
 });
 
+describe("column heads", () => {
+  /** Every span of a head row: its classes, title and text. */
+  const spans = (markup: string) =>
+    [...markup.matchAll(/<span ([^>]*)>([^<]+)<\/span>/g)].map(
+      ([, attributes, text]) => ({
+        classes: attributes.match(/class="([^"]*)"/)?.[1].split(/\s+/) ?? [],
+        title: attributes.match(/title="([^"]*)"/)?.[1],
+        text,
+      }),
+    );
+
+  it("heads_truncate_never_break", () => {
+    const role = spans(html(<RoleHeads />));
+    assert.deepEqual(
+      role.map(({ text }) => text),
+      [
+        english.models.heads.short.score,
+        english.models.heads.short.speed,
+        english.models.heads.short.size,
+      ],
+    );
+    assert.deepEqual(
+      role.map(({ title }) => title),
+      ["Score", "Speed", "Size"],
+    );
+    for (const { classes } of role) {
+      assert.ok(classes.includes("truncate"), classes.join(" "));
+      assert.ok(!classes.includes("[overflow-wrap:anywhere]"));
+    }
+    assert.ok(!html(<RoleHeads />).includes("overflow-wrap:anywhere"));
+
+    const codes = spans(html(<Codes langs={["en", "pa"]} />));
+    for (const title of ["Speed", "Size"]) {
+      const head = codes.find((span) => span.title === title);
+      assert.ok(head, `a ${title} head in ${JSON.stringify(codes)}`);
+      assert.ok(head.classes.includes("truncate"), head.classes.join(" "));
+      assert.equal(head.text, title);
+    }
+    const overall = spans(
+      html(<Codes langs={["en", "pa", "hi", "de", "fr", "es"]} />),
+    );
+    const all = overall.find(({ title }) => title === "Accuracy");
+    assert.ok(all, JSON.stringify(overall));
+    assert.ok(all.classes.includes("truncate"), all.classes.join(" "));
+    assert.equal(all.text, english.models.heads.short.all);
+  });
+});
+
+describe("direction", () => {
+  /** True when the element holding exactly `text` carries dir="ltr". */
+  const isolated = (markup: string, text: string) =>
+    new RegExp(`<[a-z]+ [^>]*dir="ltr"[^>]*>${text}</`).test(markup);
+
+  it("sizes_and_grades_isolated", () => {
+    assert.ok(isolated(html(<GradeChip letter="B" label="A−" />), "A−"));
+
+    const sized = { ...downloadedPocket, sizeBytes: 731_000_000 };
+    assert.ok(isolated(html(<RoleCells model={sized} />), "731 MB"));
+    const unlisted = html(
+      <RoleCells model={{ ...downloadedPocket, sizeBytes: null }} />,
+    );
+    assert.ok(unlisted.includes(">Not listed<"), unlisted);
+    assert.ok(!isolated(unlisted, "Not listed"), unlisted);
+
+    const grading = makeGrading(["en"], "accelerated", []);
+    const dictation = html(
+      <DictationCells
+        model={dictationModel(catalogEntry, info(null), dictCtx)}
+        entry={catalogEntry}
+        grading={grading}
+      />,
+    );
+    assert.ok(
+      isolated(dictation, formatModelSize(catalogEntry.sizeMb)),
+      dictation,
+    );
+
+    const memory = { ...downloadedPocket, memoryBytes: 453_000_000 };
+    const open = html(<ManagerRow {...rowProps({ model: memory })} open />);
+    assert.ok(isolated(open, "453 MB"), open);
+    assert.equal(detailValue(open, "Memory"), "453 MB");
+    const unmeasured = html(
+      <ManagerRow
+        {...rowProps({ model: { ...downloadedPocket, memoryBytes: null } })}
+        open
+      />,
+    );
+    assert.equal(detailValue(unmeasured, "Memory"), "Not measured");
+    assert.ok(!isolated(unmeasured, "Not measured"), unmeasured);
+  });
+});
+
 describe("RoleLegend", () => {
   it("legend_lists_bands_and_the_measuring_machine", () => {
     const read = html(
@@ -1210,12 +1394,11 @@ describe("Models, Dictation rows", () => {
 
   it("delete_question_names_the_selected_consequence", () => {
     const ask = (selected: boolean, size: string | null) =>
-      deleteMessage(t, {
-        name: "Whisper Small",
-        size,
-        selected,
-        role: "dictation",
-      });
+      deleteMessage(
+        t,
+        { name: "Whisper Small", size, selected, role: "dictation" },
+        "en",
+      );
     assert.equal(
       ask(true, "487 MB"),
       "Delete Whisper Small? It frees 487 MB. Dictation stops working until you choose another model. Your history is kept.",
@@ -1232,6 +1415,38 @@ describe("Models, Dictation rows", () => {
       ask(false, null),
       "Delete Whisper Small? Your history is kept.",
     );
+  });
+
+  it("cjk_sentences_join_without_space", async () => {
+    const ja = i18next.createInstance();
+    await ja.init({
+      lng: "ja",
+      resources: { ja: { translation: japanese } },
+      interpolation: { escapeValue: false },
+    });
+    const model = {
+      name: "Whisper Small",
+      size: "487 MB",
+      selected: true,
+      role: "dictation" as const,
+    };
+    const text = deleteMessage(ja.t.bind(ja), model, "ja");
+    const parts = [
+      ja.t("models.delete.ask", { name: model.name, size: model.size }),
+      ja.t("models.delete.selected.dictation"),
+      ja.t("models.delete.kept.dictation"),
+    ];
+    assert.ok(!text.includes("。 "), text);
+    assert.equal(text, parts.join(""));
+    assert.ok(parts[0].endsWith("。") && text.includes(parts[0] + parts[1]));
+    const en = deleteMessage(t, model, "en");
+    assert.ok(en.includes("Whisper Small? It frees 487 MB. Dictation stops"));
+    assert.ok(!en.includes("  "));
+    assert.equal(joinSentences(["a。", "b。"], "zh-TW"), "a。b。");
+    assert.equal(joinSentences(["a。", "b。"], "zh"), "a。b。");
+    assert.equal(joinSentences(["a。", "b。"], "ja-JP"), "a。b。");
+    assert.equal(joinSentences(["a.", "b."], "en"), "a. b.");
+    assert.equal(joinSentences(["a.", "b."], "de"), "a. b.");
   });
 
   it("download_or_selection_change_closes_the_question", async () => {
@@ -1614,7 +1829,7 @@ describe("Models, Cleanup rows", () => {
   });
 
   it("cleanup_delete_question_names_what_goes", () => {
-    const plain = cleanupAskedFor(t, quill, false);
+    const plain = cleanupAskedFor(t, quill, false, "en");
     assert.deepEqual(
       { id: plain.id, selected: plain.selected },
       { id: quill.id, selected: false },
@@ -1623,7 +1838,7 @@ describe("Models, Cleanup rows", () => {
       plain.message,
       "Delete Quill 0.8B? It frees 484 MB. Your prompts and history are kept.",
     );
-    const selected = cleanupAskedFor(t, s1, true);
+    const selected = cleanupAskedFor(t, s1, true, "en");
     assert.ok(selected.selected);
     assert.ok(
       selected.message.includes(
@@ -1632,7 +1847,12 @@ describe("Models, Cleanup rows", () => {
       selected.message,
     );
     assert.ok(selected.message.endsWith("Your prompts and history are kept."));
-    const unknown = cleanupAskedFor(t, { ...quill, size_bytes: 0 }, false);
+    const unknown = cleanupAskedFor(
+      t,
+      { ...quill, size_bytes: 0 },
+      false,
+      "en",
+    );
     assert.ok(!unknown.message.includes("It frees"), unknown.message);
 
     const html = render({

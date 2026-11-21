@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ReadHistoryEntry, ReadHistoryRetention } from "@/bindings";
 import {
+  CONTROL_TARGETS,
   createPendingConfirm,
   InlineConfirm,
+  useRefocusOnClose,
 } from "@/components/shared/InlineConfirm";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Input } from "@/components/ui/Input";
@@ -95,6 +97,7 @@ export function ReadRetentionGroup({
     return { field, confirm, route };
   }, []);
   useEffect(() => confirm.cancel, [confirm]);
+  const rowsRef = useRefocusOnClose(pending?.control ?? null, CONTROL_TARGETS);
   const waiting = entries === null;
   const limitRow = readLimitRow(retention);
   const confirmation = (control: ReadChange["control"]) =>
@@ -110,65 +113,73 @@ export function ReadRetentionGroup({
       />
     ) : null;
   return (
-    <SettingsGroup title={t("settings.groups.history")}>
-      <SettingContainer
-        title={t("settings.readAloudHistory.keepTitle")}
-        description={t("settings.readAloudHistory.keepHelp")}
-        descriptionMode="inline"
-        grouped
-        layout={pending?.control === "retention" ? "stacked" : "horizontal"}
-      >
-        {confirmation("retention") ?? (
-          <Dropdown
-            options={retentionOptions(t, Number(limit))}
-            selectedValue={retention}
-            onSelect={(value) => {
-              const next = value as ReadHistoryRetention;
-              void route({ limit, retention: next }, "retention", () =>
-                changeRetention(next),
-              );
-            }}
-            disabled={waiting || isUpdating("tts_history_retention")}
-          />
-        )}
-      </SettingContainer>
-      <SettingContainer
-        title={t("settings.readAloudHistory.limitTitle")}
-        description={
-          limitRow.reasonKey
-            ? t(limitRow.reasonKey)
-            : t("settings.readAloudHistory.limitHelp")
-        }
-        descriptionMode={limitRow.disabled ? "inline" : "tooltip"}
-        disabled={limitRow.disabled}
-        grouped
-        layout={pending?.control === "limit" ? "stacked" : "horizontal"}
-      >
-        {confirmation("limit") ?? (
-          <div className="flex items-center space-x-2">
-            <Input
-              type="number"
-              min="0"
-              max={MAX_LIMIT}
-              value={draft ?? limit}
-              onChange={(event) => field.type(event.target.value)}
-              onBlur={field.commit}
-              onKeyDown={(event) => {
-                // Enter's keypress would otherwise click the Cancel button the confirmation focuses.
-                if (event.key === "Enter") event.preventDefault();
-                field.key(event.key);
-              }}
-              disabled={
-                limitRow.disabled || waiting || isUpdating("tts_history_limit")
-              }
-              className="w-20"
-            />
-            <span className="text-sm text-text">
-              {t("settings.readAloudHistory.limitUnit")}
-            </span>
+    <div ref={rowsRef}>
+      <SettingsGroup title={t("settings.groups.history")}>
+        <SettingContainer
+          title={t("settings.readAloudHistory.keepTitle")}
+          description={t("settings.readAloudHistory.keepHelp")}
+          descriptionMode="inline"
+          grouped
+          layout={pending?.control === "retention" ? "stacked" : "horizontal"}
+        >
+          <div data-confirm-row="retention">
+            {confirmation("retention") ?? (
+              <Dropdown
+                options={retentionOptions(t, Number(limit))}
+                selectedValue={retention}
+                onSelect={(value) => {
+                  const next = value as ReadHistoryRetention;
+                  void route({ limit, retention: next }, "retention", () =>
+                    changeRetention(next),
+                  );
+                }}
+                disabled={waiting || isUpdating("tts_history_retention")}
+              />
+            )}
           </div>
-        )}
-      </SettingContainer>
-    </SettingsGroup>
+        </SettingContainer>
+        <SettingContainer
+          title={t("settings.readAloudHistory.limitTitle")}
+          description={
+            limitRow.reasonKey
+              ? t(limitRow.reasonKey)
+              : t("settings.readAloudHistory.limitHelp")
+          }
+          descriptionMode={limitRow.disabled ? "inline" : "tooltip"}
+          disabled={limitRow.disabled}
+          grouped
+          layout={pending?.control === "limit" ? "stacked" : "horizontal"}
+        >
+          <div data-confirm-row="limit">
+            {confirmation("limit") ?? (
+              <div className="flex items-center space-x-2">
+                <Input
+                  type="number"
+                  min="0"
+                  max={MAX_LIMIT}
+                  value={draft ?? limit}
+                  onChange={(event) => field.type(event.target.value)}
+                  onBlur={field.commit}
+                  onKeyDown={(event) => {
+                    // Enter's keypress would otherwise click the Cancel button the confirmation focuses.
+                    if (event.key === "Enter") event.preventDefault();
+                    field.key(event.key);
+                  }}
+                  disabled={
+                    limitRow.disabled ||
+                    waiting ||
+                    isUpdating("tts_history_limit")
+                  }
+                  className="w-20"
+                />
+                <span className="text-sm text-text">
+                  {t("settings.readAloudHistory.limitUnit")}
+                </span>
+              </div>
+            )}
+          </div>
+        </SettingContainer>
+      </SettingsGroup>
+    </div>
   );
 }

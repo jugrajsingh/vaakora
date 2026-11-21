@@ -509,6 +509,60 @@ describe("retention", () => {
     assert.deepEqual(again.next, { limit: 5, retention: "keep_nothing" });
     assert.deepEqual(row.changes, []);
   });
+  it("retention_controls_are_focus_rows", () => {
+    const group = readRow([]).html;
+    assert.match(group, /data-confirm-row="retention"/);
+    assert.match(group, /data-confirm-row="limit"/);
+    settings = { history_limit: 50, recording_retention_period: "weeks2" };
+    assert.match(
+      render(React.createElement(RecordingRetentionPeriodSelector)),
+      /data-confirm-row="period"/,
+    );
+    for (const file of [
+      "HistoryLimit.tsx",
+      "RecordingRetentionPeriod.tsx",
+      "tts/history/ReadRetentionGroup.tsx",
+    ]) {
+      const source = readFileSync(
+        new URL(`../../components/settings/${file}`, import.meta.url),
+        "utf8",
+      );
+      assert.match(source, /useRefocusOnClose\([^)]*CONTROL_TARGETS/s, file);
+    }
+  });
+  it("retention_controls_show_a_focus_ring", () => {
+    const element = (html: string, tag: string, marker: string) => {
+      const found = html.match(new RegExp(`<${tag} [^>]*${marker}[^>]*>`));
+      assert.ok(found, `${tag} with ${marker}`);
+      return found[0];
+    };
+    const ringed = (opener: string, where: string) => {
+      assert.match(opener, /focus-visible:ring-2/, where);
+      assert.match(opener, /focus-visible:ring-logo-primary/, where);
+    };
+    settings = { history_limit: 50, recording_retention_period: "never" };
+    const dictationLimit = render(React.createElement(HistoryLimit, {}));
+    ringed(
+      element(dictationLimit, "input", 'type="number"'),
+      "HistoryLimit number field",
+    );
+    const period = render(
+      React.createElement(RecordingRetentionPeriodSelector),
+    );
+    ringed(
+      element(period, "button", "aria-expanded"),
+      "RecordingRetentionPeriod trigger",
+    );
+    const group = readRow([]).html;
+    ringed(
+      element(group, "input", 'type="number"'),
+      "ReadRetentionGroup number field",
+    );
+    ringed(
+      element(group, "button", "aria-expanded"),
+      "ReadRetentionGroup drop-down trigger",
+    );
+  });
   it("read_retention_group_cancels_its_question_on_unmount", () => {
     const source = readFileSync(
       new URL(
@@ -652,23 +706,23 @@ describe("retention", () => {
       all.t("tts.history.retentionConfirm.message", { lng: language, count });
     assert.equal(
       read("en", 1),
-      "Delete 1 stored read now? Your vocabulary is not changed.",
+      "Delete 1 entry now? Your vocabulary is not changed.",
     );
     assert.equal(
       read("en", 5),
-      "Delete 5 stored reads now? Your vocabulary is not changed.",
+      "Delete 5 entries now? Your vocabulary is not changed.",
     );
     assert.equal(
       read("ru", 21),
-      "Удалить сейчас 21 сохранённое чтение? Ваш словарь не изменится.",
+      "Удалить сейчас 21 запись? Ваш словарь не изменится.",
     );
     assert.equal(
       read("ru", 5),
-      "Удалить сейчас сохранённые чтения (5)? Ваш словарь не изменится.",
+      "Удалить сейчас записи (5)? Ваш словарь не изменится.",
     );
     assert.equal(
       read("ar", 2),
-      "هل تريد حذف 2 من القراءات المخزنة الآن؟ لن يتغير قاموس المفردات لديك.",
+      "هل تريد حذف 2 من الإدخالات الآن؟ لن يتغير قاموس المفردات لديك.",
     );
   });
 

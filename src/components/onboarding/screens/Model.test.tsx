@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -24,10 +25,11 @@ mock.module("@/components/ui/Button", () => ({
     return RealButton(props);
   },
 }));
+const store = { extraModelId: null as string | null };
 mock.module("../onboardingStore", () => ({
   useOnboardingStore: () => ({
     modelId: null,
-    extraModelId: null,
+    extraModelId: store.extraModelId,
     downloadId: null,
     set() {},
   }),
@@ -51,6 +53,9 @@ await i18n.init({
 mock.module("@/i18n", () => ({ default: i18n }));
 
 const { ModelView } = await import("./Model");
+const { ReadAloudLine } = await import("../ReadAloudLine");
+const { keycapLabel, keycapLabels } = await import("@/lib/utils/keyboard");
+const { formatModelSize } = await import("@/lib/utils/format");
 const { NO_FILTERS } = await import("../../shared/modelTable/ModelTable");
 const { CURATED_ASR } = await import("@/lib/models/catalog");
 const { makeGrading } = await import("@/lib/models/grading");
@@ -185,5 +190,236 @@ describe("Model", () => {
     const html = render(fixture([{ model, role: "pick" }], [row]));
     assert.doesNotMatch(html, /No recommended model covers/);
     assert.ok(html.includes(model.name), "the pick's card is shown");
+  });
+
+  it("onboarding_sizes_are_isolated", () => {
+    const pickRow: Row = {
+      model: offered[0],
+      role: "pick",
+      missing: [],
+      error: null,
+      wait: 1,
+    };
+    const extraRow: Row = { ...pickRow, model: CURATED_ASR[1], role: null };
+    const models = fixture(
+      [{ model: offered[0], role: "pick" }],
+      [pickRow],
+      true,
+    );
+    store.extraModelId = extraRow.model.id;
+    try {
+      models.groups.others = [extraRow];
+      const html = render(models);
+      const sizes =
+        html.match(
+          new RegExp(`<span [^>]*>${formatModelSize(100)}</span>`, "g"),
+        ) ?? [];
+      assert.equal(sizes.length, 2, "the selected card and the one-line row");
+      for (const size of sizes) assert.match(size, /dir="ltr"/, size);
+    } finally {
+      store.extraModelId = null;
+    }
+  });
+
+  it("migration_size_is_isolated", () => {
+    assert.match(
+      readFileSync(new URL("../ModelMigration.tsx", import.meta.url), "utf8"),
+      /<span dir="ltr" className="tabular-nums">\s*\{formatModelSize\(Number\(replacement\.size_mb\)\)\}/,
+    );
+  });
+});
+
+const source = (path: string) =>
+  readFileSync(new URL(path, import.meta.url), "utf8");
+const escapeHtml = (text: string) =>
+  text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+const renderLine = (
+  binding: string | null,
+  instance: typeof i18n = i18n,
+  os: "linux" | "macos" = "linux",
+) =>
+  renderToStaticMarkup(
+    <I18nextProvider i18n={instance}>
+      <ReadAloudLine binding={binding} os={os} onChooseModel={() => {}} />
+    </I18nextProvider>,
+  );
+
+describe("finish line", () => {
+  it("finish_line_names_the_read_aloud_keys", () => {
+    const html = renderLine("super+alt+r");
+    assert.equal(html.match(/<p /g)?.length, 1, "one paragraph");
+    assert.match(html, /^<p [^>]*data-read-aloud-line/);
+    assert.match(html, /To hear text read aloud, copy it and press /);
+    assert.ok(
+      html.includes(`aria-label="${keycapLabel("super+alt+r", "linux")}"`),
+      "the keycaps name the binding",
+    );
+    for (const label of keycapLabels("super+alt+r", "linux")) {
+      assert.ok(html.includes(`>${label}</span>`), `keycap ${label}`);
+    }
+    assert.match(html, /<button[^>]*>Choose a read-aloud model<\/button>/);
+    assert.ok(
+      renderLine("super+alt+r", i18n, "macos").includes(
+        `aria-label="${keycapLabel("super+alt+r", "macos")}"`,
+      ),
+      "macOS glyphs",
+    );
+    for (const binding of [null, ""]) {
+      const unbound = renderLine(binding);
+      assert.match(unbound, /data-read-aloud-line/);
+      assert.match(
+        unbound,
+        /To hear text read aloud, set its shortcut in Settings, General\./,
+      );
+      assert.doesNotMatch(unbound, /role="img"/, "no keycaps");
+      assert.doesNotMatch(unbound, /copy it and press/);
+      assert.match(
+        unbound,
+        /<button[^>]*>Choose a read-aloud model<\/button>/,
+        "the link stays",
+      );
+    }
+  });
+
+  it("finish_line_link_has_a_focus_ring", () => {
+    for (const binding of ["super+alt+r", null]) {
+      const link = renderLine(binding).match(
+        /<button[^>]*>Choose a read-aloud model<\/button>/,
+      );
+      assert.ok(link, "the link button");
+      assert.match(link[0], /focus-visible:ring-2/);
+      assert.match(link[0], /focus-visible:ring-logo-primary/);
+    }
+  });
+
+  it("finish_line_renders_keys_and_link_in_every_locale", async () => {
+    const dir = new URL("../../../i18n/locales/", import.meta.url);
+    const locales = readdirSync(dir);
+    assert.equal(locales.length, 26);
+    for (const locale of locales) {
+      const translation = JSON.parse(
+        readFileSync(new URL(`${locale}/translation.json`, dir), "utf8"),
+      );
+      const done = translation.onboarding.done;
+      for (const key of [
+        "readAloud",
+        "readAloudUnbound",
+        "chooseReadAloudModel",
+      ]) {
+        assert.equal(typeof done[key], "string", `${locale} ${key}`);
+        assert.notEqual(done[key].trim(), "", `${locale} ${key}`);
+        if (locale !== "en") {
+          assert.notEqual(
+            done[key],
+            en.onboarding.done[key as "readAloud"],
+            `${locale} ${key} is translated`,
+          );
+        }
+      }
+      assert.ok(
+        done.readAloud.includes("<keys/>"),
+        `${locale} places the keys`,
+      );
+      assert.ok(
+        !done.readAloudUnbound.includes("<keys/>"),
+        `${locale} unbound has no keys`,
+      );
+      const instance = i18next.createInstance();
+      await instance.init({
+        lng: locale,
+        fallbackLng: false,
+        interpolation: { escapeValue: false },
+        resources: { [locale]: { translation } },
+      });
+      const link = escapeHtml(done.chooseReadAloudModel);
+      const bound = renderLine("super+alt+r", instance);
+      assert.ok(
+        bound.includes(`aria-label="${keycapLabel("super+alt+r", "linux")}"`),
+        `${locale} renders the keycaps`,
+      );
+      assert.ok(bound.includes(`>${link}</button>`), `${locale} link text`);
+      const unbound = renderLine(null, instance);
+      assert.doesNotMatch(
+        unbound,
+        /role="img"/,
+        `${locale} unbound has no keys`,
+      );
+      assert.ok(
+        unbound.includes(escapeHtml(done.readAloudUnbound)),
+        `${locale} unbound sentence`,
+      );
+      assert.ok(
+        unbound.includes(`>${link}</button>`),
+        `${locale} unbound link`,
+      );
+    }
+  });
+
+  it("choose_model_finishes_into_models", () => {
+    const flow = source("../OnboardingFlow.tsx");
+    const app = source("../../../App.tsx");
+    const tryIt = source("./TryIt.tsx");
+    assert.ok(
+      flow.includes(
+        "onChooseReadAloudModel={() => finish(LINKS.readAloudModels)}",
+      ),
+      "the link finishes into Models, Read aloud",
+    );
+    const finish = flow.slice(
+      flow.indexOf("const finish = async ("),
+      flow.indexOf("const chooseModel"),
+    );
+    assert.match(finish, /finish = async \(then\?: Location\)/);
+    const complete = finish.indexOf("onComplete(then)");
+    assert.ok(complete > 0, "finish hands the destination on");
+    assert.ok(
+      finish.indexOf("commands.completeOnboarding()") < complete,
+      "completeOnboarding first",
+    );
+    assert.ok(
+      complete < finish.indexOf("clearOnboardingProgress()"),
+      "onComplete before clearOnboardingProgress",
+    );
+    assert.match(flow, /onComplete: \(then\?: Location\) => void/);
+    assert.ok(
+      flow.includes("readAloudBinding={readAloudBinding}") &&
+        flow.includes(
+          "settings?.bindings?.read_aloud?.current_binding || null",
+        ),
+      "the binding comes from settings",
+    );
+    assert.ok(
+      tryIt.includes("onChooseModel={onChooseReadAloudModel}") &&
+        /after && \(\s*<ReadAloudLine/.test(tryIt),
+      "TryIt renders the line on the finished stage only",
+    );
+    const real = app.match(
+      /<OnboardingFlow\s+onComplete=\{\(then\) =>[\s\S]*?\}\)\s*\}\s*\/>/,
+    );
+    assert.ok(real, "the real flow's handler");
+    assert.match(real[0], /afterOnboarding\(then,/);
+    assert.match(real[0], /close: \(\) => setOnboardingStep\("done"\)/);
+    assert.match(real[0], /navigate: navigation\.navigate/);
+    const preview = app.match(
+      /preview\s+previewStep=\{onboardingPreview\}\s+onComplete=\{\(then\) =>[\s\S]*?\}\)\s*\}/,
+    );
+    assert.ok(preview, "the preview's handler");
+    assert.match(preview[0], /afterOnboarding\(then,/);
+    assert.match(preview[0], /close: \(\) => setOnboardingPreview\(null\)/);
+    assert.match(preview[0], /navigate: navigation\.navigate/);
+  });
+
+  it("done_button_passes_no_destination", () => {
+    const flow = source("../OnboardingFlow.tsx");
+    assert.ok(flow.includes("onDone={() => finish()}"));
+    assert.ok(
+      !flow.includes("onDone={finish}"),
+      "the click event must not become the destination",
+    );
   });
 });

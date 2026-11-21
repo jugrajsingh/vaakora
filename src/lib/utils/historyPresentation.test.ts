@@ -8,8 +8,10 @@ import {
   historyState,
   nextOpen,
   openEntry,
+  revealIn,
   revealScrollTop,
   shortDateTime,
+  type RevealBox,
 } from "./historyPresentation";
 function check(name: string, run: () => void): void {
   try {
@@ -131,6 +133,66 @@ check("reveal_keeps_the_top_visible", () => {
   assert.equal(revealScrollTop(view, { top: 50, bottom: 900 }), 950);
   assert.equal(revealScrollTop(view, { top: 150, bottom: 400 }), null);
   assert.equal(revealScrollTop(view, { top: 100, bottom: 500 }), null);
+});
+check("reveal_in_scrolls_an_opened_row_into_view", () => {
+  const TOOLBAR = "[data-model-toolbar]";
+  const scroller = () => {
+    const writes: number[] = [];
+    let top = 200;
+    return {
+      writes,
+      get scrollTop() {
+        return top;
+      },
+      set scrollTop(value: number) {
+        writes.push(value);
+        top = value;
+      },
+      getBoundingClientRect: (): RevealBox => ({ top: 40, bottom: 564 }),
+      querySelector: (selector: string) =>
+        selector === TOOLBAR
+          ? {
+              getBoundingClientRect: (): RevealBox => ({ top: 40, bottom: 84 }),
+            }
+          : null,
+    };
+  };
+  const reveal = (top: number, bottom: number, toolbar = TOOLBAR) => {
+    const box = scroller();
+    revealIn(
+      {
+        getBoundingClientRect: () => ({ top, bottom }),
+        closest: (selector: string) =>
+          selector === "[data-settings-scroll]" ? box : null,
+      },
+      toolbar,
+    );
+    return box;
+  };
+  // Below the fold: its bottom lines up with the view's.
+  assert.equal(reveal(500, 760).scrollTop, 396);
+  // In view: unchanged, nothing assigned.
+  const inView = reveal(100, 300);
+  assert.equal(inView.scrollTop, 200);
+  assert.deepEqual(inView.writes, []);
+  // Under the toolbar: its top lines up with the toolbar's bottom.
+  assert.equal(reveal(60, 200).scrollTop, 176);
+  // Taller than the view: its top goes to the toolbar's bottom.
+  assert.equal(reveal(300, 900).scrollTop, 416);
+  // No toolbar: the view starts at the scroller's top.
+  assert.equal(reveal(20, 100, "[data-history-toolbar]").scrollTop, 180);
+  assert.equal(reveal(20, 100).scrollTop, 136);
+  // Outside a scroller, or no row: nothing assigned, no throw.
+  const away = scroller();
+  revealIn(
+    {
+      getBoundingClientRect: () => ({ top: 500, bottom: 760 }),
+      closest: () => null,
+    },
+    TOOLBAR,
+  );
+  revealIn(null, TOOLBAR);
+  assert.deepEqual(away.writes, []);
 });
 check("history_state_precedence", () => {
   const base = { loading: false, failed: false, count: 0, kept: true };

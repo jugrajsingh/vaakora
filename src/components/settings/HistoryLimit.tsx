@@ -9,7 +9,12 @@ import {
   routeChange,
   type DictationKeep,
 } from "../../lib/utils/retention";
-import { createPendingConfirm, InlineConfirm } from "../shared/InlineConfirm";
+import {
+  CONTROL_TARGETS,
+  createPendingConfirm,
+  InlineConfirm,
+  useRefocusOnClose,
+} from "../shared/InlineConfirm";
 import { Input } from "../ui/Input";
 import { SettingContainer } from "../ui/SettingContainer";
 
@@ -55,6 +60,7 @@ export const HistoryLimit: React.FC<HistoryLimitProps> = ({
     return { field, confirm };
   }, []);
 
+  const rowsRef = useRefocusOnClose(pending ? "limit" : null, CONTROL_TARGETS);
   const limitRow = dictationLimitRow(keep.period);
   return (
     <SettingContainer
@@ -69,37 +75,39 @@ export const HistoryLimit: React.FC<HistoryLimitProps> = ({
       grouped={grouped}
       layout={pending ? "stacked" : "horizontal"}
     >
-      {pending ? (
-        <InlineConfirm
-          message={t("settings.history.retentionConfirm.preserveLimit", {
-            count: pending.limit,
-          })}
-          action={t("settings.history.retentionConfirm.action")}
-          onCancel={confirm.cancel}
-          onConfirm={() => void confirm.confirm()}
-        />
-      ) : (
-        <div className="flex items-center space-x-2">
-          <Input
-            type="number"
-            min="0"
-            max={MAX_LIMIT}
-            value={draft ?? historyLimit}
-            onChange={(event) => field.type(event.target.value)}
-            onBlur={field.commit}
-            onKeyDown={(event) => {
-              // Enter's keypress would otherwise click the Cancel button the confirmation focuses.
-              if (event.key === "Enter") event.preventDefault();
-              field.key(event.key);
-            }}
-            disabled={limitRow.disabled || isUpdating("history_limit")}
-            className="w-20"
+      <div ref={rowsRef} data-confirm-row="limit">
+        {pending ? (
+          <InlineConfirm
+            message={t("settings.history.retentionConfirm.preserveLimit", {
+              count: pending.limit,
+            })}
+            action={t("settings.history.retentionConfirm.action")}
+            onCancel={confirm.cancel}
+            onConfirm={() => void confirm.confirm()}
           />
-          <span className="text-sm text-text">
-            {t("settings.dictationHistory.limitUnit")}
-          </span>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center space-x-2">
+            <Input
+              type="number"
+              min="0"
+              max={MAX_LIMIT}
+              value={draft ?? historyLimit}
+              onChange={(event) => field.type(event.target.value)}
+              onBlur={field.commit}
+              onKeyDown={(event) => {
+                // Enter's keypress would otherwise click the Cancel button the confirmation focuses.
+                if (event.key === "Enter") event.preventDefault();
+                field.key(event.key);
+              }}
+              disabled={limitRow.disabled || isUpdating("history_limit")}
+              className="w-20"
+            />
+            <span className="text-sm text-text">
+              {t("settings.dictationHistory.limitUnit")}
+            </span>
+          </div>
+        )}
+      </div>
     </SettingContainer>
   );
 };

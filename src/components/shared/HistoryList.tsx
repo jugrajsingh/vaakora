@@ -1,8 +1,8 @@
 import type React from "react";
-import { useId, useLayoutEffect, useRef } from "react";
+import { useId } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { revealScrollTop } from "@/lib/utils/historyPresentation";
+import { useRevealOnOpen } from "@/components/shared/useRevealOnOpen";
 
 /** A history row's header grid: date, excerpt, tag, then one cell for the actions and chevron. */
 export const HISTORY_ROW_GRID =
@@ -34,31 +34,11 @@ export function HistoryRow({
 }: HistoryRowProps): React.JSX.Element {
   const { t } = useTranslation();
   const bodyId = useId();
-  const rowRef = useRef<HTMLDivElement>(null);
-  // Set when this row's own toggle opens it; mounting already open never scrolls.
-  const reveal = useRef(false);
-  const toggle = () => {
-    reveal.current = !open;
-    onToggle();
-  };
-  useLayoutEffect(() => {
-    const wanted = reveal.current;
-    reveal.current = false;
-    const row = rowRef.current;
-    const scroller = row?.closest<HTMLElement>("[data-settings-scroll]");
-    if (!open || !wanted || !row || !scroller) return;
-    const box = scroller.getBoundingClientRect();
-    const toolbar = scroller.querySelector("[data-history-toolbar]");
-    const scrollTop = revealScrollTop(
-      {
-        top: toolbar?.getBoundingClientRect().bottom ?? box.top,
-        bottom: box.bottom,
-        scrollTop: scroller.scrollTop,
-      },
-      row.getBoundingClientRect(),
-    );
-    if (scrollTop !== null) scroller.scrollTop = scrollTop;
-  }, [open]);
+  const { ref: rowRef, toggle } = useRevealOnOpen<HTMLDivElement>(
+    open,
+    onToggle,
+    "[data-history-toolbar]",
+  );
   const label = t(open ? "history.row.close" : "history.row.open");
   return (
     <div
@@ -103,7 +83,7 @@ export function HistoryRow({
             aria-label={label}
             title={label}
             onClick={toggle}
-            className="p-1.5 rounded-md flex items-center justify-center text-ink-2 hover:text-logo-primary cursor-pointer"
+            className="p-1.5 rounded-md flex items-center justify-center text-ink-2 hover:text-logo-primary cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
           >
             <ChevronDown
               width={16}
@@ -138,7 +118,7 @@ export function HistoryToolbar({
       data-history-toolbar
       className="sticky top-0 z-10 flex flex-wrap items-center gap-2 bg-background py-2"
     >
-      <p className="min-w-0 flex-1 text-xs text-ink-2">
+      <p className="min-w-0 flex-1 basis-[20rem] text-xs text-ink-2">
         {summary}{" "}
         <button
           type="button"

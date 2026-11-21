@@ -21,25 +21,24 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseClasses =
-    "font-medium rounded-lg border focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer";
+    "font-medium rounded-lg border focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer";
 
   const variantClasses = {
     primary:
-      "text-white bg-background-ui border-background-ui hover:bg-background-ui/80 hover:border-background-ui/80 focus:ring-1 focus:ring-background-ui",
+      "text-white bg-background-ui border-background-ui hover:bg-background-ui/80 hover:border-background-ui/80",
     "primary-soft":
-      "text-text bg-logo-primary/20 border-transparent hover:bg-logo-primary/20 focus:ring-1 focus:ring-logo-primary",
+      "text-text bg-logo-primary/20 border-transparent hover:bg-logo-primary/20",
     secondary:
       "bg-wash border-line hover:bg-logo-primary/20 hover:border-logo-primary focus:outline-none",
     // For screens where secondary's grey fill reads as disabled (onboarding)
-    outline:
-      "text-text bg-background border-line-strong hover:border-plum focus-visible:ring-1 focus-visible:ring-logo-primary",
-    // Secondary's neutral resting look, but hover/focus use the semantic
+    outline: "text-text bg-background border-line-strong hover:border-plum",
+    // Secondary's neutral resting look, but hover uses the semantic
     // --color-warning token (theme.css) instead of the pink accent — for
     // buttons sitting on warning surfaces like SecureInputWarning
     warning:
-      "text-text bg-wash border-line hover:bg-warning-wash hover:border-warning focus:ring-1 focus:ring-warning",
+      "text-text bg-wash border-line hover:bg-warning-wash hover:border-warning",
     danger:
-      "text-background bg-error border-error hover:bg-error/80 hover:border-error/80 focus:ring-1 focus:ring-error",
+      "text-background bg-error border-error hover:bg-error/80 hover:border-error/80",
     "danger-ghost":
       "text-error border-transparent hover:bg-error-wash focus:bg-error-wash",
     ghost:

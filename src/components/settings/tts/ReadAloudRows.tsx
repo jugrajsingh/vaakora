@@ -63,16 +63,21 @@ export function askedFor(
   t: TFunction,
   info: Pick<TtsModelInfo, "id" | "display_name" | "size_bytes">,
   selected: boolean,
+  language: string,
 ): AskedDelete {
   return {
     id: info.id,
     selected,
-    message: deleteMessage(t, {
-      name: info.display_name,
-      size: formatBytes(info.size_bytes),
-      selected,
-      role: "readAloud",
-    }),
+    message: deleteMessage(
+      t,
+      {
+        name: info.display_name,
+        size: formatBytes(info.size_bytes),
+        selected,
+        role: "readAloud",
+      },
+      language,
+    ),
   };
 }
 
@@ -306,7 +311,7 @@ export function ReadAloudRows({
       info.id,
     );
     const selected = info.downloaded && info.id === state.selectedId;
-    const ask = () => act.ask(askedFor(t, info, selected));
+    const ask = () => act.ask(askedFor(t, info, selected, i18n.language));
     const row = rowActions(
       info,
       state,

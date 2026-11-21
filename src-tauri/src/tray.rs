@@ -23,7 +23,7 @@
 use crate::local_llm::{manager::LocalLlmStateKind, registry, LocalLlmManager, LocalLlmStatus};
 use crate::managers::history::{HistoryEntry, HistoryManager};
 use crate::managers::model::{ModelInfo, ModelManager};
-use crate::managers::transcription::TranscriptionManager;
+use crate::managers::transcription::{StreamWorkKind, TranscriptionManager};
 use crate::notices::{self, NoticeCode};
 use crate::settings;
 use crate::tray_i18n::{get_tray_translations, TrayStrings};
@@ -37,6 +37,7 @@ use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::tray::TrayIcon;
 use tauri::{AppHandle, Manager, Theme};
 use tauri_plugin_clipboard_manager::ClipboardExt;
+use tauri_specta::Event;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TrayIconState {
@@ -50,6 +51,43 @@ impl TrayIconState {
     /// model submenu), so only the idle/busy distinction matters for the menu.
     fn is_busy(self) -> bool {
         self != TrayIconState::Idle
+    }
+}
+
+/// What the dictation is doing, for the main window's footer status.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, specta::Type)]
+#[serde(rename_all = "snake_case")]
+pub enum DictationActivity {
+    Ready,
+    Recording,
+    Transcribing,
+    CleaningUp,
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, specta::Type, tauri_specta::Event)]
+pub struct DictationActivityEvent {
+    pub activity: DictationActivity,
+}
+
+pub(crate) fn activity_for(state: TrayIconState) -> DictationActivity {
+    match state {
+        TrayIconState::Idle => DictationActivity::Ready,
+        TrayIconState::Recording => DictationActivity::Recording,
+        TrayIconState::Transcribing => DictationActivity::Transcribing,
+    }
+}
+
+/// The activity a streaming overlay's working phase starts; transcribing is already set by the tray state.
+pub(crate) fn activity_for_stream_work(kind: StreamWorkKind) -> Option<DictationActivity> {
+    match kind {
+        StreamWorkKind::Polishing => Some(DictationActivity::CleaningUp),
+        StreamWorkKind::Transcribing => None,
+    }
+}
+
+pub(crate) fn emit_activity(app: &AppHandle, activity: DictationActivity) {
+    if let Err(e) = (DictationActivityEvent { activity }).emit(app) {
+        warn!("Failed to emit dictation activity {activity:?}: {e}");
     }
 }
 
@@ -409,6 +447,7 @@ pub fn get_icon_path(theme: AppTheme, state: TrayIconState, badge: bool) -> &'st
 /// Sets the recording state shown by the tray (icon + Cancel/model menu).
 pub fn set_tray_state(app: &AppHandle, state: TrayIconState) {
     sync_tray_with(app, |inner| inner.icon_state = state);
+    emit_activity(app, activity_for(state));
 }
 
 /// Whether a dictation is recording, transcribing or delivering. Every start,
@@ -1556,7 +1595,7 @@ mod tests {
         let english = get_tray_translations(Some("en".into()));
         assert_eq!(
             cleanup_status_label(LocalLlmStateKind::Ready, long, &english, &english),
-            format!("Post-processing model: {long} (ready)")
+            format!("Cleanup model: {long} (ready)")
         );
     }
 
@@ -2132,11 +2171,11 @@ mod tests {
             ),
             (LocalLlmStateKind::Starting, "loading", "cleanupLoading"),
             (LocalLlmStateKind::Stopping, "loading", "cleanupLoading"),
-            (LocalLlmStateKind::Failed, "error", "cleanupError"),
+            (LocalLlmStateKind::Failed, "failed", "cleanupError"),
         ] {
             assert_eq!(
                 cleanup_status_label(state, "S1-mini", &english, &english),
-                format!("Post-processing model: S1-mini ({english_text})")
+                format!("Cleanup model: S1-mini ({english_text})")
             );
             assert_eq!(
                 cleanup_status_label(state, "S1-mini", &german, &english),
@@ -2159,11 +2198,11 @@ mod tests {
             (LocalLlmStateKind::Unloaded, "not loaded"),
             (LocalLlmStateKind::Starting, "loading"),
             (LocalLlmStateKind::Stopping, "loading"),
-            (LocalLlmStateKind::Failed, "error"),
+            (LocalLlmStateKind::Failed, "failed"),
         ] {
             assert_eq!(
                 cleanup_status_label(state, "S1-mini", &missing, &english),
-                format!("Post-processing model: S1-mini ({text})")
+                format!("Cleanup model: S1-mini ({text})")
             );
         }
     }
@@ -2251,5 +2290,73 @@ mod tests {
     #[test]
     fn idle_and_busy_menus_differ() {
         assert_ne!(inputs(false), inputs(true));
+    }
+
+    /// The source text from `start` up to the first `end` after it.
+    fn body<'a>(source: &'a str, start: &str, end: &str) -> &'a str {
+        let from = source.find(start).expect(start);
+        let rest = &source[from..];
+        &rest[..rest.find(end).expect(end)]
+    }
+
+    #[test]
+    fn tray_states_map_to_activity() {
+        assert_eq!(activity_for(TrayIconState::Idle), DictationActivity::Ready);
+        assert_eq!(
+            activity_for(TrayIconState::Recording),
+            DictationActivity::Recording
+        );
+        assert_eq!(
+            activity_for(TrayIconState::Transcribing),
+            DictationActivity::Transcribing
+        );
+        for (activity, wire) in [
+            (DictationActivity::Ready, "\"ready\""),
+            (DictationActivity::Recording, "\"recording\""),
+            (DictationActivity::Transcribing, "\"transcribing\""),
+            (DictationActivity::CleaningUp, "\"cleaning_up\""),
+        ] {
+            assert_eq!(serde_json::to_string(&activity).unwrap(), wire);
+        }
+
+        let tray = include_str!("tray.rs");
+        let set_state = body(tray, "pub fn set_tray_state(", "\n}\n");
+        let sync = set_state.find("sync_tray_with(").expect("sync");
+        let emit = set_state
+            .find("emit_activity(app, activity_for(state));")
+            .expect("set_tray_state emits the state's activity");
+        assert!(sync < emit, "the activity is emitted after the tray sync");
+
+        let overlay = include_str!("overlay.rs");
+        let processing = body(overlay, "pub fn show_processing_overlay(", "\n}\n");
+        let cleaning = processing
+            .find("crate::tray::emit_activity(app_handle, DictationActivity::CleaningUp);")
+            .expect("show_processing_overlay emits CleaningUp");
+        let shown = processing
+            .find("show_overlay_state(")
+            .expect("show_overlay_state");
+        assert!(
+            cleaning < shown,
+            "CleaningUp fires even with the overlay off"
+        );
+    }
+
+    #[test]
+    fn streaming_cleanup_reads_cleaning_up() {
+        use crate::managers::transcription::StreamWorkKind;
+        assert_eq!(
+            activity_for_stream_work(StreamWorkKind::Polishing),
+            Some(DictationActivity::CleaningUp)
+        );
+        assert_eq!(activity_for_stream_work(StreamWorkKind::Transcribing), None);
+
+        let manager = include_str!("managers/transcription.rs");
+        let working = body(manager, "pub fn emit_stream_working(", "\n    }\n");
+        assert!(
+            working
+                .contains("if let Some(activity) = crate::tray::activity_for_stream_work(kind) {")
+                && working.contains("crate::tray::emit_activity(&self.app_handle, activity);"),
+            "emit_stream_working emits the activity its kind maps to"
+        );
     }
 }

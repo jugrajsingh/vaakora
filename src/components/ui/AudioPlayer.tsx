@@ -9,6 +9,8 @@ import React, {
 } from "react";
 import { Play, Pause } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { getLanguageDirection } from "@/lib/utils/rtl";
+import { endNudgeClass, fillTowards } from "@/lib/utils/rangeFill";
 
 const revokeBlobSource = (src: string | null) => {
   if (src?.startsWith("blob:")) URL.revokeObjectURL(src);
@@ -61,7 +63,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   className = "",
   autoPlay = false,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const direction = getLanguageDirection(i18n.language);
   const group = useContext(AudioPlayerGroupContext);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -332,9 +335,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           onChange={handleSeek}
           onMouseDown={handleSliderMouseDown}
           onTouchStart={handleSliderTouchStart}
-          className={`flex-1 h-1 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-logo-primary ${progressPercent >= 99.5 ? "[&::-webkit-slider-thumb]:translate-x-0.5 [&::-moz-range-thumb]:translate-x-0.5" : ""}`}
+          className={`flex-1 h-1 rounded-lg appearance-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${progressPercent >= 99.5 ? endNudgeClass(direction) : ""}`}
           style={{
-            background: `linear-gradient(to right, var(--color-logo-primary) 0%, var(--color-logo-primary) ${progressPercent}%, var(--color-line) ${progressPercent}%, rgba(128, 128, 128, 0.2) 100%)`,
+            background: `linear-gradient(to ${fillTowards(direction)}, var(--color-logo-primary) 0%, var(--color-logo-primary) ${progressPercent}%, var(--color-line) ${progressPercent}%, rgba(128, 128, 128, 0.2) 100%)`,
           }}
         />
 

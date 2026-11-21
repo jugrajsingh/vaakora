@@ -3,29 +3,29 @@
     "settings": "Pengaturan...",
     "checkUpdates": "Periksa Pembaruan...",
     "copyLastTranscript": "Salin Transkripsi Terakhir",
-    "unloadModel": "Keluarkan model transkripsi dari memori",
-    "cleanup": "Model pascaproses",
+    "unloadModel": "Keluarkan model dikte dari memori",
+    "cleanup": "Model pembersihan",
     "cleanupReady": "siap",
     "cleanupNotLoaded": "belum dimuat",
     "cleanupLoading": "memuat",
-    "cleanupError": "kesalahan",
-    "noCleanupModel": "Tidak ada model pascaproses",
-    "unloadPostProcessingModel": "Keluarkan model pascaproses dari memori",
+    "cleanupError": "gagal",
+    "noCleanupModel": "Tidak ada model pembersihan",
+    "unloadPostProcessingModel": "Keluarkan model pembersihan dari memori",
     "model": "Model",
-    "transcriptionModel": "Model transkripsi",
+    "transcriptionModel": "Model dikte",
     "quit": "Keluar",
     "cancel": "Batal",
     "secureInputWarning": "⚠ Pintasan diblokir oleh Secure Input",
     "language": "Bahasa",
     "autoLanguage": "Otomatis",
     "otherLanguages": "Bahasa Lain",
-    "ttsModel": "Model teks ke ucapan",
-    "ttsUnload": "Keluarkan model teks ke ucapan dari memori",
-    "ttsStarting": "Memulai",
-    "ttsReady": "Dimuat",
+    "ttsModel": "Model baca nyaring",
+    "ttsUnload": "Keluarkan model baca nyaring dari memori",
+    "ttsStarting": "Memuat",
+    "ttsReady": "Siap",
     "ttsStopping": "Menghentikan",
     "ttsFailed": "Gagal",
-    "ttsUnloaded": "Dikeluarkan dari memori"
+    "ttsUnloaded": "Belum dimuat"
   },
   "sidebar": {
     "general": "Umum",
@@ -236,6 +236,9 @@
       "highFiveLabel": "Tos",
       "atLogin": "Jalankan Handy saat saya masuk",
       "finish": "Selesai",
+      "readAloud": "Untuk mendengar teks dibacakan, salin teks lalu tekan <keys/>.",
+      "readAloudUnbound": "Untuk mendengar teks dibacakan, atur pintasannya di Pengaturan, Umum.",
+      "chooseReadAloudModel": "Pilih model baca nyaring",
       "panel": {
         "name": "Handy",
         "ready": "Siap",
@@ -338,7 +341,6 @@
     "alreadyAdded_other": "{{languages}} sudah ditambahkan."
   },
   "modelSelector": {
-    "status": "Status model: {{modelName}}",
     "size": "{{size}} MiB",
     "custom": "Kustom",
     "streaming": "Streaming",
@@ -408,7 +410,9 @@
       "readAloud": "Baca nyaring",
       "activation": "Aktivasi",
       "activationHelp": "Untuk pintasan dikte",
-      "cancelLinuxHelp": "Di Linux, pintasan batal tidak menghentikan dikte, karena pintasan yang didaftarkan selama dikte tidak andal di sana. Gunakan X pada overlay, Batalkan di menu baki, atau jalankan handy --cancel."
+      "cancelLinuxHelp": "Di Linux, pintasan batal tidak menghentikan dikte, karena pintasan yang didaftarkan selama dikte tidak andal di sana. Gunakan X pada overlay, Batalkan di menu baki, atau jalankan handy --cancel.",
+      "inUse": "Sudah digunakan oleh {{name}}",
+      "cannotClear": "{{name}} tidak dapat dikosongkan"
     },
     "modelSettings": {
       "title": "Pengaturan {{model}}"
@@ -555,7 +559,8 @@
         "title": "Volume",
         "description": "Sesuaikan volume suara umpan balik audio",
         "offReason": "Tidak digunakan saat umpan balik audio mati."
-      }
+      },
+      "feedbackOutputDevice": "Perangkat keluaran umpan balik audio"
     },
     "advanced": {
       "groups": {
@@ -779,20 +784,19 @@
         "createFirst": "Klik 'Buat Prompt Baru' di atas untuk membuat prompt pascaproses pertama Anda."
       },
       "localLlm": {
-        "noCleanupModel": "Tidak ada model pascaproses",
         "s1Description": "Menggunakan kontrol gaya, struktur, dan konteks.",
-        "plainDescription": "Menggunakan prompt Handy yang Anda pilih.",
+        "plainDescription": "Menggunakan prompt yang Anda pilih.",
         "status": {
           "title": "Status",
-          "description": "Model dimuat saat dikte dengan pascaproses dimulai dan dikeluarkan dari memori setelah batas waktu pengeluaran model.",
+          "description": "Model dimuat saat dikte dengan pembersihan dimulai dan dikeluarkan dari memori setelah batas waktu pengeluaran model.",
           "notLoaded": "Belum dimuat",
           "loading": "Memuat",
           "ready": "Siap",
-          "error": "Kesalahan: {{reason}}"
+          "error": "Gagal: {{reason}}"
         },
         "styling": {
           "title": "Gaya",
-          "description": "Seberapa formal teks hasil pascaproses.",
+          "description": "Seberapa formal teks yang telah dibersihkan terdengar.",
           "options": {
             "casual": "Santai",
             "semi_casual": "Semi-santai",
@@ -819,7 +823,7 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 dengan satu ketentuan tambahan: model harus selalu disebut \"S1-mini\" dari \"Superwhisper\", dengan huruf besar dan kecil persis seperti itu."
         },
-        "promptRequired": "Pilih prompt Handy yang tidak kosong di grup Instruksi. Sampai itu dilakukan, pascaproses dilewati dan transkrip mentah digunakan.",
+        "promptRequired": "Pilih prompt yang tidak kosong di grup Instruksi. Sampai itu dilakukan, pembersihan dilewati dan transkrip asli digunakan.",
         "promptHidden": "Model ini memakai prompt tetapnya sendiri dan pengaturan Gaya, Struktur, dan Konteks di atas, sehingga editor prompt disembunyikan."
       }
     },
@@ -1072,6 +1076,10 @@
         "title": "Versi",
         "description": "Versi Handy saat ini"
       },
+      "updates": {
+        "title": "Pembaruan",
+        "description": "Periksa apakah versi yang lebih baru tersedia"
+      },
       "whatsNewUpdates": {
         "label": "Tampilkan Yang Baru",
         "description": "Tampilkan catatan rilis setelah Handy diperbarui"
@@ -1113,7 +1121,17 @@
     "portableUpdateMessage": "Instalasi portabel tidak dapat diperbarui secara otomatis. Unduh penginstal untuk sistem Anda di bawah ini, jalankan, lalu instal ke folder yang sama — folder Data/ Anda (pengaturan, model, rekaman) tetap dipertahankan.",
     "portableUpdateButton": "Unduh penginstal",
     "portableUpdateBrowseMessage": "Instalasi portabel tidak dapat diperbarui secara otomatis. Unduh versi terbaru untuk sistem Anda dari GitHub Releases dan instal ke folder yang sama — folder Data/ Anda (pengaturan, model, rekaman) tetap dipertahankan.",
-    "portableUpdateBrowseButton": "Buka GitHub Releases"
+    "portableUpdateBrowseButton": "Buka GitHub Releases",
+    "activity": {
+      "ready": "Siap",
+      "recording": "Merekam",
+      "transcribing": "Mentranskripsikan",
+      "cleaningUp": "Merapikan",
+      "reading": "Membaca",
+      "downloading": "Mengunduh {{name}} {{percent}}%",
+      "languageDetector": "pendeteksi bahasa",
+      "downloadingMany": "Mengunduh {{count}} model"
+    }
   },
   "whatsNew": {
     "title": "Baru di Handy v{{version}}"
@@ -1140,7 +1158,7 @@
   },
   "errors": {
     "readAloudBusyPastingTitle": "Baca nyaring sedang sibuk menempel",
-    "readAloudBusyPasting": "Handy masih menempel. Coba Baca nyaring lagi setelah penempelan selesai.",
+    "readAloudBusyPasting": "Penempelan masih berlangsung. Coba Baca nyaring lagi setelah penempelan selesai.",
     "readAloudUnavailableTitle": "Baca nyaring tidak tersedia",
     "readAloudClipboardUnreadableTitle": "Papan Klip Tidak Dapat Dibaca",
     "readAloudClipboardUnreadable": "Teks papan klip tidak dapat dibaca.",
@@ -1172,7 +1190,7 @@
     "filePostProcessFailed": "Pascaproses tidak selesai, jadi transkrip disimpan apa adanya.",
     "fileTranscriptionFailedTitle": "Transkripsi File Gagal",
     "transcriptionFailedTitle": "Transkripsi Gagal",
-    "vocabularyInvalidTitle": "File Kosakata Mengandung Kesalahan",
+    "vocabularyInvalidTitle": "File kosakata mengandung kesalahan",
     "vocabularyInvalid": "Bacakan menggunakan kosakata bawaan karena file kosakata Anda tidak dapat digunakan. Perbaiki file yang disebutkan di bawah untuk memakai entri Anda sendiri."
   },
   "notices": {
@@ -1245,17 +1263,15 @@
       "audio": "Perangkat keluaran tidak dapat dibuka.",
       "text": "Teks ini tidak dapat disiapkan.",
       "clock": "Pengaturan waktu pemutaran gagal.",
-      "worker": "Proses teks ke ucapan berhenti.",
-      "unavailable": "Teks ke ucapan tidak tersedia.",
-      "notReady": "Teks ke ucapan masih dimulai.",
-      "generic": "Teks ke ucapan gagal.",
-      "memory": "Diperlukan memori tersedia minimal 1 GiB.",
+      "worker": "Proses baca nyaring berhenti.",
+      "notReady": "Baca nyaring masih dimuat.",
+      "generic": "Terjadi kesalahan.",
+      "memory": "Dibutuhkan memori tersedia minimal 1,1 GB.",
       "gatedToken": "Suara Pocket memerlukan token Hugging Face dan persetujuan ketentuan suara.",
-      "model": "Pilih model teks ke ucapan yang tersedia.",
       "device": "Perangkat ini tidak tersedia.",
       "npuDriverTooOld": "Driver NPU terlalu lama. Perbarui atau pilih perangkat lain.",
       "selection": "Pilihan tidak dapat diterapkan.",
-      "busy": "Operasi teks ke ucapan sedang berjalan.",
+      "busy": "Tindakan baca nyaring lain masih berjalan.",
       "cancelled": "Pembacaan dibatalkan.",
       "clipboard": "Teks papan klip tidak dapat dibaca.",
       "deviceNotSupported": "Model ini tidak mendukung perangkat yang dipilih.",
@@ -1268,16 +1284,16 @@
       "invalidRatings": "Peringkat model hilang atau tidak valid.",
       "invalidVoice": "Pilih suara untuk model yang dipilih.",
       "outputUnavailable": "Perangkat keluaran tidak tersedia.",
-      "path": "Direktori penyimpanan teks ke ucapan tidak tersedia.",
+      "path": "Folder penyimpanan baca nyaring tidak tersedia.",
       "prepareFailed": "Perangkat yang dipilih tidak dapat menyiapkan model ini.",
-      "protocol": "Proses teks ke ucapan mengembalikan respons yang tidak valid.",
-      "registry": "Registri model teks ke ucapan tidak valid.",
-      "settings": "Pengaturan teks ke ucapan tidak dapat disimpan.",
-      "start": "Proses teks ke ucapan tidak dapat dimulai.",
-      "starting": "Proses teks ke ucapan sedang dimulai.",
+      "protocol": "Proses baca nyaring mengembalikan respons yang tidak valid.",
+      "registry": "Daftar model baca nyaring tidak valid.",
+      "settings": "Pengaturan baca nyaring tidak dapat disimpan.",
+      "start": "Proses baca nyaring tidak dapat dimulai.",
+      "starting": "Proses baca nyaring sedang dimuat.",
       "tokenRejected": "Token Hugging Face ditolak. Periksa akses ke ketentuan suara Pocket.",
       "tokenRequired": "Atur token Hugging Face dan setujui ketentuan suara Pocket sebelum mengunduh suara.",
-      "unknownModel": "Model teks ke ucapan yang dipilih tidak dikenal.",
+      "unknownModel": "Model baca nyaring yang dipilih tidak dikenal.",
       "window": "Jendela baca nyaring tidak dapat dibuka.",
       "accessDenied": "Akses ke file model ditolak.",
       "localIo": "File model tidak dapat dibaca atau ditulis.",
@@ -1324,7 +1340,7 @@
     "preview": "Dengarkan",
     "pitch": "Nada: {{value}} semiton",
     "output": "Perangkat keluaran baca nyaring",
-    "sameAsHandy": "Sama seperti {{device}}",
+    "sameAsHandy": "Sama seperti perangkat keluaran umpan balik audio",
     "readCode": "Baca blok kode",
     "technicalReading": "Pembacaan teknis",
     "fullPaths": "Bacakan path lengkap",
@@ -1340,9 +1356,9 @@
     "status": {
       "failed": "Gagal",
       "ready": "Siap",
-      "starting": "Memulai",
+      "starting": "Memuat",
       "stopping": "Menghentikan",
-      "unloaded": "Dikeluarkan dari memori"
+      "unloaded": "Belum dimuat"
     },
     "previewSentence": "Reading clearly, one phrase at a time.",
     "description": {
@@ -1372,10 +1388,11 @@
       "reading": "Kata tertulis dengan yang diucapkan",
       "readingHint": "Teks tertulis di atas, yang diucapkan di bawahnya. Seret di atas kata untuk memperbaiki cara kata itu dibacakan.",
       "retentionConfirm": {
-        "message_one": "Hapus {{count}} bacaan tersimpan sekarang? Kosakata Anda tidak berubah.",
-        "message": "Hapus {{count}} bacaan tersimpan sekarang? Kosakata Anda tidak berubah.",
-        "action": "Hapus bacaan"
-      }
+        "message_one": "Hapus {{count}} entri sekarang? Kosakata Anda tidak berubah.",
+        "message": "Hapus {{count}} entri sekarang? Kosakata Anda tidak berubah.",
+        "action": "Hapus entri"
+      },
+      "copyFailed": "Teks tidak dapat disalin ke papan klip."
     },
     "vocabulary": {
       "columns": {
@@ -1432,7 +1449,7 @@
         "changed": "Berkas kosakata berubah di disk. Tabel dimuat ulang; lakukan perubahan Anda lagi.",
         "fileInvalid": "Berkas kosakata Anda memiliki kesalahan sehingga tidak dapat diedit di sini: {{message}}",
         "invalidEdit": "Entri ini tidak dapat disimpan: {{message}}",
-        "tooLarge": "Berkas kosakata akan lebih besar dari 1 MiB sehingga tidak ada yang disimpan.",
+        "tooLarge": "File kosakata akan lebih besar dari 1 MB, jadi tidak ada yang disimpan.",
         "io": "Berkas kosakata tidak dapat ditulis: {{message}}",
         "voicesChanged": "Kosakata berubah saat perubahan ini menunggu, jadi perubahan tidak diterapkan."
       },
@@ -1451,7 +1468,7 @@
       "derive": {
         "unchanged": "Kata yang diucapkan tidak berubah, jadi tidak ada yang disimpan.",
         "severalWords": "Perubahan menyentuh lebih dari satu kata tertulis. Koreksi satu kata sekali waktu.",
-        "notExplained": "Tidak ada satu aturan pun yang membuat teks terbaca seperti ini.",
+        "notExplained": "Tidak ada satu entri pun yang membuat teks terbaca seperti ini.",
         "invalid": "Tidak dapat disimpan: {{detail}}"
       },
       "check": {
@@ -1468,7 +1485,7 @@
         "savePassedOnly": "Simpan hanya untuk model yang lulus",
         "pickOne": "Pilih satu model",
         "dictating": "Dikte sedang berjalan. Periksa lagi setelah selesai.",
-        "transcribeFailed": "Ucapan-ke-teks tidak dapat mentranskripsikan suara."
+        "transcribeFailed": "Model dikte tidak dapat mentranskripsikan suara itu."
       },
       "filters": {
         "model": "Model",
@@ -1506,7 +1523,7 @@
       "spokenAs": "Diucapkan sebagai",
       "shouldSay": "Seharusnya berbunyi",
       "savesAs": "Disimpan sebagai",
-      "deriving": "Menentukan aturan...",
+      "deriving": "Menentukan entri...",
       "exactOnly": "Hanya teks yang persis ini",
       "chooseScope": "Pilih cakupan penerapannya",
       "scopeRequiredModels": "Pilih Semua model atau satu model sebelum menyimpan.",
@@ -1531,7 +1548,7 @@
         "stopped": "Mikrofon berhenti sebelum kata-kata Anda terdengar, jadi tidak ada yang diisi.",
         "reading": "Bacakan sedang terbuka. Tutup, lalu gunakan mikrofon.",
         "failed": "Mikrofon tidak dapat dimulai.",
-        "transcribeFailed": "Ucapan ke teks tidak dapat mentranskripsikan yang Anda ucapkan."
+        "transcribeFailed": "Model dikte tidak dapat mentranskripsikan ucapan Anda."
       }
     }
   },
@@ -1595,7 +1612,9 @@
     "cleaned": "Teks yang dibersihkan",
     "original": "Transkrip asli",
     "diffNote": "Menampilkan perbedaan dari transkrip asli.",
-    "noCleanup": "Tanpa pembersihan"
+    "noCleanup": "Tanpa pembersihan",
+    "failedLine": "Entri ini tidak dapat ditranskripsikan. Gunakan {{action}} untuk mencoba lagi.",
+    "notTranscribedLine": "Entri ini belum ditranskripsikan. Gunakan {{action}} untuk mentranskripsikannya."
   },
   "models": {
     "tags": {
@@ -1677,7 +1696,13 @@
     "heads": {
       "score": "Skor",
       "speed": "Kecepatan",
-      "size": "Ukuran"
+      "size": "Ukuran",
+      "short": {
+        "score": "Skor",
+        "speed": "Kec.",
+        "size": "Ukr.",
+        "all": "Semua"
+      }
     },
     "legend": {
       "open": "Arti kolom",

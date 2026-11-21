@@ -21,6 +21,7 @@ import { DownloadStatus } from "./DownloadStatus";
 import { useOnboardingModels } from "./useOnboardingModels";
 import { useModelStore } from "@/stores/modelStore";
 import { moveScreens } from "./screenTransitions";
+import { LINKS, type Location } from "@/lib/navigation";
 import { downloadPick } from "./downloadPick";
 import "./screenTransitions.css";
 
@@ -29,8 +30,8 @@ interface OnboardingFlowProps {
   preview?: boolean;
   /** The screen a preview opens on. */
   previewStep?: OnboardingStep;
-  /** Called after the last screen, to show Settings. */
-  onComplete: () => void;
+  /** Called after the last screen, to show the app; `then` is where to open it. */
+  onComplete: (then?: Location) => void;
 }
 
 // The backend's chinese_script values for the script picked on Welcome.
@@ -104,6 +105,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       updateSetting("shortcut_activation", "hold_or_toggle");
   }, [preview, activation]);
 
+  const readAloudBinding =
+    settings?.bindings?.read_aloud?.current_binding || null;
+
   // Before first paint so a preview never shows the saved step.
   useLayoutEffect(() => {
     store.reset(preview);
@@ -148,13 +152,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     if (i > 0) go(steps[i - 1]);
   };
 
-  const finish = async () => {
+  const finish = async (then?: Location) => {
     // Saved only now: each login item change posts a macOS notification.
     if (!preview) {
       await updateSetting("autostart_enabled", store.atLogin);
       await commands.completeOnboarding();
     }
-    onComplete();
+    onComplete(then);
     // After Settings replaces the flow, so Welcome doesn't flash.
     if (!preview) clearOnboardingProgress();
   };
@@ -247,7 +251,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           onBack={() => moveScreens("out", back)}
           onArrive={() => go("done")}
           onUnfinish={() => go("try")}
-          onDone={finish}
+          onDone={() => finish()}
+          readAloudBinding={readAloudBinding}
+          onChooseReadAloudModel={() => finish(LINKS.readAloudModels)}
         />
       );
   }

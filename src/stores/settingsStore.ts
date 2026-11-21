@@ -19,6 +19,7 @@ import type {
 import { commands } from "@/bindings";
 import { notify } from "@/stores/noticeStore";
 import i18n from "@/i18n";
+import { shortcutErrorText } from "@/lib/utils/shortcutPresentation";
 
 interface SettingsStore {
   settings: Settings | null;
@@ -404,7 +405,7 @@ export const useSettingsStore = create<SettingsStore>()(
         if (key === "post_process_enabled") {
           notify({
             title: i18n.t("settings.general.shortcut.errors.set", {
-              error: String(error),
+              error: shortcutErrorText(String(error), i18n.t),
             }),
           });
         }
@@ -508,7 +509,7 @@ export const useSettingsStore = create<SettingsStore>()(
       } catch (error: unknown) {
         notify({
           title: i18n.t("settings.general.shortcut.errors.set", {
-            error: String(error),
+            error: shortcutErrorText(String(error), i18n.t),
           }),
         });
       } finally {

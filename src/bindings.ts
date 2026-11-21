@@ -1477,6 +1477,7 @@ async changeLocalLlmContextSetting(context: LocalLlmContext) : Promise<Result<nu
 
 
 export const events = __makeEvents__<{
+dictationActivityEvent: DictationActivityEvent,
 historyUpdatePayload: HistoryUpdatePayload,
 noticesChanged: NoticesChanged,
 recordingStateEvent: RecordingStateEvent,
@@ -1486,6 +1487,7 @@ transcriptionCompleteEvent: TranscriptionCompleteEvent,
 transcriptionJob: TranscriptionJob,
 ttsVoicePlaying: TtsVoicePlaying
 }>({
+dictationActivityEvent: "dictation-activity-event",
 historyUpdatePayload: "history-update-payload",
 noticesChanged: "notices-changed",
 recordingStateEvent: "recording-state-event",
@@ -1691,6 +1693,11 @@ export type DerivedRule = { entry: EntryKey; rule: Rule; reach: Reach;
 preview: string }
 export type Device = "cpu" | "gpu" | "npu"
 export type DeviceRating = { supported: boolean; placement: Partial<{ [key in string]: Device }>; first_audio_p95_s: number | null; rtf_1x: number | null; rtf_2x: number | null; load_s_cold: number | null; load_s_cached: number | null; speed_score: number | null; recommended: boolean }
+/**
+ * What the dictation is doing, for the main window's footer status.
+ */
+export type DictationActivity = "ready" | "recording" | "transcribing" | "cleaning_up"
+export type DictationActivityEvent = { activity: DictationActivity }
 /**
  * One change to the owner's file.
  */

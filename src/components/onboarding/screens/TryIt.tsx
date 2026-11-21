@@ -15,6 +15,7 @@ import { DesktopBar } from "../DesktopBar";
 import { WindowBar } from "../WindowBar";
 import { OnboardingShell, ScreenSub, ScreenTitle } from "../OnboardingShell";
 import { LinuxGuide } from "../LinuxGuide";
+import { ReadAloudLine } from "../ReadAloudLine";
 import { TrayPanel } from "../TrayPanel";
 import { useOnboardingStore } from "../onboardingStore";
 import { useTryEngine } from "../useTryEngine";
@@ -166,6 +167,10 @@ interface TryItProps {
   onArrive: () => void;
   onUnfinish: () => void;
   onDone: () => void;
+  /** The Read aloud shortcut, or null when none is set. */
+  readAloudBinding: string | null;
+  /** Finish and open Models, Read aloud. */
+  onChooseReadAloudModel: () => void;
 }
 
 /** Screen 5: first real dictation into a note; one take (hold or tap) ends it. */
@@ -182,6 +187,8 @@ export const TryIt: React.FC<TryItProps> = ({
   onArrive,
   onUnfinish,
   onDone,
+  readAloudBinding,
+  onChooseReadAloudModel,
 }) => {
   const { t, i18n } = useTranslation();
   const e = useTryEngine({ os });
@@ -567,6 +574,13 @@ export const TryIt: React.FC<TryItProps> = ({
             t("onboarding.try.subtitle")
           )}
         </ScreenSub>
+        {after && (
+          <ReadAloudLine
+            binding={readAloudBinding}
+            os={os}
+            onChooseModel={onChooseReadAloudModel}
+          />
+        )}
         <div
           ref={screen}
           className="try-screen"

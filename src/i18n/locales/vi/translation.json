@@ -3,29 +3,29 @@
     "settings": "Cài đặt...",
     "checkUpdates": "Kiểm tra cập nhật...",
     "copyLastTranscript": "Sao chép bản chép lời mới nhất",
-    "unloadModel": "Dỡ mô hình chuyển đổi giọng nói",
-    "cleanup": "Mô hình xử lý sau",
+    "unloadModel": "Dỡ mô hình đọc chính tả",
+    "cleanup": "Mô hình làm sạch",
     "cleanupReady": "sẵn sàng",
     "cleanupNotLoaded": "chưa tải",
     "cleanupLoading": "đang tải",
-    "cleanupError": "lỗi",
-    "noCleanupModel": "Không có mô hình xử lý sau",
-    "unloadPostProcessingModel": "Dỡ mô hình xử lý sau",
+    "cleanupError": "thất bại",
+    "noCleanupModel": "Không có mô hình làm sạch",
+    "unloadPostProcessingModel": "Dỡ mô hình làm sạch",
     "model": "Mô hình",
-    "transcriptionModel": "Mô hình chuyển đổi giọng nói",
+    "transcriptionModel": "Mô hình đọc chính tả",
     "quit": "Thoát",
     "cancel": "Hủy",
     "secureInputWarning": "⚠ Phím tắt bị Secure Input chặn",
     "language": "Ngôn ngữ",
     "autoLanguage": "Tự động",
     "otherLanguages": "Ngôn ngữ khác",
-    "ttsModel": "Mô hình chuyển văn bản thành giọng nói",
-    "ttsUnload": "Dỡ mô hình chuyển văn bản thành giọng nói",
-    "ttsStarting": "Đang khởi động",
-    "ttsReady": "Đã tải",
+    "ttsModel": "Mô hình đọc to",
+    "ttsUnload": "Dỡ mô hình đọc to",
+    "ttsStarting": "Đang tải",
+    "ttsReady": "Sẵn sàng",
     "ttsStopping": "Đang dừng",
     "ttsFailed": "Thất bại",
-    "ttsUnloaded": "Đã dỡ"
+    "ttsUnloaded": "Chưa tải"
   },
   "sidebar": {
     "general": "Chung",
@@ -236,6 +236,9 @@
       "highFiveLabel": "Đập tay",
       "atLogin": "Khởi động Handy khi tôi đăng nhập",
       "finish": "Xong",
+      "readAloud": "Để nghe đọc to một đoạn văn bản, hãy sao chép nó rồi nhấn <keys/>.",
+      "readAloudUnbound": "Để nghe đọc to một đoạn văn bản, hãy đặt phím tắt trong Cài đặt, Chung.",
+      "chooseReadAloudModel": "Chọn mô hình đọc to",
       "panel": {
         "name": "Handy",
         "ready": "Sẵn sàng",
@@ -338,7 +341,6 @@
     "alreadyAdded_other": "Đã thêm {{languages}} rồi."
   },
   "modelSelector": {
-    "status": "Trạng thái mô hình: {{modelName}}",
     "size": "{{size}} MiB",
     "custom": "Tùy chỉnh",
     "streaming": "Truyền trực tiếp",
@@ -408,7 +410,9 @@
       "readAloud": "Đọc to",
       "activation": "Kích hoạt",
       "activationHelp": "Cho phím tắt đọc chính tả",
-      "cancelLinuxHelp": "Trên Linux, phím tắt hủy không dừng được việc đọc chính tả, vì các phím tắt đăng ký trong lúc đọc chính tả không đáng tin ở đó. Hãy dùng nút X trên lớp phủ, Hủy trong menu khay, hoặc chạy handy --cancel."
+      "cancelLinuxHelp": "Trên Linux, phím tắt hủy không dừng được việc đọc chính tả, vì các phím tắt đăng ký trong lúc đọc chính tả không đáng tin ở đó. Hãy dùng nút X trên lớp phủ, Hủy trong menu khay, hoặc chạy handy --cancel.",
+      "inUse": "Đã được {{name}} sử dụng",
+      "cannotClear": "Không thể xóa {{name}}"
     },
     "modelSettings": {
       "title": "Cài đặt {{model}}"
@@ -555,7 +559,8 @@
         "title": "Âm lượng",
         "description": "Điều chỉnh âm lượng của âm thanh phản hồi",
         "offReason": "Không dùng khi phản hồi âm thanh đang tắt."
-      }
+      },
+      "feedbackOutputDevice": "Thiết bị đầu ra cho phản hồi âm thanh"
     },
     "advanced": {
       "groups": {
@@ -779,20 +784,19 @@
         "createFirst": "Nhấn 'Tạo Prompt mới' ở trên để tạo prompt xử lý sau đầu tiên của bạn."
       },
       "localLlm": {
-        "noCleanupModel": "Không có mô hình xử lý sau",
         "s1Description": "Dùng các tùy chọn phong cách, cấu trúc và ngữ cảnh.",
-        "plainDescription": "Dùng câu lệnh Handy bạn đã chọn.",
+        "plainDescription": "Dùng câu lệnh bạn đã chọn.",
         "status": {
           "title": "Trạng thái",
-          "description": "Mô hình được tải khi một lần đọc chính tả có xử lý sau bắt đầu và được dỡ sau thời gian chờ dỡ mô hình.",
+          "description": "Mô hình được tải khi một lần đọc chính tả có làm sạch bắt đầu và được dỡ sau thời gian chờ dỡ mô hình.",
           "notLoaded": "Chưa tải",
           "loading": "Đang tải",
           "ready": "Sẵn sàng",
-          "error": "Lỗi: {{reason}}"
+          "error": "Thất bại: {{reason}}"
         },
         "styling": {
           "title": "Phong cách",
-          "description": "Mức độ trang trọng của văn bản sau khi xử lý.",
+          "description": "Văn bản đã làm sạch nghe trang trọng đến mức nào.",
           "options": {
             "casual": "Thân mật",
             "semi_casual": "Hơi thân mật",
@@ -819,7 +823,7 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 kèm một điều khoản bổ sung: mô hình phải luôn được gọi là \"S1-mini\" của \"Superwhisper\", đúng chính xác cách viết hoa và viết thường này."
         },
-        "promptRequired": "Chọn một câu lệnh Handy không trống trong nhóm Hướng dẫn. Cho đến lúc đó, bước xử lý sau bị bỏ qua và dùng bản ghi gốc.",
+        "promptRequired": "Chọn một câu lệnh không trống trong nhóm Hướng dẫn. Cho đến lúc đó, bước làm sạch bị bỏ qua và dùng bản ghi gốc.",
         "promptHidden": "Mô hình này dùng câu lệnh cố định riêng cùng các cài đặt Phong cách, Cấu trúc và Ngữ cảnh ở trên, nên trình soạn câu lệnh bị ẩn."
       }
     },
@@ -1072,6 +1076,10 @@
         "title": "Phiên bản",
         "description": "Phiên bản hiện tại của Handy"
       },
+      "updates": {
+        "title": "Cập nhật",
+        "description": "Kiểm tra xem có phiên bản mới hơn không"
+      },
       "whatsNewUpdates": {
         "label": "Hiển thị điểm mới",
         "description": "Hiển thị ghi chú phát hành sau khi Handy cập nhật"
@@ -1113,7 +1121,17 @@
     "portableUpdateMessage": "Bản cài đặt di động không thể cập nhật tự động. Hãy tải trình cài đặt phù hợp với hệ thống của bạn bên dưới, chạy nó và cài vào cùng thư mục — thư mục Data/ (cài đặt, mô hình, bản ghi) của bạn được giữ nguyên.",
     "portableUpdateButton": "Tải trình cài đặt",
     "portableUpdateBrowseMessage": "Bản cài đặt di động không thể cập nhật tự động. Hãy tải phiên bản mới nhất phù hợp với hệ thống của bạn từ GitHub Releases và cài vào cùng thư mục — thư mục Data/ (cài đặt, mô hình, bản ghi) của bạn được giữ nguyên.",
-    "portableUpdateBrowseButton": "Mở GitHub Releases"
+    "portableUpdateBrowseButton": "Mở GitHub Releases",
+    "activity": {
+      "ready": "Sẵn sàng",
+      "recording": "Đang ghi âm",
+      "transcribing": "Đang chuyển đổi",
+      "cleaningUp": "Đang dọn dẹp",
+      "reading": "Đang đọc",
+      "downloading": "Đang tải xuống {{name}} {{percent}}%",
+      "languageDetector": "trình phát hiện ngôn ngữ",
+      "downloadingMany": "Đang tải xuống {{count}} mô hình"
+    }
   },
   "whatsNew": {
     "title": "Điểm mới trong Handy v{{version}}"
@@ -1140,7 +1158,7 @@
   },
   "errors": {
     "readAloudBusyPastingTitle": "Đọc to đang bận dán",
-    "readAloudBusyPasting": "Handy vẫn đang dán. Hãy thử lại Đọc to sau khi dán xong.",
+    "readAloudBusyPasting": "Vẫn đang dán. Hãy thử lại Đọc to sau khi dán xong.",
     "readAloudUnavailableTitle": "Đọc to không khả dụng",
     "readAloudClipboardUnreadableTitle": "Không thể đọc Clipboard",
     "readAloudClipboardUnreadable": "Không thể đọc văn bản trong Clipboard.",
@@ -1245,17 +1263,15 @@
       "audio": "Không thể mở thiết bị đầu ra.",
       "text": "Không thể chuẩn bị văn bản này.",
       "clock": "Đồng bộ thời gian phát lại thất bại.",
-      "worker": "Tiến trình chuyển văn bản thành giọng nói đã dừng.",
-      "unavailable": "Chuyển văn bản thành giọng nói không khả dụng.",
-      "notReady": "Chuyển văn bản thành giọng nói vẫn đang khởi động.",
-      "generic": "Chuyển văn bản thành giọng nói thất bại.",
-      "memory": "Cần ít nhất 1 GiB bộ nhớ khả dụng.",
+      "worker": "Tiến trình đọc to đã dừng.",
+      "notReady": "Tính năng đọc to vẫn đang tải.",
+      "generic": "Đã xảy ra sự cố.",
+      "memory": "Cần ít nhất 1,1 GB bộ nhớ khả dụng.",
       "gatedToken": "Giọng Pocket yêu cầu token Hugging Face và việc chấp nhận điều khoản giọng nói.",
-      "model": "Hãy chọn một mô hình chuyển văn bản thành giọng nói khả dụng.",
       "device": "Thiết bị này không khả dụng.",
       "npuDriverTooOld": "Trình điều khiển NPU quá cũ. Hãy cập nhật hoặc chọn thiết bị khác.",
       "selection": "Không thể áp dụng lựa chọn.",
-      "busy": "Một tác vụ chuyển văn bản thành giọng nói đang chạy.",
+      "busy": "Một thao tác đọc to khác vẫn đang chạy.",
       "cancelled": "Đã hủy việc đọc.",
       "clipboard": "Không thể đọc văn bản trong clipboard.",
       "deviceNotSupported": "Mô hình này không hỗ trợ thiết bị đã chọn.",
@@ -1268,16 +1284,16 @@
       "invalidRatings": "Xếp hạng mô hình bị thiếu hoặc không hợp lệ.",
       "invalidVoice": "Hãy chọn một giọng cho mô hình đã chọn.",
       "outputUnavailable": "Thiết bị đầu ra không khả dụng.",
-      "path": "Thư mục lưu trữ chuyển văn bản thành giọng nói không khả dụng.",
+      "path": "Thư mục lưu trữ của tính năng đọc to không khả dụng.",
       "prepareFailed": "Thiết bị đã chọn không thể chuẩn bị mô hình này.",
-      "protocol": "Tiến trình chuyển văn bản thành giọng nói trả về phản hồi không hợp lệ.",
-      "registry": "Danh mục mô hình chuyển văn bản thành giọng nói không hợp lệ.",
-      "settings": "Không thể lưu cài đặt chuyển văn bản thành giọng nói.",
-      "start": "Không thể khởi động tiến trình chuyển văn bản thành giọng nói.",
-      "starting": "Tiến trình chuyển văn bản thành giọng nói đang khởi động.",
+      "protocol": "Tiến trình đọc to trả về phản hồi không hợp lệ.",
+      "registry": "Danh sách mô hình đọc to không hợp lệ.",
+      "settings": "Không thể lưu cài đặt đọc to.",
+      "start": "Không thể khởi động tiến trình đọc to.",
+      "starting": "Tiến trình đọc to đang tải.",
       "tokenRejected": "Token Hugging Face bị từ chối. Hãy kiểm tra quyền truy cập điều khoản giọng Pocket.",
       "tokenRequired": "Hãy đặt token Hugging Face và chấp nhận điều khoản giọng Pocket trước khi tải giọng nói.",
-      "unknownModel": "Không nhận ra mô hình chuyển văn bản thành giọng nói đã chọn.",
+      "unknownModel": "Mô hình đọc to đã chọn không xác định.",
       "window": "Không thể mở cửa sổ đọc to.",
       "accessDenied": "Quyền truy cập các tệp mô hình bị từ chối.",
       "localIo": "Không thể đọc hoặc ghi các tệp mô hình.",
@@ -1324,7 +1340,7 @@
     "preview": "Nghe thử",
     "pitch": "Cao độ: {{value}} nửa cung",
     "output": "Thiết bị đầu ra khi đọc to",
-    "sameAsHandy": "Giống {{device}}",
+    "sameAsHandy": "Giống thiết bị đầu ra cho phản hồi âm thanh",
     "readCode": "Đọc khối mã",
     "technicalReading": "Đọc kỹ thuật",
     "fullPaths": "Đọc đầy đủ đường dẫn",
@@ -1340,9 +1356,9 @@
     "status": {
       "failed": "Thất bại",
       "ready": "Sẵn sàng",
-      "starting": "Đang khởi động",
+      "starting": "Đang tải",
       "stopping": "Đang dừng",
-      "unloaded": "Đã dỡ"
+      "unloaded": "Chưa tải"
     },
     "previewSentence": "Reading clearly, one phrase at a time.",
     "description": {
@@ -1372,10 +1388,11 @@
       "reading": "Các từ đã viết cùng với những gì đã đọc",
       "readingHint": "Văn bản đã viết ở trên, phần đã đọc thành tiếng ở dưới. Kéo qua các từ để sửa cách chúng được đọc.",
       "retentionConfirm": {
-        "message_one": "Xóa {{count}} lần đọc đã lưu ngay bây giờ? Từ vựng của bạn không thay đổi.",
-        "message": "Xóa {{count}} lần đọc đã lưu ngay bây giờ? Từ vựng của bạn không thay đổi.",
-        "action": "Xóa lần đọc"
-      }
+        "message_one": "Xóa {{count}} mục ngay bây giờ? Từ vựng của bạn không thay đổi.",
+        "message": "Xóa {{count}} mục ngay bây giờ? Từ vựng của bạn không thay đổi.",
+        "action": "Xóa mục"
+      },
+      "copyFailed": "Không thể sao chép văn bản vào bảng nhớ tạm."
     },
     "vocabulary": {
       "columns": {
@@ -1432,7 +1449,7 @@
         "changed": "Tệp từ vựng đã thay đổi trên đĩa. Bảng đã được tải lại; hãy sửa lại một lần nữa.",
         "fileInvalid": "Tệp từ vựng của bạn có lỗi nên không thể sửa ở đây: {{message}}",
         "invalidEdit": "Không thể lưu mục này: {{message}}",
-        "tooLarge": "Tệp từ vựng sẽ lớn hơn 1 MiB nên chưa lưu gì.",
+        "tooLarge": "Tệp từ vựng sẽ lớn hơn 1 MB nên không có gì được lưu.",
         "io": "Không thể ghi tệp từ vựng: {{message}}",
         "voicesChanged": "Từ vựng đã thay đổi trong lúc chờ nên thay đổi chưa được áp dụng."
       },
@@ -1451,7 +1468,7 @@
       "derive": {
         "unchanged": "Các từ được đọc không thay đổi nên không có gì để lưu.",
         "severalWords": "Thay đổi ảnh hưởng nhiều hơn một từ viết. Hãy sửa từng từ một.",
-        "notExplained": "Không có quy tắc đơn lẻ nào khiến văn bản được đọc như vậy.",
+        "notExplained": "Không có mục đơn lẻ nào khiến văn bản được đọc như thế này.",
         "invalid": "Không thể lưu: {{detail}}"
       },
       "check": {
@@ -1468,7 +1485,7 @@
         "savePassedOnly": "Chỉ lưu cho các mô hình đạt",
         "pickOne": "Chọn một mô hình",
         "dictating": "Đang đọc chính tả. Hãy kiểm tra lại khi kết thúc.",
-        "transcribeFailed": "Chuyển giọng nói thành văn bản không thể phiên âm giọng."
+        "transcribeFailed": "Mô hình đọc chính tả không thể chuyển giọng nói thành văn bản."
       },
       "filters": {
         "model": "Mô hình",
@@ -1506,7 +1523,7 @@
       "spokenAs": "Đọc là",
       "shouldSay": "Nên đọc là",
       "savesAs": "Lưu thành",
-      "deriving": "Đang xác định quy tắc...",
+      "deriving": "Đang xác định mục...",
       "exactOnly": "Chỉ đúng văn bản này",
       "chooseScope": "Chọn phạm vi áp dụng",
       "scopeRequiredModels": "Chọn Tất cả mô hình hoặc một mô hình trước khi lưu.",
@@ -1531,7 +1548,7 @@
         "stopped": "Micrô đã dừng trước khi nghe được lời bạn nói, nên không có gì được điền.",
         "reading": "Đọc to đang mở. Hãy đóng nó, rồi dùng micrô.",
         "failed": "Không thể khởi động micrô.",
-        "transcribeFailed": "Chuyển giọng nói thành văn bản không thể chép lại những gì bạn nói."
+        "transcribeFailed": "Mô hình đọc chính tả không thể chuyển lời bạn nói thành văn bản."
       }
     }
   },
@@ -1595,7 +1612,9 @@
     "cleaned": "Văn bản đã làm sạch",
     "original": "Bản phiên âm gốc",
     "diffNote": "Đang hiển thị khác biệt so với bản phiên âm gốc.",
-    "noCleanup": "Không làm sạch"
+    "noCleanup": "Không làm sạch",
+    "failedLine": "Không thể phiên âm mục này. Dùng {{action}} để thử lại.",
+    "notTranscribedLine": "Mục này chưa được phiên âm. Dùng {{action}} để phiên âm."
   },
   "models": {
     "tags": {
@@ -1677,7 +1696,13 @@
     "heads": {
       "score": "Điểm",
       "speed": "Tốc độ",
-      "size": "Dung lượng"
+      "size": "Dung lượng",
+      "short": {
+        "score": "Điểm",
+        "speed": "Tốc",
+        "size": "Cỡ",
+        "all": "Tất cả"
+      }
     },
     "legend": {
       "open": "Ý nghĩa các cột",

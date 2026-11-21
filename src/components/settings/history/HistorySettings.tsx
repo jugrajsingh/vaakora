@@ -35,6 +35,7 @@ import {
   shortDateTime,
 } from "@/lib/utils/historyPresentation";
 import { formatDateTime } from "@/utils/dateFormat";
+import { Alert } from "../../ui/Alert";
 import { AudioPlayer, AudioPlayerGroup } from "../../ui/AudioPlayer";
 import { Button } from "../../ui/Button";
 import { copyToClipboard } from "./clipboard";
@@ -474,9 +475,9 @@ export const HistorySettings: React.FC<{ changeRetention: () => void }> = ({
         />
       </HistoryToolbar>
       {actionError && (
-        <p role="alert" className="px-4 text-sm text-red-500">
-          {actionError}
-        </p>
+        <div role="alert" className="px-4">
+          <Alert variant="error">{actionError}</Alert>
+        </div>
       )}
       <div>{content}</div>
     </div>
@@ -698,9 +699,9 @@ export const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
     historyCopyText(entry)
   ) : entry.source_name ? (
     // Cancelled, interrupted by a quit, or failed.
-    t("settings.history.notTranscribed")
+    t("history.notTranscribedLine", { action: t("history.retranscribe") })
   ) : (
-    t("settings.history.transcriptionFailed")
+    t("history.failedLine", { action: t("history.retranscribe") })
   );
 
   return (

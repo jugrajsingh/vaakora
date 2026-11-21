@@ -92,8 +92,8 @@ describe("LocalLlmSettings", () => {
 
   it("shows_the_action_error_the_page_passes", () => {
     const html = render({ actionError: "select failed" });
-    assert.ok(html.includes("Error: select failed"), html);
-    assert.equal(render().includes("Error: "), false, "none without an error");
+    assert.ok(html.includes("Failed: select failed"), html);
+    assert.equal(render().includes("Failed: "), false, "none without an error");
   });
 
   it("job_state_waits_for_the_list_and_reports_a_failed_load", () => {

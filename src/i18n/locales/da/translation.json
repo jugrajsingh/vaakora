@@ -3,29 +3,29 @@
     "settings": "Indstillinger...",
     "checkUpdates": "Tjek for opdateringer...",
     "copyLastTranscript": "Kopiér seneste transskription",
-    "unloadModel": "Frigør transskriptionsmodel",
-    "cleanup": "Efterbehandlingsmodel",
+    "unloadModel": "Frigør dikteringsmodel",
+    "cleanup": "Oprydningsmodel",
     "cleanupReady": "klar",
     "cleanupNotLoaded": "ikke indlæst",
     "cleanupLoading": "indlæser",
-    "cleanupError": "fejl",
-    "noCleanupModel": "Ingen efterbehandlingsmodel",
-    "unloadPostProcessingModel": "Frigør efterbehandlingsmodel",
+    "cleanupError": "mislykkedes",
+    "noCleanupModel": "Ingen oprydningsmodel",
+    "unloadPostProcessingModel": "Frigør oprydningsmodel",
     "model": "Model",
-    "transcriptionModel": "Transskriptionsmodel",
+    "transcriptionModel": "Dikteringsmodel",
     "quit": "Afslut",
     "cancel": "Annuller",
     "secureInputWarning": "⚠ Genveje blokeret af Secure Input",
     "language": "Sprog",
     "autoLanguage": "Automatisk",
     "otherLanguages": "Andre sprog",
-    "ttsModel": "Tekst-til-tale-model",
-    "ttsUnload": "Frigør tekst-til-tale-model",
-    "ttsStarting": "Starter",
-    "ttsReady": "Indlæst",
+    "ttsModel": "Oplæsningsmodel",
+    "ttsUnload": "Frigør oplæsningsmodel",
+    "ttsStarting": "Indlæser",
+    "ttsReady": "Klar",
     "ttsStopping": "Stopper",
     "ttsFailed": "Mislykkedes",
-    "ttsUnloaded": "Frigjort"
+    "ttsUnloaded": "Ikke indlæst"
   },
   "sidebar": {
     "general": "Generelt",
@@ -236,6 +236,9 @@
       "highFiveLabel": "Highfive",
       "atLogin": "Start Handy, når jeg logger ind",
       "finish": "Færdig",
+      "readAloud": "Kopiér en tekst og tryk på <keys/> for at høre den læst op.",
+      "readAloudUnbound": "Indstil genvejen i Indstillinger, Generelt, for at høre tekst læst op.",
+      "chooseReadAloudModel": "Vælg en model til oplæsning",
       "panel": {
         "name": "Handy",
         "ready": "Klar",
@@ -338,7 +341,6 @@
     "alreadyAdded_other": "{{languages}} er allerede tilføjet."
   },
   "modelSelector": {
-    "status": "Modelstatus: {{modelName}}",
     "size": "{{size}} MiB",
     "custom": "Brugerdefineret",
     "streaming": "Streaming",
@@ -408,7 +410,9 @@
       "readAloud": "Oplæsning",
       "activation": "Aktivering",
       "activationHelp": "Til diktergenveje",
-      "cancelLinuxHelp": "På Linux stopper genvejen til at annullere ikke en diktering, fordi genveje, der registreres under en diktering, ikke er pålidelige dér. Brug X på overlayet, Annuller i bakkemenuen, eller kør handy --cancel."
+      "cancelLinuxHelp": "På Linux stopper genvejen til at annullere ikke en diktering, fordi genveje, der registreres under en diktering, ikke er pålidelige dér. Brug X på overlayet, Annuller i bakkemenuen, eller kør handy --cancel.",
+      "inUse": "Bruges allerede af {{name}}",
+      "cannotClear": "{{name}} kan ikke ryddes"
     },
     "modelSettings": {
       "title": "{{model}}-indstillinger"
@@ -555,7 +559,8 @@
         "title": "Lydstyrke",
         "description": "Juster lydstyrken for lydfeedback",
         "offReason": "Bruges ikke, når lydfeedback er slået fra."
-      }
+      },
+      "feedbackOutputDevice": "Udgangsenhed til lydfeedback"
     },
     "advanced": {
       "groups": {
@@ -779,20 +784,19 @@
         "createFirst": "Klik på 'Opret ny prompt' ovenfor for at oprette din første efterbehandlingsprompt."
       },
       "localLlm": {
-        "noCleanupModel": "Ingen efterbehandlingsmodel",
         "s1Description": "Bruger indstillinger for stil, struktur og kontekst.",
-        "plainDescription": "Bruger din valgte Handy-prompt.",
+        "plainDescription": "Bruger den prompt, du har valgt.",
         "status": {
           "title": "Status",
-          "description": "Modellen indlæses, når en diktering med efterbehandling starter, og frigøres efter tidsgrænsen for modelfrigørelse.",
+          "description": "Modellen indlæses, når en diktering med oprydning starter, og frigøres efter tidsgrænsen for modelfrigørelse.",
           "notLoaded": "Ikke indlæst",
           "loading": "Indlæser",
           "ready": "Klar",
-          "error": "Fejl: {{reason}}"
+          "error": "Mislykkedes: {{reason}}"
         },
         "styling": {
           "title": "Stil",
-          "description": "Hvor formel den efterbehandlede tekst lyder.",
+          "description": "Hvor formel den ryddede tekst lyder.",
           "options": {
             "casual": "Afslappet",
             "semi_casual": "Halvafslappet",
@@ -819,7 +823,7 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 med ét ekstra vilkår: modellen skal altid kaldes \"S1-mini\" fra \"Superwhisper\", med præcis den brug af store og små bogstaver."
         },
-        "promptRequired": "Vælg en ikke-tom Handy-prompt i gruppen Instruktioner. Indtil da springes efterbehandling over, og den rå transskription bruges.",
+        "promptRequired": "Vælg en ikke-tom prompt i gruppen Instruktioner. Indtil da springes oprydning over, og den oprindelige transskription bruges.",
         "promptHidden": "Denne model bruger sin egen faste prompt og indstillingerne Stil, Struktur og Kontekst ovenfor, så promptredigeringen er skjult."
       }
     },
@@ -1072,6 +1076,10 @@
         "title": "Version",
         "description": "Nuværende version af Handy"
       },
+      "updates": {
+        "title": "Opdateringer",
+        "description": "Tjek om en nyere version er tilgængelig"
+      },
       "whatsNewUpdates": {
         "label": "Vis nyheder",
         "description": "Vis udgivelsesnoter, efter Handy opdateres"
@@ -1113,7 +1121,17 @@
     "portableUpdateMessage": "Flytbare installationer kan ikke opdateres automatisk. Download installeren til dit system nedenfor, kør den, og installer i den samme mappe — din Data/-mappe (indstillinger, modeller, optagelser) bliver bevaret.",
     "portableUpdateButton": "Download installer",
     "portableUpdateBrowseMessage": "Flytbare installationer kan ikke opdateres automatisk. Download den nyeste version til dit system fra GitHub Releases, og installer den i den samme mappe — din Data/-mappe (indstillinger, modeller, optagelser) bliver bevaret.",
-    "portableUpdateBrowseButton": "Åbn GitHub Releases"
+    "portableUpdateBrowseButton": "Åbn GitHub Releases",
+    "activity": {
+      "ready": "Klar",
+      "recording": "Optager",
+      "transcribing": "Transskriberer",
+      "cleaningUp": "Rydder op",
+      "reading": "Læser op",
+      "downloading": "Downloader {{name}} {{percent}} %",
+      "languageDetector": "sproggenkendelse",
+      "downloadingMany": "Downloader {{count}} modeller"
+    }
   },
   "whatsNew": {
     "title": "Nyt i Handy v{{version}}"
@@ -1140,7 +1158,7 @@
   },
   "errors": {
     "readAloudBusyPastingTitle": "Oplæsning er optaget af indsættelse",
-    "readAloudBusyPasting": "Handy er stadig i gang med at indsætte. Prøv oplæsning igen, når indsættelsen er færdig.",
+    "readAloudBusyPasting": "Indsætningen er stadig i gang. Prøv oplæsning igen, når indsættelsen er færdig.",
     "readAloudUnavailableTitle": "Oplæsning er ikke tilgængelig",
     "readAloudClipboardUnreadableTitle": "Udklipsholder kan ikke læses",
     "readAloudClipboardUnreadable": "Teksten i udklipsholderen kunne ikke læses.",
@@ -1245,17 +1263,15 @@
       "audio": "Udgangsenheden kunne ikke åbnes.",
       "text": "Denne tekst kunne ikke forberedes.",
       "clock": "Timingen af afspilningen mislykkedes.",
-      "worker": "Arbejdsprocessen til tekst-til-tale stoppede.",
-      "unavailable": "Tekst-til-tale er ikke tilgængelig.",
-      "notReady": "Tekst-til-tale starter stadig.",
-      "generic": "Tekst-til-tale mislykkedes.",
-      "memory": "Mindst 1 GiB ledig hukommelse er påkrævet.",
+      "worker": "Arbejdsprocessen til oplæsning stoppede.",
+      "notReady": "Oplæsning indlæses stadig.",
+      "generic": "Noget gik galt.",
+      "memory": "Der kræves mindst 1,1 GB ledig hukommelse.",
       "gatedToken": "Pocket-stemmer kræver et Hugging Face-token og accepterede stemmevilkår.",
-      "model": "Vælg en tilgængelig tekst-til-tale-model.",
       "device": "Denne enhed er ikke tilgængelig.",
       "npuDriverTooOld": "NPU-driveren er for gammel. Opdater den, eller vælg en anden enhed.",
       "selection": "Valget kunne ikke anvendes.",
-      "busy": "En tekst-til-tale-handling kører allerede.",
+      "busy": "En anden oplæsningshandling kører stadig.",
       "cancelled": "Oplæsningen blev annulleret.",
       "clipboard": "Teksten på udklipsholderen kunne ikke læses.",
       "deviceNotSupported": "Denne model understøtter ikke den valgte enhed.",
@@ -1268,16 +1284,16 @@
       "invalidRatings": "Modelvurderingerne mangler eller er ugyldige.",
       "invalidVoice": "Vælg en stemme til den valgte model.",
       "outputUnavailable": "Udgangsenheden er ikke tilgængelig.",
-      "path": "Lagermappen til tekst-til-tale er ikke tilgængelig.",
+      "path": "Lagermappen til oplæsning er ikke tilgængelig.",
       "prepareFailed": "Den valgte enhed kunne ikke forberede denne model.",
-      "protocol": "Arbejdsprocessen til tekst-til-tale returnerede et ugyldigt svar.",
-      "registry": "Registret over tekst-til-tale-modeller er ugyldigt.",
-      "settings": "Indstillingerne for tekst-til-tale kunne ikke gemmes.",
-      "start": "Arbejdsprocessen til tekst-til-tale kunne ikke starte.",
-      "starting": "Arbejdsprocessen til tekst-til-tale starter.",
+      "protocol": "Arbejdsprocessen til oplæsning returnerede et ugyldigt svar.",
+      "registry": "Modellisten til oplæsning er ugyldig.",
+      "settings": "Indstillingerne for oplæsning kunne ikke gemmes.",
+      "start": "Arbejdsprocessen til oplæsning kunne ikke starte.",
+      "starting": "Arbejdsprocessen til oplæsning indlæses.",
       "tokenRejected": "Hugging Face-tokenet blev afvist. Kontrollér adgangen til Pocket-stemmevilkårene.",
       "tokenRequired": "Angiv et Hugging Face-token, og accepter Pocket-stemmevilkårene, før du downloader stemmer.",
-      "unknownModel": "Den valgte tekst-til-tale-model er ukendt.",
+      "unknownModel": "Den valgte oplæsningsmodel er ukendt.",
       "window": "Oplæsningsvinduet kunne ikke åbnes.",
       "accessDenied": "Adgang til modelfilerne blev nægtet.",
       "localIo": "Modelfilerne kunne ikke læses eller skrives.",
@@ -1324,7 +1340,7 @@
     "preview": "Lyt",
     "pitch": "Tonehøjde: {{value}} halvtoner",
     "output": "Udgangsenhed til oplæsning",
-    "sameAsHandy": "Samme som {{device}}",
+    "sameAsHandy": "Samme som udgangsenheden til lydfeedback",
     "readCode": "Læs kodeblokke op",
     "technicalReading": "Teknisk oplæsning",
     "fullPaths": "Læs hele stier",
@@ -1340,9 +1356,9 @@
     "status": {
       "failed": "Mislykkedes",
       "ready": "Klar",
-      "starting": "Starter",
+      "starting": "Indlæser",
       "stopping": "Stopper",
-      "unloaded": "Frigjort"
+      "unloaded": "Ikke indlæst"
     },
     "previewSentence": "Reading clearly, one phrase at a time.",
     "description": {
@@ -1372,10 +1388,11 @@
       "reading": "Skrevne ord med det, der blev sagt",
       "readingHint": "Den skrevne tekst står øverst og det, der blev sagt, nedenunder. Træk over ordene for at rette, hvordan de blev læst.",
       "retentionConfirm": {
-        "message_one": "Slet {{count}} gemt oplæsning nu? Din ordliste ændres ikke.",
-        "message": "Slet {{count}} gemte oplæsninger nu? Din ordliste ændres ikke.",
-        "action": "Slet oplæsninger"
-      }
+        "message_one": "Slet {{count}} post nu? Din ordliste ændres ikke.",
+        "message": "Slet {{count}} poster nu? Din ordliste ændres ikke.",
+        "action": "Slet poster"
+      },
+      "copyFailed": "Teksten kunne ikke kopieres til udklipsholderen."
     },
     "vocabulary": {
       "columns": {
@@ -1432,7 +1449,7 @@
         "changed": "Ordforrådsfilen er ændret på disken. Tabellen er indlæst igen; foretag din ændring igen.",
         "fileInvalid": "Din ordforrådsfil har en fejl og kan ikke redigeres her: {{message}}",
         "invalidEdit": "Posten kunne ikke gemmes: {{message}}",
-        "tooLarge": "Ordforrådsfilen ville blive større end 1 MiB, så intet blev gemt.",
+        "tooLarge": "Ordbogsfilen ville blive større end 1 MB, så intet blev gemt.",
         "io": "Ordforrådsfilen kunne ikke skrives: {{message}}",
         "voicesChanged": "Ordforrådet ændrede sig, mens ændringen ventede, så den blev ikke anvendt."
       },
@@ -1451,7 +1468,7 @@
       "derive": {
         "unchanged": "De talte ord er uændrede, så der er intet at gemme.",
         "severalWords": "Ændringen berører mere end ét skrevet ord. Ret ét ord ad gangen.",
-        "notExplained": "Ingen enkelt regel får teksten til at lyde sådan.",
+        "notExplained": "Ingen enkelt post får teksten til at lyde sådan.",
         "invalid": "Kan ikke gemmes: {{detail}}"
       },
       "check": {
@@ -1468,7 +1485,7 @@
         "savePassedOnly": "Gem kun for modeller, der bestod",
         "pickOne": "Vælg én model",
         "dictating": "Diktering kører. Tjek igen, når den er færdig.",
-        "transcribeFailed": "Tale-til-tekst kunne ikke transskribere stemmen."
+        "transcribeFailed": "Dikteringsmodellen kunne ikke transskribere stemmen."
       },
       "filters": {
         "model": "Model",
@@ -1506,7 +1523,7 @@
       "spokenAs": "Udtales som",
       "shouldSay": "Skal sige",
       "savesAs": "Gemmes som",
-      "deriving": "Finder reglen...",
+      "deriving": "Finder posten...",
       "exactOnly": "Kun præcis denne tekst",
       "chooseScope": "Vælg hvor den gælder",
       "scopeRequiredModels": "Vælg Alle modeller eller én model, før du gemmer.",
@@ -1531,7 +1548,7 @@
         "stopped": "Mikrofonen stoppede, før dine ord blev hørt, så intet blev udfyldt.",
         "reading": "Læs højt er åben. Luk den, og brug derefter mikrofonen.",
         "failed": "Mikrofonen kunne ikke starte.",
-        "transcribeFailed": "Tale til tekst kunne ikke transskribere det, du sagde."
+        "transcribeFailed": "Dikteringsmodellen kunne ikke transskribere det, du sagde."
       }
     }
   },
@@ -1595,7 +1612,9 @@
     "cleaned": "Renset tekst",
     "original": "Oprindelig transskription",
     "diffNote": "Viser forskelle fra den oprindelige transskription.",
-    "noCleanup": "Ingen oprydning"
+    "noCleanup": "Ingen oprydning",
+    "failedLine": "Denne post kunne ikke transskriberes. Brug {{action}} for at prøve igen.",
+    "notTranscribedLine": "Denne post er endnu ikke transskriberet. Brug {{action}} for at transskribere den."
   },
   "models": {
     "tags": {
@@ -1677,7 +1696,13 @@
     "heads": {
       "score": "Score",
       "speed": "Hastighed",
-      "size": "Størrelse"
+      "size": "Størrelse",
+      "short": {
+        "score": "Score",
+        "speed": "Fart",
+        "size": "Str.",
+        "all": "Alle"
+      }
     },
     "legend": {
       "open": "Hvad kolonnerne betyder",

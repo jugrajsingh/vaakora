@@ -111,6 +111,28 @@ describe("HistoryRows", () => {
     assert.equal(folderOpens, 1);
   });
 
+  it("retry_lines_name_the_row_action", () => {
+    const source = readFileSync(
+      new URL("./HistorySettings.tsx", import.meta.url),
+      "utf8",
+    );
+    const action = i18n.t("history.retranscribe");
+    assert.equal(action, "Re-transcribe");
+    assert.ok(source.includes('t("history.notTranscribedLine", {'));
+    assert.ok(source.includes('t("history.failedLine", {'));
+    assert.equal(source.split('action: t("history.retranscribe")').length, 3);
+    assert.ok(!source.includes("settings.history.notTranscribed"));
+    assert.ok(!source.includes("settings.history.transcriptionFailed"));
+    assert.equal(
+      i18n.t("history.failedLine", { action }),
+      "This entry could not be transcribed. Use Re-transcribe to try again.",
+    );
+    assert.equal(
+      i18n.t("history.notTranscribedLine", { action }),
+      "This entry is not transcribed yet. Use Re-transcribe to transcribe it.",
+    );
+  });
+
   it("history_header_lost_compare_and_folder", () => {
     const source = readFileSync(
       new URL("./HistorySettings.tsx", import.meta.url),

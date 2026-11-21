@@ -3,29 +3,29 @@
     "settings": "設定…",
     "checkUpdates": "アップデートを確認…",
     "copyLastTranscript": "最新の文字起こしをコピー",
-    "unloadModel": "文字起こしモデルをアンロード",
-    "cleanup": "後処理モデル",
+    "unloadModel": "音声入力モデルをアンロード",
+    "cleanup": "整形モデル",
     "cleanupReady": "準備完了",
     "cleanupNotLoaded": "未読み込み",
     "cleanupLoading": "読み込み中",
-    "cleanupError": "エラー",
-    "noCleanupModel": "後処理モデルなし",
-    "unloadPostProcessingModel": "後処理モデルをアンロード",
+    "cleanupError": "失敗",
+    "noCleanupModel": "整形モデルなし",
+    "unloadPostProcessingModel": "整形モデルをアンロード",
     "model": "モデル",
-    "transcriptionModel": "文字起こしモデル",
+    "transcriptionModel": "音声入力モデル",
     "quit": "終了",
     "cancel": "キャンセル",
     "secureInputWarning": "⚠ Secure Input でショートカットがブロック中",
     "language": "言語",
     "autoLanguage": "自動",
     "otherLanguages": "その他の言語",
-    "ttsModel": "音声合成モデル",
-    "ttsUnload": "音声合成モデルをアンロード",
-    "ttsStarting": "起動中",
-    "ttsReady": "読み込み済み",
+    "ttsModel": "読み上げモデル",
+    "ttsUnload": "読み上げモデルをアンロード",
+    "ttsStarting": "読み込み中",
+    "ttsReady": "準備完了",
     "ttsStopping": "停止中",
     "ttsFailed": "失敗",
-    "ttsUnloaded": "アンロード済み"
+    "ttsUnloaded": "未読み込み"
   },
   "sidebar": {
     "general": "一般",
@@ -236,6 +236,9 @@
       "highFiveLabel": "ハイタッチ",
       "atLogin": "ログイン時に Handy を起動する",
       "finish": "完了",
+      "readAloud": "テキストを読み上げるには、コピーして <keys/> を押してください。",
+      "readAloudUnbound": "テキストを読み上げるには、設定、一般でショートカットを設定してください。",
+      "chooseReadAloudModel": "読み上げモデルを選ぶ",
       "panel": {
         "name": "Handy",
         "ready": "準備完了",
@@ -338,7 +341,6 @@
     "alreadyAdded_other": "{{languages}} はすでに追加されています。"
   },
   "modelSelector": {
-    "status": "モデルの状態: {{modelName}}",
     "size": "{{size}} MiB",
     "custom": "カスタム",
     "streaming": "ストリーミング",
@@ -408,7 +410,9 @@
       "readAloud": "読み上げ",
       "activation": "起動方法",
       "activationHelp": "音声入力のショートカット用",
-      "cancelLinuxHelp": "Linux では、音声入力中に登録されたショートカットが不安定なため、キャンセルのショートカットでは音声入力を止められません。オーバーレイの X、トレイメニューの「キャンセル」を使うか、handy --cancel を実行してください。"
+      "cancelLinuxHelp": "Linux では、音声入力中に登録されたショートカットが不安定なため、キャンセルのショートカットでは音声入力を止められません。オーバーレイの X、トレイメニューの「キャンセル」を使うか、handy --cancel を実行してください。",
+      "inUse": "すでに{{name}}で使われています",
+      "cannotClear": "{{name}}は消去できません"
     },
     "modelSettings": {
       "title": "{{model}} の設定"
@@ -555,7 +559,8 @@
         "title": "音量",
         "description": "オーディオフィードバックの音量を調整",
         "offReason": "オーディオフィードバックがオフのときは使用されません。"
-      }
+      },
+      "feedbackOutputDevice": "フィードバック音の出力デバイス"
     },
     "advanced": {
       "groups": {
@@ -779,20 +784,19 @@
         "createFirst": "上の「新しいプロンプトを作成」をクリックして、最初の後処理プロンプトを作成してください。"
       },
       "localLlm": {
-        "noCleanupModel": "後処理モデルなし",
         "s1Description": "スタイル、構成、コンテキストの設定を使用します。",
-        "plainDescription": "選択した Handy のプロンプトを使用します。",
+        "plainDescription": "選択したプロンプトを使います。",
         "status": {
           "title": "状態",
-          "description": "モデルは後処理付きの音声入力が始まると読み込まれ、モデルのアンロードタイムアウト後にアンロードされます。",
+          "description": "モデルは整形付きの音声入力が始まると読み込まれ、モデルのアンロードタイムアウト後にアンロードされます。",
           "notLoaded": "未読み込み",
           "loading": "読み込み中",
           "ready": "準備完了",
-          "error": "エラー: {{reason}}"
+          "error": "失敗：{{reason}}"
         },
         "styling": {
           "title": "スタイル",
-          "description": "後処理後のテキストの丁寧さ。",
+          "description": "整形後のテキストの丁寧さの度合いです。",
           "options": {
             "casual": "カジュアル",
             "semi_casual": "ややカジュアル",
@@ -819,7 +823,7 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 に 1 つの条件が追加されています: このモデルは常に \"Superwhisper\" の \"S1-mini\" と、この大文字と小文字のとおりに表記する必要があります。"
         },
-        "promptRequired": "「指示」グループで空でない Handy のプロンプトを選択してください。選択するまで後処理はスキップされ、未加工の文字起こしが使われます。",
+        "promptRequired": "「指示」グループで空でないプロンプトを選択してください。選択するまで整形はスキップされ、元の文字起こしが使われます。",
         "promptHidden": "このモデルは独自の固定プロンプトと上記のスタイル、構成、コンテキストの設定を使用するため、プロンプトエディターは非表示です。"
       }
     },
@@ -1072,6 +1076,10 @@
         "title": "バージョン",
         "description": "Handy の現在のバージョン"
       },
+      "updates": {
+        "title": "アップデート",
+        "description": "新しいバージョンが利用可能か確認します"
+      },
       "whatsNewUpdates": {
         "label": "新機能を表示",
         "description": "Handy のアップデート後にリリースノートを表示"
@@ -1113,7 +1121,17 @@
     "portableUpdateMessage": "ポータブル版は自動的に更新できません。下のボタンからお使いのシステム向けのインストーラーをダウンロードし、実行して同じフォルダーにインストールしてください。Data フォルダー(設定、モデル、録音)はそのまま残ります。",
     "portableUpdateButton": "インストーラーをダウンロード",
     "portableUpdateBrowseMessage": "ポータブル版は自動的に更新できません。GitHub Releases からお使いのシステム向けの最新版をダウンロードし、同じフォルダーにインストールしてください。Data フォルダー(設定、モデル、録音)はそのまま残ります。",
-    "portableUpdateBrowseButton": "GitHub Releases を開く"
+    "portableUpdateBrowseButton": "GitHub Releases を開く",
+    "activity": {
+      "ready": "準備完了",
+      "recording": "録音中",
+      "transcribing": "文字起こし中",
+      "cleaningUp": "整形中",
+      "reading": "読み上げ中",
+      "downloading": "{{name}} をダウンロード中 {{percent}}%",
+      "languageDetector": "言語検出器",
+      "downloadingMany": "{{count}}個のモデルをダウンロード中"
+    }
   },
   "whatsNew": {
     "title": "Handy v{{version}} の新機能"
@@ -1140,7 +1158,7 @@
   },
   "errors": {
     "readAloudBusyPastingTitle": "読み上げは貼り付け中のため使えません",
-    "readAloudBusyPasting": "Handy はまだ貼り付け中です。貼り付けが終わってからもう一度読み上げを試してください。",
+    "readAloudBusyPasting": "まだ貼り付け中です。貼り付けが終わってからもう一度読み上げを試してください。",
     "readAloudUnavailableTitle": "読み上げを利用できません",
     "readAloudClipboardUnreadableTitle": "クリップボードを読み取れません",
     "readAloudClipboardUnreadable": "クリップボードのテキストを読み取れませんでした。",
@@ -1245,17 +1263,15 @@
       "audio": "出力デバイスを開けませんでした。",
       "text": "このテキストを準備できませんでした。",
       "clock": "再生タイミングの処理に失敗しました。",
-      "worker": "音声合成ワーカーが停止しました。",
-      "unavailable": "音声合成は利用できません。",
-      "notReady": "音声合成はまだ起動中です。",
-      "generic": "音声合成に失敗しました。",
-      "memory": "利用可能なメモリが 1 GiB 以上必要です。",
+      "worker": "読み上げのワーカーが停止しました。",
+      "notReady": "読み上げはまだ読み込み中です。",
+      "generic": "問題が発生しました。",
+      "memory": "空きメモリが 1.1 GB 以上必要です。",
       "gatedToken": "Pocket の音声には Hugging Face トークンと音声利用規約への同意が必要です。",
-      "model": "利用可能な音声合成モデルを選択してください。",
       "device": "このデバイスは利用できません。",
       "npuDriverTooOld": "NPU ドライバーが古すぎます。更新するか、別のデバイスを選択してください。",
       "selection": "選択内容を適用できませんでした。",
-      "busy": "音声合成の処理がすでに実行中です。",
+      "busy": "別の読み上げ操作がまだ実行中です。",
       "cancelled": "読み上げをキャンセルしました。",
       "clipboard": "クリップボードのテキストを読み取れませんでした。",
       "deviceNotSupported": "このモデルは選択したデバイスに対応していません。",
@@ -1268,16 +1284,16 @@
       "invalidRatings": "モデルの評価が見つからないか、無効です。",
       "invalidVoice": "選択したモデルの音声を選択してください。",
       "outputUnavailable": "出力デバイスは利用できません。",
-      "path": "音声合成の保存ディレクトリは利用できません。",
+      "path": "読み上げの保存フォルダーは利用できません。",
       "prepareFailed": "選択したデバイスでこのモデルを準備できませんでした。",
-      "protocol": "音声合成ワーカーが無効な応答を返しました。",
-      "registry": "音声合成モデルのレジストリが無効です。",
-      "settings": "音声合成の設定を保存できませんでした。",
-      "start": "音声合成ワーカーを起動できませんでした。",
-      "starting": "音声合成ワーカーを起動しています。",
+      "protocol": "読み上げのワーカーが無効な応答を返しました。",
+      "registry": "読み上げモデルの一覧が無効です。",
+      "settings": "読み上げの設定を保存できませんでした。",
+      "start": "読み上げのワーカーを開始できませんでした。",
+      "starting": "読み上げのワーカーを読み込み中です。",
       "tokenRejected": "Hugging Face トークンが拒否されました。Pocket の音声利用規約へのアクセス権を確認してください。",
       "tokenRequired": "音声をダウンロードする前に、Hugging Face トークンを設定し、Pocket の音声利用規約に同意してください。",
-      "unknownModel": "選択した音声合成モデルが不明です。",
+      "unknownModel": "選択した読み上げモデルは不明です。",
       "window": "読み上げウィンドウを開けませんでした。",
       "accessDenied": "モデルファイルへのアクセスが拒否されました。",
       "localIo": "モデルファイルを読み書きできませんでした。",
@@ -1324,7 +1340,7 @@
     "preview": "聞く",
     "pitch": "ピッチ: {{value}} 半音",
     "output": "読み上げの出力デバイス",
-    "sameAsHandy": "{{device}} と同じ",
+    "sameAsHandy": "フィードバック音の出力デバイスと同じ",
     "readCode": "コードブロックを読み上げ",
     "technicalReading": "技術的な読み上げ",
     "fullPaths": "パスを全体で読み上げ",
@@ -1340,9 +1356,9 @@
     "status": {
       "failed": "失敗",
       "ready": "準備完了",
-      "starting": "起動中",
+      "starting": "読み込み中",
       "stopping": "停止中",
-      "unloaded": "アンロード済み"
+      "unloaded": "未読み込み"
     },
     "previewSentence": "Reading clearly, one phrase at a time.",
     "description": {
@@ -1372,10 +1388,11 @@
       "reading": "書かれた単語と読み上げた内容",
       "readingHint": "上に書かれたテキスト、下に読み上げられた内容を表示します。単語の上をドラッグして、読み方を修正します。",
       "retentionConfirm": {
-        "message_one": "保存された読み上げ{{count}}件を今すぐ削除しますか？語彙は変更されません。",
-        "message": "保存された読み上げ{{count}}件を今すぐ削除しますか？語彙は変更されません。",
-        "action": "読み上げを削除"
-      }
+        "message_one": "{{count}}件の項目を今すぐ削除しますか？語彙は変更されません。",
+        "message": "{{count}}件の項目を今すぐ削除しますか？語彙は変更されません。",
+        "action": "項目を削除"
+      },
+      "copyFailed": "テキストをクリップボードにコピーできませんでした。"
     },
     "vocabulary": {
       "columns": {
@@ -1432,7 +1449,7 @@
         "changed": "語彙ファイルがディスク上で変更されました。表を再読み込みしたので、もう一度編集してください。",
         "fileInvalid": "語彙ファイルにエラーがあるため、ここでは編集できません: {{message}}",
         "invalidEdit": "この項目を保存できませんでした: {{message}}",
-        "tooLarge": "語彙ファイルが1 MiBを超えるため、何も保存されませんでした。",
+        "tooLarge": "語彙ファイルが 1 MB を超えるため、何も保存されませんでした。",
         "io": "語彙ファイルを書き込めませんでした: {{message}}",
         "voicesChanged": "待機中に語彙が変更されたため、変更は適用されませんでした。"
       },
@@ -1451,7 +1468,7 @@
       "derive": {
         "unchanged": "読みが変わっていないため、保存するものがありません。",
         "severalWords": "変更が複数の単語にまたがっています。1語ずつ修正してください。",
-        "notExplained": "1つのルールではこの読みになりません。",
+        "notExplained": "この読み方になる項目は 1 つもありません。",
         "invalid": "保存できません: {{detail}}"
       },
       "check": {
@@ -1468,7 +1485,7 @@
         "savePassedOnly": "合格したモデルだけに保存",
         "pickOne": "モデルを1つ選ぶ",
         "dictating": "音声入力中です。終了後にもう一度確認してください。",
-        "transcribeFailed": "音声認識で音声を文字起こしできませんでした。"
+        "transcribeFailed": "音声入力モデルが音声を文字起こしできませんでした。"
       },
       "filters": {
         "model": "モデル",
@@ -1506,7 +1523,7 @@
       "spokenAs": "現在の読み",
       "shouldSay": "正しい読み",
       "savesAs": "保存される内容",
-      "deriving": "ルールを判定中...",
+      "deriving": "項目を判定中...",
       "exactOnly": "このテキストそのものだけ",
       "chooseScope": "適用先を選択",
       "scopeRequiredModels": "保存する前に「すべてのモデル」か1つのモデルを選んでください。",
@@ -1531,7 +1548,7 @@
         "stopped": "言葉が聞き取られる前にマイクが停止したため、何も入力されませんでした。",
         "reading": "読み上げが開いています。閉じてからマイクを使ってください。",
         "failed": "マイクを開始できませんでした。",
-        "transcribeFailed": "音声認識で話した内容を文字起こしできませんでした。"
+        "transcribeFailed": "音声入力モデルがお話しになった内容を文字起こしできませんでした。"
       }
     }
   },
@@ -1595,7 +1612,9 @@
     "cleaned": "整形済みテキスト",
     "original": "元の文字起こし",
     "diffNote": "元の文字起こしとの差分を表示しています。",
-    "noCleanup": "整形なし"
+    "noCleanup": "整形なし",
+    "failedLine": "この項目を文字起こしできませんでした。もう一度試すには「{{action}}」を使ってください。",
+    "notTranscribedLine": "この項目はまだ文字起こしされていません。文字起こしするには「{{action}}」を使ってください。"
   },
   "models": {
     "tags": {
@@ -1677,7 +1696,13 @@
     "heads": {
       "score": "スコア",
       "speed": "速度",
-      "size": "サイズ"
+      "size": "サイズ",
+      "short": {
+        "score": "スコア",
+        "speed": "速度",
+        "size": "サイズ",
+        "all": "すべて"
+      }
     },
     "legend": {
       "open": "列の意味",

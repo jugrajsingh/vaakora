@@ -34,11 +34,28 @@ assert.deepEqual(
 );
 console.log("four_destinations_in_order");
 
-// sidebar_is_160px
+// sidebar_is_160px: the spec's 160 px at the 15 px root; w-40 renders 150.
 const root = html.match(/^<nav class="([^"]*)"/)?.[1].split(/\s+/) ?? [];
-assert.ok(root.includes("w-40"), `w-40 in ${root.join(" ")}`);
+assert.ok(root.includes("w-[160px]"), `w-[160px] in ${root.join(" ")}`);
+assert.ok(!root.includes("w-40"), `no w-40 in ${root.join(" ")}`);
 assert.ok(!root.includes("w-60"), `no w-60 in ${root.join(" ")}`);
 console.log("sidebar_is_160px");
+
+// labels_break_between_words: a label wraps at spaces only, never inside a word.
+const labels = html.match(/<span class="[^"]*">[^<]+<\/span>/g) ?? [];
+assert.equal(labels.length, 4, html);
+for (const label of labels) {
+  const classes = label.match(/class="([^"]*)"/)?.[1].split(/\s+/) ?? [];
+  assert.ok(classes.includes("break-normal"), label);
+  for (const wrong of [
+    "break-words",
+    "break-all",
+    "[overflow-wrap:anywhere]",
+  ]) {
+    assert.ok(!classes.includes(wrong), `${wrong} in ${label}`);
+  }
+}
+console.log("labels_break_between_words");
 
 // sidebar_keys_move_focus_vertically: Up and Down wrap, Home and End jump, other keys stay with the button.
 const focused: number[] = [];

@@ -3,29 +3,29 @@
     "settings": "设置...",
     "checkUpdates": "检查更新...",
     "copyLastTranscript": "复制最新转录",
-    "unloadModel": "卸载转录模型",
-    "cleanup": "后处理模型",
+    "unloadModel": "卸载听写模型",
+    "cleanup": "清理模型",
     "cleanupReady": "就绪",
     "cleanupNotLoaded": "未加载",
     "cleanupLoading": "加载中",
-    "cleanupError": "错误",
-    "noCleanupModel": "无后处理模型",
-    "unloadPostProcessingModel": "卸载后处理模型",
+    "cleanupError": "失败",
+    "noCleanupModel": "无清理模型",
+    "unloadPostProcessingModel": "卸载清理模型",
     "model": "模型",
-    "transcriptionModel": "转录模型",
+    "transcriptionModel": "听写模型",
     "quit": "退出",
     "cancel": "取消",
     "secureInputWarning": "⚠ 快捷键被 Secure Input 阻止",
     "language": "语言",
     "autoLanguage": "自动",
     "otherLanguages": "其他语言",
-    "ttsModel": "文本转语音模型",
-    "ttsUnload": "卸载文本转语音模型",
-    "ttsStarting": "启动中",
-    "ttsReady": "已加载",
+    "ttsModel": "朗读模型",
+    "ttsUnload": "卸载朗读模型",
+    "ttsStarting": "加载中",
+    "ttsReady": "就绪",
     "ttsStopping": "停止中",
     "ttsFailed": "失败",
-    "ttsUnloaded": "已卸载"
+    "ttsUnloaded": "未加载"
   },
   "sidebar": {
     "general": "通用",
@@ -236,6 +236,9 @@
       "highFiveLabel": "击掌",
       "atLogin": "登录时启动 Handy",
       "finish": "完成",
+      "readAloud": "要听朗读文字，请先复制文字，再按 <keys/>。",
+      "readAloudUnbound": "要听朗读文字，请在“设置”“通用”中设置朗读快捷键。",
+      "chooseReadAloudModel": "选择朗读模型",
       "panel": {
         "name": "Handy",
         "ready": "已就绪",
@@ -338,7 +341,6 @@
     "alreadyAdded_other": "已添加{{languages}}。"
   },
   "modelSelector": {
-    "status": "模型状态:{{modelName}}",
     "size": "{{size}} MiB",
     "custom": "自定义",
     "streaming": "流式",
@@ -408,7 +410,9 @@
       "readAloud": "朗读",
       "activation": "触发方式",
       "activationHelp": "用于听写快捷键",
-      "cancelLinuxHelp": "在 Linux 上，取消快捷键无法停止听写，因为听写期间注册的快捷键在那里不可靠。请使用悬浮窗上的 X、托盘菜单中的「取消」，或运行 handy --cancel。"
+      "cancelLinuxHelp": "在 Linux 上，取消快捷键无法停止听写，因为听写期间注册的快捷键在那里不可靠。请使用悬浮窗上的 X、托盘菜单中的「取消」，或运行 handy --cancel。",
+      "inUse": "已被{{name}}使用",
+      "cannotClear": "无法清除{{name}}"
     },
     "modelSettings": {
       "title": "{{model}} 设置"
@@ -555,7 +559,8 @@
         "title": "音量",
         "description": "调整音频反馈的音量",
         "offReason": "音频反馈关闭时不使用。"
-      }
+      },
+      "feedbackOutputDevice": "反馈音输出设备"
     },
     "advanced": {
       "groups": {
@@ -779,20 +784,19 @@
         "createFirst": "点击上方的「创建新提示词」来创建您的第一个后处理提示词。"
       },
       "localLlm": {
-        "noCleanupModel": "无后处理模型",
         "s1Description": "使用风格、结构和场景控制。",
-        "plainDescription": "使用你所选的 Handy 提示词。",
+        "plainDescription": "使用你所选的提示词。",
         "status": {
           "title": "状态",
-          "description": "模型在后处理听写开始时加载,并在模型卸载超时后卸载。",
+          "description": "模型在带清理的听写开始时加载，并在模型卸载超时后卸载。",
           "notLoaded": "未加载",
           "loading": "加载中",
           "ready": "就绪",
-          "error": "错误:{{reason}}"
+          "error": "失败：{{reason}}"
         },
         "styling": {
           "title": "风格",
-          "description": "后处理文本的正式程度。",
+          "description": "清理后的文字读起来有多正式。",
           "options": {
             "casual": "随意",
             "semi_casual": "半随意",
@@ -819,7 +823,7 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0，另加一项条款：该模型必须始终称为 \"Superwhisper\" 的 \"S1-mini\"，且大小写须完全一致。"
         },
-        "promptRequired": "请在“指令”分组中选择一个非空的 Handy 提示词。在此之前,将跳过后处理并使用原始转录文本。",
+        "promptRequired": "请在“指令”分组中选择一个非空的提示词。在此之前，将跳过清理并使用原始转录文本。",
         "promptHidden": "此模型使用自带的固定提示词以及上方的风格、结构和场景设置,因此提示词编辑器已隐藏。"
       }
     },
@@ -1072,6 +1076,10 @@
         "title": "版本",
         "description": "Handy 的当前版本"
       },
+      "updates": {
+        "title": "更新",
+        "description": "检查是否有新版本可用"
+      },
       "whatsNewUpdates": {
         "label": "显示新功能",
         "description": "Handy 更新后显示发行说明"
@@ -1113,7 +1121,17 @@
     "portableUpdateMessage": "便携版无法自动更新。请通过下方按钮下载适用于你的系统的安装程序，运行后安装到同一文件夹，你的 Data/ 文件夹（设置、模型、录音）会保留在原处。",
     "portableUpdateButton": "下载安装程序",
     "portableUpdateBrowseMessage": "便携版无法自动更新。请从 GitHub Releases 下载适用于你的系统的最新版本，并安装到同一文件夹，你的 Data/ 文件夹（设置、模型、录音）会保留在原处。",
-    "portableUpdateBrowseButton": "打开 GitHub Releases"
+    "portableUpdateBrowseButton": "打开 GitHub Releases",
+    "activity": {
+      "ready": "就绪",
+      "recording": "正在录音",
+      "transcribing": "正在转录",
+      "cleaningUp": "正在整理",
+      "reading": "正在朗读",
+      "downloading": "正在下载 {{name}} {{percent}}%",
+      "languageDetector": "语言检测器",
+      "downloadingMany": "正在下载 {{count}} 个模型"
+    }
   },
   "whatsNew": {
     "title": "Handy v{{version}} 新功能"
@@ -1140,7 +1158,7 @@
   },
   "errors": {
     "readAloudBusyPastingTitle": "朗读正忙于粘贴",
-    "readAloudBusyPasting": "Handy 仍在粘贴。粘贴完成后请再次尝试朗读。",
+    "readAloudBusyPasting": "仍在粘贴。粘贴完成后请再次尝试朗读。",
     "readAloudUnavailableTitle": "朗读不可用",
     "readAloudClipboardUnreadableTitle": "无法读取剪贴板",
     "readAloudClipboardUnreadable": "无法读取剪贴板中的文本。",
@@ -1245,17 +1263,15 @@
       "audio": "无法打开输出设备。",
       "text": "无法处理此文本。",
       "clock": "播放计时失败。",
-      "worker": "文本转语音工作进程已停止。",
-      "unavailable": "文本转语音不可用。",
-      "notReady": "文本转语音仍在启动中。",
-      "generic": "文本转语音失败。",
-      "memory": "至少需要 1 GiB 的可用内存。",
+      "worker": "朗读工作进程已停止。",
+      "notReady": "朗读仍在加载中。",
+      "generic": "出了点问题。",
+      "memory": "至少需要 1.1 GB 可用内存。",
       "gatedToken": "Pocket 语音需要 Hugging Face 令牌,并需接受语音条款。",
-      "model": "请选择一个可用的文本转语音模型。",
       "device": "此设备不可用。",
       "npuDriverTooOld": "NPU 驱动版本过旧。请更新驱动或选择其他设备。",
       "selection": "无法应用所选内容。",
-      "busy": "已有文本转语音操作正在运行。",
+      "busy": "另一项朗读操作仍在运行。",
       "cancelled": "朗读已取消。",
       "clipboard": "无法读取剪贴板文本。",
       "deviceNotSupported": "此模型不支持所选设备。",
@@ -1268,16 +1284,16 @@
       "invalidRatings": "模型评分缺失或无效。",
       "invalidVoice": "请为所选模型选择一种语音。",
       "outputUnavailable": "输出设备不可用。",
-      "path": "文本转语音存储目录不可用。",
+      "path": "朗读存储文件夹不可用。",
       "prepareFailed": "所选设备无法准备此模型。",
-      "protocol": "文本转语音工作进程返回了无效的响应。",
-      "registry": "文本转语音模型注册表无效。",
-      "settings": "无法保存文本转语音设置。",
-      "start": "无法启动文本转语音工作进程。",
-      "starting": "文本转语音工作进程正在启动。",
+      "protocol": "朗读工作进程返回了无效响应。",
+      "registry": "朗读模型列表无效。",
+      "settings": "无法保存朗读设置。",
+      "start": "朗读工作进程无法启动。",
+      "starting": "朗读工作进程正在加载。",
       "tokenRejected": "Hugging Face 令牌被拒绝。请检查是否有权访问 Pocket 语音条款。",
       "tokenRequired": "下载语音前,请设置 Hugging Face 令牌并接受 Pocket 语音条款。",
-      "unknownModel": "所选的文本转语音模型未知。",
+      "unknownModel": "所选的朗读模型未知。",
       "window": "无法打开朗读窗口。",
       "accessDenied": "访问模型文件被拒绝。",
       "localIo": "无法读取或写入模型文件。",
@@ -1324,7 +1340,7 @@
     "preview": "试听",
     "pitch": "音高:{{value}} 半音",
     "output": "朗读输出设备",
-    "sameAsHandy": "与 {{device}} 相同",
+    "sameAsHandy": "与反馈音输出设备相同",
     "readCode": "朗读代码块",
     "technicalReading": "技术朗读",
     "fullPaths": "朗读完整路径",
@@ -1340,9 +1356,9 @@
     "status": {
       "failed": "失败",
       "ready": "就绪",
-      "starting": "启动中",
+      "starting": "加载中",
       "stopping": "停止中",
-      "unloaded": "已卸载"
+      "unloaded": "未加载"
     },
     "previewSentence": "Reading clearly, one phrase at a time.",
     "description": {
@@ -1372,10 +1388,11 @@
       "reading": "书写的词语与所读内容",
       "readingHint": "上方是书写的文本，下方是实际朗读的内容。在词语上拖动以更正它们的读法。",
       "retentionConfirm": {
-        "message_one": "现在删除 {{count}} 条已保存的朗读？你的词汇表不会改变。",
-        "message": "现在删除 {{count}} 条已保存的朗读？你的词汇表不会改变。",
-        "action": "删除朗读"
-      }
+        "message_one": "现在删除 {{count}} 条记录？你的词汇表不会改变。",
+        "message": "现在删除 {{count}} 条记录？你的词汇表不会改变。",
+        "action": "删除条目"
+      },
+      "copyFailed": "无法将文本复制到剪贴板。"
     },
     "vocabulary": {
       "columns": {
@@ -1432,7 +1449,7 @@
         "changed": "词汇文件在磁盘上已更改。表格已重新加载，请重新进行修改。",
         "fileInvalid": "你的词汇文件有错误，无法在此编辑：{{message}}",
         "invalidEdit": "无法保存此条目：{{message}}",
-        "tooLarge": "词汇文件将超过 1 MiB，因此未保存任何内容。",
+        "tooLarge": "词汇文件将超过 1 MB，因此未保存任何内容。",
         "io": "无法写入词汇文件：{{message}}",
         "voicesChanged": "等待期间词汇已更改，因此更改未应用。"
       },
@@ -1451,7 +1468,7 @@
       "derive": {
         "unchanged": "朗读的词没有变化，没有可保存的内容。",
         "severalWords": "这个修改涉及不止一个词。请一次修正一个词。",
-        "notExplained": "没有单一规则能让文本这样读。",
+        "notExplained": "没有任何单个条目能让文本这样朗读。",
         "invalid": "无法保存：{{detail}}"
       },
       "check": {
@@ -1468,7 +1485,7 @@
         "savePassedOnly": "仅为通过的模型保存",
         "pickOne": "选择一个模型",
         "dictating": "正在听写。结束后请再检查一次。",
-        "transcribeFailed": "语音转文字无法转写该语音。"
+        "transcribeFailed": "听写模型无法转录这段语音。"
       },
       "filters": {
         "model": "模型",
@@ -1506,7 +1523,7 @@
       "spokenAs": "当前读法",
       "shouldSay": "应读作",
       "savesAs": "将保存为",
-      "deriving": "正在推导规则...",
+      "deriving": "正在推导条目...",
       "exactOnly": "仅限这段确切文本",
       "chooseScope": "选择适用范围",
       "scopeRequiredModels": "保存前请选择“所有模型”或一个模型。",
@@ -1531,7 +1548,7 @@
         "stopped": "麦克风在听到你的话之前就停止了，因此没有填入任何内容。",
         "reading": "朗读已打开。请先关闭，再使用麦克风。",
         "failed": "无法启动麦克风。",
-        "transcribeFailed": "语音转文字无法转写你说的内容。"
+        "transcribeFailed": "听写模型无法转录你说的话。"
       }
     }
   },
@@ -1595,7 +1612,9 @@
     "cleaned": "清理后的文本",
     "original": "原始转录",
     "diffNote": "显示与原始转录的差异。",
-    "noCleanup": "未清理"
+    "noCleanup": "未清理",
+    "failedLine": "无法转录此条目。请使用“{{action}}”重试。",
+    "notTranscribedLine": "此条目尚未转录。请使用“{{action}}”进行转录。"
   },
   "models": {
     "tags": {
@@ -1677,7 +1696,13 @@
     "heads": {
       "score": "评分",
       "speed": "速度",
-      "size": "大小"
+      "size": "大小",
+      "short": {
+        "score": "评分",
+        "speed": "速度",
+        "size": "大小",
+        "all": "全部"
+      }
     },
     "legend": {
       "open": "各列的含义",

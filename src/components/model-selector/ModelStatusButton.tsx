@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
+import React from "react";
 
 type ModelStatus =
   | "ready"
@@ -18,14 +17,6 @@ interface ModelStatusButtonProps {
   busy?: boolean;
   onClick: () => void;
   className?: string;
-  icon?: React.ReactNode;
-}
-
-export function modelStatusTitle(
-  name: { scrollWidth: number; clientWidth: number } | null,
-  fullTitle: string,
-): string | undefined {
-  return name && name.scrollWidth > name.clientWidth ? fullTitle : undefined;
 }
 
 const ModelStatusButton: React.FC<ModelStatusButtonProps> = ({
@@ -35,21 +26,7 @@ const ModelStatusButton: React.FC<ModelStatusButtonProps> = ({
   busy = false,
   onClick,
   className = "",
-  icon,
 }) => {
-  const { t } = useTranslation();
-  const nameRef = useRef<HTMLSpanElement>(null);
-  const [title, setTitle] = useState<string | undefined>();
-  const fullTitle = t("modelSelector.status", { modelName: displayText });
-  useEffect(() => {
-    const name = nameRef.current;
-    if (!name) return;
-    const measure = () => setTitle(modelStatusTitle(name, fullTitle));
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(name);
-    return () => observer.disconnect();
-  }, [displayText, fullTitle]);
   const getStatusColor = (status: ModelStatus): string => {
     switch (status) {
       case "ready":
@@ -76,22 +53,13 @@ const ModelStatusButton: React.FC<ModelStatusButtonProps> = ({
   return (
     <button
       onClick={onClick}
-      className={`flex w-full min-w-0 items-center gap-2 hover:text-text transition-colors ${className}`}
-      title={title}
+      className={`flex items-center gap-2 hover:text-text transition-colors ${className}`}
+      title={`Model status: ${displayText}`}
     >
-      {icon && (
-        <span aria-hidden className="shrink-0">
-          {icon}
-        </span>
-      )}
-      <div
-        className={`w-2 h-2 shrink-0 rounded-full ${getStatusColor(status)}`}
-      />
-      <span ref={nameRef} className="flex-1 min-w-0 truncate text-start">
-        {displayText}
-      </span>
+      <div className={`w-2 h-2 rounded-full ${getStatusColor(status)}`} />
+      <span className="max-w-28 truncate">{displayText}</span>
       <svg
-        className={`w-3 h-3 shrink-0 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+        className={`w-3 h-3 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"

@@ -3,29 +3,29 @@
     "settings": "Einstellungen...",
     "checkUpdates": "Nach Updates suchen...",
     "copyLastTranscript": "Letzte Transkription kopieren",
-    "unloadModel": "Transkriptionsmodell entladen",
-    "cleanup": "Nachbearbeitungsmodell",
+    "unloadModel": "Diktatmodell entladen",
+    "cleanup": "Bereinigungsmodell",
     "cleanupReady": "bereit",
     "cleanupNotLoaded": "nicht geladen",
     "cleanupLoading": "wird geladen",
-    "cleanupError": "Fehler",
-    "noCleanupModel": "Kein Nachbearbeitungsmodell",
-    "unloadPostProcessingModel": "Nachbearbeitungsmodell entladen",
+    "cleanupError": "fehlgeschlagen",
+    "noCleanupModel": "Kein Bereinigungsmodell",
+    "unloadPostProcessingModel": "Bereinigungsmodell entladen",
     "model": "Modell",
-    "transcriptionModel": "Transkriptionsmodell",
+    "transcriptionModel": "Diktatmodell",
     "quit": "Beenden",
     "cancel": "Abbrechen",
     "secureInputWarning": "⚠ Tastenkürzel durch Secure Input blockiert",
     "language": "Sprache",
     "autoLanguage": "Automatisch",
     "otherLanguages": "Weitere Sprachen",
-    "ttsModel": "Sprachausgabemodell",
-    "ttsUnload": "Sprachausgabemodell entladen",
-    "ttsStarting": "Wird gestartet",
-    "ttsReady": "Geladen",
+    "ttsModel": "Vorlesemodell",
+    "ttsUnload": "Vorlesemodell entladen",
+    "ttsStarting": "Wird geladen",
+    "ttsReady": "Bereit",
     "ttsStopping": "Wird beendet",
     "ttsFailed": "Fehlgeschlagen",
-    "ttsUnloaded": "Entladen"
+    "ttsUnloaded": "Nicht geladen"
   },
   "sidebar": {
     "general": "Allgemein",
@@ -236,6 +236,9 @@
       "highFiveLabel": "High Five",
       "atLogin": "Handy beim Anmelden starten",
       "finish": "Fertig",
+      "readAloud": "Um dir einen Text vorlesen zu lassen, kopiere ihn und drücke <keys/>.",
+      "readAloudUnbound": "Um dir einen Text vorlesen zu lassen, lege das Tastenkürzel in Einstellungen, Allgemein fest.",
+      "chooseReadAloudModel": "Wähle ein Vorlesemodell",
       "panel": {
         "name": "Handy",
         "ready": "Bereit",
@@ -338,7 +341,6 @@
     "alreadyAdded_other": "{{languages}} sind bereits hinzugefügt."
   },
   "modelSelector": {
-    "status": "Modellstatus: {{modelName}}",
     "size": "{{size}} MiB",
     "custom": "Benutzerdefiniert",
     "streaming": "Streaming",
@@ -408,7 +410,9 @@
       "readAloud": "Vorlesen",
       "activation": "Aktivierung",
       "activationHelp": "Für Diktier-Tastenkürzel",
-      "cancelLinuxHelp": "Unter Linux beendet das Tastenkürzel „Abbrechen“ kein Diktat, weil Tastenkürzel, die während eines Diktats registriert werden, dort unzuverlässig sind. Nutze das X im Overlay, „Abbrechen“ im Menü des Infobereichs oder führe handy --cancel aus."
+      "cancelLinuxHelp": "Unter Linux beendet das Tastenkürzel „Abbrechen“ kein Diktat, weil Tastenkürzel, die während eines Diktats registriert werden, dort unzuverlässig sind. Nutze das X im Overlay, „Abbrechen“ im Menü des Infobereichs oder führe handy --cancel aus.",
+      "inUse": "Wird bereits von {{name}} verwendet",
+      "cannotClear": "{{name}} kann nicht gelöscht werden"
     },
     "modelSettings": {
       "title": "{{model}}-Einstellungen"
@@ -555,7 +559,8 @@
         "title": "Lautstärke",
         "description": "Lautstärke der Audio-Feedback-Töne anpassen",
         "offReason": "Wird nicht verwendet, wenn Audio-Feedback aus ist."
-      }
+      },
+      "feedbackOutputDevice": "Ausgabegerät für Audio-Feedback"
     },
     "advanced": {
       "groups": {
@@ -779,20 +784,19 @@
         "createFirst": "Klicke oben auf 'Neuen Prompt erstellen', um deinen ersten Nachbearbeitungs-Prompt zu erstellen."
       },
       "localLlm": {
-        "noCleanupModel": "Kein Nachbearbeitungsmodell",
         "s1Description": "Nutzt Einstellungen für Stil, Struktur und Kontext.",
-        "plainDescription": "Nutzt deinen ausgewählten Handy-Prompt.",
+        "plainDescription": "Verwendet den ausgewählten Prompt.",
         "status": {
           "title": "Status",
-          "description": "Das Modell wird geladen, wenn ein Diktat mit Nachbearbeitung beginnt, und nach Ablauf der Modell-Entladezeit wieder entladen.",
+          "description": "Das Modell wird geladen, wenn ein Diktat mit Bereinigung beginnt, und nach Ablauf der Modell-Entladezeit wieder entladen.",
           "notLoaded": "Nicht geladen",
           "loading": "Wird geladen",
           "ready": "Bereit",
-          "error": "Fehler: {{reason}}"
+          "error": "Fehlgeschlagen: {{reason}}"
         },
         "styling": {
           "title": "Stil",
-          "description": "Wie förmlich der nachbearbeitete Text klingt.",
+          "description": "Wie förmlich der bereinigte Text klingt.",
           "options": {
             "casual": "Locker",
             "semi_casual": "Eher locker",
@@ -819,7 +823,7 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 mit einer zusätzlichen Bedingung: Das Modell muss immer \"S1-mini\" von \"Superwhisper\" heißen, genau in dieser Groß- und Kleinschreibung."
         },
-        "promptRequired": "Wähle in der Gruppe Anweisungen einen nicht leeren Handy-Prompt aus. Bis dahin wird die Nachbearbeitung übersprungen und das Rohtranskript verwendet.",
+        "promptRequired": "Wähle in der Gruppe Anweisungen einen nicht leeren Prompt aus. Bis dahin wird die Bereinigung übersprungen und das Originaltranskript verwendet.",
         "promptHidden": "Dieses Modell nutzt seinen eigenen festen Prompt sowie die Einstellungen für Stil, Struktur und Kontext oben, daher ist der Prompt-Editor ausgeblendet."
       }
     },
@@ -1072,6 +1076,10 @@
         "title": "Version",
         "description": "Aktuelle Version von Handy"
       },
+      "updates": {
+        "title": "Updates",
+        "description": "Prüfen, ob eine neuere Version verfügbar ist"
+      },
       "whatsNewUpdates": {
         "label": "Neuerungen anzeigen",
         "description": "Versionshinweise nach Handy-Updates anzeigen"
@@ -1113,7 +1121,17 @@
     "portableUpdateMessage": "Portable Installationen können nicht automatisch aktualisiert werden. Lade unten den Installer für dein System herunter, führe ihn aus und installiere in denselben Ordner — dein Data/-Ordner (Einstellungen, Modelle, Aufnahmen) bleibt erhalten.",
     "portableUpdateButton": "Installer herunterladen",
     "portableUpdateBrowseMessage": "Portable Installationen können nicht automatisch aktualisiert werden. Lade die neueste Version für dein System von GitHub Releases herunter und installiere sie in denselben Ordner — dein Data/-Ordner (Einstellungen, Modelle, Aufnahmen) bleibt erhalten.",
-    "portableUpdateBrowseButton": "GitHub Releases öffnen"
+    "portableUpdateBrowseButton": "GitHub Releases öffnen",
+    "activity": {
+      "ready": "Bereit",
+      "recording": "Aufnahme läuft",
+      "transcribing": "Transkribiere",
+      "cleaningUp": "Bereinige",
+      "reading": "Liest vor",
+      "downloading": "Lade {{name}} herunter {{percent}} %",
+      "languageDetector": "Spracherkennung",
+      "downloadingMany": "Lade {{count}} Modelle herunter"
+    }
   },
   "whatsNew": {
     "title": "Neu in Handy v{{version}}"
@@ -1140,7 +1158,7 @@
   },
   "errors": {
     "readAloudBusyPastingTitle": "Vorlesen ist mit dem Einfügen beschäftigt",
-    "readAloudBusyPasting": "Handy fügt noch ein. Versuche Vorlesen erneut, sobald das Einfügen abgeschlossen ist.",
+    "readAloudBusyPasting": "Das Einfügen läuft noch. Versuche Vorlesen erneut, sobald das Einfügen abgeschlossen ist.",
     "readAloudUnavailableTitle": "Vorlesen nicht verfügbar",
     "readAloudClipboardUnreadableTitle": "Zwischenablage nicht lesbar",
     "readAloudClipboardUnreadable": "Der Text in der Zwischenablage konnte nicht gelesen werden.",
@@ -1245,17 +1263,15 @@
       "audio": "Das Ausgabegerät konnte nicht geöffnet werden.",
       "text": "Dieser Text konnte nicht aufbereitet werden.",
       "clock": "Die Wiedergabezeitsteuerung ist fehlgeschlagen.",
-      "worker": "Der Sprachausgabe-Worker wurde beendet.",
-      "unavailable": "Die Sprachausgabe ist nicht verfügbar.",
-      "notReady": "Die Sprachausgabe startet noch.",
-      "generic": "Die Sprachausgabe ist fehlgeschlagen.",
-      "memory": "Mindestens 1 GiB verfügbarer Arbeitsspeicher ist erforderlich.",
+      "worker": "Der Vorlese-Worker wurde beendet.",
+      "notReady": "Das Vorlesen wird noch geladen.",
+      "generic": "Etwas ist schiefgelaufen.",
+      "memory": "Es werden mindestens 1,1 GB verfügbarer Arbeitsspeicher benötigt.",
       "gatedToken": "Pocket-Stimmen erfordern ein Hugging Face-Token und akzeptierte Stimmbedingungen.",
-      "model": "Wähle ein verfügbares Sprachausgabemodell.",
       "device": "Dieses Gerät ist nicht verfügbar.",
       "npuDriverTooOld": "NPU-Treiber zu alt. Aktualisiere ihn oder wähle ein anderes Gerät.",
       "selection": "Die Auswahl konnte nicht angewendet werden.",
-      "busy": "Ein Sprachausgabe-Vorgang läuft bereits.",
+      "busy": "Eine andere Vorlese-Aktion läuft noch.",
       "cancelled": "Das Vorlesen wurde abgebrochen.",
       "clipboard": "Der Text aus der Zwischenablage konnte nicht gelesen werden.",
       "deviceNotSupported": "Dieses Modell unterstützt das ausgewählte Gerät nicht.",
@@ -1268,16 +1284,16 @@
       "invalidRatings": "Die Modellbewertungen fehlen oder sind ungültig.",
       "invalidVoice": "Wähle eine Stimme für das ausgewählte Modell.",
       "outputUnavailable": "Das Ausgabegerät ist nicht verfügbar.",
-      "path": "Das Speicherverzeichnis der Sprachausgabe ist nicht verfügbar.",
+      "path": "Der Speicherordner für das Vorlesen ist nicht verfügbar.",
       "prepareFailed": "Das ausgewählte Gerät konnte dieses Modell nicht vorbereiten.",
-      "protocol": "Der Sprachausgabe-Worker hat eine ungültige Antwort geliefert.",
-      "registry": "Die Modellregistrierung der Sprachausgabe ist ungültig.",
-      "settings": "Die Einstellungen der Sprachausgabe konnten nicht gespeichert werden.",
-      "start": "Der Sprachausgabe-Worker konnte nicht gestartet werden.",
-      "starting": "Der Sprachausgabe-Worker startet.",
+      "protocol": "Der Vorlese-Worker hat eine ungültige Antwort geliefert.",
+      "registry": "Die Modellliste für das Vorlesen ist ungültig.",
+      "settings": "Die Einstellungen für das Vorlesen konnten nicht gespeichert werden.",
+      "start": "Der Vorlese-Worker konnte nicht gestartet werden.",
+      "starting": "Der Vorlese-Worker wird geladen.",
       "tokenRejected": "Das Hugging Face-Token wurde abgelehnt. Prüfe den Zugriff auf die Pocket-Stimmbedingungen.",
       "tokenRequired": "Lege ein Hugging Face-Token fest und akzeptiere die Pocket-Stimmbedingungen, bevor du Stimmen herunterlädst.",
-      "unknownModel": "Das ausgewählte Sprachausgabemodell ist unbekannt.",
+      "unknownModel": "Das ausgewählte Vorlesemodell ist unbekannt.",
       "window": "Das Vorlesefenster konnte nicht geöffnet werden.",
       "accessDenied": "Der Zugriff auf die Modelldateien wurde verweigert.",
       "localIo": "Die Modelldateien konnten nicht gelesen oder geschrieben werden.",
@@ -1324,7 +1340,7 @@
     "preview": "Anhören",
     "pitch": "Tonhöhe: {{value}} Halbtöne",
     "output": "Ausgabegerät für das Vorlesen",
-    "sameAsHandy": "Wie {{device}}",
+    "sameAsHandy": "Wie das Ausgabegerät für Audio-Feedback",
     "readCode": "Codeblöcke vorlesen",
     "technicalReading": "Technisches Vorlesen",
     "fullPaths": "Vollständige Pfade vorlesen",
@@ -1340,9 +1356,9 @@
     "status": {
       "failed": "Fehlgeschlagen",
       "ready": "Bereit",
-      "starting": "Startet",
+      "starting": "Wird geladen",
       "stopping": "Wird beendet",
-      "unloaded": "Entladen"
+      "unloaded": "Nicht geladen"
     },
     "previewSentence": "Reading clearly, one phrase at a time.",
     "description": {
@@ -1372,10 +1388,11 @@
       "reading": "Geschriebene Wörter mit dem Gesprochenen",
       "readingHint": "Oben der geschriebene Text, darunter das Gesprochene. Ziehen Sie über Wörter, um zu korrigieren, wie sie gelesen wurden.",
       "retentionConfirm": {
-        "message_one": "{{count}} gespeicherte Lesung jetzt löschen? Ihr Vokabular bleibt unverändert.",
-        "message": "{{count}} gespeicherte Lesungen jetzt löschen? Ihr Vokabular bleibt unverändert.",
-        "action": "Lesungen löschen"
-      }
+        "message_one": "{{count}} Eintrag jetzt löschen? Ihr Vokabular bleibt unverändert.",
+        "message": "{{count}} Einträge jetzt löschen? Ihr Vokabular bleibt unverändert.",
+        "action": "Einträge löschen"
+      },
+      "copyFailed": "Der Text konnte nicht in die Zwischenablage kopiert werden."
     },
     "vocabulary": {
       "columns": {
@@ -1432,7 +1449,7 @@
         "changed": "Die Vokabeldatei wurde auf dem Datenträger geändert. Die Tabelle wurde neu geladen; führe deine Änderung erneut aus.",
         "fileInvalid": "Deine Vokabeldatei enthält einen Fehler und kann hier nicht bearbeitet werden: {{message}}",
         "invalidEdit": "Dieser Eintrag konnte nicht gespeichert werden: {{message}}",
-        "tooLarge": "Die Vokabeldatei wäre größer als 1 MiB, daher wurde nichts gespeichert.",
+        "tooLarge": "Die Vokabeldatei wäre größer als 1 MB, daher wurde nichts gespeichert.",
         "io": "Die Vokabeldatei konnte nicht geschrieben werden: {{message}}",
         "voicesChanged": "Das Vokabular hat sich geändert, während die Änderung wartete, daher wurde sie nicht angewendet."
       },
@@ -1451,7 +1468,7 @@
       "derive": {
         "unchanged": "Die gesprochenen Wörter sind unverändert, es gibt nichts zu speichern.",
         "severalWords": "Die Änderung betrifft mehr als ein geschriebenes Wort. Korrigiere ein Wort nach dem anderen.",
-        "notExplained": "Keine einzelne Regel lässt den Text so klingen.",
+        "notExplained": "Kein einzelner Eintrag lässt den Text so vorlesen.",
         "invalid": "Das kann nicht gespeichert werden: {{detail}}"
       },
       "check": {
@@ -1468,7 +1485,7 @@
         "savePassedOnly": "Nur für bestandene Modelle speichern",
         "pickOne": "Ein Modell wählen",
         "dictating": "Ein Diktat läuft. Prüfe erneut, wenn es endet.",
-        "transcribeFailed": "Die Spracherkennung konnte die Stimme nicht transkribieren."
+        "transcribeFailed": "Das Diktatmodell konnte die Stimme nicht transkribieren."
       },
       "filters": {
         "model": "Modell",
@@ -1506,7 +1523,7 @@
       "spokenAs": "Gesprochen als",
       "shouldSay": "Soll sagen",
       "savesAs": "Wird gespeichert als",
-      "deriving": "Regel wird ermittelt...",
+      "deriving": "Eintrag wird ermittelt...",
       "exactOnly": "Nur genau dieser Text",
       "chooseScope": "Wählen, wo es gilt",
       "scopeRequiredModels": "Wähle vor dem Speichern Alle Modelle oder ein Modell.",
@@ -1531,7 +1548,7 @@
         "stopped": "Das Mikrofon wurde gestoppt, bevor deine Worte erkannt wurden, daher wurde nichts eingefügt.",
         "reading": "Vorlesen ist geöffnet. Schließe es und verwende dann das Mikrofon.",
         "failed": "Das Mikrofon konnte nicht gestartet werden.",
-        "transcribeFailed": "Die Spracherkennung konnte das Gesagte nicht transkribieren."
+        "transcribeFailed": "Das Diktatmodell konnte nicht transkribieren, was du gesagt hast."
       }
     }
   },
@@ -1595,7 +1612,9 @@
     "cleaned": "Bereinigter Text",
     "original": "Ursprüngliche Transkription",
     "diffNote": "Zeigt die Unterschiede zur ursprünglichen Transkription.",
-    "noCleanup": "Keine Bereinigung"
+    "noCleanup": "Keine Bereinigung",
+    "failedLine": "Dieser Eintrag konnte nicht transkribiert werden. Verwende {{action}}, um es erneut zu versuchen.",
+    "notTranscribedLine": "Dieser Eintrag ist noch nicht transkribiert. Verwende {{action}}, um ihn zu transkribieren."
   },
   "models": {
     "tags": {
@@ -1677,7 +1696,13 @@
     "heads": {
       "score": "Bewertung",
       "speed": "Geschwindigkeit",
-      "size": "Größe"
+      "size": "Größe",
+      "short": {
+        "score": "Note",
+        "speed": "Speed",
+        "size": "Größe",
+        "all": "Alle"
+      }
     },
     "legend": {
       "open": "Was die Spalten bedeuten",

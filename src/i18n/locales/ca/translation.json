@@ -3,29 +3,29 @@
     "settings": "Configuració...",
     "checkUpdates": "Comprova si hi ha actualitzacions...",
     "copyLastTranscript": "Copia l'última transcripció",
-    "unloadModel": "Allibera el model de transcripció de la memòria",
-    "cleanup": "Model de postprocessament",
+    "unloadModel": "Allibera el model de dictat de la memòria",
+    "cleanup": "Model de neteja",
     "cleanupReady": "a punt",
     "cleanupNotLoaded": "no carregat",
     "cleanupLoading": "s'està carregant",
-    "cleanupError": "error",
-    "noCleanupModel": "Cap model de postprocessament",
-    "unloadPostProcessingModel": "Allibera el model de postprocessament de la memòria",
+    "cleanupError": "ha fallat",
+    "noCleanupModel": "Cap model de neteja",
+    "unloadPostProcessingModel": "Allibera el model de neteja de la memòria",
     "model": "Model",
-    "transcriptionModel": "Model de transcripció",
+    "transcriptionModel": "Model de dictat",
     "quit": "Surt",
     "cancel": "Cancel·la",
     "secureInputWarning": "⚠ Dreceres blocades per l'entrada segura",
     "language": "Llengua",
     "autoLanguage": "Automàtica",
     "otherLanguages": "Altres llengües",
-    "ttsModel": "Model de text a veu",
-    "ttsUnload": "Allibera el model de text a veu de la memòria",
-    "ttsStarting": "S'està iniciant",
-    "ttsReady": "Carregat",
+    "ttsModel": "Model de lectura en veu alta",
+    "ttsUnload": "Allibera el model de lectura en veu alta de la memòria",
+    "ttsStarting": "S'està carregant",
+    "ttsReady": "A punt",
     "ttsStopping": "S'està aturant",
     "ttsFailed": "Ha fallat",
-    "ttsUnloaded": "Alliberat"
+    "ttsUnloaded": "No carregat"
   },
   "sidebar": {
     "general": "General",
@@ -236,6 +236,9 @@
       "highFiveLabel": "Xoqueu-la",
       "atLogin": "Inicia el Handy quan entri a la sessió",
       "finish": "Fet",
+      "readAloud": "Per sentir un text en veu alta, copieu-lo i premeu <keys/>.",
+      "readAloudUnbound": "Per sentir un text en veu alta, definiu-ne la drecera a Configuració, General.",
+      "chooseReadAloudModel": "Trieu un model de lectura en veu alta",
       "panel": {
         "name": "Handy",
         "ready": "A punt",
@@ -338,7 +341,6 @@
     "alreadyAdded_other": "{{languages}} ja estan afegides."
   },
   "modelSelector": {
-    "status": "Estat del model: {{modelName}}",
     "size": "{{size}} MiB",
     "custom": "Personalitzat",
     "streaming": "En temps real",
@@ -408,7 +410,9 @@
       "readAloud": "Lectura en veu alta",
       "activation": "Activació",
       "activationHelp": "Per a les dreceres de dictat",
-      "cancelLinuxHelp": "Al Linux la drecera de cancel·lació no atura un dictat, perquè les dreceres registrades durant un dictat no són fiables allà. Useu la X de la finestra superposada, Cancel·la al menú de la safata o executeu handy --cancel."
+      "cancelLinuxHelp": "Al Linux la drecera de cancel·lació no atura un dictat, perquè les dreceres registrades durant un dictat no són fiables allà. Useu la X de la finestra superposada, Cancel·la al menú de la safata o executeu handy --cancel.",
+      "inUse": "Ja l'utilitza {{name}}",
+      "cannotClear": "{{name}} no es pot esborrar"
     },
     "modelSettings": {
       "title": "Configuració de {{model}}"
@@ -555,7 +559,8 @@
         "title": "Volum",
         "description": "Ajusta el volum dels avisos sonors",
         "offReason": "No s'utilitza quan els avisos sonors estan desactivats."
-      }
+      },
+      "feedbackOutputDevice": "Dispositiu de sortida dels avisos sonors"
     },
     "advanced": {
       "groups": {
@@ -779,20 +784,19 @@
         "createFirst": "Feu clic a «Creeu una indicació nova» més amunt per crear la primera indicació de postprocessament."
       },
       "localLlm": {
-        "noCleanupModel": "Cap model de postprocessament",
         "s1Description": "Utilitza els controls d'estil, estructura i context.",
-        "plainDescription": "Utilitza la indicació del Handy seleccionada.",
+        "plainDescription": "Utilitza la indicació que heu seleccionat.",
         "status": {
           "title": "Estat",
-          "description": "El model es carrega quan comença un dictat amb postprocessament i s'allibera de la memòria passat el temps d'espera d'alliberament del model.",
+          "description": "El model es carrega quan comença un dictat amb neteja i s'allibera de la memòria passat el temps d'espera d'alliberament del model.",
           "notLoaded": "No carregat",
           "loading": "S'està carregant",
           "ready": "A punt",
-          "error": "Error: {{reason}}"
+          "error": "Ha fallat: {{reason}}"
         },
         "styling": {
           "title": "Estil",
-          "description": "Com de formal sona el text postprocessat.",
+          "description": "Com de formal sona el text netejat.",
           "options": {
             "casual": "Informal",
             "semi_casual": "Semiinformal",
@@ -819,7 +823,7 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 amb una condició addicional: el model s'ha d'anomenar sempre \"S1-mini\" de \"Superwhisper\", amb aquestes majúscules i minúscules exactes."
         },
-        "promptRequired": "Seleccioneu una indicació del Handy no buida al grup Instruccions. Fins aleshores, el postprocessament s'omet i s'utilitza la transcripció en brut.",
+        "promptRequired": "Seleccioneu una indicació no buida al grup Instruccions. Fins aleshores, la neteja s'omet i s'utilitza la transcripció original.",
         "promptHidden": "Aquest model utilitza la seva pròpia indicació fixa i els paràmetres d'Estil, Estructura i Context de dalt, de manera que l'editor d'indicacions està amagat."
       }
     },
@@ -1072,6 +1076,10 @@
         "title": "Versió",
         "description": "Versió actual del Handy"
       },
+      "updates": {
+        "title": "Actualitzacions",
+        "description": "Comprova si hi ha una versió més recent disponible"
+      },
       "whatsNewUpdates": {
         "label": "Mostra les novetats",
         "description": "Mostra les notes de la versió després d'actualitzar el Handy"
@@ -1113,7 +1121,17 @@
     "portableUpdateMessage": "Les instal·lacions portables no es poden actualitzar automàticament. Baixa l'instal·lador per al vostre sistema a continuació, executeu-lo i instal·leu-lo a la mateixa carpeta. La carpeta Data/ (configuració, models i enregistraments) es conserva.",
     "portableUpdateButton": "Baixa l'instal·lador",
     "portableUpdateBrowseMessage": "Les instal·lacions portables no es poden actualitzar automàticament. Baixa l'última versió per al vostre sistema des de GitHub Releases i instal·leu-la a la mateixa carpeta. La carpeta Data/ (configuració, models i enregistraments) es conserva.",
-    "portableUpdateBrowseButton": "Obriu GitHub Releases"
+    "portableUpdateBrowseButton": "Obriu GitHub Releases",
+    "activity": {
+      "ready": "A punt",
+      "recording": "Enregistrant",
+      "transcribing": "S'està transcrivint",
+      "cleaningUp": "S'està netejant",
+      "reading": "S'està llegint",
+      "downloading": "S'està baixant {{name}} {{percent}}%",
+      "languageDetector": "detector d'idioma",
+      "downloadingMany": "S'estan baixant models: {{count}}"
+    }
   },
   "whatsNew": {
     "title": "Novetats del Handy v{{version}}"
@@ -1140,7 +1158,7 @@
   },
   "errors": {
     "readAloudBusyPastingTitle": "La lectura en veu alta està ocupada enganxant",
-    "readAloudBusyPasting": "Handy encara està enganxant. Torna a provar la lectura en veu alta quan acabi d'enganxar.",
+    "readAloudBusyPasting": "Encara s'està enganxant. Torneu a provar la lectura en veu alta quan acabi d'enganxar.",
     "readAloudUnavailableTitle": "Lectura en veu alta no disponible",
     "readAloudClipboardUnreadableTitle": "Porta-retalls illegible",
     "readAloudClipboardUnreadable": "No s'ha pogut llegir el text del porta-retalls.",
@@ -1245,17 +1263,15 @@
       "audio": "No s'ha pogut obrir el dispositiu de sortida.",
       "text": "No s'ha pogut preparar aquest text.",
       "clock": "La sincronització de la reproducció ha fallat.",
-      "worker": "El procés de text a veu s'ha aturat.",
-      "unavailable": "El text a veu no està disponible.",
-      "notReady": "El text a veu encara s'està iniciant.",
-      "generic": "El text a veu ha fallat.",
-      "memory": "Cal almenys 1 GiB de memòria disponible.",
+      "worker": "El procés de lectura en veu alta s'ha aturat.",
+      "notReady": "La lectura en veu alta encara s'està carregant.",
+      "generic": "Alguna cosa ha anat malament.",
+      "memory": "Calen com a mínim 1,1 GB de memòria disponible.",
       "gatedToken": "Les veus de Pocket requereixen un testimoni de Hugging Face i haver acceptat les condicions de les veus.",
-      "model": "Trieu un model de text a veu disponible.",
       "device": "Aquest dispositiu no està disponible.",
       "npuDriverTooOld": "El controlador de la NPU és massa antic. Actualitzeu-lo o trieu un altre dispositiu.",
       "selection": "No s'ha pogut aplicar la selecció.",
-      "busy": "Ja hi ha una operació de text a veu en curs.",
+      "busy": "Una altra acció de lectura en veu alta encara s'està executant.",
       "cancelled": "S'ha cancel·lat la lectura.",
       "clipboard": "No s'ha pogut llegir el text del porta-retalls.",
       "deviceNotSupported": "Aquest model no admet el dispositiu seleccionat.",
@@ -1268,16 +1284,16 @@
       "invalidRatings": "Les valoracions del model falten o no són vàlides.",
       "invalidVoice": "Trieu una veu per al model seleccionat.",
       "outputUnavailable": "El dispositiu de sortida no està disponible.",
-      "path": "El directori d'emmagatzematge del text a veu no està disponible.",
+      "path": "La carpeta d'emmagatzematge de la lectura en veu alta no està disponible.",
       "prepareFailed": "El dispositiu seleccionat no ha pogut preparar aquest model.",
-      "protocol": "El procés de text a veu ha retornat una resposta no vàlida.",
-      "registry": "El registre de models de text a veu no és vàlid.",
-      "settings": "No s'han pogut desar els paràmetres del text a veu.",
-      "start": "No s'ha pogut iniciar el procés de text a veu.",
-      "starting": "El procés de text a veu s'està iniciant.",
+      "protocol": "El procés de lectura en veu alta ha retornat una resposta no vàlida.",
+      "registry": "La llista de models de lectura en veu alta no és vàlida.",
+      "settings": "No s'han pogut desar els paràmetres de la lectura en veu alta.",
+      "start": "El procés de lectura en veu alta no s'ha pogut iniciar.",
+      "starting": "El procés de lectura en veu alta s'està carregant.",
       "tokenRejected": "S'ha rebutjat el testimoni de Hugging Face. Comproveu l'accés a les condicions de les veus de Pocket.",
       "tokenRequired": "Definiu un testimoni de Hugging Face i accepteu les condicions de les veus de Pocket abans de baixar veus.",
-      "unknownModel": "El model de text a veu seleccionat és desconegut.",
+      "unknownModel": "El model de lectura en veu alta seleccionat és desconegut.",
       "window": "No s'ha pogut obrir la finestra de lectura en veu alta.",
       "accessDenied": "S'ha denegat l'accés als fitxers del model.",
       "localIo": "No s'han pogut llegir ni escriure els fitxers del model.",
@@ -1324,7 +1340,7 @@
     "preview": "Escolta",
     "pitch": "To: {{value}} semitons",
     "output": "Dispositiu de sortida de la lectura en veu alta",
-    "sameAsHandy": "Igual que {{device}}",
+    "sameAsHandy": "Igual que el dispositiu de sortida dels avisos sonors",
     "readCode": "Llegeix els blocs de codi",
     "technicalReading": "Lectura tècnica",
     "fullPaths": "Llegeix els camins complets",
@@ -1340,9 +1356,9 @@
     "status": {
       "failed": "Ha fallat",
       "ready": "A punt",
-      "starting": "S'està iniciant",
+      "starting": "S'està carregant",
       "stopping": "S'està aturant",
-      "unloaded": "Alliberat"
+      "unloaded": "No carregat"
     },
     "previewSentence": "Reading clearly, one phrase at a time.",
     "description": {
@@ -1372,10 +1388,11 @@
       "reading": "Paraules escrites amb el que s'ha dit",
       "readingHint": "El text escrit a dalt i el que s'ha dit a sota. Arrossegueu sobre les paraules per corregir com s'han llegit.",
       "retentionConfirm": {
-        "message_one": "Voleu suprimir ara {{count}} lectura desada? El vostre vocabulari no canvia.",
-        "message": "Voleu suprimir ara {{count}} lectures desades? El vostre vocabulari no canvia.",
-        "action": "Suprimeix les lectures"
-      }
+        "message_one": "Voleu suprimir ara {{count}} entrada? El vostre vocabulari no canvia.",
+        "message": "Voleu suprimir ara {{count}} entrades? El vostre vocabulari no canvia.",
+        "action": "Suprimeix les entrades"
+      },
+      "copyFailed": "No s'ha pogut copiar el text al porta-retalls."
     },
     "vocabulary": {
       "columns": {
@@ -1432,7 +1449,7 @@
         "changed": "El fitxer de vocabulari ha canviat al disc. S'ha tornat a carregar la taula; torna a fer el canvi.",
         "fileInvalid": "El teu fitxer de vocabulari té un error i no es pot editar aquí: {{message}}",
         "invalidEdit": "No s'ha pogut desar aquesta entrada: {{message}}",
-        "tooLarge": "El fitxer de vocabulari superaria 1 MiB, així que no s'ha desat res.",
+        "tooLarge": "El fitxer de vocabulari superaria 1 MB, així que no s'ha desat res.",
         "io": "No s'ha pogut escriure el fitxer de vocabulari: {{message}}",
         "voicesChanged": "El vocabulari ha canviat mentre esperava, de manera que el canvi no s'ha aplicat."
       },
@@ -1451,7 +1468,7 @@
       "derive": {
         "unchanged": "Les paraules dites no han canviat, no hi ha res per desar.",
         "severalWords": "El canvi afecta més d'una paraula escrita. Corregeix una paraula cada vegada.",
-        "notExplained": "Cap regla única fa que el text es llegeixi així.",
+        "notExplained": "Cap entrada única fa que el text es llegeixi així.",
         "invalid": "No es pot desar: {{detail}}"
       },
       "check": {
@@ -1468,7 +1485,7 @@
         "savePassedOnly": "Desa només per als models que han passat",
         "pickOne": "Tria un model",
         "dictating": "Hi ha un dictat en curs. Torna a comprovar-ho quan acabi.",
-        "transcribeFailed": "La transcripció de veu no ha pogut transcriure la veu."
+        "transcribeFailed": "El model de dictat no ha pogut transcriure la veu."
       },
       "filters": {
         "model": "Model",
@@ -1506,7 +1523,7 @@
       "spokenAs": "Es diu com",
       "shouldSay": "Hauria de dir",
       "savesAs": "Es desa com",
-      "deriving": "Calculant la regla...",
+      "deriving": "Calculant l'entrada...",
       "exactOnly": "Només aquest text exacte",
       "chooseScope": "Tria on s'aplica",
       "scopeRequiredModels": "Tria Tots els models o un model abans de desar.",
@@ -1531,7 +1548,7 @@
         "stopped": "El micròfon s'ha aturat abans de sentir les teves paraules, així que no s'ha omplert res.",
         "reading": "La lectura en veu alta és oberta. Tanca-la i després fes servir el micròfon.",
         "failed": "No s'ha pogut iniciar el micròfon.",
-        "transcribeFailed": "La conversió de veu a text no ha pogut transcriure el que has dit."
+        "transcribeFailed": "El model de dictat no ha pogut transcriure el que heu dit."
       }
     }
   },
@@ -1595,7 +1612,9 @@
     "cleaned": "Text net",
     "original": "Transcripció original",
     "diffNote": "Es mostren les diferències amb la transcripció original.",
-    "noCleanup": "Sense neteja"
+    "noCleanup": "Sense neteja",
+    "failedLine": "Aquesta entrada no s'ha pogut transcriure. Useu «{{action}}» per tornar-ho a provar.",
+    "notTranscribedLine": "Aquesta entrada encara no s'ha transcrit. Useu «{{action}}» per transcriure-la."
   },
   "models": {
     "tags": {
@@ -1677,7 +1696,13 @@
     "heads": {
       "score": "Puntuació",
       "speed": "Velocitat",
-      "size": "Mida"
+      "size": "Mida",
+      "short": {
+        "score": "Punt.",
+        "speed": "Vel.",
+        "size": "Mida",
+        "all": "Totes"
+      }
     },
     "legend": {
       "open": "Què volen dir les columnes",

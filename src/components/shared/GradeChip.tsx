@@ -30,6 +30,8 @@ export const GradeChip: React.FC<GradeChipProps> = ({
     className={`inline-grid place-items-center rounded-chip border font-display leading-none h-[22px] ${dense ? "min-w-[24px] px-[3px] text-tag" : "min-w-[30px] px-[5px] text-small"} ${LETTER_CLASSES[letter]}`}
   >
     {/* Trim to cap height so the letter, is centered. */}
-    <span className="block [text-box:trim-both_cap_alphabetic]">{label}</span>
+    <span dir="ltr" className="block [text-box:trim-both_cap_alphabetic]">
+      {label}
+    </span>
   </span>
 );

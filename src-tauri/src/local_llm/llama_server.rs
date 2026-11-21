@@ -187,7 +187,15 @@ pub fn wait_healthy(
     deadline: Instant,
     cancel: &AtomicBool,
 ) -> Result<(), HealthError> {
-    wait_healthy_inner(client, LOCAL_AUTHORITY, child, deadline, cancel, None)
+    wait_healthy_inner(
+        client,
+        LOCAL_AUTHORITY,
+        child,
+        deadline,
+        cancel,
+        None,
+        &Instant::now,
+    )
 }
 
 fn wait_healthy_inner(
@@ -197,6 +205,7 @@ fn wait_healthy_inner(
     deadline: Instant,
     cancel: &AtomicBool,
     kill: Option<&ChildKillSwitch>,
+    clock: &dyn Fn() -> Instant,
 ) -> Result<(), HealthError> {
     let url = format!("http://{authority}/health");
     loop {
@@ -212,7 +221,7 @@ fn wait_healthy_inner(
             Ok(None) => {}
             Err(e) => return Err(HealthError::Exited(e.to_string())),
         }
-        let now = Instant::now();
+        let now = clock();
         if now >= deadline {
             return Err(HealthError::Timeout);
         }
@@ -231,7 +240,7 @@ fn wait_healthy_inner(
                 };
             }
         }
-        std::thread::sleep(HEALTH_POLL.min(deadline.saturating_duration_since(Instant::now())));
+        std::thread::sleep(HEALTH_POLL.min(deadline.saturating_duration_since(clock())));
     }
 }
 
@@ -427,7 +436,11 @@ pub struct LlamaServerBackend {
     runtime_dir: Option<PathBuf>,
     running: Option<Running>,
     kill: Arc<ChildKillSwitch>,
+    clock: Clock,
 }
+
+/// Time source for the start deadline; tests substitute their own.
+type Clock = Arc<dyn Fn() -> Instant + Send + Sync>;
 
 impl Default for LlamaServerBackend {
     fn default() -> Self {
@@ -448,6 +461,7 @@ impl LlamaServerBackend {
                 .map(PathBuf::from),
             running: None,
             kill: Arc::new(ChildKillSwitch::new()),
+            clock: Arc::new(Instant::now),
         }
     }
 
@@ -462,7 +476,15 @@ impl LlamaServerBackend {
             installed: binary,
             running: None,
             kill: Arc::new(ChildKillSwitch::new()),
+            clock: Arc::new(Instant::now),
         }
+    }
+
+    /// Reads the start deadline from `clock` instead of the system clock.
+    #[cfg(test)]
+    pub(crate) fn with_clock(mut self, clock: Clock) -> Self {
+        self.clock = clock;
+        self
     }
 
     /// Uses the app data directory when XDG_RUNTIME_DIR is absent.
@@ -536,6 +558,7 @@ impl LlamaServerBackend {
             deadline,
             &opts.cancel,
             Some(&self.kill),
+            &*self.clock,
         ) {
             Ok(()) => StartOutcome::Ready(Running {
                 child,
@@ -588,7 +611,7 @@ impl TextModelBackend for LlamaServerBackend {
         }
         self.unload();
         let binary = resolve_binary(self.binary_env.clone(), &self.installed)?;
-        let deadline = Instant::now() + opts.start_timeout;
+        let deadline = (self.clock)() + opts.start_timeout;
         let mut last = LocalLlmError::StartTimeout;
         let attempts = if opts.single_spawn { 1 } else { SPAWN_ATTEMPTS };
         for attempt in 1..=attempts {
@@ -604,7 +627,7 @@ impl TextModelBackend for LlamaServerBackend {
                 StartOutcome::ExitedEarly(msg) => {
                     warn!("local-llm: {msg} (attempt {attempt}/{attempts})");
                     last = LocalLlmError::StartFailed(msg);
-                    if Instant::now() >= deadline {
+                    if (self.clock)() >= deadline {
                         break;
                     }
                 }
@@ -734,6 +757,32 @@ pub(crate) mod tests {
         path
     }
 
+    /// A clock frozen at its creation time plus one hour per hang, where `hangs` maps the number of
+    /// lines in the fake binary's spawn log to the number of spawns that hang. The start deadline
+    /// is then reached only after a hanging child has started, never while a crash is pending.
+    pub(crate) fn spawn_log_clock(spawns: PathBuf, hangs: fn(usize) -> u32) -> Clock {
+        let base = Instant::now();
+        Arc::new(move || {
+            let lines = std::fs::read_to_string(&spawns).map_or(0, |log| log.lines().count());
+            base + Duration::from_secs(3600) * hangs(lines)
+        })
+    }
+
+    /// Polls `probe` every 10 ms until it returns `Some` or `limit` passes.
+    #[cfg(target_os = "linux")]
+    fn poll_until<T>(limit: Duration, mut probe: impl FnMut() -> Option<T>) -> Option<T> {
+        let deadline = Instant::now() + limit;
+        loop {
+            if let Some(value) = probe() {
+                return Some(value);
+            }
+            if Instant::now() >= deadline {
+                return None;
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+    }
+
     #[cfg(target_os = "linux")]
     #[test]
     fn kill_switch_kills_a_running_child_and_owner_reaps_it() {
@@ -788,32 +837,33 @@ pub(crate) mod tests {
         );
         let mut backend = LlamaServerBackend::with_binary(bin);
         let kill = Arc::clone(&backend.kill);
-        let options = opts(dir.path().join("m.gguf"), Duration::from_secs(10));
+        let options = opts(dir.path().join("m.gguf"), Duration::from_secs(60));
         let (tx, rx) = mpsc::channel();
         let start = std::thread::spawn(move || {
             let result = backend.ensure_loaded(registry::find("s1-mini-q4km").unwrap(), &options);
             tx.send(result).unwrap();
         });
-        let deadline = Instant::now() + Duration::from_secs(2);
-        let mut pid = None;
-        while Instant::now() < deadline {
-            pid = std::fs::read_to_string(&pidfile)
+        let wait = Duration::from_secs(30);
+        let pid = poll_until(wait, || {
+            std::fs::read_to_string(&pidfile)
                 .ok()
-                .and_then(|value| value.trim().parse::<i32>().ok());
-            if pid.is_some() {
-                break;
-            }
-            std::thread::sleep(Duration::from_millis(10));
-        }
-        let published_pid = kill.pid.load(Ordering::SeqCst);
-        let stopped = Instant::now();
+                .and_then(|value| value.trim().parse::<i32>().ok())
+        });
+        // The backend publishes after spawn returns and try_wait zeroes the slot while polling; wait for a non-zero read.
+        let published_pid = poll_until(wait, || {
+            Some(kill.pid.load(Ordering::SeqCst)).filter(|value| *value != 0)
+        });
         kill.trigger();
-        let result = rx.recv_timeout(Duration::from_secs(2)).unwrap();
+        // The start timeout is 60 s, so a result inside 30 s means the kill switch stopped it.
+        let result = rx.recv_timeout(wait).unwrap();
         start.join().unwrap();
-        let pid = pid.expect("fake server must write its PID within 2 s");
-        assert_eq!(published_pid, pid, "startup must publish the child PID");
+        let pid = pid.expect("fake server must write its PID");
+        assert_eq!(
+            published_pid,
+            Some(pid),
+            "startup must publish the child PID"
+        );
         assert!(matches!(result, Err(LocalLlmError::StartFailed(_))));
-        assert!(stopped.elapsed() < Duration::from_secs(2));
         assert!(!Path::new(&format!("/proc/{pid}")).exists());
     }
 
@@ -1403,14 +1453,12 @@ PY"#,
                 log = counter.display()
             ),
         );
-        let mut backend = LlamaServerBackend::with_binary(bin);
+        let clock = spawn_log_clock(counter.clone(), |spawns| spawns as u32 / 2);
+        let mut backend = LlamaServerBackend::with_binary(bin).with_clock(clock);
         let entry = registry::find("s1-mini-q4km").unwrap();
-        let budget = Duration::from_secs(2);
-        let t0 = Instant::now();
-        let r = backend.ensure_loaded(entry, &opts(dir.path().join("m.gguf"), budget));
-        assert!(
-            t0.elapsed() >= budget,
-            "the second run must hang to the deadline"
+        let r = backend.ensure_loaded(
+            entry,
+            &opts(dir.path().join("m.gguf"), Duration::from_secs(60)),
         );
         assert_eq!(
             std::fs::read_to_string(&counter).unwrap().lines().count(),

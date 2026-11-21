@@ -47,7 +47,7 @@ await i18n.init({ lng: "en", resources: { en: { translation: en } } });
 function render() {
   updates.length = 0;
   inputProps = undefined;
-  renderToStaticMarkup(
+  const html = renderToStaticMarkup(
     <I18nextProvider i18n={i18n}>
       <HistoryLimit />
     </I18nextProvider>,
@@ -55,6 +55,7 @@ function render() {
   const props = inputProps as InputProps | undefined;
   assert.ok(props);
   return {
+    html,
     type: (value: string) =>
       props.onChange?.({
         target: { value },
@@ -74,6 +75,13 @@ function render() {
 }
 
 describe("HistoryLimit", () => {
+  it("the_number_field_sits_in_a_focus_row", () => {
+    const row = render().html.match(
+      /<div[^>]*data-confirm-row="limit"[^>]*>(.*?)<\/div>/s,
+    );
+    assert.ok(row, "a data-confirm-row=limit wrapper");
+    assert.ok(row[1].includes('type="number"'), "around the number field");
+  });
   it("typing_never_writes", () => {
     const field = render();
     for (const value of ["1", "10", "100"]) field.type(value);

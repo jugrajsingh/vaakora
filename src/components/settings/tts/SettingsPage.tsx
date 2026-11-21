@@ -301,9 +301,7 @@ export function SettingsControls({
             options={[
               {
                 value: "",
-                label: t("tts.sameAsHandy", {
-                  device: t("settings.sound.outputDevice.title"),
-                }),
+                label: t("tts.sameAsHandy"),
               },
               ...outputDevices.map((device) => ({
                 value: device.name,

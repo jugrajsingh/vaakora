@@ -1,57 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { getVersion } from "@tauri-apps/api/app";
+import React from "react";
 
-import ModelSelector from "../model-selector";
-import { LocalLlmModelSelector } from "../model-selector/LocalLlmModelSelector";
-import UpdateChecker from "../update-checker";
+import type { Link } from "@/lib/navigation";
+import { ActivityStatus } from "./ActivityStatus";
 import NoticeChip from "./NoticeChip";
-import TranscriptionStatus from "./TranscriptionStatus";
 
 interface FooterProps {
-  onShowHistory: () => void;
-  onOpenPostProcessing: () => void;
+  navigate: (link: Link) => void;
 }
-const Footer: React.FC<FooterProps> = ({
-  onShowHistory,
-  onOpenPostProcessing,
-}) => {
-  const [version, setVersion] = useState("");
 
-  useEffect(() => {
-    const fetchVersion = async () => {
-      try {
-        const appVersion = await getVersion();
-        setVersion(appVersion);
-      } catch (error) {
-        console.error("Failed to get app version:", error);
-        setVersion("0.1.2");
-      }
-    };
-
-    fetchVersion();
-  }, []);
-
+const Footer: React.FC<FooterProps> = ({ navigate }) => {
   return (
-    <div className="w-full border-t border-line pt-3">
-      <div className="flex justify-between items-center gap-3 min-w-0 text-xs px-4 pb-3 text-ink-2">
-        <div className="flex items-center gap-4 min-w-0 flex-1">
-          <ModelSelector />
-          <TranscriptionStatus onShowHistory={onShowHistory} />
-          <LocalLlmModelSelector onOpenPostProcessing={onOpenPostProcessing} />
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          {/* Update Status */}
-          <div className="flex items-center gap-1">
-            <UpdateChecker />
-            <span>•</span>
-            {/* eslint-disable-next-line i18next/no-literal-string */}
-            <span>v{version}</span>
-          </div>
-          <NoticeChip />
-        </div>
-      </div>
-    </div>
+    <footer className="flex h-[36px] w-full shrink-0 items-center justify-between gap-3 border-t border-line px-4 text-xs">
+      <ActivityStatus navigate={navigate} />
+      <NoticeChip />
+    </footer>
   );
 };
 

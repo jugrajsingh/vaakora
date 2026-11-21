@@ -26,14 +26,19 @@ mock.module("@/components/ui/Button", () => ({
   },
 }));
 const {
+  CONTROL_TARGETS,
   InlineConfirm,
   confirmKey,
   createPendingConfirm,
+  refocusRow,
+  refocusStep,
   returnTarget,
   rowToRefocus,
   useRowConfirm,
 } = await import("./InlineConfirm");
 type Recount<T> = import("./InlineConfirm").Recount<T>;
+type FocusRoot = import("./InlineConfirm").FocusRoot;
+const asRoot = (fake: unknown) => fake as FocusRoot;
 const { ClearHistoryView, createClearFlow } = await import("./ClearHistory");
 type ClearState<T> = import("./ClearHistory").ClearState<T>;
 const i18n = i18next.createInstance();
@@ -158,6 +163,117 @@ describe("InlineConfirm", () => {
     assert.equal(returnTarget(row)?.name, "Edit");
     assert.equal(returnTarget([button("Hidden", false, true)]), undefined);
   });
+  it("refocus_row_returns_to_the_replaced_control", () => {
+    const focused: string[] = [];
+    const target = (name: string, tag: string, disabled = false) => ({
+      name,
+      tag,
+      disabled,
+      closest: () => null,
+      focus: () => focused.push(name),
+    });
+    const rowOf = (key: string, targets: ReturnType<typeof target>[]) => ({
+      dataset: { confirmRow: key },
+      querySelectorAll: (selector: string) =>
+        targets.filter((item) =>
+          selector.split(", ").includes(item.tag),
+        ) as Iterable<ReturnType<typeof target>>,
+    });
+    const limit = rowOf("limit", [
+      target("Save", "button", true),
+      target("Number", "input"),
+    ]);
+    const retention = rowOf("retention", [target("Keep", "button")]);
+    const root = {
+      ...rowOf("", []),
+      querySelectorAll: (selector: string) =>
+        selector === "[data-confirm-row]"
+          ? [limit, retention]
+          : ([] as Iterable<ReturnType<typeof target>>),
+    };
+    const run = (
+      previous: string | null,
+      asking: string | null,
+      selector: string,
+    ) => {
+      focused.length = 0;
+      refocusRow(previous, asking, asRoot(root), selector);
+      return [...focused];
+    };
+    assert.deepEqual(run("limit", null, CONTROL_TARGETS), ["Number"]);
+    assert.deepEqual(run("limit", "retention", CONTROL_TARGETS), []);
+    assert.deepEqual(run(null, null, CONTROL_TARGETS), []);
+    assert.deepEqual(run("limit", null, "button"), [], "the input is skipped");
+    assert.deepEqual(run("retention", null, "button"), ["Keep"]);
+    confirmCase();
+  });
+  /** After Confirm the control remounts disabled until the saved change is applied. */
+  function confirmCase() {
+    let disabled = true;
+    const focused: string[] = [];
+    const number = {
+      get disabled() {
+        return disabled;
+      },
+      closest: () => null,
+      focus: () => focused.push("Number"),
+    };
+    const row = {
+      dataset: { confirmRow: "limit" },
+      querySelectorAll: () => [number] as Iterable<typeof number>,
+    };
+    const root = {
+      dataset: {},
+      querySelectorAll: () => [row] as Iterable<typeof row>,
+    };
+    const step = (owed: string | null, previous: string | null, free = true) =>
+      refocusStep(owed, previous, null, free, asRoot(root), CONTROL_TARGETS);
+    const owed = step(null, "limit");
+    assert.equal(
+      owed,
+      "limit",
+      "the remounted control is disabled: still owed",
+    );
+    assert.deepEqual(focused, []);
+    assert.equal(
+      step(owed, null),
+      "limit",
+      "still disabled on the next render",
+    );
+    disabled = false;
+    assert.equal(
+      step(owed, null, false),
+      null,
+      "focus moved elsewhere: dropped",
+    );
+    assert.deepEqual(focused, []);
+    assert.equal(
+      step(owed, null),
+      null,
+      "enabled again: focused, no longer owed",
+    );
+    assert.deepEqual(focused, ["Number"]);
+    assert.equal(
+      refocusStep(
+        "limit",
+        null,
+        "retention",
+        true,
+        asRoot(root),
+        CONTROL_TARGETS,
+      ),
+      null,
+      "another question opening cancels the debt",
+    );
+    assert.equal(step(null, null), null);
+    assert.deepEqual(focused, ["Number"]);
+    const empty = { dataset: {}, querySelectorAll: () => [] };
+    assert.equal(
+      refocusStep("limit", null, null, true, asRoot(empty), CONTROL_TARGETS),
+      null,
+      "a row that is gone is no longer owed",
+    );
+  }
   it("pending_prunes_a_question_whose_row_is_gone", async () => {
     const shown: (string | null)[] = [];
     const applied: string[] = [];

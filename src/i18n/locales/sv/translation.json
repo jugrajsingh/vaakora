@@ -3,29 +3,29 @@
     "settings": "Inställningar...",
     "checkUpdates": "Sök efter uppdateringar...",
     "copyLastTranscript": "Kopiera senaste transkriptionen",
-    "unloadModel": "Avlasta transkriptionsmodell",
-    "cleanup": "Efterbearbetningsmodell",
+    "unloadModel": "Avlasta dikteringsmodell",
+    "cleanup": "Rensningsmodell",
     "cleanupReady": "redo",
     "cleanupNotLoaded": "inte laddad",
     "cleanupLoading": "laddar",
-    "cleanupError": "fel",
-    "noCleanupModel": "Ingen efterbearbetningsmodell",
-    "unloadPostProcessingModel": "Avlasta efterbearbetningsmodell",
+    "cleanupError": "misslyckades",
+    "noCleanupModel": "Ingen rensningsmodell",
+    "unloadPostProcessingModel": "Avlasta rensningsmodell",
     "model": "Modell",
-    "transcriptionModel": "Transkriptionsmodell",
+    "transcriptionModel": "Dikteringsmodell",
     "quit": "Avsluta",
     "cancel": "Avbryt",
     "secureInputWarning": "⚠ Kortkommandon blockeras av Secure Input",
     "language": "Språk",
     "autoLanguage": "Automatiskt",
     "otherLanguages": "Andra språk",
-    "ttsModel": "Text-till-tal-modell",
-    "ttsUnload": "Avlasta text-till-tal-modell",
-    "ttsStarting": "Startar",
-    "ttsReady": "Laddad",
+    "ttsModel": "Uppläsningsmodell",
+    "ttsUnload": "Avlasta uppläsningsmodell",
+    "ttsStarting": "Laddar",
+    "ttsReady": "Redo",
     "ttsStopping": "Stoppar",
     "ttsFailed": "Misslyckades",
-    "ttsUnloaded": "Avlastad"
+    "ttsUnloaded": "Inte laddad"
   },
   "sidebar": {
     "general": "Allmänt",
@@ -236,6 +236,9 @@
       "highFiveLabel": "Femman",
       "atLogin": "Starta Handy när jag loggar in",
       "finish": "Klar",
+      "readAloud": "Kopiera en text och tryck på <keys/> för att få den uppläst.",
+      "readAloudUnbound": "Ställ in genvägen i Inställningar, Allmänt för att få text uppläst.",
+      "chooseReadAloudModel": "Välj en uppläsningsmodell",
       "panel": {
         "name": "Handy",
         "ready": "Redo",
@@ -338,7 +341,6 @@
     "alreadyAdded_other": "{{languages}} är redan tillagda."
   },
   "modelSelector": {
-    "status": "Modellstatus: {{modelName}}",
     "size": "{{size}} MiB",
     "custom": "Anpassad",
     "streaming": "Streaming",
@@ -408,7 +410,9 @@
       "readAloud": "Uppläsning",
       "activation": "Aktivering",
       "activationHelp": "För dikteringskortkommandon",
-      "cancelLinuxHelp": "På Linux stoppar inte kortkommandot för avbryt en diktering, eftersom kortkommandon som registreras under en diktering är opålitliga där. Använd X på overlayen, Avbryt i systemfältets meny eller kör handy --cancel."
+      "cancelLinuxHelp": "På Linux stoppar inte kortkommandot för avbryt en diktering, eftersom kortkommandon som registreras under en diktering är opålitliga där. Använd X på overlayen, Avbryt i systemfältets meny eller kör handy --cancel.",
+      "inUse": "Används redan av {{name}}",
+      "cannotClear": "{{name}} kan inte rensas"
     },
     "modelSettings": {
       "title": "{{model}}-inställningar"
@@ -555,7 +559,8 @@
         "title": "Volym",
         "description": "Justera volymen för ljudåterkopplingsljud",
         "offReason": "Används inte när ljudåterkoppling är av."
-      }
+      },
+      "feedbackOutputDevice": "Utenhet för ljudåterkoppling"
     },
     "advanced": {
       "groups": {
@@ -779,20 +784,19 @@
         "createFirst": "Klicka på 'Skapa ny prompt' ovan för att skapa din första prompt för efterbearbetning."
       },
       "localLlm": {
-        "noCleanupModel": "Ingen efterbearbetningsmodell",
         "s1Description": "Använder kontroller för stil, struktur och sammanhang.",
-        "plainDescription": "Använder din valda Handy-prompt.",
+        "plainDescription": "Använder den prompt du har valt.",
         "status": {
           "title": "Status",
-          "description": "Modellen laddas när ett diktamen med efterbearbetning startar och avlastas efter tidsgränsen för modellavlastning.",
+          "description": "Modellen laddas när ett diktamen med rensning startar och avlastas efter tidsgränsen för modellavlastning.",
           "notLoaded": "Inte laddad",
           "loading": "Laddar",
           "ready": "Redo",
-          "error": "Fel: {{reason}}"
+          "error": "Misslyckades: {{reason}}"
         },
         "styling": {
           "title": "Stil",
-          "description": "Hur formell den efterbearbetade texten låter.",
+          "description": "Hur formell den rensade texten låter.",
           "options": {
             "casual": "Ledig",
             "semi_casual": "Halvledig",
@@ -819,7 +823,7 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 med ett extra villkor: modellen måste alltid kallas \"S1-mini\" från \"Superwhisper\", med exakt den användningen av versaler och gemener."
         },
-        "promptRequired": "Välj en icke-tom Handy-prompt i gruppen Instruktioner. Tills dess hoppas efterbearbetningen över och den råa transkriptionen används.",
+        "promptRequired": "Välj en icke-tom prompt i gruppen Instruktioner. Tills dess hoppas rensningen över och den ursprungliga transkriptionen används.",
         "promptHidden": "Den här modellen använder sin egen fasta prompt och inställningarna Stil, Struktur och Sammanhang ovan, så promptredigeraren är dold."
       }
     },
@@ -1072,6 +1076,10 @@
         "title": "Version",
         "description": "Nuvarande version av Handy"
       },
+      "updates": {
+        "title": "Uppdateringar",
+        "description": "Kontrollera om en nyare version finns tillgänglig"
+      },
       "whatsNewUpdates": {
         "label": "Visa nyheter",
         "description": "Visa versionsinformation efter Handy-uppdateringar"
@@ -1113,7 +1121,17 @@
     "portableUpdateMessage": "Portabla installationer kan inte uppdateras automatiskt. Ladda ner installeraren för ditt system nedan, kör den och installera i samma mapp — din Data/-mapp (inställningar, modeller, inspelningar) behålls.",
     "portableUpdateButton": "Ladda ner installeraren",
     "portableUpdateBrowseMessage": "Portabla installationer kan inte uppdateras automatiskt. Ladda ner den senaste versionen för ditt system från GitHub Releases och installera den i samma mapp — din Data/-mapp (inställningar, modeller, inspelningar) behålls.",
-    "portableUpdateBrowseButton": "Öppna GitHub Releases"
+    "portableUpdateBrowseButton": "Öppna GitHub Releases",
+    "activity": {
+      "ready": "Redo",
+      "recording": "Spelar in",
+      "transcribing": "Transkriberar",
+      "cleaningUp": "Rensar upp",
+      "reading": "Läser upp",
+      "downloading": "Laddar ner {{name}} {{percent}} %",
+      "languageDetector": "språkdetektor",
+      "downloadingMany": "Laddar ner {{count}} modeller"
+    }
   },
   "whatsNew": {
     "title": "Nytt i Handy v{{version}}"
@@ -1140,7 +1158,7 @@
   },
   "errors": {
     "readAloudBusyPastingTitle": "Uppläsning är upptagen med inklistring",
-    "readAloudBusyPasting": "Handy klistrar fortfarande in. Försök med uppläsning igen när inklistringen är klar.",
+    "readAloudBusyPasting": "Inklistringen pågår fortfarande. Försök med uppläsning igen när inklistringen är klar.",
     "readAloudUnavailableTitle": "Uppläsning är inte tillgänglig",
     "readAloudClipboardUnreadableTitle": "Urklipp kan inte läsas",
     "readAloudClipboardUnreadable": "Texten i urklipp kunde inte läsas.",
@@ -1245,17 +1263,15 @@
       "audio": "Utenheten kunde inte öppnas.",
       "text": "Texten kunde inte förberedas.",
       "clock": "Uppspelningens timing misslyckades.",
-      "worker": "Arbetsprocessen för text-till-tal stoppades.",
-      "unavailable": "Text-till-tal är inte tillgängligt.",
-      "notReady": "Text-till-tal startar fortfarande.",
-      "generic": "Text-till-tal misslyckades.",
-      "memory": "Minst 1 GiB tillgängligt minne krävs.",
+      "worker": "Arbetsprocessen för uppläsning stoppades.",
+      "notReady": "Uppläsning laddas fortfarande.",
+      "generic": "Något gick fel.",
+      "memory": "Minst 1,1 GB tillgängligt minne krävs.",
       "gatedToken": "Pocket-röster kräver en Hugging Face-token och godkända villkor för rösterna.",
-      "model": "Välj en tillgänglig text-till-tal-modell.",
       "device": "Den här enheten är inte tillgänglig.",
       "npuDriverTooOld": "NPU-drivrutinen är för gammal. Uppdatera den eller välj en annan enhet.",
       "selection": "Valet kunde inte tillämpas.",
-      "busy": "En text-till-tal-åtgärd pågår redan.",
+      "busy": "En annan uppläsningsåtgärd pågår fortfarande.",
       "cancelled": "Uppläsningen avbröts.",
       "clipboard": "Texten i urklipp kunde inte läsas.",
       "deviceNotSupported": "Den här modellen stöder inte den valda enheten.",
@@ -1268,16 +1284,16 @@
       "invalidRatings": "Modellbetygen saknas eller är ogiltiga.",
       "invalidVoice": "Välj en röst för den valda modellen.",
       "outputUnavailable": "Utenheten är inte tillgänglig.",
-      "path": "Lagringskatalogen för text-till-tal är inte tillgänglig.",
+      "path": "Lagringsmappen för uppläsning är inte tillgänglig.",
       "prepareFailed": "Den valda enheten kunde inte förbereda den här modellen.",
-      "protocol": "Arbetsprocessen för text-till-tal returnerade ett ogiltigt svar.",
-      "registry": "Registret över text-till-tal-modeller är ogiltigt.",
-      "settings": "Inställningarna för text-till-tal kunde inte sparas.",
-      "start": "Arbetsprocessen för text-till-tal kunde inte startas.",
-      "starting": "Arbetsprocessen för text-till-tal startar.",
+      "protocol": "Arbetsprocessen för uppläsning returnerade ett ogiltigt svar.",
+      "registry": "Modelllistan för uppläsning är ogiltig.",
+      "settings": "Inställningarna för uppläsning kunde inte sparas.",
+      "start": "Arbetsprocessen för uppläsning kunde inte startas.",
+      "starting": "Arbetsprocessen för uppläsning laddas.",
       "tokenRejected": "Hugging Face-token avvisades. Kontrollera åtkomsten till villkoren för Pocket-rösterna.",
       "tokenRequired": "Ange en Hugging Face-token och godkänn villkoren för Pocket-rösterna innan du laddar ner röster.",
-      "unknownModel": "Den valda text-till-tal-modellen är okänd.",
+      "unknownModel": "Den valda uppläsningsmodellen är okänd.",
       "window": "Uppläsningsfönstret kunde inte öppnas.",
       "accessDenied": "Åtkomst till modellfilerna nekades.",
       "localIo": "Modellfilerna kunde inte läsas eller skrivas.",
@@ -1324,7 +1340,7 @@
     "preview": "Lyssna",
     "pitch": "Tonhöjd: {{value}} halvtoner",
     "output": "Utenhet för uppläsning",
-    "sameAsHandy": "Samma som {{device}}",
+    "sameAsHandy": "Samma som utenheten för ljudåterkoppling",
     "readCode": "Läs upp kodblock",
     "technicalReading": "Teknisk uppläsning",
     "fullPaths": "Läs hela sökvägar",
@@ -1340,9 +1356,9 @@
     "status": {
       "failed": "Misslyckades",
       "ready": "Redo",
-      "starting": "Startar",
+      "starting": "Laddar",
       "stopping": "Stoppar",
-      "unloaded": "Avlastad"
+      "unloaded": "Inte laddad"
     },
     "previewSentence": "Reading clearly, one phrase at a time.",
     "description": {
@@ -1372,10 +1388,11 @@
       "reading": "Skrivna ord med det som sades",
       "readingHint": "Den skrivna texten överst och det som sades under. Dra över orden för att rätta hur de lästes.",
       "retentionConfirm": {
-        "message_one": "Ta bort {{count}} sparad uppläsning nu? Din ordlista ändras inte.",
-        "message": "Ta bort {{count}} sparade uppläsningar nu? Din ordlista ändras inte.",
-        "action": "Ta bort uppläsningar"
-      }
+        "message_one": "Ta bort {{count}} post nu? Din ordlista ändras inte.",
+        "message": "Ta bort {{count}} poster nu? Din ordlista ändras inte.",
+        "action": "Ta bort poster"
+      },
+      "copyFailed": "Texten kunde inte kopieras till urklipp."
     },
     "vocabulary": {
       "columns": {
@@ -1432,7 +1449,7 @@
         "changed": "Vokabulärfilen ändrades på disken. Tabellen lästes in igen; gör din ändring på nytt.",
         "fileInvalid": "Din vokabulärfil har ett fel och kan inte redigeras här: {{message}}",
         "invalidEdit": "Posten kunde inte sparas: {{message}}",
-        "tooLarge": "Vokabulärfilen skulle bli större än 1 MiB, så inget sparades.",
+        "tooLarge": "Ordlistefilen skulle bli större än 1 MB, så ingenting sparades.",
         "io": "Vokabulärfilen kunde inte skrivas: {{message}}",
         "voicesChanged": "Vokabulären ändrades medan ändringen väntade, så den tillämpades inte."
       },
@@ -1451,7 +1468,7 @@
       "derive": {
         "unchanged": "De uttalade orden är oförändrade, så det finns inget att spara.",
         "severalWords": "Ändringen berör mer än ett skrivet ord. Korrigera ett ord i taget.",
-        "notExplained": "Ingen enskild regel får texten att läsas så här.",
+        "notExplained": "Ingen enskild post gör att texten läses så här.",
         "invalid": "Det går inte att spara: {{detail}}"
       },
       "check": {
@@ -1468,7 +1485,7 @@
         "savePassedOnly": "Spara bara för modeller som klarade sig",
         "pickOne": "Välj en modell",
         "dictating": "Diktering pågår. Kontrollera igen när den är klar.",
-        "transcribeFailed": "Tal-till-text kunde inte transkribera rösten."
+        "transcribeFailed": "Dikteringsmodellen kunde inte transkribera rösten."
       },
       "filters": {
         "model": "Modell",
@@ -1506,7 +1523,7 @@
       "spokenAs": "Uttalas som",
       "shouldSay": "Ska säga",
       "savesAs": "Sparas som",
-      "deriving": "Räknar ut regeln...",
+      "deriving": "Räknar ut posten...",
       "exactOnly": "Bara exakt den här texten",
       "chooseScope": "Välj var den gäller",
       "scopeRequiredModels": "Välj Alla modeller eller en modell innan du sparar.",
@@ -1531,7 +1548,7 @@
         "stopped": "Mikrofonen stoppades innan dina ord hördes, så inget fylldes i.",
         "reading": "Läs upp är öppen. Stäng den och använd sedan mikrofonen.",
         "failed": "Mikrofonen kunde inte starta.",
-        "transcribeFailed": "Tal till text kunde inte transkribera det du sa."
+        "transcribeFailed": "Dikteringsmodellen kunde inte transkribera det du sa."
       }
     }
   },
@@ -1595,7 +1612,9 @@
     "cleaned": "Rensad text",
     "original": "Ursprunglig transkription",
     "diffNote": "Visar skillnaderna mot den ursprungliga transkriptionen.",
-    "noCleanup": "Ingen rensning"
+    "noCleanup": "Ingen rensning",
+    "failedLine": "Den här posten kunde inte transkriberas. Använd {{action}} för att försöka igen.",
+    "notTranscribedLine": "Den här posten är inte transkriberad än. Använd {{action}} för att transkribera den."
   },
   "models": {
     "tags": {
@@ -1677,7 +1696,13 @@
     "heads": {
       "score": "Poäng",
       "speed": "Hastighet",
-      "size": "Storlek"
+      "size": "Storlek",
+      "short": {
+        "score": "Poäng",
+        "speed": "Fart",
+        "size": "Stl.",
+        "all": "Alla"
+      }
     },
     "legend": {
       "open": "Vad kolumnerna betyder",

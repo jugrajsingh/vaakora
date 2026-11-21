@@ -80,7 +80,7 @@ export function ReadHistoryRows({
   const copyRead = (entry: ReadHistoryEntry) =>
     copyHistoryRaw(
       () => copy(entry.source),
-      () => notify({ title: t("settings.history.copyError") }),
+      () => notify({ title: t("tts.history.copyFailed") }),
     );
   return (
     <>

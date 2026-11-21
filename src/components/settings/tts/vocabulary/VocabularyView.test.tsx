@@ -606,7 +606,7 @@ describe("VocabularyView, toolbar and states", () => {
     assert.match(
       html,
       new RegExp(
-        `<p class="[^"]*font-mono[^"]*break-all[^"]*text-ink-2[^"]*">${path}</p>`,
+        `<p dir="ltr" class="[^"]*font-mono[^"]*break-all[^"]*text-ink-2[^"]*">${path}</p>`,
       ),
     );
     assert.ok(html.includes("Built-in readings are used until it is fixed."));

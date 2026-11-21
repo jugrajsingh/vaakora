@@ -264,12 +264,16 @@ export const ModelsSettings: React.FC<ModelsSettingsProps> = ({
     asked.current = {
       id: m.id,
       selected,
-      message: deleteMessage(t, {
-        name: m.name,
-        size: m.sizeBytes === null ? null : formatBytes(m.sizeBytes),
-        selected,
-        role: "dictation",
-      }),
+      message: deleteMessage(
+        t,
+        {
+          name: m.name,
+          size: m.sizeBytes === null ? null : formatBytes(m.sizeBytes),
+          selected,
+          role: "dictation",
+        },
+        i18n.language,
+      ),
     };
     question.ask(m.id);
   };

@@ -36,6 +36,7 @@ export function groupAnchor(group: GroupId): string {
 
 /** Cross-link targets used by pages. */
 export const LINKS = {
+  about: { destination: "settings", tab: "about" },
   dictationHistory: { destination: "dictation", tab: "history" },
   cleanup: { destination: "dictation", tab: "cleanup" },
   readAloudModels: { destination: "models", tab: "readAloud" },
@@ -124,6 +125,15 @@ export function createNavigator(deps: {
       }
     },
   };
+}
+
+/** Ends onboarding or its preview, then follows the finish link when there is one. */
+export function afterOnboarding(
+  then: Link | undefined,
+  deps: { close(): void; navigate(to: Link): void },
+): void {
+  deps.close();
+  if (then) deps.navigate(then);
 }
 
 /** Scrolls a link's group into view, or the page to its top when there is none. */

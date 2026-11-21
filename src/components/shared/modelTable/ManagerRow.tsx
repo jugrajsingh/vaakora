@@ -8,6 +8,7 @@ import { InlineConfirm } from "@/components/shared/InlineConfirm";
 import { ProgressRing } from "@/components/shared/ProgressRing";
 import { SpeedBars } from "@/components/shared/SpeedBars";
 import { Tag } from "@/components/shared/Tag";
+import { useRevealOnOpen } from "@/components/shared/useRevealOnOpen";
 import {
   openLink,
   type OpenLink,
@@ -15,7 +16,7 @@ import {
 import { languageList } from "@/lib/constants/languages";
 import { formatBytes } from "@/lib/utils/format";
 import type { Grading } from "@/lib/models/grading";
-import { CODE_CLASS, Values, rowGrid } from "./columns";
+import { HEAD_CLASS, Values, rowGrid } from "./columns";
 import type { TableModel } from "./context";
 import type { ManagerModel, Measure, ModelState } from "./roles";
 
@@ -48,6 +49,11 @@ const VALUE_CLASS = "min-w-0 [overflow-wrap:anywhere] text-ink-2";
 
 const sizeOf = (bytes: number | null): string | null =>
   bytes === null ? null : formatBytes(bytes);
+
+/** A formatted size that keeps its digits before its unit in right-to-left text. */
+const isolated = (size: string): React.ReactNode => (
+  <span dir="ltr">{size}</span>
+);
 
 function markIcon(state: ModelState, cancels: boolean): React.ReactNode {
   switch (state.kind) {
@@ -108,11 +114,13 @@ export function ManagerRowView({
   language,
   detailId,
   openLink: openUrl,
+  rowRef,
 }: ManagerRowProps & {
   t: TFunction;
   language: string;
   detailId: string;
   openLink: OpenLink;
+  rowRef?: React.Ref<HTMLDivElement>;
 }): React.JSX.Element {
   const { state } = model;
   const selected = state.kind === "selected";
@@ -124,6 +132,7 @@ export function ManagerRowView({
       : null;
   const icon = markIcon(state, pressable !== null);
   const size = sizeOf(model.sizeBytes);
+  const memory = sizeOf(model.memoryBytes);
   const notListed = t("models.missing.notListed");
 
   const secondLine = (): React.ReactNode => {
@@ -183,7 +192,7 @@ export function ManagerRowView({
       : [[t("models.detail.runOn"), runOnValue] as [string, React.ReactNode]]),
     [
       t("models.detail.memory"),
-      sizeOf(model.memoryBytes) ?? t("models.missing.notMeasured"),
+      memory === null ? t("models.missing.notMeasured") : isolated(memory),
     ],
     [t("models.detail.measuredOn"), measuredOn],
     ...(model.role === "readAloud"
@@ -283,6 +292,7 @@ export function ManagerRowView({
 
   return (
     <div
+      ref={rowRef}
       data-row={model.id}
       data-selected={selected ? "" : undefined}
       tabIndex={onKeyDown ? 0 : undefined}
@@ -362,9 +372,16 @@ export function ManagerRowView({
 export function ManagerRow(props: ManagerRowProps): React.JSX.Element {
   const { t, i18n } = useTranslation();
   const detailId = `${useId()}-detail`;
+  const reveal = useRevealOnOpen<HTMLDivElement>(
+    props.open,
+    props.toggle,
+    "[data-model-toolbar]",
+  );
   return (
     <ManagerRowView
       {...props}
+      toggle={reveal.toggle}
+      rowRef={reveal.ref}
       t={t}
       language={i18n.language}
       detailId={detailId}
@@ -385,9 +402,10 @@ export function RoleHeads(): React.JSX.Element {
       {(["score", "speed", "size"] as const).map((head) => (
         <span
           key={head}
-          className={`min-w-0 text-center [overflow-wrap:anywhere] ${CODE_CLASS}`}
+          title={t(`models.heads.${head}`)}
+          className={`text-center ${HEAD_CLASS}`}
         >
-          {t(`models.heads.${head}`)}
+          {t(`models.heads.short.${head}`)}
         </span>
       ))}
     </span>
@@ -415,7 +433,8 @@ export function RoleCells({
   const unmeasured = t("models.missing.unmeasured");
   const score = measureLabel(t, t("models.heads.score"), model.quality);
   const speed = measureLabel(t, t("models.heads.speed"), model.speed);
-  const shownSize = sizeOf(model.sizeBytes) ?? t("models.missing.notListed");
+  const listedSize = sizeOf(model.sizeBytes);
+  const shownSize = listedSize ?? t("models.missing.notListed");
   const size = t("models.cell.value", {
     head: t("models.heads.size"),
     figure: shownSize,
@@ -448,7 +467,7 @@ export function RoleCells({
         title={size}
         className="text-center text-label tabular-nums text-ink-3"
       >
-        {shownSize}
+        {listedSize === null ? shownSize : isolated(listedSize)}
       </span>
     </span>
   );

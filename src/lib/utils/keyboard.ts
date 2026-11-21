@@ -289,6 +289,13 @@ const PC_KEYCAPS: Record<string, string> = {
   command: "⊞",
 };
 
+const LINUX_KEYCAPS: Record<string, string> = {
+  ...PC_KEYCAPS,
+  meta: "Super",
+  super: "Super",
+  command: "Super",
+};
+
 /** "option+space" → ["⌥", "Space"] on macOS. */
 export const keycapLabels = (binding: string, osType: OSType): string[] =>
   binding
@@ -297,7 +304,12 @@ export const keycapLabels = (binding: string, osType: OSType): string[] =>
     .filter(Boolean)
     .map((part) => {
       const key = part.replace(/_(left|right)$/, "");
-      const glyphs = osType === "macos" ? MAC_KEYCAPS : PC_KEYCAPS;
+      const glyphs =
+        osType === "macos"
+          ? MAC_KEYCAPS
+          : osType === "linux"
+            ? LINUX_KEYCAPS
+            : PC_KEYCAPS;
       return glyphs[key] ?? capitalizeKey(key);
     });
 

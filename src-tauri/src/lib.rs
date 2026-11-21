@@ -994,6 +994,7 @@ pub fn run(cli_args: CliArgs) {
             actions::TranscriptionCompleteEvent,
             notices::NoticesChanged,
             tts::vocabulary_commands::TtsVoicePlaying,
+            tray::DictationActivityEvent,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds

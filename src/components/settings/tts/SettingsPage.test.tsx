@@ -290,7 +290,12 @@ test("groups_are_model_playback_text_handling_history", () => {
 test("output_row_names_the_read_aloud_device", () => {
   const html = renderControls([pocket, supertonic], "supertonic-3");
   assert.ok(html.includes("Read-aloud output device"));
-  assert.ok(html.includes("Same as Output Device"), "names the feedback row");
+  assert.ok(
+    html.includes("Same as the feedback output device"),
+    "names the feedback row",
+  );
+  assert.ok(!html.includes("Same as Feedback output device"));
+  assert.ok(!html.includes("Same as Output Device"));
   assert.ok(!html.includes("Same as Handy"));
 });
 

@@ -92,7 +92,7 @@ const NoticeCard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // Over dialogs. Onboarding has no footer, and its Continue button is where
   // the card would be, so there it sits below the window's top bar.
-  const position = footerShown ? "bottom-9" : "top-14";
+  const position = footerShown ? "bottom-[36px]" : "top-14";
 
   return (
     <div

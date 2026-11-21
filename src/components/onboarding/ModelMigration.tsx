@@ -397,7 +397,7 @@ const MigrationRow: React.FC<MigrationRowProps> = ({
       );
     }
     return (
-      <span className="tabular-nums">
+      <span dir="ltr" className="tabular-nums">
         {formatModelSize(Number(replacement.size_mb))}
       </span>
     );

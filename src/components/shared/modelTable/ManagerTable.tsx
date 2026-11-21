@@ -10,6 +10,7 @@ import { isComposingKeyEvent } from "@/lib/utils/keyboard";
 import { CODE_CLASS, rowGrid } from "./columns";
 import {
   SPEED_SCORE_FLOORS,
+  createOpenSync,
   nextOpen,
   type Chip,
   type ManagerModel,
@@ -174,14 +175,13 @@ export function ManagerTableView({
 export function ManagerTable(props: ManagerTableProps): React.JSX.Element {
   const { t } = useTranslation();
   const { sections, openId, onOpenChange } = props;
-  const open = nextOpen(
-    openId,
-    sections.flatMap((section) => section.rows.map((m) => m.id)),
-  );
+  const [sync] = useState(createOpenSync);
+  const ids = sections.flatMap((section) => section.rows.map((m) => m.id));
   useEffect(() => {
-    if (open !== openId) onOpenChange(open);
-  }, [open, openId, onOpenChange]);
-  return <ManagerTableView {...props} t={t} />;
+    const next = sync(openId, ids);
+    if (next !== undefined) onOpenChange(next);
+  }, [sync, openId, ids.join("\n"), onOpenChange]);
+  return <ManagerTableView {...props} openId={nextOpen(openId, ids)} t={t} />;
 }
 
 interface RoleLegendProps {

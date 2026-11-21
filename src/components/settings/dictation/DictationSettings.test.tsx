@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import i18next from "i18next";
 import { I18nextProvider } from "react-i18next";
 import en from "../../../i18n/locales/en/translation.json";
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 const {
   describe,
@@ -148,6 +149,25 @@ function groups(html: string): Record<string, string[]> {
 }
 
 describe("DictationSettings", () => {
+  it("release_note_names_paste_method_place", () => {
+    const note = readFileSync(
+      new URL(
+        "../../../content/release-notes/0.10.1.linux.md",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    const place = [
+      "nav.dictation",
+      "nav.settings",
+      "settings.groups.output",
+      "settings.advanced.pasteMethod.title",
+    ]
+      .map((key) => i18n.t(key))
+      .join(" → ");
+    assert.ok(note.includes(`**${place}**`), place);
+    assert.ok(!note.includes("Advanced → Paste Method"));
+  });
   it("groups_follow_the_job_order", () => {
     const html = render(model(true, true));
     assert.deepEqual(titles(html), [

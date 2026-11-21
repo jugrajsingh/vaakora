@@ -10,6 +10,7 @@
   --color-background: var(--color-background);
   --color-background-ui: var(--color-background-ui);
   --color-logo-primary: var(--color-logo-primary);
+  --color-logo-pastel: var(--color-logo-pastel);
   --color-warning: var(--color-warning);
   --color-error: var(--color-error);
   --color-moss: var(--color-moss);
@@ -259,6 +260,16 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--scrollbar-thumb-hover);
+}
+
+/* Slider and audio player thumb in the app's pink. */
+input[type="range"].appearance-none::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--color-logo-primary);
+  border: 2px solid var(--color-background);
 }
 
 .logo-primary {

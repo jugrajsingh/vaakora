@@ -216,7 +216,7 @@ describe("PostProcessingSettings", () => {
       "Instructions",
       "Local model",
     ]);
-    const prompts = html.indexOf("Selected Prompt");
+    const prompts = html.indexOf("Selected prompt");
     assert.ok(
       html.indexOf(">Instructions</h2>") < prompts &&
         prompts < html.indexOf(">Local model</h2>"),
@@ -379,10 +379,10 @@ describe("PostProcessingSettings", () => {
       "Dictations are sent to api.openai.com for cleanup.",
     );
     assert.ok(
-      html.indexOf('role="note"') < html.indexOf(">API Key</h3>"),
+      html.indexOf('role="note"') < html.indexOf(">API key</h3>"),
       "the destination line precedes the API key row",
     );
-    assert.deepEqual(rowTitles(html).slice(0, 2), ["Provider", "API Key"]);
+    assert.deepEqual(rowTitles(html).slice(0, 2), ["Provider", "API key"]);
   });
 
   it("custom_provider_names_its_host_with_port", () => {
@@ -407,7 +407,7 @@ describe("PostProcessingSettings", () => {
       llmModel("s1_control_line"),
     ]);
     assert.deepEqual(groupTitles(html), ["Provider", "Local model"]);
-    assert.ok(!html.includes("Selected Prompt"));
+    assert.ok(!html.includes("Selected prompt"));
     assert.ok(
       html.indexOf('data-marker="LocalLlmSettings"') <
         html.indexOf("uses its own fixed prompt"),
@@ -429,7 +429,7 @@ describe("PostProcessingSettings", () => {
     assert.ok(!html.includes("Update Prompt"));
     assert.ok(!html.includes("Delete Prompt"));
     assert.ok(!html.includes("Create Prompt"));
-    assert.ok(!html.includes("Prompt Instructions"), "no inline editor");
+    assert.ok(!html.includes("Prompt instructions"), "no inline editor");
     assert.ok(
       html.indexOf("Clean up") < html.indexOf(">Edit</button>") &&
         html.indexOf(">Edit</button>") < html.indexOf(">New prompt</button>"),

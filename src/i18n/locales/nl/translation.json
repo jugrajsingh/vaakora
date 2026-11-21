@@ -3,29 +3,29 @@
     "settings": "Instellingen...",
     "checkUpdates": "Controleren op updates...",
     "copyLastTranscript": "Laatste transcriptie kopiëren",
-    "unloadModel": "Transcriptiemodel ontladen",
-    "cleanup": "Naverwerkingsmodel",
+    "unloadModel": "Dicteermodel ontladen",
+    "cleanup": "Opschoonmodel",
     "cleanupReady": "gereed",
     "cleanupNotLoaded": "niet geladen",
     "cleanupLoading": "laden",
-    "cleanupError": "fout",
-    "noCleanupModel": "Geen naverwerkingsmodel",
-    "unloadPostProcessingModel": "Naverwerkingsmodel ontladen",
+    "cleanupError": "mislukt",
+    "noCleanupModel": "Geen opschoonmodel",
+    "unloadPostProcessingModel": "Opschoonmodel ontladen",
     "model": "Model",
-    "transcriptionModel": "Transcriptiemodel",
+    "transcriptionModel": "Dicteermodel",
     "quit": "Afsluiten",
     "cancel": "Annuleren",
     "secureInputWarning": "⚠ Sneltoetsen geblokkeerd door Secure Input",
     "language": "Taal",
     "autoLanguage": "Automatisch",
     "otherLanguages": "Andere talen",
-    "ttsModel": "Tekst-naar-spraakmodel",
-    "ttsUnload": "Tekst-naar-spraakmodel ontladen",
-    "ttsStarting": "Starten",
-    "ttsReady": "Geladen",
+    "ttsModel": "Voorleesmodel",
+    "ttsUnload": "Voorleesmodel ontladen",
+    "ttsStarting": "Laden",
+    "ttsReady": "Gereed",
     "ttsStopping": "Stoppen",
     "ttsFailed": "Mislukt",
-    "ttsUnloaded": "Ontladen"
+    "ttsUnloaded": "Niet geladen"
   },
   "sidebar": {
     "general": "Algemeen",
@@ -236,6 +236,9 @@
       "highFiveLabel": "High five",
       "atLogin": "Handy starten als ik inlog",
       "finish": "Klaar",
+      "readAloud": "Om een tekst te laten voorlezen, kopieer je de tekst en druk je op <keys/>.",
+      "readAloudUnbound": "Om een tekst te laten voorlezen, stel je de sneltoets in bij Instellingen, Algemeen.",
+      "chooseReadAloudModel": "Kies een voorleesmodel",
       "panel": {
         "name": "Handy",
         "ready": "Klaar",
@@ -338,7 +341,6 @@
     "alreadyAdded_other": "{{languages}} zijn al toegevoegd."
   },
   "modelSelector": {
-    "status": "Modelstatus: {{modelName}}",
     "size": "{{size}} MiB",
     "custom": "Aangepast",
     "streaming": "Streaming",
@@ -408,7 +410,9 @@
       "readAloud": "Voorlezen",
       "activation": "Activering",
       "activationHelp": "Voor dicteersneltoetsen",
-      "cancelLinuxHelp": "Op Linux stopt de sneltoets voor annuleren een dictaat niet, omdat sneltoetsen die tijdens een dictaat worden geregistreerd daar onbetrouwbaar zijn. Gebruik het X op de overlay, Annuleren in het menu van het systeemvak, of voer handy --cancel uit."
+      "cancelLinuxHelp": "Op Linux stopt de sneltoets voor annuleren een dictaat niet, omdat sneltoetsen die tijdens een dictaat worden geregistreerd daar onbetrouwbaar zijn. Gebruik het X op de overlay, Annuleren in het menu van het systeemvak, of voer handy --cancel uit.",
+      "inUse": "Wordt al gebruikt door {{name}}",
+      "cannotClear": "{{name}} kan niet worden gewist"
     },
     "modelSettings": {
       "title": "Instellingen voor {{model}}"
@@ -555,7 +559,8 @@
         "title": "Volume",
         "description": "Pas het volume van de geluidsfeedback aan",
         "offReason": "Niet gebruikt wanneer geluidsfeedback uit staat."
-      }
+      },
+      "feedbackOutputDevice": "Afspeelapparaat voor geluidsfeedback"
     },
     "advanced": {
       "groups": {
@@ -779,20 +784,19 @@
         "createFirst": "Klik hierboven op 'Nieuwe prompt maken' om je eerste naverwerkingsprompt aan te maken."
       },
       "localLlm": {
-        "noCleanupModel": "Geen naverwerkingsmodel",
         "s1Description": "Gebruikt de instellingen voor stijl, structuur en context.",
-        "plainDescription": "Gebruikt je geselecteerde Handy-prompt.",
+        "plainDescription": "Gebruikt de prompt die je hebt geselecteerd.",
         "status": {
           "title": "Status",
-          "description": "Het model wordt geladen wanneer een dictaat met naverwerking begint en na de time-out voor het ontladen van modellen weer ontladen.",
+          "description": "Het model wordt geladen wanneer een dictaat met opschoning begint en na de time-out voor het ontladen van modellen weer ontladen.",
           "notLoaded": "Niet geladen",
           "loading": "Laden",
           "ready": "Gereed",
-          "error": "Fout: {{reason}}"
+          "error": "Mislukt: {{reason}}"
         },
         "styling": {
           "title": "Stijl",
-          "description": "Hoe formeel de naverwerkte tekst klinkt.",
+          "description": "Hoe formeel de opgeschoonde tekst klinkt.",
           "options": {
             "casual": "Informeel",
             "semi_casual": "Halfinformeel",
@@ -819,7 +823,7 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 met één extra voorwaarde: het model moet altijd \"S1-mini\" van \"Superwhisper\" heten, met precies deze hoofdletters en kleine letters."
         },
-        "promptRequired": "Selecteer in de groep Instructies een niet-lege Handy-prompt. Tot die tijd wordt naverwerking overgeslagen en wordt de ruwe transcriptie gebruikt.",
+        "promptRequired": "Selecteer in de groep Instructies een niet-lege prompt. Tot die tijd wordt opschoning overgeslagen en wordt de originele transcriptie gebruikt.",
         "promptHidden": "Dit model gebruikt zijn eigen vaste prompt en de instellingen voor stijl, structuur en context hierboven, dus de prompt-editor is verborgen."
       }
     },
@@ -1072,6 +1076,10 @@
         "title": "Versie",
         "description": "Huidige versie van Handy"
       },
+      "updates": {
+        "title": "Updates",
+        "description": "Controleer of er een nieuwere versie beschikbaar is"
+      },
       "whatsNewUpdates": {
         "label": "Toon 'Wat is er nieuw'",
         "description": "Release-notes tonen nadat Handy is bijgewerkt"
@@ -1113,7 +1121,17 @@
     "portableUpdateMessage": "Draagbare (portable) installaties kunnen niet automatisch worden bijgewerkt. Download hieronder het installatiebestand voor je systeem, voer het uit en installeer in dezelfde map — je Data/-map (instellingen, modellen, opnames) blijft behouden.",
     "portableUpdateButton": "Installatiebestand downloaden",
     "portableUpdateBrowseMessage": "Draagbare (portable) installaties kunnen niet automatisch worden bijgewerkt. Download de nieuwste versie voor je systeem van GitHub Releases en installeer die in dezelfde map — je Data/-map (instellingen, modellen, opnames) blijft behouden.",
-    "portableUpdateBrowseButton": "GitHub Releases openen"
+    "portableUpdateBrowseButton": "GitHub Releases openen",
+    "activity": {
+      "ready": "Gereed",
+      "recording": "Opnemen",
+      "transcribing": "Transcriberen",
+      "cleaningUp": "Opschonen",
+      "reading": "Voorlezen",
+      "downloading": "{{name}} downloaden {{percent}}%",
+      "languageDetector": "taaldetector",
+      "downloadingMany": "{{count}} modellen downloaden"
+    }
   },
   "whatsNew": {
     "title": "Nieuw in Handy v{{version}}"
@@ -1140,7 +1158,7 @@
   },
   "errors": {
     "readAloudBusyPastingTitle": "Voorlezen is bezig met plakken",
-    "readAloudBusyPasting": "Handy is nog aan het plakken. Probeer Voorlezen opnieuw nadat het plakken klaar is.",
+    "readAloudBusyPasting": "Het plakken is nog bezig. Probeer Voorlezen opnieuw nadat het plakken klaar is.",
     "readAloudUnavailableTitle": "Voorlezen niet beschikbaar",
     "readAloudClipboardUnreadableTitle": "Klembord niet leesbaar",
     "readAloudClipboardUnreadable": "De tekst op het klembord kon niet worden gelezen.",
@@ -1245,17 +1263,15 @@
       "audio": "Het uitvoerapparaat kon niet worden geopend.",
       "text": "Deze tekst kon niet worden voorbereid.",
       "clock": "De timing van het afspelen is mislukt.",
-      "worker": "De tekst-naar-spraakworker is gestopt.",
-      "unavailable": "Tekst-naar-spraak is niet beschikbaar.",
-      "notReady": "Tekst-naar-spraak is nog bezig met starten.",
-      "generic": "Tekst-naar-spraak is mislukt.",
-      "memory": "Minstens 1 GiB beschikbaar geheugen is vereist.",
+      "worker": "De voorleesworker is gestopt.",
+      "notReady": "Voorlezen wordt nog geladen.",
+      "generic": "Er ging iets mis.",
+      "memory": "Er is minstens 1,1 GB beschikbaar geheugen nodig.",
       "gatedToken": "Pocket-stemmen vereisen een Hugging Face-token en geaccepteerde stemvoorwaarden.",
-      "model": "Kies een beschikbaar tekst-naar-spraakmodel.",
       "device": "Dit apparaat is niet beschikbaar.",
       "npuDriverTooOld": "NPU-stuurprogramma te oud. Werk het bij of kies een ander apparaat.",
       "selection": "De selectie kon niet worden toegepast.",
-      "busy": "Er loopt al een tekst-naar-spraakbewerking.",
+      "busy": "Er loopt nog een andere voorleesactie.",
       "cancelled": "Voorlezen is geannuleerd.",
       "clipboard": "De tekst op het klembord kon niet worden gelezen.",
       "deviceNotSupported": "Dit model ondersteunt het geselecteerde apparaat niet.",
@@ -1268,16 +1284,16 @@
       "invalidRatings": "De modelbeoordelingen ontbreken of zijn ongeldig.",
       "invalidVoice": "Kies een stem voor het geselecteerde model.",
       "outputUnavailable": "Het uitvoerapparaat is niet beschikbaar.",
-      "path": "De opslagmap voor tekst-naar-spraak is niet beschikbaar.",
+      "path": "De opslagmap voor voorlezen is niet beschikbaar.",
       "prepareFailed": "Het geselecteerde apparaat kon dit model niet voorbereiden.",
-      "protocol": "De tekst-naar-spraakworker gaf een ongeldig antwoord.",
-      "registry": "Het register van tekst-naar-spraakmodellen is ongeldig.",
-      "settings": "De tekst-naar-spraakinstellingen konden niet worden opgeslagen.",
-      "start": "De tekst-naar-spraakworker kon niet starten.",
-      "starting": "De tekst-naar-spraakworker wordt gestart.",
+      "protocol": "De voorleesworker gaf een ongeldig antwoord.",
+      "registry": "De lijst met voorleesmodellen is ongeldig.",
+      "settings": "De voorleesinstellingen konden niet worden opgeslagen.",
+      "start": "De voorleesworker kon niet starten.",
+      "starting": "De voorleesworker wordt geladen.",
       "tokenRejected": "Het Hugging Face-token is geweigerd. Controleer de toegang tot de Pocket-stemvoorwaarden.",
       "tokenRequired": "Stel een Hugging Face-token in en accepteer de Pocket-stemvoorwaarden voordat je stemmen downloadt.",
-      "unknownModel": "Het geselecteerde tekst-naar-spraakmodel is onbekend.",
+      "unknownModel": "Het geselecteerde voorleesmodel is onbekend.",
       "window": "Het venster voor voorlezen kon niet worden geopend.",
       "accessDenied": "Toegang tot de modelbestanden is geweigerd.",
       "localIo": "De modelbestanden konden niet worden gelezen of geschreven.",
@@ -1324,7 +1340,7 @@
     "preview": "Beluisteren",
     "pitch": "Toonhoogte: {{value}} halve tonen",
     "output": "Uitvoerapparaat voor voorlezen",
-    "sameAsHandy": "Hetzelfde als {{device}}",
+    "sameAsHandy": "Hetzelfde als het afspeelapparaat voor geluidsfeedback",
     "readCode": "Codeblokken voorlezen",
     "technicalReading": "Technisch voorlezen",
     "fullPaths": "Volledige paden voorlezen",
@@ -1340,9 +1356,9 @@
     "status": {
       "failed": "Mislukt",
       "ready": "Gereed",
-      "starting": "Starten",
+      "starting": "Laden",
       "stopping": "Stoppen",
-      "unloaded": "Ontladen"
+      "unloaded": "Niet geladen"
     },
     "previewSentence": "Reading clearly, one phrase at a time.",
     "description": {
@@ -1372,10 +1388,11 @@
       "reading": "Geschreven woorden met wat er gezegd is",
       "readingHint": "Bovenaan de geschreven tekst, eronder wat er gezegd is. Sleep over woorden om te corrigeren hoe ze zijn voorgelezen.",
       "retentionConfirm": {
-        "message_one": "Nu {{count}} bewaarde voorlezing verwijderen? Je woordenlijst verandert niet.",
-        "message": "Nu {{count}} bewaarde voorlezingen verwijderen? Je woordenlijst verandert niet.",
-        "action": "Voorlezingen verwijderen"
-      }
+        "message_one": "Nu {{count}} item verwijderen? Je woordenlijst verandert niet.",
+        "message": "Nu {{count}} items verwijderen? Je woordenlijst verandert niet.",
+        "action": "Items verwijderen"
+      },
+      "copyFailed": "De tekst kon niet naar het klembord worden gekopieerd."
     },
     "vocabulary": {
       "columns": {
@@ -1432,7 +1449,7 @@
         "changed": "Het woordenschatbestand is op schijf gewijzigd. De tabel is opnieuw geladen; voer je wijziging opnieuw uit.",
         "fileInvalid": "Je woordenschatbestand bevat een fout en kan hier niet worden bewerkt: {{message}}",
         "invalidEdit": "Dit item kon niet worden opgeslagen: {{message}}",
-        "tooLarge": "Het woordenschatbestand zou groter zijn dan 1 MiB, dus er is niets opgeslagen.",
+        "tooLarge": "Het woordenlijstbestand zou groter dan 1 MB worden, dus er is niets opgeslagen.",
         "io": "Het woordenschatbestand kon niet worden geschreven: {{message}}",
         "voicesChanged": "De woordenschat veranderde terwijl dit wachtte, dus de wijziging is niet toegepast."
       },
@@ -1451,7 +1468,7 @@
       "derive": {
         "unchanged": "De uitgesproken woorden zijn niet veranderd, er valt niets op te slaan.",
         "severalWords": "De wijziging raakt meer dan één geschreven woord. Corrigeer één woord tegelijk.",
-        "notExplained": "Geen enkele regel laat de tekst zo klinken.",
+        "notExplained": "Geen enkel item zorgt ervoor dat de tekst zo wordt voorgelezen.",
         "invalid": "Opslaan lukt niet: {{detail}}"
       },
       "check": {
@@ -1468,7 +1485,7 @@
         "savePassedOnly": "Alleen opslaan voor geslaagde modellen",
         "pickOne": "Kies één model",
         "dictating": "Er loopt een dictaat. Controleer opnieuw als het klaar is.",
-        "transcribeFailed": "Spraak-naar-tekst kon de stem niet transcriberen."
+        "transcribeFailed": "Het dicteermodel kon de stem niet transcriberen."
       },
       "filters": {
         "model": "Model",
@@ -1506,7 +1523,7 @@
       "spokenAs": "Uitgesproken als",
       "shouldSay": "Zou moeten zeggen",
       "savesAs": "Wordt opgeslagen als",
-      "deriving": "Regel wordt bepaald...",
+      "deriving": "Item wordt bepaald...",
       "exactOnly": "Alleen deze exacte tekst",
       "chooseScope": "Kies waar het geldt",
       "scopeRequiredModels": "Kies Alle modellen of één model voordat je opslaat.",
@@ -1531,7 +1548,7 @@
         "stopped": "De microfoon stopte voordat je woorden werden gehoord, dus er is niets ingevuld.",
         "reading": "Voorlezen is geopend. Sluit het en gebruik daarna de microfoon.",
         "failed": "De microfoon kon niet starten.",
-        "transcribeFailed": "Spraak-naar-tekst kon niet transcriberen wat je zei."
+        "transcribeFailed": "Het dicteermodel kon niet transcriberen wat je zei."
       }
     }
   },
@@ -1595,7 +1612,9 @@
     "cleaned": "Opgeschoonde tekst",
     "original": "Oorspronkelijke transcriptie",
     "diffNote": "Toont de verschillen met de oorspronkelijke transcriptie.",
-    "noCleanup": "Geen opschoning"
+    "noCleanup": "Geen opschoning",
+    "failedLine": "Dit item kon niet worden getranscribeerd. Gebruik {{action}} om het opnieuw te proberen.",
+    "notTranscribedLine": "Dit item is nog niet getranscribeerd. Gebruik {{action}} om het te transcriberen."
   },
   "models": {
     "tags": {
@@ -1677,7 +1696,13 @@
     "heads": {
       "score": "Score",
       "speed": "Snelheid",
-      "size": "Grootte"
+      "size": "Grootte",
+      "short": {
+        "score": "Score",
+        "speed": "Snel.",
+        "size": "Afm.",
+        "all": "Alle"
+      }
     },
     "legend": {
       "open": "Wat de kolommen betekenen",

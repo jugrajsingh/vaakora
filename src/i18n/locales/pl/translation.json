@@ -3,29 +3,29 @@
     "settings": "Ustawienia...",
     "checkUpdates": "Sprawdź aktualizacje...",
     "copyLastTranscript": "Kopiuj ostatnią transkrypcję",
-    "unloadModel": "Zwolnij model transkrypcji",
-    "cleanup": "Model postprocesu",
+    "unloadModel": "Zwolnij model dyktowania",
+    "cleanup": "Model porządkowania",
     "cleanupReady": "gotowy",
     "cleanupNotLoaded": "niezaładowany",
     "cleanupLoading": "ładowanie",
-    "cleanupError": "błąd",
-    "noCleanupModel": "Brak modelu postprocesu",
-    "unloadPostProcessingModel": "Zwolnij model postprocesu",
+    "cleanupError": "niepowodzenie",
+    "noCleanupModel": "Brak modelu porządkowania",
+    "unloadPostProcessingModel": "Zwolnij model porządkowania",
     "model": "Model",
-    "transcriptionModel": "Model transkrypcji",
+    "transcriptionModel": "Model dyktowania",
     "quit": "Zamknij",
     "cancel": "Anuluj",
     "secureInputWarning": "⚠ Skróty zablokowane przez Secure Input",
     "language": "Język",
     "autoLanguage": "Automatycznie",
     "otherLanguages": "Inne języki",
-    "ttsModel": "Model zamiany tekstu na mowę",
-    "ttsUnload": "Zwolnij model zamiany tekstu na mowę",
-    "ttsStarting": "Uruchamianie",
-    "ttsReady": "Załadowany",
+    "ttsModel": "Model czytania na głos",
+    "ttsUnload": "Zwolnij model czytania na głos",
+    "ttsStarting": "Ładowanie",
+    "ttsReady": "Gotowy",
     "ttsStopping": "Zatrzymywanie",
     "ttsFailed": "Niepowodzenie",
-    "ttsUnloaded": "Zwolniony"
+    "ttsUnloaded": "Niezaładowany"
   },
   "sidebar": {
     "general": "Ogólne",
@@ -236,6 +236,9 @@
       "highFiveLabel": "Piątka",
       "atLogin": "Uruchamiaj Handy po zalogowaniu",
       "finish": "Gotowe",
+      "readAloud": "Aby usłyszeć tekst czytany na głos, skopiuj go i naciśnij <keys/>.",
+      "readAloudUnbound": "Aby usłyszeć tekst czytany na głos, ustaw jego skrót w Ustawieniach, Ogólne.",
+      "chooseReadAloudModel": "Wybierz model czytania na głos",
       "panel": {
         "name": "Handy",
         "ready": "Gotowe",
@@ -338,7 +341,6 @@
     "alreadyAdded_other": "{{languages}}: już dodano."
   },
   "modelSelector": {
-    "status": "Stan modelu: {{modelName}}",
     "size": "{{size}} MiB",
     "custom": "Własny",
     "streaming": "Streaming",
@@ -408,7 +410,9 @@
       "readAloud": "Czytanie na głos",
       "activation": "Aktywacja",
       "activationHelp": "Dla skrótów dyktowania",
-      "cancelLinuxHelp": "W systemie Linux skrót anulowania nie zatrzymuje dyktowania, bo skróty rejestrowane podczas dyktowania są tam zawodne. Użyj X na nakładce, Anuluj w menu zasobnika albo uruchom handy --cancel."
+      "cancelLinuxHelp": "W systemie Linux skrót anulowania nie zatrzymuje dyktowania, bo skróty rejestrowane podczas dyktowania są tam zawodne. Użyj X na nakładce, Anuluj w menu zasobnika albo uruchom handy --cancel.",
+      "inUse": "Już używa tego {{name}}",
+      "cannotClear": "Nie można wyczyścić: {{name}}"
     },
     "modelSettings": {
       "title": "Ustawienia {{model}}"
@@ -555,7 +559,8 @@
         "title": "Głośność",
         "description": "Dostosuj głośność dźwięków informacyjnych",
         "offReason": "Nieużywane, gdy informacja dźwiękowa jest wyłączona."
-      }
+      },
+      "feedbackOutputDevice": "Urządzenie wyjściowe informacji dźwiękowej"
     },
     "advanced": {
       "groups": {
@@ -779,20 +784,19 @@
         "createFirst": "Kliknij 'Utwórz nowy prompt' powyżej, aby utworzyć pierwszy prompt postprocessingu."
       },
       "localLlm": {
-        "noCleanupModel": "Brak modelu postprocesu",
         "s1Description": "Używa ustawień stylu, struktury i kontekstu.",
-        "plainDescription": "Używa wybranego promptu Handy.",
+        "plainDescription": "Używa wybranego przez Ciebie promptu.",
         "status": {
           "title": "Stan",
-          "description": "Model ładuje się po rozpoczęciu dyktowania z postprocesem i jest zwalniany po upływie limitu czasu zwolnienia modelu.",
+          "description": "Model ładuje się po rozpoczęciu dyktowania z porządkowaniem i jest zwalniany po upływie limitu czasu zwolnienia modelu.",
           "notLoaded": "Niezaładowany",
           "loading": "Ładowanie",
           "ready": "Gotowy",
-          "error": "Błąd: {{reason}}"
+          "error": "Niepowodzenie: {{reason}}"
         },
         "styling": {
           "title": "Styl",
-          "description": "Jak formalnie brzmi tekst po postprocesie.",
+          "description": "Jak formalnie brzmi uporządkowany tekst.",
           "options": {
             "casual": "Swobodny",
             "semi_casual": "Półswobodny",
@@ -819,7 +823,7 @@
         "licenseNotes": {
           "s1Name": "Apache-2.0 z jednym dodatkowym warunkiem: model musi być zawsze nazywany \"S1-mini\" od \"Superwhisper\", dokładnie z taką pisownią wielkich i małych liter."
         },
-        "promptRequired": "Wybierz niepusty prompt Handy w grupie Instrukcje. Do tego czasu postproces jest pomijany i używana jest surowa transkrypcja.",
+        "promptRequired": "Wybierz niepusty prompt w grupie Instrukcje. Do tego czasu porządkowanie jest pomijane i używana jest oryginalna transkrypcja.",
         "promptHidden": "Ten model używa własnego stałego promptu oraz powyższych ustawień Styl, Struktura i Kontekst, dlatego edytor promptów jest ukryty."
       }
     },
@@ -1072,6 +1076,10 @@
         "title": "Wersja",
         "description": "Aktualna wersja Handy"
       },
+      "updates": {
+        "title": "Aktualizacje",
+        "description": "Sprawdź, czy dostępna jest nowsza wersja"
+      },
       "whatsNewUpdates": {
         "label": "Pokaż nowości",
         "description": "Pokazuj informacje o wydaniu po aktualizacjach Handy"
@@ -1113,7 +1121,17 @@
     "portableUpdateMessage": "Instalacji przenośnych nie można aktualizować automatycznie. Pobierz poniżej instalator dla swojego systemu, uruchom go i zainstaluj w tym samym folderze — Twój folder Data/ (ustawienia, modele, nagrania) pozostaje na miejscu.",
     "portableUpdateButton": "Pobierz instalator",
     "portableUpdateBrowseMessage": "Instalacji przenośnych nie można aktualizować automatycznie. Pobierz najnowszą wersję dla swojego systemu z GitHub Releases i zainstaluj ją w tym samym folderze — Twój folder Data/ (ustawienia, modele, nagrania) pozostaje na miejscu.",
-    "portableUpdateBrowseButton": "Otwórz GitHub Releases"
+    "portableUpdateBrowseButton": "Otwórz GitHub Releases",
+    "activity": {
+      "ready": "Gotowe",
+      "recording": "Nagrywanie",
+      "transcribing": "Transkrypcja",
+      "cleaningUp": "Porządkowanie",
+      "reading": "Czytanie",
+      "downloading": "Pobieranie {{name}} {{percent}}%",
+      "languageDetector": "wykrywacz języka",
+      "downloadingMany": "Pobieranie modeli: {{count}}"
+    }
   },
   "whatsNew": {
     "title": "Nowości w Handy v{{version}}"
@@ -1140,7 +1158,7 @@
   },
   "errors": {
     "readAloudBusyPastingTitle": "Czytanie na głos czeka na zakończenie wklejania",
-    "readAloudBusyPasting": "Handy nadal wkleja tekst. Spróbuj ponownie czytania na głos po zakończeniu wklejania.",
+    "readAloudBusyPasting": "Wklejanie nadal trwa. Spróbuj ponownie czytania na głos po zakończeniu wklejania.",
     "readAloudUnavailableTitle": "Czytanie na głos niedostępne",
     "readAloudClipboardUnreadableTitle": "Schowek nieczytelny",
     "readAloudClipboardUnreadable": "Nie udało się odczytać tekstu ze schowka.",
@@ -1245,17 +1263,15 @@
       "audio": "Nie można otworzyć urządzenia wyjściowego.",
       "text": "Nie można przygotować tego tekstu.",
       "clock": "Synchronizacja odtwarzania nie powiodła się.",
-      "worker": "Proces roboczy zamiany tekstu na mowę został zatrzymany.",
-      "unavailable": "Zamiana tekstu na mowę jest niedostępna.",
-      "notReady": "Zamiana tekstu na mowę nadal się uruchamia.",
-      "generic": "Zamiana tekstu na mowę nie powiodła się.",
-      "memory": "Wymagany jest co najmniej 1 GiB dostępnej pamięci.",
+      "worker": "Proces roboczy czytania na głos został zatrzymany.",
+      "notReady": "Czytanie na głos nadal się ładuje.",
+      "generic": "Coś poszło nie tak.",
+      "memory": "Wymagane jest co najmniej 1,1 GB dostępnej pamięci.",
       "gatedToken": "Głosy Pocket wymagają tokenu Hugging Face i zaakceptowanych warunków głosów.",
-      "model": "Wybierz dostępny model zamiany tekstu na mowę.",
       "device": "To urządzenie jest niedostępne.",
       "npuDriverTooOld": "Sterownik NPU jest zbyt stary. Zaktualizuj go lub wybierz inne urządzenie.",
       "selection": "Nie można zastosować wyboru.",
-      "busy": "Operacja zamiany tekstu na mowę jest już uruchomiona.",
+      "busy": "Inna czynność czytania na głos nadal trwa.",
       "cancelled": "Czytanie zostało anulowane.",
       "clipboard": "Nie można odczytać tekstu ze schowka.",
       "deviceNotSupported": "Ten model nie obsługuje wybranego urządzenia.",
@@ -1268,16 +1284,16 @@
       "invalidRatings": "Oceny modeli są niedostępne lub nieprawidłowe.",
       "invalidVoice": "Wybierz głos dla wybranego modelu.",
       "outputUnavailable": "Urządzenie wyjściowe jest niedostępne.",
-      "path": "Katalog przechowywania zamiany tekstu na mowę jest niedostępny.",
+      "path": "Folder przechowywania czytania na głos jest niedostępny.",
       "prepareFailed": "Wybrane urządzenie nie mogło przygotować tego modelu.",
-      "protocol": "Proces roboczy zamiany tekstu na mowę zwrócił nieprawidłową odpowiedź.",
-      "registry": "Rejestr modeli zamiany tekstu na mowę jest nieprawidłowy.",
-      "settings": "Nie można zapisać ustawień zamiany tekstu na mowę.",
-      "start": "Nie można uruchomić procesu roboczego zamiany tekstu na mowę.",
-      "starting": "Proces roboczy zamiany tekstu na mowę się uruchamia.",
+      "protocol": "Proces roboczy czytania na głos zwrócił nieprawidłową odpowiedź.",
+      "registry": "Lista modeli czytania na głos jest nieprawidłowa.",
+      "settings": "Nie udało się zapisać ustawień czytania na głos.",
+      "start": "Nie udało się uruchomić procesu roboczego czytania na głos.",
+      "starting": "Proces roboczy czytania na głos się ładuje.",
       "tokenRejected": "Token Hugging Face został odrzucony. Sprawdź dostęp do warunków głosów Pocket.",
       "tokenRequired": "Przed pobraniem głosów ustaw token Hugging Face i zaakceptuj warunki głosów Pocket.",
-      "unknownModel": "Wybrany model zamiany tekstu na mowę jest nieznany.",
+      "unknownModel": "Wybrany model czytania na głos jest nieznany.",
       "window": "Nie można otworzyć okna czytania na głos.",
       "accessDenied": "Odmowa dostępu do plików modelu.",
       "localIo": "Nie można odczytać ani zapisać plików modelu.",
@@ -1324,7 +1340,7 @@
     "preview": "Odsłuchaj",
     "pitch": "Wysokość tonu: {{value}} półtonów",
     "output": "Urządzenie wyjściowe czytania na głos",
-    "sameAsHandy": "Takie samo jak {{device}}",
+    "sameAsHandy": "Takie samo jak urządzenie wyjściowe informacji dźwiękowej",
     "readCode": "Czytaj bloki kodu",
     "technicalReading": "Czytanie techniczne",
     "fullPaths": "Czytaj pełne ścieżki",
@@ -1340,9 +1356,9 @@
     "status": {
       "failed": "Niepowodzenie",
       "ready": "Gotowy",
-      "starting": "Uruchamianie",
+      "starting": "Ładowanie",
       "stopping": "Zatrzymywanie",
-      "unloaded": "Zwolniony"
+      "unloaded": "Niezaładowany"
     },
     "previewSentence": "Reading clearly, one phrase at a time.",
     "description": {
@@ -1372,10 +1388,11 @@
       "reading": "Zapisane słowa z tym, co zostało powiedziane",
       "readingHint": "Na górze tekst pisany, pod nim to, co zostało powiedziane. Przeciągnij po słowach, aby poprawić sposób ich odczytania.",
       "retentionConfirm": {
-        "message_one": "Usunąć teraz {{count}} zapisany odczyt? Twój słownik się nie zmieni.",
-        "message": "Usunąć teraz zapisane odczyty ({{count}})? Twój słownik się nie zmieni.",
-        "action": "Usuń odczyty"
-      }
+        "message_one": "Usunąć teraz {{count}} wpis? Twój słownik się nie zmieni.",
+        "message": "Usunąć teraz wpisy ({{count}})? Twój słownik się nie zmieni.",
+        "action": "Usuń wpisy"
+      },
+      "copyFailed": "Nie udało się skopiować tekstu do schowka."
     },
     "vocabulary": {
       "columns": {
@@ -1432,7 +1449,7 @@
         "changed": "Plik słownika zmienił się na dysku. Tabela została wczytana ponownie; powtórz zmianę.",
         "fileInvalid": "Twój plik słownika zawiera błąd, więc nie można go tutaj edytować: {{message}}",
         "invalidEdit": "Nie udało się zapisać wpisu: {{message}}",
-        "tooLarge": "Plik słownika przekroczyłby 1 MiB, więc nic nie zapisano.",
+        "tooLarge": "Plik słownika przekroczyłby 1 MB, więc nic nie zapisano.",
         "io": "Nie udało się zapisać pliku słownika: {{message}}",
         "voicesChanged": "Słownik zmienił się w trakcie oczekiwania, więc zmiana nie została zastosowana."
       },
@@ -1451,7 +1468,7 @@
       "derive": {
         "unchanged": "Wymawiane słowa się nie zmieniły, więc nie ma czego zapisać.",
         "severalWords": "Zmiana dotyczy więcej niż jednego słowa. Poprawiaj po jednym słowie.",
-        "notExplained": "Żadna pojedyncza reguła nie daje takiego odczytu.",
+        "notExplained": "Żaden pojedynczy wpis nie sprawia, że tekst jest czytany w ten sposób.",
         "invalid": "Nie można zapisać: {{detail}}"
       },
       "check": {
@@ -1468,7 +1485,7 @@
         "savePassedOnly": "Zapisz tylko dla modeli, które przeszły",
         "pickOne": "Wybierz jeden model",
         "dictating": "Trwa dyktowanie. Sprawdź ponownie, gdy się zakończy.",
-        "transcribeFailed": "Rozpoznawanie mowy nie zdołało przepisać głosu."
+        "transcribeFailed": "Model dyktowania nie zdołał przepisać głosu."
       },
       "filters": {
         "model": "Model",
@@ -1506,7 +1523,7 @@
       "spokenAs": "Wymawiane jako",
       "shouldSay": "Powinno brzmieć",
       "savesAs": "Zapisze się jako",
-      "deriving": "Ustalanie reguły...",
+      "deriving": "Ustalanie wpisu...",
       "exactOnly": "Tylko dokładnie ten tekst",
       "chooseScope": "Wybierz, gdzie obowiązuje",
       "scopeRequiredModels": "Przed zapisem wybierz Wszystkie modele lub jeden model.",
@@ -1531,7 +1548,7 @@
         "stopped": "Mikrofon zatrzymał się, zanim Twoje słowa zostały usłyszane, więc nic nie zostało wpisane.",
         "reading": "Czytanie na głos jest otwarte. Zamknij je, a potem użyj mikrofonu.",
         "failed": "Nie udało się uruchomić mikrofonu.",
-        "transcribeFailed": "Zamiana mowy na tekst nie zdołała przepisać tego, co powiedziano."
+        "transcribeFailed": "Model dyktowania nie zdołał przepisać tego, co powiedziałeś."
       }
     }
   },
@@ -1595,7 +1612,9 @@
     "cleaned": "Uporządkowany tekst",
     "original": "Oryginalna transkrypcja",
     "diffNote": "Pokazano różnice względem oryginalnej transkrypcji.",
-    "noCleanup": "Bez porządkowania"
+    "noCleanup": "Bez porządkowania",
+    "failedLine": "Nie udało się przepisać tego wpisu. Użyj opcji {{action}}, aby spróbować ponownie.",
+    "notTranscribedLine": "Ten wpis nie został jeszcze przepisany. Użyj opcji {{action}}, aby go przepisać."
   },
   "models": {
     "tags": {
@@ -1677,7 +1696,13 @@
     "heads": {
       "score": "Wynik",
       "speed": "Szybkość",
-      "size": "Rozmiar"
+      "size": "Rozmiar",
+      "short": {
+        "score": "Wynik",
+        "speed": "Szyb.",
+        "size": "Rozm.",
+        "all": "Wszys."
+      }
     },
     "legend": {
       "open": "Co oznaczają kolumny",

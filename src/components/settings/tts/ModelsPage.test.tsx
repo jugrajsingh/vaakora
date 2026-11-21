@@ -650,6 +650,7 @@ describe("Models, Read aloud rows", () => {
       t,
       { ...pocket, display_name: "Pocket TTS" },
       true,
+      "en",
     );
     assert.deepEqual(
       { id: selected.id, selected: selected.selected },
@@ -659,12 +660,12 @@ describe("Models, Read aloud rows", () => {
       selected.message,
       "Delete Pocket TTS? It frees 296 MB. Read aloud stops working until you choose another model. Your vocabulary and history are kept.",
     );
-    const other = askedFor(t, kokoro, false);
+    const other = askedFor(t, kokoro, false, "en");
     assert.equal(
       other.message,
       "Delete Kokoro? It frees 296 MB. Your vocabulary and history are kept.",
     );
-    const unknown = askedFor(t, { ...kokoro, size_bytes: 0 }, false);
+    const unknown = askedFor(t, { ...kokoro, size_bytes: 0 }, false, "en");
     assert.ok(!unknown.message.includes("frees"), unknown.message);
 
     const asking = {

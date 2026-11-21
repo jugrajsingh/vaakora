@@ -974,6 +974,9 @@ impl TranscriptionManager {
             kind: Some(kind),
         }
         .emit(&self.app_handle);
+        if let Some(activity) = crate::tray::activity_for_stream_work(kind) {
+            crate::tray::emit_activity(&self.app_handle, activity);
+        }
     }
 
     /// Transcribe a whole clip in batch: a re-transcribed history entry, or

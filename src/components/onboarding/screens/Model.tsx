@@ -312,7 +312,7 @@ export const ModelView: React.FC<ModelProps & { list: ModelList }> = ({
             {t(`modelTable.roles.${ROLE_KEYS[role]}`)}
           </b>
           {capabilityTags(row.model)}
-          <span {...vt(id, "s")} className={sizeClass}>
+          <span {...vt(id, "s")} dir="ltr" className={sizeClass}>
             {sizeOf(row.model)}
           </span>
         </span>
@@ -486,7 +486,7 @@ export const ModelView: React.FC<ModelProps & { list: ModelList }> = ({
               </span>
             </SpeedTip>
           </span>
-          <span {...vt(id, "s")} className={`${sizeClass} ms-0`}>
+          <span {...vt(id, "s")} dir="ltr" className={`${sizeClass} ms-0`}>
             {sizeOf(row.model)}
           </span>
         </span>

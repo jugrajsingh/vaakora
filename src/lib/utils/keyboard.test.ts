@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
-import { formatKeyCombination, getKeyName } from "./keyboard";
+import {
+  formatKeyCombination,
+  getKeyName,
+  keycapLabel,
+  keycapLabels,
+} from "./keyboard";
 
 const keyboardEvent = (value: { code?: string; key?: string }): KeyboardEvent =>
   value as KeyboardEvent;
@@ -23,5 +28,16 @@ assert.equal(
   getKeyName(keyboardEvent({ code: "AudioVolumeUp" })),
   "audiovolumeup",
 );
+
+assert.deepEqual(keycapLabels("super+alt+d", "linux"), ["Super", "Alt", "D"]);
+assert.equal(
+  keycapLabel("super+alt+d", "linux"),
+  formatKeyCombination("super+alt+d", "linux"),
+);
+assert.equal(keycapLabel("super+alt+d", "linux"), "Super + Alt + D");
+assert.deepEqual(keycapLabels("super+alt+d", "windows"), ["⊞", "Alt", "D"]);
+assert.deepEqual(keycapLabels("super+alt+d", "macos"), ["⌘", "⌥", "D"]);
+assert.deepEqual(keycapLabels("meta+space", "linux"), ["Super", "Space"]);
+console.log("keyboard: linux_names_super");
 
 console.log("keyboard: all assertions passed");
