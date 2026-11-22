@@ -113,15 +113,21 @@ impl AsyncRequest for openvino::InferRequest {
     }
 }
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
-    struct CpuFixture(std::path::PathBuf);
+    pub(crate) struct CpuFixture(pub(crate) std::path::PathBuf);
     impl CpuFixture {
-        fn new() -> Self {
+        /// Writes a fresh fixture file; tests running in parallel each get their own.
+        pub(crate) fn new() -> Self {
+            static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
             let scratch =
                 std::path::PathBuf::from(std::env::var_os("HANDY_TTS_TEST_SCRATCH").unwrap());
             std::fs::create_dir_all(&scratch).unwrap();
-            let fixture = Self(scratch.join(format!("s11-cpu-lanes-{}.onnx", std::process::id())));
+            let fixture = Self(scratch.join(format!(
+                "s11-cpu-lanes-{}-{}.onnx",
+                std::process::id(),
+                NEXT.fetch_add(1, Ordering::Relaxed)
+            )));
             // ONNX IR 8, opset 13: float32 Add(x, x), input and output shape [2].
             std::fs::write(
                 &fixture.0,

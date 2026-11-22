@@ -16,7 +16,7 @@ mod supertonic;
 mod unigram;
 use anyhow::{Context, Result, bail};
 use ort::{
-    execution_providers::CPUExecutionProvider,
+    ep::CPU,
     session::{Session, builder::GraphOptimizationLevel},
 };
 use std::path::Path;
@@ -26,8 +26,25 @@ pub(crate) fn diagnostic_file_name(path: &Path) -> std::borrow::Cow<'_, str> {
     path.file_name().unwrap_or_default().to_string_lossy()
 }
 
+/// Builds a CPU ONNX Runtime session. Sessions need an environment, and ort refuses a second
+/// `ort::init().build()` in one process even after the first is dropped, so the first call builds
+/// the process's environment and later calls reuse it. It is kept until exit because the worker
+/// loads models again after every session of the previous one is gone.
 fn ort_session(path: &Path, threads: usize) -> Result<Session> {
-    Session::builder()
+    static ENVIRONMENT: std::sync::Mutex<Option<ort::environment::Environment>> =
+        std::sync::Mutex::new(None);
+    let environment = {
+        let mut slot = ENVIRONMENT
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        match slot.as_ref() {
+            Some(environment) => environment.clone(),
+            None => slot
+                .insert(ort::init().build().context("create ORT environment")?)
+                .clone(),
+        }
+    };
+    Session::builder(&environment)
         .context("create ORT session builder")?
         .with_optimization_level(GraphOptimizationLevel::Level3)
         .map_err(|e| anyhow::anyhow!(e.to_string()))?
@@ -35,7 +52,7 @@ fn ort_session(path: &Path, threads: usize) -> Result<Session> {
         .map_err(|e| anyhow::anyhow!(e.to_string()))?
         .with_inter_threads(1)
         .map_err(|e| anyhow::anyhow!(e.to_string()))?
-        .with_execution_providers([CPUExecutionProvider::default().build()])
+        .with_execution_providers([CPU::default().build()])
         .map_err(|e| anyhow::anyhow!(e.to_string()))?
         .commit_from_file(path)
         .with_context(|| format!("load ONNX graph {}", diagnostic_file_name(path)))
@@ -182,6 +199,20 @@ impl Engine {
 }
 
 pub mod measure;
+
+#[cfg(test)]
+mod ort_environment_tests {
+    #[test]
+    fn every_ort_session_in_the_process_shares_one_environment() {
+        let fixture = crate::cancellation::tests::CpuFixture::new();
+        let first = super::ort_session(&fixture.0, 1).expect("first session");
+        drop(first);
+        for n in 2..=3 {
+            super::ort_session(&fixture.0, 1)
+                .unwrap_or_else(|error| panic!("session {n} after the first: {error:#}"));
+        }
+    }
+}
 
 #[cfg(test)]
 mod diagnostic_tests {

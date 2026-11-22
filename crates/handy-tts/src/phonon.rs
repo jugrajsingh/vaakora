@@ -208,13 +208,6 @@ fn ints(shape: Vec<usize>, data: Vec<i64>) -> Result<DynValue> {
         .into_dyn())
 }
 
-fn owned(value: &DynValue) -> Result<DynValue> {
-    value
-        .view()
-        .try_upgrade()
-        .map_err(|_| anyhow::anyhow!("Phonon state must own its backing tensor"))
-}
-
 fn kv_name(prefix: &str, index: usize) -> String {
     let part = if index.is_multiple_of(2) {
         "key"
@@ -280,7 +273,7 @@ impl Graphs {
                     .enumerate()
                     .map(|(index, value)| (kv_name("past_key_values", index), value)),
             );
-            let outputs = self
+            let mut outputs = self
                 .flow
                 .run_with_options(inputs, options)
                 .context("run Phonon flow graph")?;
@@ -309,9 +302,9 @@ impl Graphs {
             if frames >= keep {
                 break history[..keep * LATENT].to_vec();
             }
-            past_latents = owned(outputs.get("present.audio_latents")?)?;
+            past_latents = outputs.take("present.audio_latents")?;
             past = (0..2 * LAYERS)
-                .map(|index| owned(outputs.get(&kv_name("present", index))?))
+                .map(|index| outputs.take(&kv_name("present", index)))
                 .collect::<Result<Vec<_>>>()?;
             let (present, _) = past[0]
                 .try_extract_tensor::<f32>()

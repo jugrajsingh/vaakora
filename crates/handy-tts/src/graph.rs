@@ -55,6 +55,19 @@ impl Outputs {
     pub fn iter(&self) -> impl Iterator<Item = (&str, &DynValue)> {
         self.values.iter().map(|(n, v)| (n.as_str(), v))
     }
+    /// Moves a named output out, so it can feed the next run without a copy.
+    pub fn take(&mut self, name: &str) -> Result<DynValue> {
+        let index = self
+            .values
+            .iter()
+            .position(|(n, _)| n == name)
+            .context("missing named graph output")?;
+        Ok(self.values.remove(index).1)
+    }
+    /// The outputs in graph order, owned.
+    pub fn into_values(self) -> impl Iterator<Item = DynValue> {
+        self.values.into_iter().map(|(_, v)| v)
+    }
 }
 /// Cache used by the accelerated loader, with an injectable compiler and request factory.
 pub(crate) struct CompilationCache<C: crate::ov_graph::RequestFactory = openvino::CompiledModel> {
@@ -333,16 +346,9 @@ impl Session {
                     .run_with_options(inputs, options)
                     .context("run CPU ONNX graph")?;
                 let values = output
-                    .iter()
-                    .map(|(name, value)| {
-                        value
-                            .try_upgrade()
-                            .map(|v| (name.to_string(), v))
-                            .map_err(|_| {
-                                anyhow::anyhow!("CPU graph output must own tensor backing")
-                            })
-                    })
-                    .collect::<Result<_>>()?;
+                    .into_iter()
+                    .map(|(name, value)| (name.to_string(), value))
+                    .collect();
                 Ok(Outputs { values })
             }
             Self::OpenVino(graph) => {

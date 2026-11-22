@@ -47,16 +47,17 @@ A shortcut reads the text you last copied, in a popup that follows along.
 
 Eight downloadable voice models are offered. GPU and NPU mean an Intel GPU or NPU through OpenVINO.
 
-| Voice model                                     | Runs on       |
-| ----------------------------------------------- | ------------- |
-| Pocket TTS                                      | CPU, GPU, NPU |
-| Supertonic 3                                    | CPU, GPU, NPU |
-| Kokoro-82M                                      | CPU, GPU, NPU |
-| Paradee-8M                                      | CPU           |
-| Phonon 31M (English)                            | CPU           |
-| Indic Tiny TTS (Indian English, Hindi, Punjabi) | CPU, GPU      |
+| Voice model                                     | Runs on                              |
+| ----------------------------------------------- | ------------------------------------ |
+| Pocket TTS                                      | CPU, GPU and NPU in part (see below) |
+| Supertonic 3                                    | CPU, GPU, NPU                        |
+| Kokoro-82M                                      | CPU, GPU, NPU                        |
+| Paradee-8M                                      | CPU                                  |
+| Phonon 31M (English)                            | CPU                                  |
+| Indic Tiny TTS (Indian English, Hindi, Punjabi) | CPU, GPU                             |
 
 - The app picks the best device that works on the machine.
+- Pocket TTS keeps part of its work on the CPU (ONNX Runtime). On the GPU only its text conditioner runs there, and its main flow model, flow sampler and audio decoder stay on the CPU. On the NPU its main flow model stays on the CPU.
 
 The full list of changes is in [CHANGELOG.md](CHANGELOG.md). Its new interface strings are translated into the other 26 languages by machine and have not been reviewed by native speakers.
 

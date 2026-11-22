@@ -1,6 +1,9 @@
 use crate::graph::Session;
 use anyhow::{Context, Result, bail, ensure};
-use ort::value::{DynValue, Tensor};
+use ort::{
+    session::SessionInputValue,
+    value::{DynValue, Tensor},
+};
 use rand::{SeedableRng, rngs::StdRng};
 use rand_distr::{Distribution, StandardNormal};
 use sentencepiece_rs::SentencePieceProcessor;
@@ -53,39 +56,47 @@ fn initial(spec: &StateSpec) -> Result<DynValue> {
         dtype => bail!("unsupported Pocket state dtype {dtype}"),
     }
 }
+/// Runs one step of a stateful graph. `state` is read in place; the step's state outputs are
+/// moved out as the next state, and the outputs before `offset` are returned.
 fn forward(
     session: &mut Session,
     specs: &[StateSpec],
-    state: &mut Vec<DynValue>,
-    mut inputs: Vec<(String, DynValue)>,
+    state: &[DynValue],
+    inputs: Vec<(String, DynValue)>,
     offset: usize,
     options: &ort::session::RunOptions,
-) -> Result<Vec<DynValue>> {
-    inputs.extend(
-        specs
-            .iter()
-            .zip(state.iter())
-            .map(|(spec, value)| Ok((spec.input_name.clone(), alias(value)?)))
-            .collect::<Result<Vec<_>>>()?,
-    );
-    let outputs = session
+) -> Result<(Vec<DynValue>, Vec<DynValue>)> {
+    let inputs: Vec<(String, SessionInputValue<'_>)> = inputs
+        .into_iter()
+        .map(|(name, value)| (name, value.into()))
+        .chain(
+            specs
+                .iter()
+                .zip(state)
+                .map(|(spec, value)| (spec.input_name.clone(), value.view().into())),
+        )
+        .collect();
+    let mut values: Vec<Option<DynValue>> = session
         .run_with_options(inputs, options)
-        .context("run Pocket stateful graph")?;
-    let values: Vec<DynValue> = outputs
+        .context("run Pocket stateful graph")?
+        .into_values()
+        .map(Some)
+        .collect();
+    let next = specs
         .iter()
-        .map(|(_, value)| alias(value))
+        .map(|spec| {
+            values
+                .get_mut(offset + spec.index)
+                .and_then(Option::take)
+                .context("Pocket state output missing")
+        })
         .collect::<Result<_>>()?;
-    *state = specs
-        .iter()
-        .map(|spec| alias(&values[offset + spec.index]))
+    values.truncate(offset);
+    let head = values
+        .into_iter()
+        .map(|value| value.context("Pocket graph output missing"))
         .collect::<Result<_>>()?;
-    Ok(values)
-}
-fn alias(value: &DynValue) -> Result<DynValue> {
-    value
-        .view()
-        .try_upgrade()
-        .map_err(|_| anyhow::anyhow!("Pocket state must own its backing tensor"))
+    Ok((head, next))
 }
 pub struct Pocket {
     pub(crate) cancellation: crate::cancellation::Cancellation,
@@ -333,11 +344,10 @@ impl Pocket {
         }
         let embedding = floats(dims, embedding.to_vec())?;
         drop(text_output);
-        let mut state = self.voice.iter().map(alias).collect::<Result<Vec<_>>>()?;
-        forward(
+        let (_, mut state) = forward(
             &mut self.main,
             &self.flow_specs,
-            &mut state,
+            &self.voice,
             vec![
                 ("sequence".into(), floats(vec![1, 0, 32], vec![])?),
                 ("text_embeddings".into(), embedding),
@@ -346,7 +356,6 @@ impl Pocket {
             &self.cancellation.options,
         )?;
         let mut current = floats(vec![1, 1, 32], vec![f32::NAN; 32])?;
-        let empty = floats(vec![1, 0, 1024], vec![])?;
         let mut eos = None;
         let tail = if text.split_whitespace().count() <= 4 {
             5
@@ -355,17 +364,18 @@ impl Pocket {
         };
         let mut latents = vec![];
         for step in 0..limit {
-            let outputs = forward(
+            let (outputs, next) = forward(
                 &mut self.main,
                 &self.flow_specs,
-                &mut state,
+                &state,
                 vec![
                     ("sequence".into(), current),
-                    ("text_embeddings".into(), alias(&empty)?),
+                    ("text_embeddings".into(), floats(vec![1, 0, 1024], vec![])?),
                 ],
                 2,
                 &self.cancellation.options,
             )?;
+            state = next;
             let (_, logit) = outputs[1]
                 .try_extract_tensor::<f32>()
                 .context("read Pocket EOS logit")?;
@@ -401,10 +411,10 @@ impl Pocket {
             .collect::<Result<Vec<_>>>()?;
         let mut audio = vec![];
         for chunk in latents.chunks(12 * 32) {
-            let output = forward(
+            let (output, next) = forward(
                 &mut self.decoder,
                 &self.mimi_specs,
-                &mut decoder_state,
+                &decoder_state,
                 vec![(
                     "latent".into(),
                     floats(vec![1, chunk.len() / 32, 32], chunk.to_vec())?,
@@ -412,6 +422,7 @@ impl Pocket {
                 1,
                 &self.cancellation.options,
             )?;
+            decoder_state = next;
             let (_, pcm) = output
                 .first()
                 .context("missing decoder waveform")?
