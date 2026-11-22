@@ -286,14 +286,15 @@ mod wbfix3 {
     #[test]
     fn m1_wl_copy_and_unset_script_keep_their_cause() {
         use std::os::unix::process::ExitStatusExt;
-        let error = write_clipboard_via_wl_copy_with("fixture transcript", |_, _| {
-            Ok(std::process::Output {
-                status: std::process::ExitStatus::from_raw(17 << 8),
-                stdout: Vec::new(),
-                stderr: b"fixture transcript /private/path".to_vec(),
+        let error =
+            write_clipboard_via_wl_copy_with("fixture transcript", true, true, |_, _, _| {
+                Ok(std::process::Output {
+                    status: std::process::ExitStatus::from_raw(17 << 8),
+                    stdout: Vec::new(),
+                    stderr: b"fixture transcript /private/path".to_vec(),
+                })
             })
-        })
-        .unwrap_err();
+            .unwrap_err();
         assert_eq!(
             crate::actions::paste_failure_notice(error)
                 .detail
@@ -1091,11 +1092,18 @@ fn queued_input<T: Send + 'static>(
     }
 }
 
-fn write_text_to_clipboard(app_handle: &AppHandle, text: &str) -> Result<(), PasteError> {
+/// `sensitive` marks text that only passes through the clipboard for a paste, so
+/// clipboard-history tools can skip it (wl-copy only).
+#[cfg_attr(not(target_os = "linux"), allow(unused_variables))]
+fn write_text_to_clipboard(
+    app_handle: &AppHandle,
+    text: &str,
+    sensitive: bool,
+) -> Result<(), PasteError> {
     #[cfg(target_os = "linux")]
     if is_wayland() && is_wl_copy_available()? {
         info!("Using wl-copy for clipboard write on Wayland");
-        return write_clipboard_via_wl_copy(text);
+        return write_clipboard_via_wl_copy(text, sensitive);
     }
 
     app_handle
@@ -1144,7 +1152,7 @@ fn paste_via_clipboard(
     };
 
     // Write text to clipboard first
-    if let Err(e) = write_text_to_clipboard(app_handle, text) {
+    if let Err(e) = write_text_to_clipboard(app_handle, text, true) {
         #[cfg(target_os = "linux")]
         if let Some(saved) = saved_primary {
             crate::primary_selection::restore(saved);
@@ -1186,7 +1194,7 @@ fn paste_via_clipboard(
         // an image is only restored when the clipboard held no text at all, which is
         // the case that used to silently wipe screenshots.
         if let Some(clipboard_content) = saved_text {
-            let _ = write_text_to_clipboard(app_handle, &clipboard_content);
+            let _ = write_text_to_clipboard(app_handle, &clipboard_content, true);
         } else if let Some(image) = saved_image {
             info!("Restoring image to clipboard");
             let _ = clipboard.write_image(&image);
@@ -1696,29 +1704,49 @@ fn type_text_via_kwtype(text: &str) -> Result<(), PasteError> {
 }
 
 /// Write text to clipboard via wl-copy (Wayland clipboard tool).
-/// Uses Stdio::null() to avoid blocking on repeated calls — wl-copy forks a
-/// daemon that inherits piped fds, causing read_to_end to hang indefinitely.
+/// The text goes on stdin so it never appears in the process list. Stdout and
+/// stderr stay null: wl-copy forks a daemon that inherits piped fds, which would
+/// keep a reader waiting for end of file indefinitely.
 #[cfg(target_os = "linux")]
-fn write_clipboard_via_wl_copy(text: &str) -> Result<(), PasteError> {
-    write_clipboard_via_wl_copy_with(text, quiet_tool)
+fn write_clipboard_via_wl_copy(text: &str, sensitive: bool) -> Result<(), PasteError> {
+    write_clipboard_via_wl_copy_with(
+        text,
+        sensitive,
+        wl_copy_has_sensitive(),
+        quiet_tool_with_input,
+    )
+}
+
+/// Whether this wl-copy knows `--sensitive` (wl-clipboard 2.3 or later; older
+/// versions reject an unknown option). Probed once.
+#[cfg(target_os = "linux")]
+fn wl_copy_has_sensitive() -> bool {
+    static HAS_SENSITIVE: OnceLock<bool> = OnceLock::new();
+    *HAS_SENSITIVE.get_or_init(|| {
+        paste_probe_with_timeout(Command::new("wl-copy").arg("--help"), PASTE_PROBE_TIMEOUT)
+            .map(|output| {
+                String::from_utf8_lossy(&[output.stdout, output.stderr].concat())
+                    .contains("--sensitive")
+            })
+            .unwrap_or(false)
+    })
 }
 
 #[cfg(target_os = "linux")]
 fn write_clipboard_via_wl_copy_with(
     text: &str,
-    run: impl FnOnce(&mut Command, Duration) -> std::io::Result<std::process::Output>,
+    sensitive: bool,
+    has_sensitive: bool,
+    run: impl FnOnce(&mut Command, Vec<u8>, Duration) -> std::io::Result<std::process::Output>,
 ) -> Result<(), PasteError> {
-    use std::process::Stdio;
-    let status = run(
-        Command::new("wl-copy")
-            .arg("--")
-            .arg(text)
-            .stdout(Stdio::null())
-            .stderr(Stdio::null()),
-        PASTE_TOOL_TIMEOUT,
-    )
-    .map(|output| output.status)
-    .map_err(|e| PasteError::execute("wl-copy", e))?;
+    let mut command = Command::new("wl-copy");
+    if sensitive && has_sensitive {
+        command.arg("--sensitive");
+    }
+    command.args(["--type", "text/plain;charset=utf-8"]);
+    let status = run(&mut command, text.as_bytes().to_vec(), PASTE_TOOL_TIMEOUT)
+        .map(|output| output.status)
+        .map_err(|e| PasteError::execute("wl-copy", e))?;
 
     if !status.success() {
         return Err(PasteError::tool_exit("wl-copy", status));
@@ -2115,7 +2143,7 @@ fn paste_inner(
 
     // After pasting, optionally copy to clipboard based on settings
     if settings.clipboard_handling == ClipboardHandling::CopyToClipboard {
-        write_text_to_clipboard(&app_handle, &text)?;
+        write_text_to_clipboard(&app_handle, &text, false)?;
     }
 
     Ok(false)
@@ -2302,6 +2330,70 @@ mod tests {
             "unreadable help output must allow fallback"
         );
         assert!(cache.get().is_none());
+    }
+
+    /// What `write_clipboard_via_wl_copy_with` handed to its runner: argv and stdin.
+    #[cfg(target_os = "linux")]
+    fn wl_copy_invocation(
+        text: &str,
+        sensitive: bool,
+        has_sensitive: bool,
+    ) -> (Vec<String>, Vec<u8>) {
+        use std::os::unix::process::ExitStatusExt;
+        let mut seen = None;
+        write_clipboard_via_wl_copy_with(text, sensitive, has_sensitive, |command, input, _| {
+            let mut argv = vec![command.get_program().to_string_lossy().into_owned()];
+            argv.extend(command.get_args().map(|a| a.to_string_lossy().into_owned()));
+            seen = Some((argv, input));
+            Ok(std::process::Output {
+                status: std::process::ExitStatus::from_raw(0),
+                stdout: Vec::new(),
+                stderr: Vec::new(),
+            })
+        })
+        .unwrap();
+        seen.expect("the runner must be called once")
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn wl_copy_gets_text_on_stdin_never_in_argv() {
+        let text = "fixture transcript -n --sensitive";
+        let (argv, stdin) = wl_copy_invocation(text, false, true);
+        assert_eq!(argv[0], "wl-copy");
+        assert!(
+            argv.iter().all(|arg| !arg.contains("fixture transcript")),
+            "the transcript must not be in argv: {argv:?}"
+        );
+        assert_eq!(stdin, text.as_bytes(), "stdin must carry the exact text");
+        assert!(
+            argv.windows(2)
+                .any(|pair| pair[0] == "--type" && pair[1] == "text/plain;charset=utf-8"),
+            "the MIME type must be set explicitly without a text argument: {argv:?}"
+        );
+        assert!(
+            argv.iter().all(|arg| arg != text),
+            "no argument may equal the text: {argv:?}"
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn wl_copy_marks_paste_only_text_sensitive() {
+        for (sensitive, has_sensitive, expected) in [
+            (true, true, true),
+            (true, false, false),
+            (false, true, false),
+            (false, false, false),
+        ] {
+            let (argv, stdin) = wl_copy_invocation("fixture transcript", sensitive, has_sensitive);
+            assert_eq!(
+                argv.iter().any(|arg| arg == "--sensitive"),
+                expected,
+                "sensitive={sensitive} has_sensitive={has_sensitive}: {argv:?}"
+            );
+            assert_eq!(stdin, b"fixture transcript");
+        }
     }
 
     #[cfg(target_os = "linux")]
