@@ -176,9 +176,14 @@ pub fn chunk_budget(system: &str, control: &str) -> u32 {
         .max(MIN_CHUNK_BUDGET)
 }
 
+/// The most one character costs in estimated tokens (`char_weight` tops out at 90 thirtieths,
+/// pinned by a test). Chunking never splits a character, so a framed chunk needs this much room.
+const MAX_CHAR_TOKENS: u32 = 3;
+
 /// Transcript tokens left for one framed Plain chunk once the system prompt, template and
-/// `<transcript>` frame are paid for, or `None` when not even one token is left. No floor, so
-/// a framed chunk never gets more than the space left under `CHUNK_TOKEN_LIMIT`.
+/// `<transcript>` frame are paid for, or `None` when that cannot hold one widest character
+/// (`MAX_CHAR_TOKENS`). No floor, so a framed chunk never gets more than the space left under
+/// `CHUNK_TOKEN_LIMIT`.
 fn plain_frame_allowance(system: &str) -> Option<u32> {
     let frame = est_tokens(&crate::actions::frame_transcript(""));
     let fixed = est_tokens(system)
@@ -186,7 +191,7 @@ fn plain_frame_allowance(system: &str) -> Option<u32> {
         .saturating_add(frame);
     CHUNK_TOKEN_LIMIT
         .checked_sub(fixed)
-        .filter(|&allowance| allowance >= 1)
+        .filter(|&allowance| allowance >= MAX_CHAR_TOKENS)
 }
 
 /// Transcript tokens allowed per chunk for a request in the model's prompt style. S1 pays its
@@ -849,19 +854,84 @@ mod tests {
         assert!(split > 0);
     }
 
+    /// Gurmukhi, Devanagari and emoji transcripts (every length from 1 to 80 characters, so up to
+    /// about 240 estimated tokens) over every system prompt of 850..=1000 estimated tokens:
+    /// whenever the unframed single request fits, every request sent fits, framed or not.
+    #[test]
+    fn non_latin_plain_requests_fit_whenever_the_unframed_request_fits() {
+        let mut checked = 0;
+        let mut framed = 0;
+        for system_tokens in 850..=1000 {
+            let system = text_of("Fix grammar. ", system_tokens);
+            for (script, words) in [
+                ("gurmukhi", "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ ਜੀ "),
+                ("devanagari", "नमस्ते आप कैसे हैं "),
+                ("emoji", "😀🎉 👍 🙏🏽 "),
+            ] {
+                for length in 1..=80 {
+                    let transcript: String = words.chars().cycle().take(length).collect();
+                    if transcript.ends_with(' ') {
+                        continue;
+                    }
+                    let (chunks, requests) = plain_requests(&system, &transcript);
+                    assert_eq!(
+                        chunks.concat().split_whitespace().collect::<String>(),
+                        transcript.split_whitespace().collect::<String>(),
+                        "system={system_tokens} {script} chars={length}"
+                    );
+                    let unframed =
+                        system_tokens + est_tokens(&transcript) + TEMPLATE_OVERHEAD_TOKENS;
+                    if unframed > CHUNK_TOKEN_LIMIT {
+                        continue;
+                    }
+                    checked += 1;
+                    for (index, messages) in requests.iter().enumerate() {
+                        if messages[1].content.starts_with("<transcript>\n") {
+                            framed += 1;
+                        }
+                        let total = request_total(messages);
+                        assert!(
+                            total <= CHUNK_TOKEN_LIMIT,
+                            "first failing pair: system={system_tokens} {script} \
+                             transcript={transcript:?} chunk={index} of {} total={total} \
+                             limit={CHUNK_TOKEN_LIMIT}",
+                            chunks.len()
+                        );
+                    }
+                }
+            }
+        }
+        println!(
+            "non-Latin pairs where the unframed request fits: {checked}; framed requests: {framed}"
+        );
+        assert!(checked > 0 && framed > 0);
+    }
+
+    #[test]
+    fn max_char_tokens_is_the_costliest_character() {
+        let costliest = (0..=u32::from(char::MAX))
+            .filter_map(char::from_u32)
+            .map(|c| char_weight(c).div_ceil(30))
+            .max();
+        assert_eq!(costliest, Some(MAX_CHAR_TOKENS));
+    }
+
     #[test]
     fn plain_prompt_without_room_for_the_frame_is_sent_unframed() {
         let settings = crate::settings::get_default_settings();
-        // 974 leaves exactly one token after the template and frame: framed, one token a chunk.
-        let fits = text_of("Fix grammar. ", 974);
+        // 972 leaves room for one widest character after the template and frame: framed.
+        let fits = text_of("Fix grammar. ", 972);
         let (chunks, requests) = plain_requests(&fits, "hello there");
-        assert!(chunks.iter().all(|chunk| est_tokens(chunk) <= 1));
+        assert!(chunks
+            .iter()
+            .all(|chunk| est_tokens(chunk) <= MAX_CHAR_TOKENS));
         for messages in &requests {
             assert!(messages[1].content.starts_with("<transcript>\n"));
             assert!(request_total(messages) <= CHUNK_TOKEN_LIMIT);
         }
-        // 975 and longer leave no token: the request is the pre-frame one, unframed, floor budget.
-        for system_tokens in [975, 990, 1000, 1200] {
+        // 973 and longer leave less than one widest character: the request is the pre-frame one,
+        // unframed, floor budget.
+        for system_tokens in [973, 974, 975, 990, 1000, 1200] {
             let system = text_of("Fix grammar. ", system_tokens);
             assert_eq!(
                 chunk_budget_for(PromptStyle::PlainSystemPrompt, &system, &settings),
