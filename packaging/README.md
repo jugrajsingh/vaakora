@@ -26,7 +26,7 @@ packaging/build.sh [--stage-only] [--cpu x86-64-v3|native]
 | llama.cpp        | tag `b11260`, commit `e904318a2d3e2382e78c98b4353c5dd569c079f6` (refused on a mismatch)                                                                                  | `llama-server.sh`     |
 | OpenVINO runtime | wheel `openvino-2026.4.1-22982-cp313-cp313-manylinux_2_28_x86_64.whl`, sha256 `a9b637846c579d7b81b17b6585e0c7b1947574e8d13cf83d7307ce50cd2c352e` (refused on a mismatch) | `openvino-runtime.sh` |
 
-`packaging/llama-server.sh <out-dir> [--cpu ...]` and `packaging/openvino-runtime.sh <dest-dir> [--wheel <file>]` can be run on their own. The OpenVINO wheel and the built binaries are cached under `packaging/.work/`; the llama.cpp git clone lives outside the checkout, in `${XDG_CACHE_HOME:-$HOME/.cache}/vaakora-build/llama.cpp`, so the checkout never holds a nested `.git`.
+`packaging/llama-server.sh <out-dir> [--cpu ...]` and `packaging/openvino-runtime.sh <dest-dir> [--wheel <file>]` can be run on their own. The OpenVINO wheel and the built binaries are cached under `packaging/.work/`; the llama.cpp git clone lives outside the checkout, in `${XDG_CACHE_HOME:-$HOME/.cache}/vaakora-build/llama.cpp-<commit>`, so the checkout never holds a nested `.git`. The clone and the build directory (`packaging/.work/llama-build-<commit>-<cpu>`) are keyed by the pinned commit, so moving the pin starts from fresh sources and never trips over what the old pin left behind.
 
 ## Install
 

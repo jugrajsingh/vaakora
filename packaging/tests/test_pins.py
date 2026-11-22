@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import unittest
@@ -9,6 +10,8 @@ import zipfile
 from roots import PACKAGING, SCRATCH
 
 LLAMA_COMMIT = "e904318a2d3e2382e78c98b4353c5dd569c079f6"
+OTHER_TAG = "b99999"
+OTHER_COMMIT = "0123456789abcdef0123456789abcdef01234567"
 WHEEL_SHA256 = "a9b637846c579d7b81b17b6585e0c7b1947574e8d13cf83d7307ce50cd2c352e"
 LIBRARIES = (
     "libopenvino.so.2641",
@@ -73,7 +76,7 @@ class LlamaPinTests(unittest.TestCase):
         self.cmake_trace = self.scratch / "cmake-trace"
         self.out = self.scratch / "out"
         self.cache = self.scratch / "cache"
-        self.clone = self.cache / "vaakora-build/llama.cpp"
+        self.clone = self.cache / f"vaakora-build/llama.cpp-{LLAMA_COMMIT}"
         self.env = {
             **os.environ,
             "PATH": str(self.bin) + ":" + os.environ["PATH"],
@@ -131,6 +134,52 @@ class LlamaPinTests(unittest.TestCase):
         self.assertFalse(self.trace.exists())
         self.assertFalse(self.cmake_trace.exists())
         self.assertFalse(self.out.exists())
+
+    def other_pin_script(self) -> Path:
+        """A copy of the script pinned to a different tag and commit, in its own packaging dir."""
+        directory = self.scratch / "packaging-other"
+        directory.mkdir()
+        text = (PACKAGING / "llama-server.sh").read_text()
+        text, tag_count = re.subn(r"^LLAMA_TAG=.*$", f"LLAMA_TAG={OTHER_TAG}", text, flags=re.M)
+        text, commit_count = re.subn(r"^LLAMA_COMMIT=.*$", f"LLAMA_COMMIT={OTHER_COMMIT}", text, flags=re.M)
+        self.assertEqual((tag_count, commit_count), (1, 1))
+        script = directory / "llama-server.sh"
+        script.write_text(text)
+        return script
+
+    def test_a_cache_of_another_pin_never_blocks_a_new_pin(self) -> None:
+        # The old pin's cache, under both its commit-keyed name and the old unkeyed name.
+        for name in (f"llama.cpp-{LLAMA_COMMIT}", "llama.cpp"):
+            old = self.cache / "vaakora-build" / name
+            (old / ".git").mkdir(parents=True)
+            (old / ".fake-commit").write_text(LLAMA_COMMIT + "\n")
+        self.tool(
+            "git",
+            'dir=.; prev=; for a; do [ "$prev" = -C ] && dir=$a; prev=$a; done\n'
+            'case "$*" in\n'
+            '*"rev-parse HEAD") cat "$dir/.fake-commit";;\n'
+            'clone*) echo "$*" >"$CLONE_TRACE"; for last; do :; done; mkdir -p "$last/.git"; echo ' + OTHER_COMMIT + ' >"$last/.fake-commit";;\n'
+            '*) echo "unexpected git call $*" >&2; exit 23;;\n'
+            'esac\n',
+        )
+        self.env["CLONE_TRACE"] = str(self.scratch / "clone-trace")
+        script = self.other_pin_script()
+        result = subprocess.run(["bash", str(script), str(self.out)], capture_output=True, text=True, env=self.env, timeout=60)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        fresh = self.cache / f"vaakora-build/llama.cpp-{OTHER_COMMIT}"
+        clone = (self.scratch / "clone-trace").read_text()
+        self.assertIn(f"--branch {OTHER_TAG} ", clone)
+        self.assertTrue(clone.strip().endswith(str(fresh)), clone)
+        for name in (f"llama.cpp-{LLAMA_COMMIT}", "llama.cpp"):
+            self.assertEqual((self.cache / "vaakora-build" / name / ".fake-commit").read_text().strip(), LLAMA_COMMIT)
+        self.assertTrue((script.parent / f".work/llm-bin-{OTHER_COMMIT}-x86-64-v3/llama-server").is_file())
+        self.assertIn(f"llama-server {OTHER_TAG} ({OTHER_COMMIT}", result.stdout)
+        self.assertTrue(self.out.joinpath("llama-server").is_file())
+
+    def test_each_pin_builds_in_its_own_directory(self) -> None:
+        self.pin_head()
+        self.assertEqual(self.run_script().returncode, 0)
+        self.assertTrue(any(f"llama-build-{LLAMA_COMMIT}-x86-64-v3" in line for line in self.trace.read_text().splitlines()))
 
     def test_llama_cpu_flags(self) -> None:
         self.pin_head()

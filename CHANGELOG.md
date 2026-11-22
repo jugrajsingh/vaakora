@@ -99,6 +99,7 @@ Packaging
 
 ### Changed
 
+- The llama.cpp source clone and the `llama-server` build directory that `packaging/` caches are keyed by the pinned commit (`llama.cpp-<commit>`, `llama-build-<commit>-<cpu>`). Moving the pin builds from fresh sources instead of refusing on the clone the previous pin left behind; a test covers two pins side by side.
 - The fork is now built on upstream v0.10.1 (it was v0.10.0). Upstream's changes in that release are described in its own release notes; where they meet the fork's additions, the entries under Fixed say what the fork does differently.
 - Read aloud runs on ONNX Runtime 1.31.0 through ort 2.0.0-rc.15 (fixes memory-safety issues and leaks in the runtime bindings) and openvino-rs 0.11.1 (zero-initialised buffers).
 - After the ONNX Runtime upgrade, Phonon takes about 0.2 to 0.35 seconds longer to load its model; its speaking speed is unchanged.
