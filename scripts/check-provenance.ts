@@ -135,6 +135,116 @@ function checkTakenRow(
   }
 }
 
+// Credit for borrowed commits, checked both ways. A commit that takes a change
+// from outside carries a body line `Based on: <owner>/<repo>@<sha> by <name>`.
+// Scope: every such line needs an adopted or rewritten row, in the upstream
+// commit table or the fork table, that names the commit as "Our commit" with
+// the same source. Every adopted or rewritten row of the upstream commit table
+// needs a commit that carries a matching line. Pull request rows and fork rows
+// are not required to have a line: their commits were not recommitted under a
+// credit line.
+const BASED_ON = /^Based on: ([\w.-]+)\/([\w.-]+)@([0-9a-f]{7,40}) by (\S.*)$/;
+const UPSTREAM_SLUG = "cjpais/Handy";
+const HEX_ID = /^[0-9a-f]{7,40}$/;
+
+interface LedgerRow {
+  table: "commits" | "forks";
+  // <owner>/<repo>@<sha>, as a Based-on line names it
+  source: string;
+  decision: string;
+  ours: string;
+}
+
+interface Credit {
+  source: string;
+  line: string;
+}
+
+function resolveCommit(id: string): string | null {
+  try {
+    return git("rev-parse", "--verify", "--quiet", `${id}^{commit}`).trim();
+  } catch {
+    return null;
+  }
+}
+
+function sameSource(a: string, b: string): boolean {
+  const [aRepo, aSha] = a.toLowerCase().split("@");
+  const [bRepo, bSha] = b.toLowerCase().split("@");
+  return aRepo === bRepo && (aSha.startsWith(bSha) || bSha.startsWith(aSha));
+}
+
+function creditsInHistory(problems: string[]): Map<string, Credit[]> {
+  const credits = new Map<string, Credit[]>();
+  const log = git("log", "--format=%H%x1f%B%x1e", "HEAD");
+  for (const entry of log.split("\x1e")) {
+    const [rawId, message = ""] = entry.split("\x1f");
+    const id = rawId.trim();
+    if (id === "") continue;
+    for (const line of message.split("\n")) {
+      if (!line.startsWith("Based on:")) continue;
+      const found = BASED_ON.exec(line);
+      if (found === null) {
+        problems.push(
+          `${id.slice(0, ABBREV)}: malformed credit line "${line}", need Based on: <owner>/<repo>@<sha> by <name>`,
+        );
+        continue;
+      }
+      const list = credits.get(id) ?? [];
+      list.push({ source: `${found[1]}/${found[2]}@${found[3]}`, line });
+      credits.set(id, list);
+    }
+  }
+  return credits;
+}
+
+function checkCredit(rows: LedgerRow[], problems: string[]): void {
+  const credits = creditsInHistory(problems);
+  const credited = rows.filter(
+    (row) => row.decision === "adopted" || row.decision === "rewritten",
+  );
+  const ours = new Map<LedgerRow, string | null>(
+    credited.map((row) => [row, resolveCommit(row.ours)]),
+  );
+
+  for (const row of credited) {
+    if (row.table !== "commits") continue;
+    const commit = ours.get(row) ?? null;
+    const wanted = `Based on: ${row.source} by <name>`;
+    if (!HEX_ID.test(row.source.split("@")[1])) {
+      problems.push(
+        `UPSTREAM.md: upstream commit "${row.source.split("@")[1]}" is not a hex commit id`,
+      );
+    } else if (commit === null) {
+      problems.push(
+        `UPSTREAM.md: row ${row.source} names our commit ${row.ours}, which is not a commit in this repository`,
+      );
+    } else if (
+      !(credits.get(commit) ?? []).some((credit) =>
+        sameSource(credit.source, row.source),
+      )
+    ) {
+      problems.push(
+        `UPSTREAM.md: row ${row.source} names our commit ${row.ours}, which carries no "${wanted}" line`,
+      );
+    }
+  }
+
+  for (const [commit, list] of credits) {
+    for (const credit of list) {
+      const named = credited.some(
+        (row) =>
+          ours.get(row) === commit && sameSource(row.source, credit.source),
+      );
+      if (!named) {
+        problems.push(
+          `${commit.slice(0, ABBREV)}: "${credit.line}" has no adopted or rewritten row in UPSTREAM.md naming this commit as Our commit with source ${credit.source}`,
+        );
+      }
+    }
+  }
+}
+
 function checkUpstreamLedger(problems: string[]): void {
   const ledger = readFile("UPSTREAM.md");
   if (ledger === null) {
@@ -151,6 +261,7 @@ function checkUpstreamLedger(problems: string[]): void {
   }
 
   const rowHashes: string[] = [];
+  const ledgerRows: LedgerRow[] = [];
   // The ledger holds three tables, told apart by their header: upstream commits
   // (4 cells), open upstream pull requests and fork commits (5 cells each).
   let table: "commits" | keyof typeof TAKEN_TABLES = "commits";
@@ -176,6 +287,18 @@ function checkUpstreamLedger(problems: string[]): void {
     if (/^-+$/.test(first ?? "")) continue;
     if (table !== "commits") {
       checkTakenRow(table, cells, line, problems);
+      if (
+        table === "forks" &&
+        cells.length === 5 &&
+        TAKEN_TABLES.forks.id.test(cells[0])
+      ) {
+        ledgerRows.push({
+          table,
+          source: cells[0],
+          decision: cells[3],
+          ours: cells[4],
+        });
+      }
       continue;
     }
     const [hash, , decision] = cells;
@@ -186,12 +309,20 @@ function checkUpstreamLedger(problems: string[]): void {
       continue;
     }
     rowHashes.push(hash);
+    ledgerRows.push({
+      table: "commits",
+      source: `${UPSTREAM_SLUG}@${hash}`,
+      decision,
+      ours: cells[3],
+    });
     if (!DECISIONS.has(decision)) {
       problems.push(
         `UPSTREAM.md: row ${hash} has decision "${decision}", need one of ${[...DECISIONS].join("|")}`,
       );
     }
   }
+
+  checkCredit(ledgerRows, problems);
 
   const ref = (() => {
     try {
