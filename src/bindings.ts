@@ -13,14 +13,6 @@ async getTtsModels() : Promise<Result<TtsModelInfo[], string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async getTtsStatus() : Promise<Result<ManagerSnapshot, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("get_tts_status") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async getTtsDevices() : Promise<Result<Device[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_tts_devices") };
@@ -104,14 +96,6 @@ async setTtsModel(modelId: string) : Promise<Result<null, string>> {
 async setTtsRunOn(modelId: string, choice: RunOn) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("set_tts_run_on", { modelId, choice }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async unloadTtsModel() : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("unload_tts_model") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -1883,7 +1867,6 @@ export type LogLevel = "trace" | "debug" | "info" | "warn" | "error"
  * A macOS privacy permission Handy asks for during onboarding.
  */
 export type MacPermission = "accessibility" | "microphone"
-export type ManagerSnapshot = { state: State; preparation: Preparation; ready: WorkerReady | null; fallback_from: Device | null }
 /**
  * How an entry matches text.
  */
@@ -2182,7 +2165,6 @@ export type ShortcutActivation =
 "hold_or_toggle"
 export type ShortcutBinding = { id: string; name: string; description: string; default_binding: string; current_binding: string }
 export type SoundTheme = "marimba" | "pop" | "custom"
-export type State = "Unloaded" | "Starting" | "Ready" | "Stopping" | "Failed"
 /**
  * Phase of the streaming overlay card, emitted to drive its UI state.
  */
@@ -2323,7 +2305,6 @@ export type WindowsMicrophonePermissionStatus = { supported: boolean; overall_ac
  * chunk's source range); a word split across chunks has one span per part.
  */
 export type WordSpan = { source_start: number; source_end: number; spoken_start: number; spoken_end: number }
-export type WorkerReady = { device: Device; placement: Partial<{ [key in string]: Device }> }
 
 /** tauri-specta globals **/
 

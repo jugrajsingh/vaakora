@@ -2603,8 +2603,8 @@ pub(crate) mod tests {
     }
 
     /// `testdata/muesli_parity.json` is what the evaluation's `handy` variant for
-    /// `muesli-2b-q4km` (eval/scripts/cleanup_port.py) sends for every eval sample: system
-    /// prompt, chunks, `max_tokens`, timeout and request flags. The app must send the same.
+    /// `muesli-2b-q4km` sends for every eval sample: system prompt, chunks, `max_tokens`,
+    /// timeout and request flags. The app must send the same.
     #[test]
     fn muesli_requests_match_the_evaluated_handy_variant() {
         let fixture: ParityFixture =

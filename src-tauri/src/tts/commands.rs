@@ -1,5 +1,4 @@
 use super::{
-    manager::ManagerSnapshot,
     service::{selection, TtsService},
     session::{SessionCommand, SessionView},
 };
@@ -154,14 +153,6 @@ pub async fn get_tts_models(
             .collect()
     })
     .await
-}
-#[tauri::command]
-#[specta::specta]
-pub async fn get_tts_status(
-    service: State<'_, Arc<TtsService>>,
-) -> Result<ManagerSnapshot, String> {
-    let service = service.inner().clone();
-    blocking(move || Ok(service.ready()?.manager.snapshot())).await
 }
 #[tauri::command]
 #[specta::specta]
@@ -358,27 +349,6 @@ pub async fn set_tts_run_on(
         }
         super::preparation::prepare(&ready, &model_id, choice)?;
         Ok(())
-    })
-    .await
-}
-fn unload_after_stop(
-    stop: impl FnOnce() -> Result<(), String>,
-    unload: impl FnOnce(),
-) -> Result<(), String> {
-    stop()?;
-    unload();
-    Ok(())
-}
-#[tauri::command]
-#[specta::specta]
-pub async fn unload_tts_model(service: State<'_, Arc<TtsService>>) -> Result<(), String> {
-    let service = service.inner().clone();
-    blocking(move || {
-        let ready = service.ready()?;
-        unload_after_stop(
-            || ready.session.stop_and_wait().map_err(|e| e.to_string()),
-            || ready.manager.unload(),
-        )
     })
     .await
 }
@@ -682,30 +652,5 @@ mod tests {
         drop(first);
         assert!(map.lock().unwrap().is_empty());
         assert!(DownloadOwnership::claim(&map, "pocket-en", second).is_ok());
-    }
-}
-
-#[cfg(test)]
-mod wbfix_tests {
-    use super::*;
-    #[test]
-    fn wbfix_unload_requires_stop_acknowledgement() {
-        let stopped = std::cell::Cell::new(false);
-        let unloaded = std::cell::Cell::new(false);
-        unload_after_stop(
-            || {
-                stopped.set(true);
-                Ok(())
-            },
-            || {
-                assert!(stopped.get(), "stop must precede unload");
-                unloaded.set(true);
-            },
-        )
-        .unwrap();
-        assert!(unloaded.get());
-        unloaded.set(false);
-        assert!(unload_after_stop(|| Err("stop pending".into()), || unloaded.set(true)).is_err());
-        assert!(!unloaded.get(), "unacknowledged stop must never unload");
     }
 }

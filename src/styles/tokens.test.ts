@@ -173,7 +173,7 @@ interface Pair {
 const onBoth = (fg: string, min: number, role: string): Pair[] =>
   ["background", "wash"].map((on) => ({ fg, on, min, role }));
 
-/* R17 pairs. Out of the table: `line` and `wash` (dividers and fills, not
+/* Contrast pairs. Out of the table: `line` and `wash` (dividers and fills, not
  * boundaries) and illustration tokens (demo-*, wordmark, mascot-line, logo-pastel). */
 const PAIRS: Pair[] = [
   ...["text", "ink-2", "ink-3", "logo-primary"].flatMap((fg) =>
@@ -186,7 +186,7 @@ const PAIRS: Pair[] = [
   ...onBoth("line-strong", 3, "control boundary"),
   ...onBoth("logo-primary", 3, "focus ring and slider thumb"),
   ...onBoth("background-ui", 3, "focus ring and filled control"),
-  // Dark keeps #da5893 (Phase 7 ruling F5): white on it is 3.62:1.
+  // Dark keeps #da5893: white on it is 3.62:1.
   {
     fg: "#ffffff",
     on: "background-ui",

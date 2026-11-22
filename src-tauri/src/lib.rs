@@ -804,7 +804,6 @@ pub fn run(cli_args: CliArgs) {
     let specta_builder = Builder::<tauri::Wry>::new()
         .commands(collect_commands![
             tts::commands::get_tts_models,
-            tts::commands::get_tts_status,
             tts::commands::get_tts_devices,
             tts::commands::get_read_aloud_state,
             tts::commands::read_aloud_replace_text,
@@ -816,7 +815,6 @@ pub fn run(cli_args: CliArgs) {
             tts::commands::set_tts_selection,
             tts::commands::set_tts_model,
             tts::commands::set_tts_run_on,
-            tts::commands::unload_tts_model,
             tts::commands::download_tts_model,
             tts::commands::cancel_tts_download,
             tts::commands::delete_tts_model,

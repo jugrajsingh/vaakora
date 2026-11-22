@@ -32,7 +32,6 @@ const SCHEMA: u32 = 2;
 /// Base URLs tried in order when the Hugging Face download fails. The full
 /// file URL is `{mirror}/{repo_id}/{revision}/{filename}` — the same three
 /// values that form the HF resolve URL, so a mirror is a plain static host.
-/// `scripts/mirror_models.py` populates it from this catalog.
 const MIRRORS: &[&str] = &["https://blob.handy.computer"];
 
 /// Handy's list order and onboarding set, keyed by catalog id. Kept from the
@@ -144,7 +143,6 @@ impl CatalogModel {
 
     /// Handy uses a flat models directory for mirror downloads, so only
     /// transcription models with root-level default files can be offered.
-    /// Must match `offered_models` in `scripts/mirror_models.py`.
     fn is_offered(&self) -> bool {
         self.role == "asr"
             && self

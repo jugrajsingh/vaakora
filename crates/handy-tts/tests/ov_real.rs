@@ -30,8 +30,7 @@ impl Drop for ProbeDirectory {
 
 fn traced_cancel_probe(device: Device) {
     let scratch = PathBuf::from(std::env::var_os("TMPDIR").unwrap());
-    let directory =
-        ProbeDirectory(scratch.join(format!("task-13-cancel-probe-{}", std::process::id())));
+    let directory = ProbeDirectory(scratch.join(format!("cancel-probe-{}", std::process::id())));
     std::fs::create_dir(&directory.0).unwrap();
     let source = directory.0.join("trace.c");
     let proxy = directory.0.join("trace.so");

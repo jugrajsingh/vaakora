@@ -312,13 +312,12 @@ test("footer_adds_no_key_handlers", () => {
 
 test("no_selection_on_download_complete", () => {
   const root = new URL("../../", import.meta.url).pathname;
-  const pickers = join(root, "components/model-selector");
   const files: string[] = [];
   const walk = (dir: string) => {
     for (const name of readdirSync(dir)) {
       const path = join(dir, name);
       if (statSync(path).isDirectory()) {
-        if (path !== pickers) walk(path);
+        walk(path);
       } else if (/\.tsx?$/u.test(name) && !/\.test\.tsx?$/u.test(name)) {
         files.push(path);
       }
@@ -335,10 +334,6 @@ test("no_selection_on_download_complete", () => {
         code.includes("selectModel(")
       ),
       `${name} selects a model when a download completes`,
-    );
-    assert.ok(
-      !/from "[^"]*model-selector[^"]*"/u.test(code),
-      `${name} imports the unused footer pickers`,
     );
   }
 });
