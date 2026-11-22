@@ -35,7 +35,11 @@ describe("BrandLockup", () => {
   it("lockup_names_vaakora", () => {
     const html = render(<BrandLockup size={26} />);
     assert.equal(appName, "Vaakora");
-    assert.ok(html.includes('aria-label="Vaakora"'), "the group is named");
+    // The root element carries the accessible name: the mark inside it is
+    // aria-hidden and its own label must not satisfy this.
+    const root = /^<[a-z]+\b([^>]*)>/.exec(html)?.[1] ?? "";
+    assert.ok(root.includes('role="img"'), `root is an image: ${root}`);
+    assert.ok(root.includes('aria-label="Vaakora"'), `root is named: ${root}`);
     // The 26 px lockup uses the 16 master (rects only), so every <path is a glyph.
     assert.equal(count(html, "<path"), wordmark.paths.length);
     assert.ok(/class="[^"]*text-wordmark/.test(html), "word colour class");
