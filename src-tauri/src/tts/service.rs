@@ -263,6 +263,39 @@ fn open_popup_with(
         show();
     }));
 }
+/// Why a read given its text (the socket) did not start.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ExternalReadError {
+    /// Read aloud could not start.
+    Unavailable,
+    /// The selected voice model is unknown or not downloaded.
+    ModelNotInstalled,
+    /// A dictation records or completes its output; nothing changed.
+    Dictating,
+    /// A voice preview could not be stopped.
+    Preview(String),
+}
+/// The session command that loads a popup's text and plays it, marked with who asked for it.
+fn popup_replace(text: String, origin: ReadOrigin) -> SessionCommand {
+    SessionCommand::Replace {
+        client_revision: None,
+        text,
+        autoplay: true,
+        origin,
+    }
+}
+/// Applies a read given its text; during a dictation it is refused and the referee is untouched.
+fn read_text_with(referee: &mut Referee, text: String) -> Result<Vec<Effect>, ExternalReadError> {
+    if referee.activity == Activity::Dictating {
+        return Err(ExternalReadError::Dictating);
+    }
+    Ok(referee.apply(Event::ReadText { text }))
+}
+/// Whether the voice model `model_id` is downloaded under `root`; an unknown or empty id is not.
+fn model_installed(root: &std::path::Path, model_id: &str) -> bool {
+    handy_tts_core::catalog::entry(model_id)
+        .is_ok_and(|entry| handy_tts_core::download::is_downloaded(root, entry))
+}
 struct CaptureReservation<'a>(&'a PasteFence);
 impl Drop for CaptureReservation<'_> {
     fn drop(&mut self) {
@@ -772,7 +805,7 @@ impl TtsService {
                 referee.popup_open || referee.activity == Activity::Reading,
                 Ordering::Release,
             );
-            self.dispatch_effects(effects, referee.popup_open);
+            self.dispatch_effects(effects, referee.popup_open, ReadOrigin::App);
         });
     }
     fn refuse(&self, code: crate::notices::NoticeCode, reader_open: bool) {
@@ -782,7 +815,7 @@ impl TtsService {
             reader_open,
         );
     }
-    fn dispatch_effects(&self, effects: Vec<Effect>, reader_open: bool) {
+    fn dispatch_effects(&self, effects: Vec<Effect>, reader_open: bool, origin: ReadOrigin) {
         for effect in effects {
             reading_cancel_with(&effect, |active| {
                 crate::shortcut::cancel::set(
@@ -807,12 +840,7 @@ impl TtsService {
                     open_popup_with(
                         || {
                             if let Ok(ready) = self.ready() {
-                                let _ = ready.session.send(SessionCommand::Replace {
-                                    client_revision: None,
-                                    text,
-                                    autoplay: true,
-                                    origin: ReadOrigin::App,
-                                });
+                                let _ = ready.session.send(popup_replace(text, origin));
                             }
                         },
                         |job| {
@@ -852,6 +880,27 @@ impl TtsService {
     pub fn read_clipboard(self: &Arc<Self>) {
         self.start_read(Event::ReadClipboard);
     }
+    /// Reads `text` aloud in the popup, replacing any read, without touching the clipboard; the
+    /// read is recorded with `origin`. A read during a dictation is refused and changes nothing.
+    pub fn read_text(&self, text: String, origin: ReadOrigin) -> Result<(), ExternalReadError> {
+        let ready = self.ready().map_err(|_| ExternalReadError::Unavailable)?;
+        let model_id = crate::settings::get_settings(&self.app).tts_model_id;
+        if !model_installed(&ready.root, &model_id) {
+            return Err(ExternalReadError::ModelNotInstalled);
+        }
+        self.cancel_preview().map_err(ExternalReadError::Preview)?;
+        let mut referee = self.referee.lock().unwrap_or_else(|p| p.into_inner());
+        let effects = read_text_with(&mut referee, text)?;
+        self.reading.store(
+            referee.popup_open || referee.activity == Activity::Reading,
+            Ordering::Release,
+        );
+        clear_read_aloud_notices(&self.vocabulary, || {
+            crate::notices::clear(&self.app, crate::notices::NoticeSource::ReadAloud)
+        });
+        self.dispatch_effects(effects, referee.popup_open, origin);
+        Ok(())
+    }
     fn start_read(self: &Arc<Self>, event: Event) {
         let revision = self.fence.revision();
         let ticket = {
@@ -882,7 +931,7 @@ impl TtsService {
             if let Some(Effect::Capture { ticket }) = effects.first() {
                 Some(*ticket)
             } else {
-                self.dispatch_effects(effects, referee.popup_open);
+                self.dispatch_effects(effects, referee.popup_open, ReadOrigin::App);
                 None
             }
         };
@@ -1911,6 +1960,73 @@ mod tests {
         let result = forward_reading_command(&mut referee, command, |_| panic!("sent"));
         assert_eq!(result, Err("tts.errors.busy".into()));
         assert_eq!(referee.popup_text, "copied");
+    }
+    mod external_read {
+        use super::*;
+
+        #[test]
+        fn read_text_with_refuses_dictation_and_keeps_the_referee() {
+            for processing in [false, true] {
+                let mut referee = Referee::default();
+                referee.apply(Event::DictationStart);
+                if processing {
+                    referee.apply(Event::DictationProcessing);
+                }
+                let (ticket, activity, popup_open) =
+                    (referee.ticket, referee.activity, referee.popup_open);
+                let before = format!("{referee:?}");
+                assert_eq!(
+                    read_text_with(&mut referee, "plan".into()),
+                    Err(ExternalReadError::Dictating)
+                );
+                assert_eq!(
+                    (referee.ticket, referee.activity, referee.popup_open),
+                    (ticket, activity, popup_open)
+                );
+                assert_eq!(format!("{referee:?}"), before);
+            }
+        }
+
+        #[test]
+        fn read_text_with_opens_the_popup() {
+            let mut referee = Referee::default();
+            assert_eq!(
+                read_text_with(&mut referee, "plan".into()),
+                Ok(vec![Effect::OpenPopup {
+                    text: "plan".into()
+                }])
+            );
+            assert!(referee.popup_open);
+            assert_eq!(referee.activity, Activity::Reading);
+        }
+
+        #[test]
+        fn popup_replace_carries_the_origin() {
+            assert!(matches!(
+                popup_replace("x".into(), ReadOrigin::Agent),
+                SessionCommand::Replace {
+                    client_revision: None,
+                    autoplay: true,
+                    origin: ReadOrigin::Agent,
+                    ref text,
+                } if text == "x"
+            ));
+            assert!(matches!(
+                popup_replace("x".into(), ReadOrigin::App),
+                SessionCommand::Replace {
+                    origin: ReadOrigin::App,
+                    ..
+                }
+            ));
+        }
+
+        #[test]
+        fn unknown_or_empty_model_is_not_installed() {
+            let root = std::path::Path::new("/nonexistent-vaakora-tts-root");
+            for id in ["", "ghost", "kokoro-82m-int8"] {
+                assert!(!model_installed(root, id), "{id:?}");
+            }
+        }
     }
     #[test]
     fn capture_finishing_after_the_popup_closed_opens_nothing_through_the_ordered_path() {

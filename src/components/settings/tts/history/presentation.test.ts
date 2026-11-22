@@ -54,6 +54,9 @@ describe("entry presentation", () => {
     );
   });
   it("names the agent in the label it is given", () => {
+    const tag = entryTag(models, { ...ENTRY, origin: "agent" }, "vom Agenten");
+    assert.equal(tag, "Pocket TTS, alba, vom Agenten");
+    assert.ok(!tag.includes("from agent"));
     assert.equal(
       entryTag(
         models,

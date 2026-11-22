@@ -18,9 +18,20 @@ pub enum Event {
     DictationProcessing,
     ReadShortcut,
     ReadClipboard,
-    Clipboard { ticket: u64, text: String },
-    CaptureRefused { ticket: u64 },
-    ClipboardUnreadable { ticket: u64 },
+    /// A read given its text (the socket), never through the clipboard.
+    ReadText {
+        text: String,
+    },
+    Clipboard {
+        ticket: u64,
+        text: String,
+    },
+    CaptureRefused {
+        ticket: u64,
+    },
+    ClipboardUnreadable {
+        ticket: u64,
+    },
     DictationFinished,
     Cancel,
     Close,
@@ -144,6 +155,12 @@ impl Referee {
             }
             Event::ReadClipboard => {}
             Event::ReadShortcut => self.start_capture(&mut effects, false),
+            Event::ReadText { .. } if self.activity == Activity::Dictating => {}
+            Event::ReadText { text } if is_blank(&text) => {}
+            Event::ReadText { text } => {
+                self.invalidate();
+                self.show(text, &mut effects);
+            }
             Event::CaptureRefused { ticket } if ticket == self.ticket && self.capture_pending => {
                 self.invalidate();
                 effects.push(Effect::CaptureRefused);
@@ -417,6 +434,124 @@ mod tests {
                 text: "fresh".into()
             }]
         );
+    }
+
+    mod read_text {
+        use super::*;
+
+        fn read(r: &mut Referee, text: &str) -> Vec<Effect> {
+            r.apply(Event::ReadText { text: text.into() })
+        }
+
+        #[test]
+        fn read_text_opens_the_popup() {
+            let mut r = Referee::default();
+            assert_eq!(
+                read(&mut r, "plan"),
+                [Effect::OpenPopup {
+                    text: "plan".into()
+                }]
+            );
+            assert_eq!(r.activity, Activity::Reading);
+            assert!(r.popup_open);
+            assert_eq!(r.popup_text, "plan");
+        }
+
+        #[test]
+        fn read_text_replaces_an_open_read() {
+            let mut r = Referee::default();
+            read(&mut r, "first");
+            assert_eq!(
+                read(&mut r, "second"),
+                [Effect::OpenPopup {
+                    text: "second".into()
+                }]
+            );
+            assert_eq!(r.popup_text, "second");
+            assert!(r.popup_open);
+            assert_eq!(r.activity, Activity::Reading);
+        }
+
+        #[test]
+        fn read_text_cancels_a_pending_capture() {
+            let mut r = Referee::default();
+            assert_eq!(
+                r.apply(Event::ReadShortcut),
+                [Effect::Capture { ticket: 1 }]
+            );
+            assert_eq!(
+                read(&mut r, "plan"),
+                [Effect::OpenPopup {
+                    text: "plan".into()
+                }]
+            );
+            assert!(!r.capture_pending);
+            assert!(
+                r.apply(Event::Clipboard {
+                    ticket: 1,
+                    text: "late".into()
+                })
+                .is_empty()
+            );
+            assert_eq!(r.popup_text, "plan");
+        }
+
+        #[test]
+        fn read_text_during_dictation_does_nothing() {
+            for processing in [false, true] {
+                let mut r = Referee::default();
+                r.apply(Event::DictationStart);
+                if processing {
+                    r.apply(Event::DictationProcessing);
+                }
+                let before = format!("{r:?}");
+                assert!(read(&mut r, "plan").is_empty(), "processing={processing}");
+                assert_eq!(r.activity, Activity::Dictating);
+                assert!(!r.popup_open);
+                assert_eq!(format!("{r:?}"), before, "processing={processing}");
+            }
+        }
+
+        #[test]
+        fn blank_read_text_does_nothing() {
+            let mut r = Referee::default();
+            let before = format!("{r:?}");
+            assert!(read(&mut r, "  \n").is_empty());
+            assert_eq!(r.activity, Activity::Idle);
+            assert!(!r.popup_open);
+            assert_eq!(format!("{r:?}"), before);
+        }
+
+        /// A read given its text never asks for the clipboard, whatever the referee holds.
+        #[test]
+        fn read_text_never_captures() {
+            let mut idle = Referee::default();
+            let mut pending = Referee::default();
+            pending.apply(Event::ReadShortcut);
+            let mut open = Referee::default();
+            read(&mut open, "open");
+            let mut open_pending = Referee::default();
+            read(&mut open_pending, "open");
+            open_pending.apply(Event::ReadClipboard);
+            let mut dictating = Referee::default();
+            dictating.apply(Event::DictationStart);
+            dictating.apply(Event::ReadShortcut);
+            for r in [
+                &mut idle,
+                &mut pending,
+                &mut open,
+                &mut open_pending,
+                &mut dictating,
+            ] {
+                let effects = read(r, "text");
+                assert!(
+                    effects
+                        .iter()
+                        .all(|effect| matches!(effect, Effect::OpenPopup { .. })),
+                    "{effects:?}"
+                );
+            }
+        }
     }
 
     mod open_popup {
