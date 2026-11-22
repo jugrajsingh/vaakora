@@ -72,11 +72,14 @@ class LlamaPinTests(unittest.TestCase):
         self.trace = self.scratch / "trace"
         self.cmake_trace = self.scratch / "cmake-trace"
         self.out = self.scratch / "out"
+        self.cache = self.scratch / "cache"
+        self.clone = self.cache / "vaakora-build/llama.cpp"
         self.env = {
             **os.environ,
             "PATH": str(self.bin) + ":" + os.environ["PATH"],
             "PODMAN_TRACE": str(self.trace),
             "CMAKE_TRACE": str(self.cmake_trace),
+            "XDG_CACHE_HOME": str(self.cache),
         }
         self.tool("cmake", 'echo "$*" >>"$CMAKE_TRACE"\n')
         self.tool("install", 'case "$*" in */work/llama-build/*) exit 0;; *) exec /usr/bin/install "$@";; esac\n')
@@ -104,7 +107,7 @@ class LlamaPinTests(unittest.TestCase):
         path.chmod(0o755)
 
     def pin_head(self) -> None:
-        (self.packaging / ".work/llama.cpp/.git").mkdir(parents=True)
+        (self.clone / ".git").mkdir(parents=True)
         self.tool("git", 'case "$*" in *"rev-parse HEAD") echo ' + LLAMA_COMMIT + ';; *) echo "unexpected git call $*" >&2; exit 23;; esac\n')
 
     def run_script(self, *arguments: str) -> subprocess.CompletedProcess[str]:
@@ -117,7 +120,7 @@ class LlamaPinTests(unittest.TestCase):
         )
 
     def test_llama_commit_mismatch_is_refused(self) -> None:
-        clone = self.packaging / ".work/llama.cpp"
+        clone = self.clone
         clone.mkdir(parents=True)
         git = ("git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false", "-C", str(clone))
         subprocess.run(["git", "-C", str(clone), "init", "-q", "-b", "main"], check=True)
@@ -154,6 +157,22 @@ class LlamaPinTests(unittest.TestCase):
         runs = len(self.trace.read_text().splitlines())
         self.assertEqual(self.run_script().returncode, 0)
         self.assertEqual(len(self.trace.read_text().splitlines()), runs)
+
+    def test_clone_goes_to_the_cache_outside_the_checkout(self) -> None:
+        self.tool(
+            "git",
+            'case "$*" in\n'
+            '*"rev-parse HEAD") echo ' + LLAMA_COMMIT + ';;\n'
+            'clone*) for last; do :; done; echo "$last" >"$CLONE_TRACE"; mkdir -p "$last/.git";;\n'
+            '*) echo "unexpected git call $*" >&2; exit 23;;\n'
+            'esac\n',
+        )
+        self.env["CLONE_TRACE"] = str(self.scratch / "clone-trace")
+        result = self.run_script()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((self.scratch / "clone-trace").read_text().strip(), str(self.clone))
+        self.assertEqual(list(self.packaging.rglob(".git")), [])
+        self.assertTrue(self.clone.is_relative_to(self.cache))
 
     def test_unknown_cpu_target_exits_2_before_any_build(self) -> None:
         self.pin_head()

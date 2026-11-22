@@ -30,12 +30,13 @@ WORK="$HERE/.work"
 IMAGE=vaakora-build:fedora45
 LLAMA_TAG=b11260
 LLAMA_COMMIT=e904318a2d3e2382e78c98b4353c5dd569c079f6
-LLAMA_SRC="$WORK/llama.cpp"
+LLAMA_SRC="${XDG_CACHE_HOME:-$HOME/.cache}/vaakora-build/llama.cpp"
 LLAMA_OUT="$WORK/llm-bin-$LLAMA_COMMIT-$cpu"
 LLAMA_BUILD="$WORK/llama-build-$cpu"
 
 if [[ ! -x "$LLAMA_OUT/llama-server" ]]; then
   if [[ ! -d "$LLAMA_SRC/.git" ]]; then
+    mkdir -p "$(dirname "$LLAMA_SRC")"
     git clone --depth 1 --branch "$LLAMA_TAG" https://github.com/ggml-org/llama.cpp "$LLAMA_SRC"
   fi
   llama_have="$(git -C "$LLAMA_SRC" rev-parse HEAD)"
