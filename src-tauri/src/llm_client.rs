@@ -187,6 +187,10 @@ fn build_headers(provider: &PostProcessProvider, api_key: &str) -> Result<Header
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
     headers.insert(REFERER, HeaderValue::from_static(crate::brand::REPO_URL));
     headers.insert(
+        "HTTP-Referer",
+        HeaderValue::from_static(crate::brand::REPO_URL),
+    );
+    headers.insert(
         USER_AGENT,
         HeaderValue::from_str(&format!(
             "{}/{} (+{})",
@@ -743,6 +747,7 @@ mod tests {
         let text = |name: &str| headers.get(name).unwrap().to_str().unwrap().to_string();
         assert_eq!(text("X-Title"), crate::brand::DISPLAY_NAME);
         assert_eq!(text("X-Title"), "Vaakora");
+        assert_eq!(text("HTTP-Referer"), crate::brand::REPO_URL);
         assert_eq!(text("Referer"), crate::brand::REPO_URL);
         let agent = text("User-Agent");
         assert!(agent.starts_with("Vaakora/"), "User-Agent: {agent}");

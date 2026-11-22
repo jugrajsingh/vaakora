@@ -297,6 +297,7 @@ class BuildTests(unittest.TestCase):
             "linux"
         ]["rpm"]
         self.assertEqual(config["files"]["/usr/lib/Vaakora/tts"], "tts-bin")
+        self.assertEqual(config["files"][LICENCE], "../LICENSE")
         self.assertEqual(config["recommends"], list(DEPS))
 
 
