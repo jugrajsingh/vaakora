@@ -119,8 +119,7 @@ pub fn import_if_needed(
     sweep_stale(base, &name);
     let staging = base.join(format!("{}{}", staging_prefix(&name), unique_suffix()));
     let mut copied = report(ImportStatus::Copied, None);
-    let built = fs::create_dir(&staging)
-        .map_err(|e| with_path(e, &staging))
+    let built = create_private_dir(&staging, None)
         .and_then(|()| copy_allowlist(&paths.old, &staging, copy, &mut copied))
         .and_then(|()| write_report(&staging, &copied));
     let result = built.and_then(|()| {
@@ -144,7 +143,7 @@ pub fn import_if_needed(
 /// Create the new dir holding only `failed`, unless the new dir exists by now
 /// (then it and its contents are left alone and nothing is reported).
 fn fail(paths: &ImportPaths, failed: DataImportReport) -> Option<DataImportReport> {
-    fs::create_dir(&paths.new).ok()?;
+    create_private_dir(&paths.new, None).ok()?;
     if let Err(e) = write_report(&paths.new, &failed) {
         eprintln!("[data import] could not write the failure report: {e}");
     }
@@ -157,6 +156,68 @@ fn exists(path: &Path) -> bool {
 
 fn with_path(e: io::Error, path: &Path) -> io::Error {
     io::Error::new(e.kind(), format!("{}: {e}", path.display()))
+}
+
+/// `mode`, narrowed to the source's permission bits when a source is given.
+#[cfg(unix)]
+fn private_mode(mode: u32, source: Option<&Path>) -> io::Result<u32> {
+    use std::os::unix::fs::PermissionsExt;
+    match source {
+        Some(source) => {
+            let meta = fs::metadata(source).map_err(|e| with_path(e, source))?;
+            Ok(mode & meta.permissions().mode())
+        }
+        None => Ok(mode),
+    }
+}
+
+/// A directory only its owner can enter (0700, or the source's mode where
+/// stricter), set at creation so nothing copied into it is ever reachable
+/// by other users, whatever the umask.
+fn create_private_dir(path: &Path, source: Option<&Path>) -> io::Result<()> {
+    let mut builder = fs::DirBuilder::new();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::DirBuilderExt;
+        builder.mode(private_mode(0o700, source)?);
+    }
+    #[cfg(not(unix))]
+    let _ = source;
+    builder.create(path).map_err(|e| with_path(e, path))
+}
+
+/// An empty file only its owner can read (0600, or the source's mode where
+/// stricter), created before a database copy writes into it.
+fn create_private_file(path: &Path, source: &Path) -> io::Result<()> {
+    let mut options = fs::OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(private_mode(0o600, Some(source))?);
+    }
+    #[cfg(not(unix))]
+    let _ = source;
+    options.open(path).map(drop).map_err(|e| with_path(e, path))
+}
+
+/// Copy a file's bytes. A new `dst` gets the source's permissions before any
+/// data, as `std::fs::copy` does; a `dst` that exists (a database copy
+/// created private) keeps its own. `io::copy` between files uses
+/// copy_file_range, which shares blocks where the filesystem allows.
+pub fn copy_file(src: &Path, dst: &Path) -> io::Result<u64> {
+    let mut reader = fs::File::open(src)?;
+    let permissions = reader.metadata()?.permissions();
+    let existed = dst.exists();
+    let mut writer = fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(dst)?;
+    if !existed {
+        writer.set_permissions(permissions)?;
+    }
+    io::copy(&mut reader, &mut writer)
 }
 
 fn staging_prefix(name: &str) -> String {
@@ -271,7 +332,7 @@ fn copy_tree(
     sqlite: bool,
     report: &mut DataImportReport,
 ) -> io::Result<u64> {
-    fs::create_dir(dst).map_err(|e| with_path(e, dst))?;
+    create_private_dir(dst, Some(src))?;
     let mut entries = fs::read_dir(src)
         .map_err(|e| with_path(e, src))?
         .collect::<Result<Vec<_>, _>>()
@@ -357,6 +418,7 @@ fn copy_sqlite(
                 format!("{}: not UTF-8", dst.display()),
             )
         })?;
+        create_private_file(dst, src)?;
         conn.execute("VACUUM INTO ?1", [target])
             .map_err(|e| sqlite_error(e, src))?;
     }
@@ -399,8 +461,10 @@ fn snapshot_wal(
     let (src_wal, dst_wal) = (sidecar(src, "-wal"), sidecar(dst, "-wal"));
     for _ in 0..ATTEMPTS {
         let before = (stamp(src)?, stamp(&src_wal)?);
+        create_private_file(dst, src)?;
         copy(src, dst).map_err(|e| with_path(e, src))?;
         if before.1.is_some() {
+            create_private_file(&dst_wal, &src_wal)?;
             copy(&src_wal, &dst_wal).map_err(|e| with_path(e, &src_wal))?;
         }
         if (stamp(src)?, stamp(&src_wal)?) == before {
@@ -432,14 +496,11 @@ fn read_report(dir: &Path) -> Option<DataImportReport> {
     serde_json::from_slice(&fs::read(dir.join(REPORT_FILE)).ok()?).ok()
 }
 
-/// Resolve the paths and import with `std::fs::copy` (copy_file_range, which
-/// shares blocks where the filesystem allows); the caller logs the result from
-/// `setup` (logging before the builder goes nowhere).
+/// Resolve the paths and import with [`copy_file`]; the caller logs the
+/// result from `setup` (logging before the builder goes nowhere).
 pub fn import_on_first_start() -> Option<DataImportReport> {
     let paths = ImportPaths::resolve()?;
-    import_if_needed(&paths, crate::portable::is_portable(), &|src, dst| {
-        fs::copy(src, dst)
-    })
+    import_if_needed(&paths, crate::portable::is_portable(), &copy_file)
 }
 
 /// The report in `dir`, if any and not dismissed.
@@ -581,7 +642,7 @@ mod tests {
     }
 
     fn fs_copy(src: &Path, dst: &Path) -> io::Result<u64> {
-        fs::copy(src, dst)
+        copy_file(src, dst)
     }
 
     fn write(path: &Path, bytes: &[u8]) {
@@ -726,7 +787,7 @@ mod tests {
             if src.ends_with(name) {
                 return Err(io::Error::other(format!("injected failure on {name}")));
             }
-            fs::copy(src, dst)
+            copy_file(src, dst)
         }
     }
 
@@ -890,7 +951,7 @@ mod tests {
                 fs::write(new.join("someone-else.txt"), b"theirs").unwrap();
                 return Err(io::Error::other("injected failure"));
             }
-            fs::copy(src, dst)
+            copy_file(src, dst)
         };
         assert_eq!(import_if_needed(&f.paths, false, &racing), None);
         assert_eq!(
@@ -915,7 +976,7 @@ mod tests {
                     return Ok(18);
                 }
             }
-            fs::copy(src, dst)
+            copy_file(src, dst)
         };
         let report = import_if_needed(&f.paths, false, &torn_twice).expect("an import");
         assert_eq!(report.status, ImportStatus::Copied);
@@ -929,7 +990,7 @@ mod tests {
                 fs::write(dst, b"{\"settings\": {\"bind")?;
                 return Ok(18);
             }
-            fs::copy(src, dst)
+            copy_file(src, dst)
         };
         let report = import_if_needed(&g.paths, false, &always_torn).expect("a report");
         assert_eq!(report.status, ImportStatus::Failed);
@@ -1077,6 +1138,170 @@ mod tests {
         drop(held);
         assert_eq!(second.join().unwrap(), None, "and then finds the new dir");
         assert!(listing(&f.paths.new).is_empty());
+    }
+
+    fn mode(path: &Path) -> u32 {
+        fs::metadata(path).unwrap().permissions().mode() & 0o777
+    }
+
+    #[test]
+    fn private_source_stays_private() {
+        // Under umask 022 a plain create_dir gives 0755 and VACUUM INTO 0644.
+        // SAFETY: umask only sets this process's file mode creation mask.
+        unsafe { libc::umask(0o022) };
+        let f = fixture();
+        let old = &f.paths.old;
+        fs::set_permissions(old, fs::Permissions::from_mode(0o700)).unwrap();
+        fs::set_permissions(
+            old.join("settings_store.json"),
+            fs::Permissions::from_mode(0o644),
+        )
+        .unwrap();
+        fs::set_permissions(old.join("history.db"), fs::Permissions::from_mode(0o600)).unwrap();
+        fs::set_permissions(
+            old.join("tts-history.db"),
+            fs::Permissions::from_mode(0o644),
+        )
+        .unwrap();
+        let seen = std::cell::RefCell::new(Vec::new());
+        let watching = |src: &Path, dst: &Path| {
+            // Every directory between the staging root and this file, mid-copy.
+            let mut dir = dst.parent().unwrap();
+            loop {
+                seen.borrow_mut()
+                    .push((dir.display().to_string(), mode(dir)));
+                if dir
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .contains(".import-")
+                {
+                    break;
+                }
+                dir = dir.parent().unwrap();
+            }
+            copy_file(src, dst)
+        };
+        let report = import_if_needed(&f.paths, false, &watching).expect("an import");
+        assert_eq!(report.status, ImportStatus::Copied);
+        let seen = seen.into_inner();
+        assert!(seen.iter().any(|(dir, _)| dir.ends_with("models/tts/v")));
+        for (dir, dir_mode) in &seen {
+            assert_eq!(*dir_mode, 0o700, "{dir} during the copy");
+        }
+        let new = &f.paths.new;
+        assert_eq!(mode(new), 0o700, "published dir");
+        for dir in ["recordings", "models", "models/llm/m", "localstorage"] {
+            assert_eq!(mode(&new.join(dir)), 0o700, "{dir}");
+        }
+        assert_eq!(mode(&new.join("history.db")), 0o600);
+        assert_eq!(mode(&new.join("tts-history.db")), 0o600);
+        assert_eq!(
+            mode(&new.join("localstorage/tauri_localhost_0.localstorage")),
+            0o600
+        );
+        assert_eq!(mode(&new.join("settings_store.json")), 0o644, "source mode");
+        assert_eq!(
+            mode(&new.join("recordings/a.wav")),
+            mode(&old.join("recordings/a.wav"))
+        );
+    }
+
+    #[test]
+    fn wal_change_is_retried_and_unstable_source_fails() {
+        // The old app writes its web storage during the copy: a copy whose
+        // source changed is taken again; a source that changes every time
+        // fails the import.
+        for every_time in [false, true] {
+            let f = fixture();
+            let ls = f
+                .paths
+                .old
+                .join("localstorage/tauri_localhost_0.localstorage");
+            let writer = Connection::open(&ls).unwrap();
+            writer.pragma_update(None, "wal_autocheckpoint", 0).unwrap();
+            let copies = std::cell::Cell::new(0);
+            let live = |src: &Path, dst: &Path| {
+                let bytes = copy_file(src, dst)?;
+                if src == ls {
+                    copies.set(copies.get() + 1);
+                    if every_time || copies.get() == 1 {
+                        let row = format!("change {}", copies.get());
+                        writer
+                            .execute("INSERT INTO t (v) VALUES (?1)", [row])
+                            .unwrap();
+                    }
+                }
+                Ok(bytes)
+            };
+            let report = import_if_needed(&f.paths, false, &live).expect("a report");
+            if every_time {
+                assert_eq!(report.status, ImportStatus::Failed);
+                assert_eq!(copies.get(), ATTEMPTS);
+                assert!(report.error.unwrap().contains("changed during each"));
+                assert_eq!(listing(&f.paths.new), [REPORT_FILE]);
+            } else {
+                assert_eq!(report.status, ImportStatus::Copied);
+                assert_eq!(copies.get(), 2, "the changed copy is taken again");
+                assert_eq!(
+                    rows(
+                        &f.paths
+                            .new
+                            .join("localstorage/tauri_localhost_0.localstorage")
+                    ),
+                    ["theme=dark", "change 1"]
+                );
+            }
+            assert!(staging_left(&f.base).is_empty());
+        }
+    }
+
+    #[test]
+    fn failed_integrity_check_discards_staging() {
+        // A database copy that opens but whose index disagrees with its table.
+        let f = fixture();
+        let broken = f.base.join("broken.db");
+        {
+            let conn = Connection::open(&broken).unwrap();
+            conn.execute_batch(
+                "PRAGMA page_size = 4096; CREATE TABLE t (v TEXT); CREATE INDEX i ON t (v);
+                 INSERT INTO t VALUES ('alpha'), ('bravo'), ('charlie');",
+            )
+            .unwrap();
+        }
+        let mut bytes = fs::read(&broken).unwrap();
+        let index_page = 2 * 4096..3 * 4096;
+        let at = bytes[index_page.clone()]
+            .windows(7)
+            .position(|w| w == b"charlie")
+            .expect("the index entry")
+            + index_page.start;
+        bytes[at + 6] = b'x';
+        fs::write(&broken, &bytes).unwrap();
+        let check: String = Connection::open(&broken)
+            .unwrap()
+            .query_row("PRAGMA integrity_check", [], |row| row.get(0))
+            .unwrap();
+        assert_ne!(check, "ok", "precondition: it opens and fails the check");
+
+        let ls = f
+            .paths
+            .old
+            .join("localstorage/tauri_localhost_0.localstorage");
+        let swapped = |src: &Path, dst: &Path| {
+            if src == ls {
+                return copy_file(&broken, dst);
+            }
+            if src == sidecar(&ls, "-wal") {
+                return Ok(0);
+            }
+            copy_file(src, dst)
+        };
+        let report = import_if_needed(&f.paths, false, &swapped).expect("a report");
+        assert_eq!(report.status, ImportStatus::Failed);
+        assert!(report.error.unwrap().contains("integrity_check"));
+        assert_eq!(listing(&f.paths.new), [REPORT_FILE]);
+        assert!(staging_left(&f.base).is_empty());
     }
 
     #[test]
