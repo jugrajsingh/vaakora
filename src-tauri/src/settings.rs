@@ -1669,10 +1669,10 @@ fn self_update_possible() -> bool {
 }
 
 /// Update checks are forced off (without touching the persisted setting) when
-/// `HANDY_DISABLE_UPDATER` is set — e.g. by the Nix package, since self-update
-/// can't work against an immutable /nix/store install — when this build
-/// cannot install its own update (see `linux_self_update_possible`), or when it
-/// has no update channel (`crate::brand::UPDATE_ENDPOINT` is `None`).
+/// `HANDY_DISABLE_UPDATER` is set (for example by the Nix package, since
+/// self-update can't work against an immutable /nix/store install), when this
+/// build cannot install its own update (see `linux_self_update_possible`), or
+/// when it has no update channel (`crate::brand::UPDATE_ENDPOINT` is `None`).
 pub fn update_checks_forced_disabled() -> bool {
     use std::sync::OnceLock;
     static IS_UPDATER_DISABLED: OnceLock<bool> = OnceLock::new();
