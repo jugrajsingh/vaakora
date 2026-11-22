@@ -16,6 +16,7 @@ import { Dropdown } from "./Dropdown";
 import { InfoTooltip } from "./InfoTooltip";
 import { PathDisplay } from "./PathDisplay";
 import { Slider } from "./Slider";
+import { Switch } from "./Switch";
 import { TextDisplay } from "./TextDisplay";
 const {
   describe,
@@ -46,7 +47,7 @@ function openingTag(file: string, anchor: string): string {
   const starts = [
     ...source
       .slice(0, at)
-      .matchAll(/<(button|summary|select|li|div|input|label)\b/g),
+      .matchAll(/<(button|summary|select|li|div|input|label|span)\b/g),
   ];
   const start = starts[starts.length - 1].index;
   let depth = 0;
@@ -100,6 +101,11 @@ const PLAIN_CONTROLS: ReadonlyArray<readonly [string, string, string]> = [
     "LanguageSelector option",
     "components/settings/LanguageSelector.tsx",
     "handleLanguageSelect(language.value)",
+  ],
+  [
+    "ReadingView token",
+    "components/settings/tts/history/ReadingView.tsx",
+    "aria-pressed={selected}",
   ],
   [
     "LanguagePicker soft chip",
@@ -443,6 +449,32 @@ describe("upstream ui controls", () => {
   it("plain_controls_replace_the_native_outline_with_the_ring", () => {
     for (const [name, file, anchor] of PLAIN_CONTROLS) {
       assertRingInsteadOfOutline(name, openingTag(file, anchor));
+    }
+  });
+
+  it("switch_shows_a_two_px_keyboard_only_ring_on_its_track", () => {
+    for (const checked of [false, true]) {
+      const html = renderToStaticMarkup(
+        <Switch checked={checked} onChange={() => {}} ariaLabel="x" />,
+      );
+      const input = /<input[^>]*type="checkbox"[^>]*>/.exec(html)?.[0] ?? "";
+      const track = /<div class="([^"]*)"/.exec(html)?.[1] ?? "";
+      const inputClasses = (/class="([^"]*)"/.exec(input)?.[1] ?? "").split(
+        /\s+/,
+      );
+      const classes = track.split(/\s+/);
+      const name = `checked=${checked}`;
+      assert.ok(inputClasses.includes("peer"), `${name}: input is the peer`);
+      assert.ok(
+        inputClasses.includes("focus:outline-none"),
+        `${name}: native outline stays on the checkbox`,
+      );
+      assert.ok(classes.includes("peer-focus-visible:ring-2"), name);
+      assert.ok(classes.includes("peer-focus-visible:ring-logo-primary"), name);
+      assert.ok(
+        !classes.some((c) => c.startsWith("peer-focus:ring")),
+        `${name}: a pointer-focus ring is back`,
+      );
     }
   });
 

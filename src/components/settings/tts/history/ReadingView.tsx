@@ -48,7 +48,7 @@ export function ReadingView({
             tabIndex={0}
             aria-pressed={selected}
             data-changed={token.changed}
-            className={`inline-flex max-w-full flex-col rounded px-1 cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-logo-primary ${
+            className={`inline-flex max-w-full flex-col rounded px-1 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
               selected ? "bg-sel ring-2 ring-logo-primary" : ""
             }`}
             onPointerDown={(event) => {

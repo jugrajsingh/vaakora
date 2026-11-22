@@ -89,7 +89,7 @@ test("settings use grouped themed controls", () => {
   );
   const checkbox = html.match(/<input[^>]*type="checkbox"[^>]*>/)?.[0];
   assert.ok(
-    checkbox?.includes('class="sr-only peer"'),
+    checkbox?.includes('class="sr-only peer focus:outline-none"'),
     "code blocks use shared themed ToggleSwitch",
   );
   const speed = html.match(/<input[^>]*aria-label="Speed"[^>]*>/)?.[0];
