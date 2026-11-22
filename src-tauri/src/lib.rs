@@ -14,6 +14,8 @@ mod data_import;
 pub mod engine_supervisor;
 mod helpers;
 mod input;
+#[cfg(target_os = "linux")]
+pub mod ipc;
 mod language_detection;
 mod languages;
 mod llm_client;

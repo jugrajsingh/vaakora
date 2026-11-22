@@ -4,6 +4,10 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 
 ## [Unreleased]
 
+### Added
+
+- A local control socket: while Vaakora runs it listens on `$XDG_RUNTIME_DIR/vaakora.sock` (or `$VAAKORA_SOCKET`), readable and writable only by you, and answers only processes running as your user. It speaks JSON-RPC 2.0, one message per line, in the shape of upstream pull request #1906, with protocol version 1. The socket's folder must belong to you and be closed to other users, as `$XDG_RUNTIME_DIR` is, or the socket is not opened; a file, or the socket of a Vaakora that is still running, is never removed from the socket path.
+
 ## [0.1.0] - 2026-11-23
 
 First Vaakora release. It starts from Handy v0.10.1 plus the changes below; see UPSTREAM.md.
