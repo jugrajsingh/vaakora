@@ -135,13 +135,28 @@ fn save_and_set_with(
 /// Puts `text` on PRIMARY.
 pub fn write(text: &str) -> Result<(), String> {
     if use_wl_clipboard()? {
-        return wl_copy_set(Command::new("wl-copy"), text, WRITE_TIMEOUT);
+        return wl_copy_set(
+            Command::new("wl-copy"),
+            text,
+            crate::clipboard::wl_copy_has_sensitive(),
+            WRITE_TIMEOUT,
+        );
     }
     with_arboard(|c| c.set().clipboard(LinuxClipboardKind::Primary).text(text))
 }
 
 /// Sets PRIMARY to `text`, sent on stdin so it never appears in a process's arguments.
-fn wl_copy_set(mut base: Command, text: &str, timeout: Duration) -> Result<(), String> {
+/// PRIMARY only ever holds paste-only text (the transcript, or the selection put back
+/// afterwards), so `--sensitive` is passed whenever this wl-copy knows it, as for the clipboard.
+fn wl_copy_set(
+    mut base: Command,
+    text: &str,
+    has_sensitive: bool,
+    timeout: Duration,
+) -> Result<(), String> {
+    if has_sensitive {
+        base.arg("--sensitive");
+    }
     let status = crate::clipboard::quiet_tool_with_input(
         base.args(["--primary", "--type", "text/plain;charset=utf-8"]),
         text.as_bytes().to_vec(),
@@ -240,8 +255,28 @@ mod tests {
     fn primary_write_sends_the_text_on_stdin_not_in_arguments() {
         let dir = tempfile::tempdir().unwrap();
         let (wl_copy, argv, stdin) = recording_wl_copy(dir.path());
-        wl_copy_set(wl_copy, PRIVATE, WRITE_TIMEOUT).unwrap();
+        wl_copy_set(wl_copy, PRIVATE, false, WRITE_TIMEOUT).unwrap();
         assert_sent_on_stdin_only(&argv, &stdin, PRIVATE);
+    }
+
+    #[test]
+    fn primary_write_is_marked_sensitive_only_when_wl_copy_knows_the_option() {
+        for has_sensitive in [true, false] {
+            let dir = tempfile::tempdir().unwrap();
+            let (wl_copy, argv, stdin) = recording_wl_copy(dir.path());
+            wl_copy_set(wl_copy, PRIVATE, has_sensitive, WRITE_TIMEOUT).unwrap();
+            let args = std::fs::read_to_string(&argv).unwrap();
+            assert_eq!(
+                args.lines().any(|arg| arg == "--sensitive"),
+                has_sensitive,
+                "has_sensitive={has_sensitive}: {args:?}"
+            );
+            assert!(
+                args.lines().any(|arg| arg == "--primary"),
+                "still the primary selection: {args:?}"
+            );
+            assert_sent_on_stdin_only(&argv, &stdin, PRIVATE);
+        }
     }
 
     #[test]
@@ -250,7 +285,7 @@ mod tests {
         let (wl_copy, argv, stdin) = recording_wl_copy(dir.path());
         restore_with(
             Saved::Text(PRIVATE.into()),
-            |text| wl_copy_set(wl_copy, text, WRITE_TIMEOUT),
+            |text| wl_copy_set(wl_copy, text, false, WRITE_TIMEOUT),
             || panic!("a saved selection is written back, not cleared"),
         );
         assert_sent_on_stdin_only(&argv, &stdin, PRIVATE);
@@ -273,7 +308,7 @@ mod tests {
         let (wl_copy, _, stdin) = recording_wl_copy(dir.path());
         restore_with(
             saved,
-            |text| wl_copy_set(wl_copy, text, WRITE_TIMEOUT),
+            |text| wl_copy_set(wl_copy, text, false, WRITE_TIMEOUT),
             || panic!("a saved selection is written back, not cleared"),
         );
         assert_eq!(std::fs::read(stdin).unwrap(), text.as_bytes());

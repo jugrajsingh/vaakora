@@ -1094,7 +1094,13 @@ fn queued_input<T: Send + 'static>(
 
 /// `sensitive` marks text that only passes through the clipboard for a paste, so
 /// clipboard-history tools can skip it (wl-copy only).
-#[cfg_attr(not(target_os = "linux"), allow(unused_variables))]
+#[cfg_attr(
+    not(target_os = "linux"),
+    expect(
+        unused_variables,
+        reason = "sensitive is used only by the Linux wl-copy path"
+    )
+)]
 fn write_text_to_clipboard(
     app_handle: &AppHandle,
     text: &str,
@@ -1720,7 +1726,7 @@ fn write_clipboard_via_wl_copy(text: &str, sensitive: bool) -> Result<(), PasteE
 /// Whether this wl-copy knows `--sensitive` (wl-clipboard 2.3 or later; older
 /// versions reject an unknown option). Probed once.
 #[cfg(target_os = "linux")]
-fn wl_copy_has_sensitive() -> bool {
+pub(crate) fn wl_copy_has_sensitive() -> bool {
     static HAS_SENSITIVE: OnceLock<bool> = OnceLock::new();
     *HAS_SENSITIVE.get_or_init(|| {
         paste_probe_with_timeout(Command::new("wl-copy").arg("--help"), PASTE_PROBE_TIMEOUT)
