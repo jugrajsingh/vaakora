@@ -58,7 +58,7 @@ export const DataImportCardView: React.FC<DataImportCardViewProps> = ({
             {t("dataImport.startAtLogin")}
           </Button>
         )}
-        <Button size="sm" onClick={onDismiss}>
+        <Button size="sm" surface="surface" onClick={onDismiss}>
           {t("dataImport.ok")}
         </Button>
       </div>

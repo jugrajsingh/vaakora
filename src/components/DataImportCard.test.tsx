@@ -117,6 +117,21 @@ describe("DataImportCard", () => {
     }
   });
 
+  it("primary_ok_leaves_a_gap_in_the_card_surface_colour", () => {
+    const html = render(copied);
+    assert.ok(
+      html.includes("bg-surface"),
+      "the card sits on the surface token",
+    );
+    const ok = (html.match(/<button[^>]*>/g) ?? []).find((b) =>
+      b.includes("bg-background-ui"),
+    );
+    assert.ok(ok, "the primary OK button");
+    assert.ok(ok.includes("focus-visible:ring-offset-2"), ok);
+    assert.ok(ok.includes("focus-visible:ring-offset-surface"), ok);
+    assert.ok(!ok.includes("focus-visible:ring-offset-background"), ok);
+  });
+
   it("every_button_has_the_focus_ring", () => {
     const buttons = render(copied).match(/<button[^>]*>/g) ?? [];
     assert.equal(buttons.length, 2, "Start at login and OK");

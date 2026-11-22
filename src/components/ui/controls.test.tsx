@@ -411,6 +411,58 @@ describe("upstream ui controls", () => {
     }
   });
 
+  it("primary_button_leaves_a_2px_gap_before_the_focus_ring", () => {
+    const classesOf = (html: string) =>
+      (/<button[^>]*class="([^"]*)"/.exec(html)?.[1] ?? "").split(/\s+/);
+    const onBackground = classesOf(
+      renderToStaticMarkup(<Button variant="primary">{"gap"}</Button>),
+    );
+    assert.ok(onBackground.includes("focus-visible:ring-offset-2"));
+    assert.ok(onBackground.includes("focus-visible:ring-offset-background"));
+    assert.ok(!onBackground.includes("focus-visible:ring-offset-surface"));
+    const onSurface = classesOf(
+      renderToStaticMarkup(
+        <Button variant="primary" surface="surface">
+          {"gap"}
+        </Button>,
+      ),
+    );
+    assert.ok(onSurface.includes("focus-visible:ring-offset-2"));
+    assert.ok(onSurface.includes("focus-visible:ring-offset-surface"));
+    assert.ok(!onSurface.includes("focus-visible:ring-offset-background"));
+    // the default variant is primary
+    assert.ok(
+      classesOf(renderToStaticMarkup(<Button>{"gap"}</Button>)).includes(
+        "focus-visible:ring-offset-2",
+      ),
+    );
+    // the surface prop is a style input, never a DOM attribute
+    assert.ok(
+      !renderToStaticMarkup(
+        <Button surface="surface">{"gap"}</Button>,
+      ).includes("surface="),
+    );
+  });
+
+  it("update_dialog_download_leaves_the_same_gap_on_its_background_surface", () => {
+    const tag = openingTag(
+      "components/update-checker/UpdateChecker.tsx",
+      "bg-background-ui text-accent-on",
+    );
+    assert.ok(tag.includes("focus-visible:ring-offset-2"), tag);
+    assert.ok(tag.includes("focus-visible:ring-offset-background"), tag);
+    const source = readFileSync(
+      new URL("components/update-checker/UpdateChecker.tsx", SOURCE_ROOT),
+      "utf8",
+    );
+    assert.ok(
+      source.includes(
+        '<div className="bg-background border border-line rounded-lg p-6',
+      ),
+      "the dialog sits on the background token",
+    );
+  });
+
   it("dropdown_trigger_and_options_replace_the_outline", async () => {
     const html = renderToStaticMarkup(
       <I18nextProvider i18n={await instance("en")}>

@@ -11,13 +11,26 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     | "danger-ghost"
     | "ghost";
   size?: "sm" | "md" | "lg";
+  /**
+   * The token of the surface the button sits on. The primary variant's focus
+   * ring has the fill's own colour, so a 2 px gap in the surface colour keeps
+   * it readable; the default is the page background.
+   */
+  surface?: "background" | "surface";
 }
+
+const PRIMARY_RING_GAP = {
+  background:
+    "focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+  surface: "focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
+} as const;
 
 export const Button: React.FC<ButtonProps> = ({
   children,
   className = "",
   variant = "primary",
   size = "md",
+  surface = "background",
   ...props
 }) => {
   const baseClasses =
@@ -53,7 +66,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
-      className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={`${baseClasses} ${variantClasses[variant]} ${variant === "primary" ? PRIMARY_RING_GAP[surface] : ""} ${sizeClasses[size]} ${className}`}
       {...props}
     >
       {children}
