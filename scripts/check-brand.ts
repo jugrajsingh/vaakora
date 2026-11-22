@@ -233,6 +233,7 @@ interface Mirrored {
   workerBinaryName: string;
   installDir: string;
   copyright: string[];
+  updater?: { endpoint?: string | null };
 }
 
 function readText(rel: string): string | null {
@@ -311,6 +312,35 @@ function checkBundleFiles(kind: "rpm" | "deb", files: unknown, b: Mirrored) {
   }
 }
 
+/**
+ * No update channel, no updater config: `brand.json` `updater.endpoint` null
+ * means `tauri.conf.json` carries no `plugins.updater` and builds no updater
+ * artifacts; it never names the upstream account, channel or not.
+ */
+function checkUpdaterOff(
+  tauri: Record<string, unknown>,
+  bundle: Record<string, unknown>,
+  b: Mirrored,
+) {
+  if (/cjpais/i.test(JSON.stringify(tauri))) {
+    fail("mirrors", "tauri.conf.json names cjpais");
+  }
+  if (b.updater?.endpoint !== null) return; // a channel exists: its own rules
+  const plugins = isRecord(tauri.plugins) ? tauri.plugins : {};
+  if ("updater" in plugins) {
+    fail(
+      "mirrors",
+      "tauri.conf.json has plugins.updater but brand.json updater.endpoint is null",
+    );
+  }
+  if (bundle.createUpdaterArtifacts !== false) {
+    fail(
+      "mirrors",
+      `tauri.conf.json bundle.createUpdaterArtifacts is ${JSON.stringify(bundle.createUpdaterArtifacts)}, want false`,
+    );
+  }
+}
+
 function checkMirrors() {
   const b = mirroredBrand();
   if (!b) return;
@@ -328,6 +358,7 @@ function checkMirrors() {
       bundle.copyright,
       b.copyright.join("; "),
     );
+    checkUpdaterOff(tauri, bundle, b);
     const linux = isRecord(bundle.linux) ? bundle.linux : {};
     for (const kind of ["rpm", "deb"] as const) {
       const section = linux[kind];

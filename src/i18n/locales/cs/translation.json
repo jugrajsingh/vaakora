@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "Kontrolovat aktualizace",
         "description": "Automaticky kontrolovat nové verze {{appName}}",
-        "lockedDescription": "Zakázáno systémovou konfigurací (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "Zakázáno: tato verze nemá kanál aktualizací, nebo to vypíná systémová konfigurace (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "Náhled novinek",

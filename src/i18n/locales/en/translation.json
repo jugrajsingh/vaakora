@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "Check for Updates",
         "description": "Automatically check for new versions of {{appName}}",
-        "lockedDescription": "Disabled by system configuration (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "Disabled: this build has no update channel, or system configuration turns it off (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "Preview What's New",

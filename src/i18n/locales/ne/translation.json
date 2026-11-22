@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "अपडेटहरू जाँच गर्नुहोस्",
         "description": "{{appName}} को नयाँ संस्करण स्वतः जाँच गर्नुहोस्",
-        "lockedDescription": "प्रणाली कन्फिगरेसनद्वारा असक्षम पारिएको (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "असक्षम: यस बिल्डमा अपडेट च्यानल छैन, वा प्रणाली कन्फिगरेसनले यसलाई बन्द गरेको छ (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "नयाँ के छ पूर्वावलोकन",

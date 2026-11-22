@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "업데이트 확인",
         "description": "{{appName}}의 새 버전을 자동으로 확인합니다",
-        "lockedDescription": "시스템 구성에 의해 비활성화됨 (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "비활성화됨: 이 빌드에는 업데이트 채널이 없거나 시스템 구성에서 꺼져 있습니다 (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "새 소식 미리보기",

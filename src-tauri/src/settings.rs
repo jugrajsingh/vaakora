@@ -726,8 +726,9 @@ fn default_autostart_enabled() -> bool {
     false
 }
 
+/// New stores check for updates only when the build has a channel to ask.
 fn default_update_checks_enabled() -> bool {
-    true
+    crate::brand::UPDATE_ENDPOINT.is_some()
 }
 
 fn default_show_whats_new_on_update() -> bool {
@@ -1669,13 +1670,30 @@ fn self_update_possible() -> bool {
 
 /// Update checks are forced off (without touching the persisted setting) when
 /// `HANDY_DISABLE_UPDATER` is set — e.g. by the Nix package, since self-update
-/// can't work against an immutable /nix/store install — or when this build
-/// cannot install its own update (see `linux_self_update_possible`).
+/// can't work against an immutable /nix/store install — when this build
+/// cannot install its own update (see `linux_self_update_possible`), or when it
+/// has no update channel (`crate::brand::UPDATE_ENDPOINT` is `None`).
 pub fn update_checks_forced_disabled() -> bool {
     use std::sync::OnceLock;
     static IS_UPDATER_DISABLED: OnceLock<bool> = OnceLock::new();
-    *IS_UPDATER_DISABLED
-        .get_or_init(|| utils::env_flag_enabled("HANDY_DISABLE_UPDATER") || !self_update_possible())
+    *IS_UPDATER_DISABLED.get_or_init(|| {
+        forced_disabled_in_build(
+            utils::env_flag_enabled("HANDY_DISABLE_UPDATER"),
+            self_update_possible(),
+        )
+    })
+}
+
+/// `forced_disabled` for this build's own update channel.
+fn forced_disabled_in_build(env_flag: bool, self_update: bool) -> bool {
+    forced_disabled(env_flag, self_update, crate::brand::UPDATE_ENDPOINT)
+}
+
+/// The pure decision behind `update_checks_forced_disabled`: off when the
+/// environment flag is set, this build cannot install its own update, or it has
+/// no update channel (`brand.json` `updater.endpoint` is null).
+fn forced_disabled(env_flag: bool, self_update: bool, endpoint: Option<&str>) -> bool {
+    env_flag || !self_update || endpoint.is_none()
 }
 
 /// Effective updater state: the user's stored preference, overridden to `false`
@@ -1939,6 +1957,39 @@ mod tests {
         assert!(settings.filler_word_removal_enabled);
         // Bindings default to empty; the load path merges the real defaults in.
         assert!(settings.bindings.is_empty());
+    }
+
+    /// A build without a release channel (`brand.json` `updater.endpoint` is
+    /// null) has nothing to check: checks are locked off whatever the
+    /// environment and the packaging say, and a stored `true` (an imported
+    /// Handy setting) cannot turn them on.
+    #[test]
+    fn updates_off_without_a_channel() {
+        assert!(
+            crate::brand::UPDATE_ENDPOINT.is_none(),
+            "this build has no update channel"
+        );
+        assert!(forced_disabled_in_build(false, true));
+        assert!(!default_update_checks_enabled());
+        assert!(!AppSettings::default().update_checks_enabled);
+        let imported = AppSettings {
+            update_checks_enabled: true,
+            ..AppSettings::default()
+        };
+        assert!(!update_checks_effectively_enabled(&imported));
+    }
+
+    #[test]
+    fn forced_disabled_follows_channel_environment_and_packaging() {
+        let channel = Some("https://example.invalid/latest.json");
+        assert!(!forced_disabled(false, true, channel));
+        assert!(
+            forced_disabled(true, true, channel),
+            "env flag still forces off"
+        );
+        assert!(forced_disabled(false, false, channel), "unpackaged build");
+        assert!(forced_disabled(false, true, None), "no channel");
+        assert!(forced_disabled(true, false, None));
     }
 
     /// Frozen snapshot of a real v0.9.0-era settings store, as written to

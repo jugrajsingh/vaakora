@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "Vérifier les mises à jour",
         "description": "Vérifier automatiquement les nouvelles versions de {{appName}}",
-        "lockedDescription": "Désactivé par la configuration système (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "Désactivé : cette version n'a pas de canal de mises à jour, ou la configuration système le désactive (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "Aperçu des nouveautés",

@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "Перевірка оновлень",
         "description": "Автоматично перевіряти наявність нових версій {{appName}}",
-        "lockedDescription": "Вимкнено системною конфігурацією (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "Вимкнено: у цієї збірки немає каналу оновлень, або його вимикає системна конфігурація (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "Попередній перегляд новин",

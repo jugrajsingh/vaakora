@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "Comproveu si hi ha actualitzacions",
         "description": "Comprova automàticament si hi ha versions noves del {{appName}}",
-        "lockedDescription": "Desactivat per la configuració del sistema (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "Desactivat: aquesta versió no té canal d'actualitzacions o la configuració del sistema el desactiva (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "Previsualització de les novetats",

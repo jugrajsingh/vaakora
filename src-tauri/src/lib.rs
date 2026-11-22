@@ -539,6 +539,20 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     utils::create_recording_overlay(app_handle);
 }
 
+/// The updater plugin exists only for a build with an update channel
+/// (`brand.json` `updater.endpoint`). Registering it also needs
+/// `plugins.updater` in `tauri.conf.json` (key and endpoint), which a channel
+/// adds; without that config the plugin refuses to start.
+fn with_updater<R: tauri::Runtime>(
+    builder: tauri::Builder<R>,
+    endpoint: Option<&str>,
+) -> tauri::Builder<R> {
+    match endpoint {
+        Some(_) => builder.plugin(tauri_plugin_updater::Builder::new().build()),
+        None => builder,
+    }
+}
+
 #[tauri::command]
 #[specta::specta]
 fn trigger_update_check(app: AppHandle) -> Result<(), String> {
@@ -1100,11 +1114,12 @@ pub fn run(cli_args: CliArgs) {
         }));
     }
 
+    let builder = with_updater(builder, brand::UPDATE_ENDPOINT);
+
     #[allow(unused_mut)]
     let mut app = builder
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_os::init())
         .plugin(system_languages::init())
         .plugin(tauri_plugin_clipboard_manager::init())
@@ -1390,6 +1405,29 @@ pub fn run(cli_args: CliArgs) {
         }
         _ => {}
     });
+}
+
+#[cfg(test)]
+mod updater_registration_tests {
+    use super::with_updater;
+
+    fn built(endpoint: Option<&str>) -> bool {
+        with_updater(tauri::test::mock_builder(), endpoint)
+            .build(tauri::test::mock_context(tauri::test::noop_assets()))
+            .is_ok()
+    }
+
+    /// The updater plugin refuses to start without `plugins.updater` config, and
+    /// this build carries none: a registered plugin shows as a failed build, an
+    /// unregistered one as a working app.
+    #[test]
+    fn updater_plugin_is_registered_only_with_a_channel() {
+        assert!(built(None), "no channel: the plugin is not registered");
+        assert!(
+            !built(Some("https://example.invalid/latest.json")),
+            "a channel registers the plugin, which needs its config"
+        );
+    }
 }
 
 #[cfg(test)]

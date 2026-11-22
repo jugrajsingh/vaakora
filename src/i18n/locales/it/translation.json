@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "Controlla aggiornamenti",
         "description": "Controlla automaticamente la disponibilità di nuove versioni di {{appName}}",
-        "lockedDescription": "Disabilitato dalla configurazione di sistema (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "Disabilitato: questa versione non ha un canale di aggiornamento, oppure la configurazione di sistema lo disattiva (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "Anteprima delle novità",

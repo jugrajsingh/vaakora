@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "Güncellemeleri Kontrol Et",
         "description": "{{appName}} için yeni sürümleri otomatik olarak kontrol eder",
-        "lockedDescription": "Sistem yapılandırması tarafından devre dışı bırakıldı (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "Devre dışı: bu sürümün güncelleme kanalı yok veya sistem yapılandırması kapatıyor (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "Yenilikleri Önizle",

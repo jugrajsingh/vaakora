@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "Sök efter uppdateringar",
         "description": "Sök automatiskt efter nya versioner av {{appName}}",
-        "lockedDescription": "Inaktiverad av systemkonfiguration (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "Inaktiverad: den här versionen har ingen uppdateringskanal, eller så stänger systemkonfigurationen av den (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "Förhandsvisa nyheter",

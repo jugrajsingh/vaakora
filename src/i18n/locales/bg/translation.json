@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "Проверка за актуализации",
         "description": "Автоматична проверка за нови версии на {{appName}}",
-        "lockedDescription": "Деактивирано от системната конфигурация (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "Деактивирано: тази версия няма канал за актуализации или системната конфигурация го изключва (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "Преглед на новостите",

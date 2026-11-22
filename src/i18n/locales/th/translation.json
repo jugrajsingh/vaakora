@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "ตรวจสอบการอัปเดต",
         "description": "ตรวจสอบเวอร์ชันใหม่ของ {{appName}} โดยอัตโนมัติ",
-        "lockedDescription": "ถูกปิดใช้งานโดยการตั้งค่าระบบ (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "ปิดใช้งาน: บิลด์นี้ไม่มีช่องทางอัปเดต หรือการตั้งค่าระบบปิดไว้ (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "ดูตัวอย่างหน้า “มีอะไรใหม่”",

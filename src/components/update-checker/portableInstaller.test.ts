@@ -325,4 +325,23 @@ function installHarness(allowedAtStart = true) {
   );
 }
 
+// updates_off_without_a_channel: the build has no update channel, so the
+// backend lock reports true; an imported Handy setting (stored true) is still
+// refused and Install makes no call at all.
+{
+  const locked = true;
+  assert.equal(
+    updateChecksAllowed(true, locked),
+    false,
+    "stored true is refused while locked",
+  );
+  const h = installHarness();
+  await runInstall({
+    ...h.deps,
+    allowed: () => updateChecksAllowed(true, locked),
+  });
+  assert.deepEqual(h.calls, [], "no isPortable, check or download when locked");
+  assert.equal(getUpdaterState().installing, false);
+}
+
 console.log("portableInstaller: all assertions passed");

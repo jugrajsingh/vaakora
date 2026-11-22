@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "Kiểm tra cập nhật",
         "description": "Tự động kiểm tra phiên bản mới của {{appName}}",
-        "lockedDescription": "Đã bị vô hiệu hóa bởi cấu hình hệ thống (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "Đã vô hiệu hóa: bản dựng này không có kênh cập nhật, hoặc cấu hình hệ thống đã tắt nó (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "Xem trước điểm mới",

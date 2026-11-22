@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "בדוק עדכונים",
         "description": "בדוק אוטומטית אם קיימות גרסאות חדשות של {{appName}}",
-        "lockedDescription": "מושבת על ידי תצורת המערכת (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "מושבת: לגרסה זו אין ערוץ עדכונים, או שתצורת המערכת מכבה אותו (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "תצוגה מקדימה של מה חדש",

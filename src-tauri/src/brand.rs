@@ -3,25 +3,46 @@
 //! and the update channel. Files that cannot read it (`tauri.conf.json`,
 //! `Cargo.toml`, `package.json`, `index.html`) carry literals that
 //! `scripts/check-brand.ts` proves equal.
-#![cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "APP_ID, LEGACY_APP_ID, INSTALL_DIR, WORKER_BINARY and UPDATE_ENDPOINT are read by tests now and by the first-start data copy and the updater gate (rebrand Tasks 7 and 8); the install paths read them through env! in const strings"
-    )
-)]
 
 /// The product name shown to the user (window title, CLI help, notifications).
 pub const DISPLAY_NAME: &str = env!("BRAND_DISPLAY_NAME");
 /// The app id (`identifier` in `tauri.conf.json`); names the app data directory.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "read by the first-start data copy (rebrand Task 8); tests read it now"
+    )
+)]
 pub const APP_ID: &str = env!("BRAND_APP_ID");
 /// The package and binary name (`vaakora`); names the log file.
 pub const PACKAGE_NAME: &str = env!("BRAND_PACKAGE_NAME");
 /// The previous app id whose data directory a first start may copy from.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "read by the first-start data copy (rebrand Task 8); tests read it now"
+    )
+)]
 pub const LEGACY_APP_ID: &str = env!("BRAND_LEGACY_APP_ID");
 /// The directory the package installs the app's libraries and helpers into.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "the install paths read it through env! in const strings; tests read this constant (rebrand Task 8 removes this expectation)"
+    )
+)]
 pub const INSTALL_DIR: &str = env!("BRAND_INSTALL_DIR");
 /// The read-aloud worker's binary name inside `<INSTALL_DIR>/tts/`.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "the install paths read it through env! in const strings; tests read this constant (rebrand Task 8 removes this expectation)"
+    )
+)]
 pub const WORKER_BINARY: &str = env!("BRAND_WORKER_BINARY");
 /// The project's repository link, sent as the referrer of cloud requests.
 pub const REPO_URL: &str = env!("BRAND_REPO_URL");

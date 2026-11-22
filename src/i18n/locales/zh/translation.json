@@ -1170,7 +1170,7 @@
       "updateChecks": {
         "label": "检查更新",
         "description": "自动检查 {{appName}} 的新版本",
-        "lockedDescription": "已被系统配置禁用 (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "已禁用：此版本没有更新渠道，或系统配置已将其关闭 (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
         "title": "预览新功能",
