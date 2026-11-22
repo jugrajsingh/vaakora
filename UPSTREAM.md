@@ -8,4 +8,4 @@ Decisions: `adopted` (taken as is), `rewritten` (taken in changed form), `declin
 | Upstream commit | Subject                                                                | Decision | Our commit |
 | --------------- | ---------------------------------------------------------------------- | -------- | ---------- |
 | 4807c21a        | feat: add Thai translation (#2529)                                     | pending  | -          |
-| 939c9573        | fix: let the output device pick the feedback sound buffer size (#2525) | pending  | -          |
+| 939c9573        | fix: let the output device pick the feedback sound buffer size (#2525) | adopted  | 30685a1e   |
