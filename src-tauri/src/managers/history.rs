@@ -192,7 +192,10 @@ impl HistoryManager {
             Err(rusqlite_migration::Error::MigrationDefinition(
                 MigrationDefinitionError::DatabaseTooFarAhead,
             )) => {
-                warn!("history.db is from a newer version of Handy; opening it without migrating")
+                warn!(
+                    "history.db is from a newer version of {}; opening it without migrating",
+                    crate::brand::DISPLAY_NAME
+                )
             }
             other => other?,
         }

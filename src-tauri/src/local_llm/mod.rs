@@ -135,7 +135,10 @@ pub(crate) async fn post_process_with_warning(
         .and_then(registry::find)
         .is_some_and(|entry| entry.prompt_style == registry::PromptStyle::PlainSystemPrompt);
     if plain && prompt::system_prompt(registry::PromptStyle::PlainSystemPrompt, settings).is_err() {
-        warning("local-llm: post-processing skipped because the selected Handy prompt is missing or empty; using the raw transcript");
+        warning(&format!(
+            "local-llm: post-processing skipped because the selected {} prompt is missing or empty; using the raw transcript",
+            crate::brand::DISPLAY_NAME
+        ));
         return None;
     }
     let Some(manager) = manager else {

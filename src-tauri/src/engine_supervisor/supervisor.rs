@@ -1415,7 +1415,13 @@ fn record_launched_exe() {
                 let id = file_id(&path)?;
                 Ok((path, id))
             })
-            .inspect_err(|e| warn!("Could not identify Handy's executable: {}", e))
+            .inspect_err(|e| {
+                warn!(
+                    "Could not identify {}'s executable: {}",
+                    crate::brand::DISPLAY_NAME,
+                    e
+                )
+            })
             .ok()
     });
 }

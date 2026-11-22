@@ -1156,8 +1156,9 @@ pub fn run(cli_args: CliArgs) {
             );
             #[cfg(target_os = "linux")]
             log::info!(
-                "Gamescope WSI layer policy: DISABLE_GAMESCOPE_WSI={:?} (set by Handy: {})",
+                "Gamescope WSI layer policy: DISABLE_GAMESCOPE_WSI={:?} (set by {}: {})",
                 std::env::var_os("DISABLE_GAMESCOPE_WSI"),
+                brand::DISPLAY_NAME,
                 utils::gamescope_wsi_disabled_by_handy(),
             );
             system_languages::log_system_languages();
