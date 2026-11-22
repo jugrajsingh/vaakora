@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -9,6 +12,7 @@ import en from "../../i18n/locales/en/translation.json";
 import wordmark from "../../../brand/generated/wordmark-latin.json";
 import { BrandLockup } from "./BrandLockup";
 import { BrandMark } from "./BrandMark";
+import { TrayGlyph } from "./TrayGlyph";
 import { LinuxGuide } from "../onboarding/LinuxGuide";
 import { SecureInputHelp } from "../SecureInputWarning";
 
@@ -105,6 +109,66 @@ describe("BrandMark", () => {
       assert.ok(html.includes('aria-label="Vaakora"'));
       assert.ok(html.includes('class="x"'));
     }
+  });
+});
+
+describe("TrayGlyph", () => {
+  // brand/tray/tray-16.svg: two bars, then the cursor (stem and caps).
+  const bars = [
+    'x="1" y="6" width="2" height="4"',
+    'x="4" y="3" width="2" height="10"',
+  ];
+  const cursor = [
+    'x="10" y="1" width="2" height="14"',
+    'x="8" y="1" width="6" height="2"',
+    'x="8" y="13" width="6" height="2"',
+  ];
+
+  it("draws the tray master's one silhouette in every state", () => {
+    for (const state of ["idle", "recording", "transcribing"] as const) {
+      const html = render(<TrayGlyph state={state} size={19} />);
+      assert.ok(html.includes('viewBox="0 0 16 16"'), `${state}: 16 master`);
+      assert.ok(html.includes('width="19"'), `${state}: width`);
+      assert.ok(html.includes('aria-hidden="true"'), `${state}: decorative`);
+      for (const rect of [...bars, ...cursor])
+        assert.ok(html.includes(rect), `${state}: ${rect}`);
+      assert.equal(count(html, "<path"), 0, `${state}: no traced outline`);
+    }
+  });
+
+  it("tints only the cursor while recording, as the tray rasters do", () => {
+    const idle = render(<TrayGlyph state="idle" size={16} />);
+    const transcribing = render(<TrayGlyph state="transcribing" size={16} />);
+    const recording = render(<TrayGlyph state="recording" size={16} />);
+    assert.equal(transcribing, idle, "Transcribing keeps the idle glyph");
+    assert.equal(count(idle, 'fill="currentColor"'), 2, "bars and cursor");
+    assert.equal(count(recording, 'fill="currentColor"'), 1, "bars only");
+    assert.equal(count(recording, "fill:var(--color-logo-primary)"), 1);
+    assert.ok(!idle.includes("--color-logo-primary"));
+    const tinted = recording.indexOf("fill:var(--color-logo-primary)");
+    assert.ok(tinted > recording.indexOf(bars[1]), "the bars stay untinted");
+    assert.ok(tinted < recording.indexOf(cursor[0]), "the cursor is tinted");
+  });
+
+  it("no component draws the old tray rasters or the traced hand", () => {
+    const src = fileURLToPath(new URL("../../", import.meta.url));
+    assert.ok(!existsSync(join(src, "components/icons/TrayIcon.tsx")));
+    const old =
+      /icons\/TrayIcon|tray_(idle|recording|transcribing)|handy(_warning)?\.png|resources\/(recording|transcribing)\.png|traced from src-tauri/;
+    const self = fileURLToPath(import.meta.url);
+    const hits: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) walk(path);
+        else if (/\.(tsx?|css)$/.test(entry.name) && path !== self) {
+          const text = readFileSync(path, "utf8");
+          if (old.test(text)) hits.push(path.slice(src.length));
+        }
+      }
+    };
+    walk(src);
+    assert.deepEqual(hits, []);
   });
 });
 

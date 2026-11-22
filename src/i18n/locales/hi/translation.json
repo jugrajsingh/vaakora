@@ -25,7 +25,11 @@
     "ttsReady": "तैयार",
     "ttsStopping": "रुक रहा है",
     "ttsFailed": "विफल",
-    "ttsUnloaded": "लोड नहीं हुआ"
+    "ttsUnloaded": "लोड नहीं हुआ",
+    "stateReady": "तैयार",
+    "stateRecording": "रिकॉर्डिंग हो रही है",
+    "stateTranscribing": "ट्रांसक्राइब हो रहा है",
+    "stateReadingAloud": "ज़ोर से पढ़ रहा है"
   },
   "sidebar": {
     "general": "सामान्य",

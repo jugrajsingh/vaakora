@@ -188,6 +188,9 @@ transcribe-cpp = { version = "0.4.2", default-features = false, features = [
 
 [dev-dependencies]
 tempfile = "3"
+# The mock runtime (`tauri::test::mock_app`) builds the real tray menu in unit
+# tests without a display; the `test` feature adds no crates.
+tauri = { version = "2.11.5", features = ["test"] }
 # Test-only tokio features for the local socket servers exercising the
 # resumable HTTP downloader, and paused time for the post-processing deadline
 # tests; normal builds keep the leaner feature set.

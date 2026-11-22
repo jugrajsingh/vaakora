@@ -25,7 +25,11 @@
     "ttsReady": "Klar",
     "ttsStopping": "Stopper",
     "ttsFailed": "Mislykkedes",
-    "ttsUnloaded": "Ikke indlæst"
+    "ttsUnloaded": "Ikke indlæst",
+    "stateReady": "Klar",
+    "stateRecording": "Optager",
+    "stateTranscribing": "Transskriberer",
+    "stateReadingAloud": "Læser op"
   },
   "sidebar": {
     "general": "Generelt",

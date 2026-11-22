@@ -25,7 +25,11 @@
     "ttsReady": "Готов",
     "ttsStopping": "Спира",
     "ttsFailed": "Неуспешно",
-    "ttsUnloaded": "Не е зареден"
+    "ttsUnloaded": "Не е зареден",
+    "stateReady": "Готово",
+    "stateRecording": "Записване",
+    "stateTranscribing": "Транскрибиране",
+    "stateReadingAloud": "Чете на глас"
   },
   "sidebar": {
     "general": "Общи",

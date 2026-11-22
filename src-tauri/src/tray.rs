@@ -47,10 +47,59 @@ pub enum TrayIconState {
 }
 
 impl TrayIconState {
-    /// Recording and Transcribing share the same menu ("Cancel" instead of the
-    /// model submenu), so only the idle/busy distinction matters for the menu.
+    /// Recording and Transcribing show the busy menu ("Cancel" instead of the
+    /// model submenu); only its state line tells them apart.
     fn is_busy(self) -> bool {
         self != TrayIconState::Idle
+    }
+}
+
+/// What the tray says the app is doing, in the menu's state line and the
+/// tooltip.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TrayActivity {
+    Ready,
+    Recording,
+    Transcribing,
+    ReadingAloud,
+}
+
+/// The dictation state wins; `ReadingAloud` only when idle and a read is
+/// playing.
+pub(crate) fn tray_activity(icon: TrayIconState, reading: bool) -> TrayActivity {
+    match icon {
+        TrayIconState::Recording => TrayActivity::Recording,
+        TrayIconState::Transcribing => TrayActivity::Transcribing,
+        TrayIconState::Idle if reading => TrayActivity::ReadingAloud,
+        TrayIconState::Idle => TrayActivity::Ready,
+    }
+}
+
+/// The state line, `"<name>: <state>"`: the disabled first menu item and the
+/// tooltip. Linux panels ignore tooltips, so the menu line is where the state
+/// is read there. Debug builds say `"<name> (Dev): <state>"`.
+pub fn tray_tooltip(activity: TrayActivity, strings: &TrayStrings) -> String {
+    state_line(cfg!(debug_assertions), activity, strings)
+}
+
+/// [`tray_tooltip`] for a debug (`dev`) or release build; a locale missing a
+/// state word shows the English one.
+fn state_line(dev: bool, activity: TrayActivity, strings: &TrayStrings) -> String {
+    let english = get_tray_translations(Some("en".to_string()));
+    let word = match activity {
+        TrayActivity::Ready => tray_label(&strings.state_ready, &english.state_ready),
+        TrayActivity::Recording => tray_label(&strings.state_recording, &english.state_recording),
+        TrayActivity::Transcribing => {
+            tray_label(&strings.state_transcribing, &english.state_transcribing)
+        }
+        TrayActivity::ReadingAloud => {
+            tray_label(&strings.state_reading_aloud, &english.state_reading_aloud)
+        }
+    };
+    if dev {
+        format!("{} (Dev): {word}", crate::brand::DISPLAY_NAME)
+    } else {
+        format!("{}: {word}", crate::brand::DISPLAY_NAME)
     }
 }
 
@@ -224,7 +273,8 @@ pub(crate) fn unload_cleanup_on_worker(
 /// compare equal the menu is not rebuilt.
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct MenuInputs {
-    busy: bool,
+    /// What the state line says. Recording and Transcribing make the busy menu.
+    activity: TrayActivity,
     /// A background transcription holds the model, so it can't be switched
     /// or unloaded.
     models_locked: bool,
@@ -244,6 +294,16 @@ struct MenuInputs {
     update_checks_enabled: bool,
     /// The language submenu, when the selected model has languages to pick.
     language: Option<LanguageMenu>,
+}
+
+impl MenuInputs {
+    /// Recording or transcribing: "Cancel" instead of the model submenu.
+    fn busy(&self) -> bool {
+        matches!(
+            self.activity,
+            TrayActivity::Recording | TrayActivity::Transcribing
+        )
+    }
 }
 
 /// What the language submenu shows: `(code, name)` entries, with codes as
@@ -267,6 +327,31 @@ struct LanguageMenu {
 struct TrayDesired {
     icon_path: &'static str,
     menu: MenuInputs,
+}
+
+/// The tray for a dictation state and a playing read: the icon follows the
+/// dictation state and the badge, the menu's state line the activity, so a
+/// read starting or ending changes the snapshot like any other input.
+fn desired_snapshot(
+    theme: AppTheme,
+    icon_state: TrayIconState,
+    reading: bool,
+    badge: bool,
+    menu: impl FnOnce(TrayActivity) -> MenuInputs,
+) -> TrayDesired {
+    TrayDesired {
+        icon_path: get_icon_path(theme, icon_state, badge),
+        menu: menu(tray_activity(icon_state, reading)),
+    }
+}
+
+/// One applier pass: the snapshot it applies and the native parts it changes.
+struct ApplyPass {
+    desired: TrayDesired,
+    icon: Option<Image<'static>>,
+    icon_changed: bool,
+    menu_changed: bool,
+    menu_revision: u64,
 }
 
 struct TrayInner {
@@ -323,6 +408,39 @@ impl TrayInner {
         self.applied_menu = Some(menu);
         self.applied_menu_revision = revision;
     }
+
+    /// Starts an applier pass: clears `pending`, so a request from now on
+    /// schedules the next pass, and takes the latest snapshot. `None` when the
+    /// tray already shows it.
+    fn begin_apply(&mut self) -> Option<ApplyPass> {
+        self.pending = false;
+        let desired = self.desired.clone()?;
+        let icon_changed = self.applied_icon != Some(desired.icon_path);
+        let menu_changed = self.menu_needs_rebuild(&desired.menu);
+        if !icon_changed && !menu_changed {
+            trace!("tray apply: nothing changed");
+            return None;
+        }
+        Some(ApplyPass {
+            icon: self.icons.get(desired.icon_path).cloned(),
+            desired,
+            icon_changed,
+            menu_changed,
+            menu_revision: self.menu_revision,
+        })
+    }
+
+    /// Ends a pass. Each part is recorded as shown only if its native call
+    /// succeeded, so a transient failure is retried on the next sync instead of
+    /// being remembered as displayed.
+    fn finish_apply(&mut self, pass: &ApplyPass, icon_ok: bool, menu_ok: bool) {
+        if icon_ok {
+            self.applied_icon = Some(pass.desired.icon_path);
+        }
+        if menu_ok {
+            self.mark_menu_applied(pass.desired.menu.clone(), pass.menu_revision);
+        }
+    }
 }
 
 /// Tauri managed state owning the tray's desired/applied snapshots.
@@ -362,7 +480,7 @@ impl Default for TrayState {
 pub enum AppTheme {
     Dark,
     Light,
-    Colored, // Pink/colored theme for Linux
+    Colored, // The app tile in colour, for Linux
 }
 
 /// Gets the current app theme, with Linux defaulting to Colored theme
@@ -420,27 +538,35 @@ fn windows_taskbar_theme() -> Option<AppTheme> {
 /// `badge` marks the idle icon while something needs attention (a notice, or
 /// macOS Secure Input). Busy states keep their normal icons. The menu line says
 /// what's wrong, so the badge doesn't vary by level.
+///
+/// Every state uses one Voice cursor silhouette (`scripts/brand-icons.sh`
+/// renders these from `brand/`). Dark and Light tint only the cursor while
+/// recording and name the other states in the menu's state line; Colored, the
+/// app tile on Linux, recolours the tile for Recording and Transcribing so the
+/// panel shows them.
 pub fn get_icon_path(theme: AppTheme, state: TrayIconState, badge: bool) -> &'static str {
     if badge && state == TrayIconState::Idle {
         return match theme {
             AppTheme::Dark => "resources/tray_idle_warning.png",
             AppTheme::Light => "resources/tray_idle_warning_dark.png",
-            AppTheme::Colored => "resources/handy_warning.png",
+            AppTheme::Colored => "resources/tray_colored_warning.png",
         };
     }
     match (theme, state) {
         // Dark theme uses light icons
         (AppTheme::Dark, TrayIconState::Idle) => "resources/tray_idle.png",
         (AppTheme::Dark, TrayIconState::Recording) => "resources/tray_recording.png",
-        (AppTheme::Dark, TrayIconState::Transcribing) => "resources/tray_transcribing.png",
+        (AppTheme::Dark, TrayIconState::Transcribing) => "resources/tray_idle.png",
         // Light theme uses dark icons
         (AppTheme::Light, TrayIconState::Idle) => "resources/tray_idle_dark.png",
         (AppTheme::Light, TrayIconState::Recording) => "resources/tray_recording_dark.png",
-        (AppTheme::Light, TrayIconState::Transcribing) => "resources/tray_transcribing_dark.png",
-        // Colored theme uses pink icons (for Linux)
-        (AppTheme::Colored, TrayIconState::Idle) => "resources/handy.png",
-        (AppTheme::Colored, TrayIconState::Recording) => "resources/recording.png",
-        (AppTheme::Colored, TrayIconState::Transcribing) => "resources/transcribing.png",
+        (AppTheme::Light, TrayIconState::Transcribing) => "resources/tray_idle_dark.png",
+        // Colored theme: the app tile (for Linux)
+        (AppTheme::Colored, TrayIconState::Idle) => "resources/tray_colored.png",
+        (AppTheme::Colored, TrayIconState::Recording) => "resources/tray_colored_recording.png",
+        (AppTheme::Colored, TrayIconState::Transcribing) => {
+            "resources/tray_colored_transcribing.png"
+        }
     }
 }
 
@@ -602,6 +728,14 @@ fn compute_desired(app: &AppHandle, icon_state: TrayIconState) -> TrayDesired {
         })
         .unwrap_or_default();
 
+    let tts = app.try_state::<Arc<crate::tts::service::TtsService>>();
+    let reading = tts.as_ref().is_some_and(|service| service.read_playing());
+    let tts_menu = tts
+        .map(|service| service.tray_snapshot())
+        .unwrap_or_else(|| {
+            handy_tts_core::tray::tts_menu(&[], None, handy_tts_core::lifecycle::State::Unloaded)
+        });
+
     let cleanup = cleanup_menu(
         settings.post_process_enabled,
         icon_state.is_busy(),
@@ -615,34 +749,22 @@ fn compute_desired(app: &AppHandle, icon_state: TrayIconState) -> TrayDesired {
         },
     );
 
-    TrayDesired {
-        icon_path: get_icon_path(theme, icon_state, badge),
-        menu: MenuInputs {
-            busy: icon_state.is_busy(),
-            models_locked,
-            secure_input,
-            notice: notice.map(|notice| notice.code),
-            cleanup,
-            tts: app
-                .try_state::<Arc<crate::tts::service::TtsService>>()
-                .map(|service| service.tray_snapshot())
-                .unwrap_or_else(|| {
-                    handy_tts_core::tray::tts_menu(
-                        &[],
-                        None,
-                        handy_tts_core::lifecycle::State::Unloaded,
-                    )
-                }),
-            selected_cleanup_model: settings.local_llm_model_id.clone(),
-            downloaded_cleanup_models,
-            model_loaded,
-            selected_model: settings.selected_model,
-            downloaded_models,
-            locale: settings.app_language,
-            update_checks_enabled: settings.update_checks_enabled,
-            language,
-        },
-    }
+    desired_snapshot(theme, icon_state, reading, badge, |activity| MenuInputs {
+        activity,
+        models_locked,
+        secure_input,
+        notice: notice.map(|notice| notice.code),
+        cleanup,
+        tts: tts_menu,
+        selected_cleanup_model: settings.local_llm_model_id.clone(),
+        downloaded_cleanup_models,
+        model_loaded,
+        selected_model: settings.selected_model,
+        downloaded_models,
+        locale: settings.app_language,
+        update_checks_enabled: settings.update_checks_enabled,
+        language,
+    })
 }
 
 /// The language submenu for `model`, mirroring the settings window's picker:
@@ -711,11 +833,11 @@ fn language_menu(
     })
 }
 
-fn language_submenu(
-    app: &AppHandle,
+fn language_submenu<R: tauri::Runtime>(
+    app: &AppHandle<R>,
     strings: &crate::tray_i18n::TrayStrings,
     menu: &LanguageMenu,
-) -> tauri::Result<Submenu<tauri::Wry>> {
+) -> tauri::Result<Submenu<R>> {
     let active_label = if menu.active == "auto" {
         strings.auto_language.clone()
     } else {
@@ -778,45 +900,26 @@ fn apply_on_main(app: &AppHandle) {
     };
 
     let started = Instant::now();
-    let (desired, icon, icon_changed, menu_changed, menu_revision) = {
-        let mut inner = state.lock();
-        inner.pending = false;
-        let Some(desired) = inner.desired.clone() else {
-            return;
-        };
-        let icon_changed = inner.applied_icon != Some(desired.icon_path);
-        let menu_changed = inner.menu_needs_rebuild(&desired.menu);
-        if !icon_changed && !menu_changed {
-            trace!("tray apply: nothing changed");
-            return;
-        }
-        let icon = inner.icons.get(desired.icon_path).cloned();
-        (
-            desired,
-            icon,
-            icon_changed,
-            menu_changed,
-            inner.menu_revision,
-        )
+    let Some(mut pass) = state.lock().begin_apply() else {
+        return;
     };
+    let icon_path = pass.desired.icon_path;
 
-    // Each part is recorded as applied only if its native call succeeded, so a
-    // transient failure is retried on the next sync instead of being
-    // remembered as displayed.
     let mut icon_ok = false;
-    if icon_changed {
-        match icon {
+    if pass.icon_changed {
+        match pass.icon.take() {
             Some(image) => match tray.set_icon_with_as_template(Some(image), true) {
                 Ok(()) => icon_ok = true,
-                Err(err) => error!("Failed to update tray icon '{}': {err}", desired.icon_path),
+                Err(err) => error!("Failed to update tray icon '{icon_path}': {err}"),
             },
-            None => error!("Tray icon '{}' is not loaded", desired.icon_path),
+            None => error!("Tray icon '{icon_path}' is not loaded"),
         }
     }
 
     let mut menu_ok = false;
-    if menu_changed {
-        match build_menu(app, &desired.menu) {
+    let mut shown_tooltip = None;
+    if pass.menu_changed {
+        match build_menu(app, &pass.desired.menu) {
             Ok((menu, tooltip)) => match tray.set_menu(Some(menu)) {
                 Ok(()) => {
                     menu_ok = true;
@@ -825,9 +928,10 @@ fn apply_on_main(app: &AppHandle) {
                     // Shell_NotifyIcon call means the icon is failing too.
                     // Gating `menu_ok` on it would re-run the full menu
                     // rebuild on every sync for the cheapest mutation.
-                    if let Err(err) = tray.set_tooltip(Some(tooltip)) {
+                    if let Err(err) = tray.set_tooltip(Some(&tooltip)) {
                         error!("Failed to set tray tooltip: {err}");
                     }
+                    shown_tooltip = Some(tooltip);
                 }
                 Err(err) => error!("Failed to set tray menu: {err}"),
             },
@@ -835,25 +939,22 @@ fn apply_on_main(app: &AppHandle) {
         }
     }
 
-    {
-        let mut inner = state.lock();
-        if icon_ok {
-            inner.applied_icon = Some(desired.icon_path);
-        }
-        if menu_ok {
-            inner.mark_menu_applied(desired.menu.clone(), menu_revision);
-        }
-    }
+    state.lock().finish_apply(&pass, icon_ok, menu_ok);
 
     debug!(
-        "tray apply: icon={} menu={} busy={} took={:?}",
-        if icon_changed {
-            desired.icon_path
+        "tray apply: icon={} menu={} tooltip={:?} busy={} took={:?}",
+        if pass.icon_changed {
+            icon_path
         } else {
             "unchanged"
         },
-        if menu_changed { "rebuilt" } else { "unchanged" },
-        desired.menu.busy,
+        if pass.menu_changed {
+            "rebuilt"
+        } else {
+            "unchanged"
+        },
+        shown_tooltip.as_deref().unwrap_or("unchanged"),
+        pass.desired.menu.busy(),
         started.elapsed()
     );
 }
@@ -863,23 +964,14 @@ fn load_tray_icon(resolved_icon_path: tauri::Result<PathBuf>) -> tauri::Result<I
     Image::from_path(&resolved_icon_path).map(Image::to_owned)
 }
 
-pub fn tray_tooltip() -> String {
-    version_label()
-}
-
-fn version_label() -> String {
-    if cfg!(debug_assertions) {
-        format!("Handy v{} (Dev)", env!("CARGO_PKG_VERSION"))
-    } else {
-        format!("Handy v{}", env!("CARGO_PKG_VERSION"))
-    }
-}
-
 /// Builds the tray menu and tooltip for the given inputs. Pure with respect
 /// to app state: everything it depends on is in `inputs`, plus the
 /// process-constant `HANDY_DISABLE_UPDATER` env flag behind
 /// `update_checks_forced_disabled()`, which cannot change during a run.
-fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri::Wry>, String)> {
+fn build_menu<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+    inputs: &MenuInputs,
+) -> tauri::Result<(Menu<R>, String)> {
     let strings = get_tray_translations(Some(inputs.locale.clone()));
 
     // Secure Input warning entry (macOS): clicking opens the settings window
@@ -918,9 +1010,10 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
     #[cfg(not(target_os = "macos"))]
     let (settings_accelerator, quit_accelerator) = (Some("Ctrl+,"), Some("Ctrl+Q"));
 
-    // Create common menu items
-    let version_label = version_label();
-    let version_i = MenuItem::with_id(app, "version", &version_label, false, None::<&str>)?;
+    // Create common menu items. The first line names the state; the version
+    // is in Settings > About.
+    let state_line = tray_tooltip(inputs.activity, &strings);
+    let state_i = MenuItem::with_id(app, "tray_state", &state_line, false, None::<&str>)?;
     let settings_i = MenuItem::with_id(
         app,
         "settings",
@@ -945,12 +1038,12 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
     let quit_i = MenuItem::with_id(app, "quit", &strings.quit, true, quit_accelerator)?;
     let separator = || PredefinedMenuItem::separator(app);
 
-    let menu = if inputs.busy {
+    let menu = if inputs.busy() {
         let cancel_i = MenuItem::with_id(app, "cancel", &strings.cancel, true, None::<&str>)?;
         Menu::with_items(
             app,
             &[
-                &version_i,
+                &state_i,
                 &separator()?,
                 &cancel_i,
                 &separator()?,
@@ -1042,7 +1135,7 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
         let menu = Menu::with_items(
             app,
             &[
-                &version_i,
+                &state_i,
                 &copy_last_transcript_i,
                 &separator()?,
                 &model_submenu,
@@ -1053,7 +1146,7 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
                 &quit_i,
             ],
         )?;
-        // Right below the model submenu: version, separator, copy, separator, model.
+        // Right below the model submenu: state line, separator, copy, separator, model.
         if let Some(language) = &inputs.language {
             menu.insert(&language_submenu(app, &strings, language)?, 5)?;
         }
@@ -1104,9 +1197,9 @@ fn build_menu(app: &AppHandle, inputs: &MenuInputs) -> tauri::Result<(Menu<tauri
         menu.remove(&check_updates_i)?;
     }
 
-    // Both layouts start with [version, separator, ...]; slot the warnings in
-    // right below the version line so they're the first actionable thing seen.
-    let mut tooltip = version_label;
+    // Both layouts start with [state line, separator, ...]; slot the warnings
+    // in right below the state line so they're the first actionable thing seen.
+    let mut tooltip = state_line;
     let mut position = 2;
     if let Some(warning_item) = secure_input_warning {
         menu.insert(&warning_item, position)?;
@@ -1154,7 +1247,7 @@ pub fn set_tray_visibility(app: &AppHandle, visible: bool) {
 /// Recovery for the macOS tray-disappearance bug (#1948, tauri-apps/tauri#12060):
 /// the `NSStatusItem` can silently vanish with no error surfaced to the app.
 /// Hiding and re-showing the tray recreates it with its current icon, menu and
-/// tooltip. Called when the user "relaunches" Handy while it is already running
+/// tooltip. Called when the user "relaunches" the app while it is already running
 /// (`RunEvent::Reopen` for Spotlight/Finder/Dock, the single-instance callback
 /// for a second process) — the natural "where did my icon go?" moment — so a
 /// relaunch brings the icon back without a full quit.
@@ -1753,7 +1846,11 @@ mod tests {
 
     fn inputs(busy: bool) -> MenuInputs {
         MenuInputs {
-            busy,
+            activity: if busy {
+                TrayActivity::Recording
+            } else {
+                TrayActivity::Ready
+            },
             models_locked: false,
             secure_input: false,
             notice: None,
@@ -2255,19 +2352,19 @@ mod tests {
     }
 
     #[test]
-    fn recording_and_transcribing_share_a_menu() {
-        // The icon differs but the menu inputs are identical, so a
-        // Recording -> Transcribing transition must not rebuild the menu.
-        let recording = TrayDesired {
-            icon_path: "resources/tray_recording.png",
-            menu: inputs(TrayIconState::Recording.is_busy()),
-        };
-        let transcribing = TrayDesired {
-            icon_path: "resources/tray_transcribing.png",
-            menu: inputs(TrayIconState::Transcribing.is_busy()),
-        };
+    fn recording_and_transcribing_differ_only_in_the_state_line() {
+        // Both are busy menus ("Cancel" instead of the model submenu); the
+        // first line names the state, so that line is all that differs.
+        let recording = snapshot(TrayIconState::Recording, false);
+        let transcribing = snapshot(TrayIconState::Transcribing, false);
+        assert!(recording.menu.busy() && transcribing.menu.busy());
         assert_ne!(recording.icon_path, transcribing.icon_path);
-        assert_eq!(recording.menu, transcribing.menu);
+        assert_ne!(recording.menu, transcribing.menu);
+        let same_line = MenuInputs {
+            activity: recording.menu.activity,
+            ..transcribing.menu.clone()
+        };
+        assert_eq!(same_line, recording.menu);
     }
 
     #[test]
@@ -2290,6 +2387,355 @@ mod tests {
     #[test]
     fn idle_and_busy_menus_differ() {
         assert_ne!(inputs(false), inputs(true));
+    }
+
+    /// The Linux (Colored) snapshot for a dictation state and a playing read.
+    fn snapshot(state: TrayIconState, reading: bool) -> TrayDesired {
+        desired_snapshot(AppTheme::Colored, state, reading, false, |activity| {
+            MenuInputs {
+                activity,
+                ..inputs(state.is_busy())
+            }
+        })
+    }
+
+    /// The menu's state line for `word` in this build ("Vaakora (Dev): ..." in debug).
+    fn line(word: &str) -> String {
+        let name = if cfg!(debug_assertions) {
+            "Vaakora (Dev)"
+        } else {
+            "Vaakora"
+        };
+        format!("{name}: {word}")
+    }
+
+    /// Every entry of a built menu, submenus flattened: (id, text, enabled).
+    fn entries_of<R: tauri::Runtime>(menu: &Menu<R>) -> Vec<(String, String, bool)> {
+        menu.items()
+            .expect("menu items")
+            .iter()
+            .filter_map(|item| match item {
+                tauri::menu::MenuItemKind::MenuItem(item) => Some((
+                    item.id().0.clone(),
+                    item.text().expect("item text"),
+                    item.is_enabled().expect("item enabled"),
+                )),
+                tauri::menu::MenuItemKind::Submenu(item) => Some((
+                    item.id().0.clone(),
+                    item.text().expect("submenu text"),
+                    item.is_enabled().expect("submenu enabled"),
+                )),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// The first menu entry and the tooltip, built from the snapshot an applier
+    /// pass would apply.
+    fn built_line(
+        app: &tauri::App<tauri::test::MockRuntime>,
+        menu: &MenuInputs,
+    ) -> ((String, String, bool), String) {
+        let (built, tooltip) = build_menu(app.handle(), menu).expect("menu builds");
+        let first = entries_of(&built)
+            .into_iter()
+            .next()
+            .expect("a first entry");
+        (first, tooltip)
+    }
+
+    #[test]
+    fn reading_aloud_shows_in_the_tooltip() {
+        let en = get_tray_translations(Some("en".into()));
+        let reading = tray_activity(TrayIconState::Idle, true);
+        assert_eq!(reading, TrayActivity::ReadingAloud);
+        assert_eq!(state_line(false, reading, &en), "Vaakora: Reading aloud");
+        assert_eq!(
+            state_line(true, reading, &en),
+            "Vaakora (Dev): Reading aloud"
+        );
+        assert_eq!(tray_tooltip(reading, &en), line("Reading aloud"));
+        // Dictation states win over a playing read.
+        assert_eq!(
+            tray_activity(TrayIconState::Recording, true),
+            TrayActivity::Recording
+        );
+        assert_eq!(
+            tray_activity(TrayIconState::Transcribing, true),
+            TrayActivity::Transcribing
+        );
+        assert_eq!(
+            tray_activity(TrayIconState::Idle, false),
+            TrayActivity::Ready
+        );
+        for (activity, word) in [
+            (TrayActivity::Ready, "Ready"),
+            (TrayActivity::Recording, "Recording"),
+            (TrayActivity::Transcribing, "Transcribing"),
+            (TrayActivity::ReadingAloud, "Reading aloud"),
+        ] {
+            assert_eq!(state_line(false, activity, &en), format!("Vaakora: {word}"));
+        }
+        // A translated word is used; a missing one falls back to English.
+        let german = get_tray_translations(Some("de".into()));
+        assert_eq!(
+            state_line(false, reading, &german),
+            format!("Vaakora: {}", german.state_reading_aloud)
+        );
+        assert_ne!(german.state_reading_aloud, en.state_reading_aloud);
+        let mut missing = german.clone();
+        missing.state_reading_aloud.clear();
+        assert_eq!(
+            state_line(false, reading, &missing),
+            "Vaakora: Reading aloud"
+        );
+    }
+
+    #[test]
+    fn every_state_uses_one_silhouette() {
+        use AppTheme::{Colored, Dark, Light};
+        use TrayIconState::{Idle, Recording, Transcribing};
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        for (theme, state, badge, path) in [
+            (Dark, Idle, false, "resources/tray_idle.png"),
+            (Dark, Transcribing, false, "resources/tray_idle.png"),
+            (Dark, Recording, false, "resources/tray_recording.png"),
+            (Dark, Idle, true, "resources/tray_idle_warning.png"),
+            (Light, Idle, false, "resources/tray_idle_dark.png"),
+            (Light, Transcribing, false, "resources/tray_idle_dark.png"),
+            (Light, Recording, false, "resources/tray_recording_dark.png"),
+            (Light, Idle, true, "resources/tray_idle_warning_dark.png"),
+            (Colored, Idle, false, "resources/tray_colored.png"),
+            (
+                Colored,
+                Recording,
+                false,
+                "resources/tray_colored_recording.png",
+            ),
+            (
+                Colored,
+                Transcribing,
+                false,
+                "resources/tray_colored_transcribing.png",
+            ),
+            (Colored, Idle, true, "resources/tray_colored_warning.png"),
+        ] {
+            assert_eq!(get_icon_path(theme.clone(), state, badge), path);
+            let image = load_tray_icon(Ok(root.join(path)))
+                .unwrap_or_else(|err| panic!("{path} does not load: {err}"));
+            assert_eq!((image.width(), image.height()), (64, 64), "{path}");
+        }
+        // The panel shows the state on Linux: Colored keeps distinct images.
+        let colored: std::collections::HashSet<_> = [Idle, Recording, Transcribing]
+            .into_iter()
+            .map(|state| {
+                std::fs::read(root.join(get_icon_path(Colored, state, false)))
+                    .expect("Colored raster reads")
+            })
+            .collect();
+        assert_eq!(
+            colored.len(),
+            3,
+            "Colored Idle, Recording and Transcribing differ"
+        );
+        // Each tray raster is its brand/generated render, byte for byte.
+        for (resource, generated) in [
+            ("tray_idle.png", "tray-dark-panel.png"),
+            ("tray_idle_dark.png", "tray-light-panel.png"),
+            ("tray_recording.png", "tray-dark-panel-recording.png"),
+            ("tray_recording_dark.png", "tray-light-panel-recording.png"),
+            ("tray_idle_warning.png", "tray-dark-panel-warning.png"),
+            ("tray_idle_warning_dark.png", "tray-light-panel-warning.png"),
+            ("tray_colored.png", "tray-colored.png"),
+            ("tray_colored_warning.png", "tray-colored-warning.png"),
+            ("tray_colored_recording.png", "tray-colored-recording.png"),
+            (
+                "tray_colored_transcribing.png",
+                "tray-colored-transcribing.png",
+            ),
+        ] {
+            let read = |path: std::path::PathBuf| {
+                std::fs::read(&path).unwrap_or_else(|err| panic!("{}: {err}", path.display()))
+            };
+            assert!(
+                read(root.join("resources").join(resource))
+                    == read(root.join("../brand/generated").join(generated)),
+                "resources/{resource} is not brand/generated/{generated}"
+            );
+        }
+        // The old hand rasters are gone.
+        for old in [
+            "handy.png",
+            "handy_warning.png",
+            "recording.png",
+            "transcribing.png",
+            "tray_transcribing.png",
+            "tray_transcribing_dark.png",
+        ] {
+            assert!(
+                !root.join("resources").join(old).exists(),
+                "resources/{old} still exists"
+            );
+        }
+    }
+
+    #[test]
+    fn tooltip_change_goes_through_the_applier() {
+        let idle = snapshot(TrayIconState::Idle, false);
+        let reading = snapshot(TrayIconState::Idle, true);
+        assert_ne!(idle, reading, "a read starting changes the snapshot");
+        assert_eq!(idle.icon_path, reading.icon_path);
+
+        let app = tauri::test::mock_app();
+        let state = TrayState::new();
+        let mut inner = state.lock();
+        assert!(inner.accept_desired(1, idle));
+        let pass = inner.begin_apply().expect("the first snapshot is applied");
+        inner.finish_apply(&pass, true, true);
+        assert!(inner.begin_apply().is_none(), "nothing left to apply");
+
+        assert!(
+            inner.accept_desired(2, reading.clone()),
+            "a read starting schedules one applier pass"
+        );
+        assert!(!inner.accept_desired(3, reading), "and coalesces with more");
+        let pass = inner.begin_apply().expect("the read is applied");
+        assert!(pass.menu_changed && !pass.icon_changed);
+        let ((id, text, enabled), tooltip) = built_line(&app, &pass.desired.menu);
+        assert_eq!(id, "tray_state");
+        assert_eq!(text, line("Reading aloud"));
+        assert!(!enabled, "the state line is not clickable");
+        assert_eq!(tooltip, text);
+    }
+
+    #[test]
+    fn rapid_state_changes_land_the_last_state_with_its_line_and_icon() {
+        use TrayIconState::{Idle, Recording, Transcribing};
+        let app = tauri::test::mock_app();
+        let state = TrayState::new();
+        let mut inner = state.lock();
+        let mut seq = 0;
+        let mut accept = |inner: &mut TrayInner, icon: TrayIconState, reading: bool| {
+            seq += 1;
+            inner.accept_desired(seq, snapshot(icon, reading))
+        };
+        // One applier pass, run as apply_on_main runs it: what it built and showed.
+        let apply = |inner: &mut TrayInner| {
+            let pass = inner.begin_apply()?;
+            let ((_, text, _), _) = built_line(&app, &pass.desired.menu);
+            inner.finish_apply(&pass, true, true);
+            Some((text, pass.desired.icon_path))
+        };
+        let shown = |word: &str, icon: &'static str| Some((line(word), icon));
+        let colored = "resources/tray_colored.png";
+
+        // A whole dictation and a read arrive while one pass is pending: that
+        // pass shows the last state, and nothing stale is left behind.
+        assert!(accept(&mut inner, Recording, false));
+        assert!(!accept(&mut inner, Transcribing, false));
+        assert!(!accept(&mut inner, Idle, true));
+        assert!(!accept(&mut inner, Idle, false));
+        assert_eq!(apply(&mut inner), shown("Ready", colored));
+        assert_eq!(apply(&mut inner), None);
+
+        // Each state on its own, with read start, stop, finish and error
+        // (each one ends the read: `reading` false).
+        for (icon, reading, word, path) in [
+            (
+                Recording,
+                false,
+                "Recording",
+                "resources/tray_colored_recording.png",
+            ),
+            (
+                Transcribing,
+                false,
+                "Transcribing",
+                "resources/tray_colored_transcribing.png",
+            ),
+            (Idle, false, "Ready", colored),
+            (Idle, true, "Reading aloud", colored),
+            (Idle, false, "Ready", colored),
+            (Idle, true, "Reading aloud", colored),
+            (
+                Recording,
+                true,
+                "Recording",
+                "resources/tray_colored_recording.png",
+            ),
+            (Idle, true, "Reading aloud", colored),
+            (Idle, false, "Ready", colored),
+        ] {
+            assert!(accept(&mut inner, icon, reading), "{word} schedules a pass");
+            assert_eq!(apply(&mut inner), shown(word, path));
+            assert_eq!(apply(&mut inner), None, "{word}: nothing left to apply");
+        }
+
+        // A change landing while a pass is on the main thread schedules the next
+        // pass, which shows it.
+        assert!(accept(&mut inner, Idle, true));
+        let pass = inner.begin_apply().expect("the read starts");
+        assert!(
+            accept(&mut inner, Idle, false),
+            "a read ending mid-pass schedules another pass"
+        );
+        inner.finish_apply(&pass, true, true);
+        assert_eq!(apply(&mut inner), shown("Ready", colored));
+
+        // A failed native call is retried by the next pass instead of being
+        // remembered as shown.
+        assert!(accept(&mut inner, Idle, true));
+        let pass = inner.begin_apply().expect("the read starts");
+        inner.finish_apply(&pass, true, false);
+        assert!(accept(&mut inner, Idle, true));
+        assert_eq!(apply(&mut inner), shown("Reading aloud", colored));
+
+        // An older request never overwrites a newer one.
+        assert!(!inner.accept_desired(1, snapshot(Recording, false)));
+        assert_eq!(apply(&mut inner), None);
+    }
+
+    #[test]
+    fn the_state_line_replaces_the_version_in_both_menus() {
+        let app = tauri::test::mock_app();
+        for state in [TrayIconState::Idle, TrayIconState::Recording] {
+            let (built, _) =
+                build_menu(app.handle(), &snapshot(state, false).menu).expect("menu builds");
+            let entries = entries_of(&built);
+            assert_eq!(entries[0].0, "tray_state", "{state:?}");
+            for (id, text, _) in &entries {
+                assert_ne!(id, "version", "{state:?}");
+                assert!(
+                    !text.contains(env!("CARGO_PKG_VERSION")) && !text.contains("Handy"),
+                    "{state:?}: {text}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn tray_strings_have_state_words_in_every_locale() {
+        assert_eq!(crate::tray_i18n::TRANSLATIONS.len(), 27);
+        for (code, strings) in crate::tray_i18n::TRANSLATIONS.iter() {
+            for (key, word) in [
+                ("stateReady", &strings.state_ready),
+                ("stateRecording", &strings.state_recording),
+                ("stateTranscribing", &strings.state_transcribing),
+                ("stateReadingAloud", &strings.state_reading_aloud),
+            ] {
+                assert!(!word.trim().is_empty(), "{code} tray.{key} is empty");
+            }
+        }
+        let en = get_tray_translations(Some("en".into()));
+        assert_eq!(
+            [
+                en.state_ready.as_str(),
+                en.state_recording.as_str(),
+                en.state_transcribing.as_str(),
+                en.state_reading_aloud.as_str()
+            ],
+            ["Ready", "Recording", "Transcribing", "Reading aloud"]
+        );
     }
 
     /// The source text from `start` up to the first `end` after it.

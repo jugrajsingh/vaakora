@@ -25,7 +25,11 @@
     "ttsReady": "Hazır",
     "ttsStopping": "Durduruluyor",
     "ttsFailed": "Başarısız",
-    "ttsUnloaded": "Yüklenmedi"
+    "ttsUnloaded": "Yüklenmedi",
+    "stateReady": "Hazır",
+    "stateRecording": "Kaydediliyor",
+    "stateTranscribing": "Transkribe ediliyor",
+    "stateReadingAloud": "Sesli okunuyor"
   },
   "sidebar": {
     "general": "Genel",

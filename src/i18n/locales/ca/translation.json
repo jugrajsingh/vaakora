@@ -25,7 +25,11 @@
     "ttsReady": "A punt",
     "ttsStopping": "S'està aturant",
     "ttsFailed": "Ha fallat",
-    "ttsUnloaded": "No carregat"
+    "ttsUnloaded": "No carregat",
+    "stateReady": "A punt",
+    "stateRecording": "Enregistrant",
+    "stateTranscribing": "S'està transcrivint",
+    "stateReadingAloud": "S'està llegint en veu alta"
   },
   "sidebar": {
     "general": "General",

@@ -1,6 +1,6 @@
 import React from "react";
 import type { OSType } from "@/lib/utils/keyboard";
-import TrayIcon from "../icons/TrayIcon";
+import { TrayGlyph, type TrayGlyphState } from "../brand/TrayGlyph";
 import "./desktopBar.css";
 
 // Placeholder menu widths per size.
@@ -21,11 +21,11 @@ const Tux = () => (
   </svg>
 );
 
-/** The drawn menu bar (macOS) or taskbar (Windows, Linux) holding Handy's icon. */
+/** The drawn menu bar (macOS) or taskbar (Windows, Linux) holding the tray icon. */
 export const DesktopBar: React.FC<{
   os: OSType;
   size: "demo" | "try";
-  state: React.ComponentProps<typeof TrayIcon>["state"];
+  state: TrayGlyphState;
   /** Try it's glove flies into this. */
   trayRef?: React.Ref<HTMLSpanElement>;
   caught?: boolean;
@@ -36,7 +36,7 @@ export const DesktopBar: React.FC<{
       className="desktop-tray"
       data-caught={caught || undefined}
     >
-      <TrayIcon state={state} size={ICON_SIZE[size]} />
+      <TrayGlyph state={state} size={ICON_SIZE[size]} />
     </span>
   );
   const clock = <span className="tabular-nums">9:41</span>;

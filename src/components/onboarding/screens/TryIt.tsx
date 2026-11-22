@@ -10,7 +10,7 @@ import { Button } from "../../ui/Button";
 import { TextLink } from "../../ui/TextLink";
 import { CapturedKeys, captureHintKey, Keycaps } from "../../shared/Keycaps";
 import { BrandMark } from "../../brand/BrandMark";
-import TrayIcon from "../../icons/TrayIcon";
+import { TrayGlyph } from "../../brand/TrayGlyph";
 import { DesktopBar } from "../DesktopBar";
 import { WindowBar } from "../WindowBar";
 import { OnboardingShell, ScreenSub, ScreenTitle } from "../OnboardingShell";
@@ -481,7 +481,7 @@ export const TryIt: React.FC<TryItProps> = ({
             onClick={() => start("five")}
             disabled={stage !== "try"}
           >
-            <TrayIcon state="idle" size={16} />
+            <TrayGlyph state="idle" size={16} />
             {t("onboarding.try.highFive")}
           </Button>
         ),

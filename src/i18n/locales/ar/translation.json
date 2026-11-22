@@ -25,7 +25,11 @@
     "ttsReady": "جاهز",
     "ttsStopping": "جارٍ الإيقاف",
     "ttsFailed": "فشل",
-    "ttsUnloaded": "غير محمّل"
+    "ttsUnloaded": "غير محمّل",
+    "stateReady": "جاهز",
+    "stateRecording": "جارٍ التسجيل",
+    "stateTranscribing": "جاري التفريغ",
+    "stateReadingAloud": "جارٍ القراءة بصوت عالٍ"
   },
   "sidebar": {
     "general": "عام",

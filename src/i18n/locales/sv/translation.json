@@ -25,7 +25,11 @@
     "ttsReady": "Redo",
     "ttsStopping": "Stoppar",
     "ttsFailed": "Misslyckades",
-    "ttsUnloaded": "Inte laddad"
+    "ttsUnloaded": "Inte laddad",
+    "stateReady": "Redo",
+    "stateRecording": "Spelar in",
+    "stateTranscribing": "Transkriberar",
+    "stateReadingAloud": "Läser upp"
   },
   "sidebar": {
     "general": "Allmänt",

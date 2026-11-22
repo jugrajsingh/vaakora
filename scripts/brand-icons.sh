@@ -6,9 +6,12 @@
 #                                    src-tauri/icons: the five rasters from brand/generated, and
 #                                    icon.ico, icon.icns and the Windows Square/Store logos from
 #                                    `tauri icon` run on app-1024.png into target/brand-app-icons
+#   scripts/brand-icons.sh --sync-tray write brand/generated, then copy the tray rasters into
+#                                    src-tauri/resources under the names tray.rs loads
 #   scripts/brand-icons.sh --check   render into target/brand-check and cmp every file
 #                                    with brand/generated, and the five src-tauri/icons rasters
-#                                    with their brand/generated sources; exit 1 on any difference
+#                                    and the src-tauri/resources tray rasters with their
+#                                    brand/generated sources; exit 1 on any difference
 #
 # Needs ImageMagick with the RSVG delegate (`magick -list format | grep SVG`).
 # The density is 96 x scale, so one SVG user unit is one pixel at scale 1. Every
@@ -29,20 +32,29 @@ DARK_REC_CURSOR="#a9e1b4"
 LIGHT_REC_CURSOR="#376b43"
 DARK_WARN="#fbbf24"
 LIGHT_WARN="#9d5604"
+# Colored theme (the app tile; Linux): the 16 app master's own tile, bars and
+# cursor colours (brand.json mark). Recording lights the tile in the cursor's
+# mint with a forest glyph; Transcribing turns the tile pale with a forest glyph,
+# so the panel shows each state with the same silhouette.
+MARK_TILE="#2d583a"
+MARK_BARS="#f1f6f2"
+MARK_CURSOR="#a9e1b4"
 
 mode="write"
 sync_app=0
+sync_tray=0
 case "${1:-}" in
   "") ;;
   --check) mode="check" ;;
   --sync-app) sync_app=1 ;;
+  --sync-tray) sync_tray=1 ;;
   *)
-    echo "usage: scripts/brand-icons.sh [--check|--sync-app]" >&2
+    echo "usage: scripts/brand-icons.sh [--check|--sync-app|--sync-tray]" >&2
     exit 2
     ;;
 esac
 if [[ $# -gt 1 ]]; then
-  echo "usage: scripts/brand-icons.sh [--check|--sync-app]" >&2
+  echo "usage: scripts/brand-icons.sh [--check|--sync-app|--sync-tray]" >&2
   exit 2
 fi
 
@@ -54,6 +66,21 @@ APP_RASTERS=(
   "128x128.png app-128.png"
   "128x128@2x.png app-256.png"
   "icon.png app-512.png"
+)
+# The tray rasters tray.rs loads, from brand/generated: <resources file> <generated file>.
+# Dark theme (light panel glyph off) uses the dark-panel files; Light theme the light-panel ones.
+RESOURCES="$ROOT/src-tauri/resources"
+TRAY_RASTERS=(
+  "tray_idle.png tray-dark-panel.png"
+  "tray_idle_dark.png tray-light-panel.png"
+  "tray_recording.png tray-dark-panel-recording.png"
+  "tray_recording_dark.png tray-light-panel-recording.png"
+  "tray_idle_warning.png tray-dark-panel-warning.png"
+  "tray_idle_warning_dark.png tray-light-panel-warning.png"
+  "tray_colored.png tray-colored.png"
+  "tray_colored_warning.png tray-colored-warning.png"
+  "tray_colored_recording.png tray-colored-recording.png"
+  "tray_colored_transcribing.png tray-colored-transcribing.png"
 )
 
 if ! magick -list format | grep -q 'SVG.*RSVG'; then
@@ -119,8 +146,17 @@ tray_svg "$DARK_GLYPH" "$DARK_REC_CURSOR" "$WORK/dark-rec.svg"
 tray_png "$WORK/dark-rec.svg" "$OUT/tray-dark-panel-recording.png"
 tray_svg "$LIGHT_GLYPH" "$LIGHT_REC_CURSOR" "$WORK/light-rec.svg"
 tray_png "$WORK/light-rec.svg" "$OUT/tray-light-panel-recording.png"
-# Colored theme: the app tile (16 master) for every state.
+# Colored theme: the app tile (16 master); Recording and Transcribing recolour it.
+# colored_svg <tile> <bars> <cursor> <out svg>
+colored_svg() {
+  sed "s/fill=\"$MARK_TILE\"/fill=\"TILE\"/;s/fill=\"$MARK_BARS\"/fill=\"BARS\"/;s/fill=\"$MARK_CURSOR\"/fill=\"CURSOR\"/" \
+    "$MARK/vaakora-16.svg" | sed "s/fill=\"TILE\"/fill=\"$1\"/;s/fill=\"BARS\"/fill=\"$2\"/;s/fill=\"CURSOR\"/fill=\"$3\"/" > "$4"
+}
 tray_png "$MARK/vaakora-16.svg" "$OUT/tray-colored.png"
+colored_svg "$MARK_CURSOR" "$MARK_TILE" "$MARK_TILE" "$WORK/colored-rec.svg"
+tray_png "$WORK/colored-rec.svg" "$OUT/tray-colored-recording.png"
+colored_svg "$MARK_BARS" "$MARK_TILE" "$MARK_TILE" "$WORK/colored-busy.svg"
+tray_png "$WORK/colored-busy.svg" "$OUT/tray-colored-transcribing.png"
 
 cp "$OUT/tray-dark-panel.png" "$OUT/tray-dark-panel-warning.png"
 badge "$OUT/tray-dark-panel-warning.png" "$DARK_WARN" 0 13
@@ -135,6 +171,13 @@ if [[ "$mode" == check ]]; then
     read -r icon generated <<<"$pair"
     if ! cmp -s "$ICONS/$icon" "$GENERATED/$generated"; then
       echo "DIFFERS src-tauri/icons/$icon from brand/generated/$generated"
+      bad=1
+    fi
+  done
+  for pair in "${TRAY_RASTERS[@]}"; do
+    read -r resource generated <<<"$pair"
+    if ! cmp -s "$RESOURCES/$resource" "$GENERATED/$generated"; then
+      echo "DIFFERS src-tauri/resources/$resource from brand/generated/$generated"
       bad=1
     fi
   done
@@ -173,4 +216,12 @@ if [[ "$sync_app" -eq 1 ]]; then
   done
   rm -rf "$TAURI_OUT"
   echo "synced app icons into src-tauri/icons"
+fi
+
+if [[ "$sync_tray" -eq 1 ]]; then
+  for pair in "${TRAY_RASTERS[@]}"; do
+    read -r resource generated <<<"$pair"
+    cp "$GENERATED/$generated" "$RESOURCES/$resource"
+  done
+  echo "synced ${#TRAY_RASTERS[@]} tray rasters into src-tauri/resources"
 fi

@@ -25,7 +25,11 @@
     "ttsReady": "מוכן",
     "ttsStopping": "נעצר",
     "ttsFailed": "נכשל",
-    "ttsUnloaded": "לא נטען"
+    "ttsUnloaded": "לא נטען",
+    "stateReady": "מוכן",
+    "stateRecording": "מקליט",
+    "stateTranscribing": "מתמלל",
+    "stateReadingAloud": "מקריא"
   },
   "sidebar": {
     "general": "כללי",

@@ -25,7 +25,11 @@
     "ttsReady": "Připraven",
     "ttsStopping": "Zastavuje se",
     "ttsFailed": "Selhalo",
-    "ttsUnloaded": "Nenačten"
+    "ttsUnloaded": "Nenačten",
+    "stateReady": "Připraveno",
+    "stateRecording": "Nahrávání",
+    "stateTranscribing": "Přepisuji",
+    "stateReadingAloud": "Čtu nahlas"
   },
   "sidebar": {
     "general": "Obecné",

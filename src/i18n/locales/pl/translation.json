@@ -25,7 +25,11 @@
     "ttsReady": "Gotowy",
     "ttsStopping": "Zatrzymywanie",
     "ttsFailed": "Niepowodzenie",
-    "ttsUnloaded": "Niezaładowany"
+    "ttsUnloaded": "Niezaładowany",
+    "stateReady": "Gotowe",
+    "stateRecording": "Nagrywanie",
+    "stateTranscribing": "Transkrypcja",
+    "stateReadingAloud": "Czytanie na głos"
   },
   "sidebar": {
     "general": "Ogólne",

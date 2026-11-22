@@ -25,7 +25,11 @@
     "ttsReady": "준비됨",
     "ttsStopping": "중지 중",
     "ttsFailed": "실패",
-    "ttsUnloaded": "로드되지 않음"
+    "ttsUnloaded": "로드되지 않음",
+    "stateReady": "준비됨",
+    "stateRecording": "녹음 중",
+    "stateTranscribing": "텍스트로 변환 중",
+    "stateReadingAloud": "소리 내어 읽는 중"
   },
   "sidebar": {
     "general": "일반",

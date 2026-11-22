@@ -38,6 +38,9 @@ pub struct TtsService {
     ready: Mutex<Result<Ready, String>>,
     refused_shortcut: AtomicBool,
     reading: AtomicBool,
+    /// A read's audio is starting, buffering or playing: the tray says
+    /// "Reading aloud" when dictation is idle.
+    playing: Arc<AtomicBool>,
     tray_refresh: mpsc::SyncSender<()>,
     referee: Mutex<Referee>,
     binding: Mutex<String>,
@@ -320,6 +323,36 @@ fn available_or_cpu(output: Option<&str>) -> Vec<Device> {
     }
     result
 }
+/// Whether the tray shows the read as playing: its audio is starting,
+/// buffering or playing and it has not failed. Paused, stopped, finished and
+/// failed reads are not.
+fn read_playing(snapshot: &handy_tts_core::session::SessionSnapshot) -> bool {
+    use handy_tts_core::scheduler::PlaybackState;
+    snapshot.error.is_none()
+        && matches!(
+            snapshot.state,
+            PlaybackState::Starting | PlaybackState::Buffering | PlaybackState::Playing
+        )
+}
+/// Records whether a read is playing and calls `changed` when that flips, so
+/// the tray re-syncs once per start or end, not on every progress event.
+fn note_read_playing(flag: &AtomicBool, playing: bool, changed: impl FnOnce()) {
+    if flag.swap(playing, Ordering::AcqRel) != playing {
+        changed();
+    }
+}
+/// The read-aloud session's state callback: records whether a read is playing
+/// (re-syncing the tray when that flips), then hands the state to the reader.
+fn session_events(
+    playing: Arc<AtomicBool>,
+    resync_tray: impl Fn() + Send + Sync + 'static,
+    forward: impl Fn(super::session::SessionEvent) + Send + Sync + 'static,
+) -> Arc<dyn Fn(super::session::SessionEvent) + Send + Sync> {
+    Arc::new(move |state| {
+        note_read_playing(&playing, read_playing(&state.snapshot), &resync_tray);
+        forward(state);
+    })
+}
 fn run_tray_refreshes(events: mpsc::Receiver<()>, mut refresh: impl FnMut() -> bool) {
     while events.recv().is_ok() {
         if !refresh() {
@@ -343,6 +376,7 @@ impl TtsService {
             app: app.clone(),
             refused_shortcut: AtomicBool::new(false),
             reading: AtomicBool::new(false),
+            playing: Arc::new(AtomicBool::new(false)),
             tray_refresh,
             ready: Mutex::new(Err("tts.errors.starting".into())),
             referee: Mutex::new(Referee::default()),
@@ -494,9 +528,16 @@ impl TtsService {
                     super::history::prepare,
                 )
             },
-            Arc::new(move |state| {
-                let _ = app.emit("read-aloud-state", state);
-            }),
+            session_events(
+                self.playing.clone(),
+                {
+                    let app = self.app.clone();
+                    move || crate::tray::update_tray_menu(&app)
+                },
+                move |state| {
+                    let _ = app.emit("read-aloud-state", state);
+                },
+            ),
         );
         manager.spawn_idle(self.app.clone(), session.busy.clone());
         let app = self.app.clone();
@@ -703,6 +744,10 @@ impl TtsService {
     /// Returns the tray snapshot updated by download, selection and status events.
     pub fn tray_snapshot(&self) -> handy_tts_core::tray::TtsMenu {
         self.tray.lock().unwrap_or_else(|p| p.into_inner()).clone()
+    }
+    /// Whether a read is playing, for the tray's state line.
+    pub fn read_playing(&self) -> bool {
+        self.playing.load(Ordering::Acquire)
     }
     /// The read-aloud history store, or why it could not be opened.
     pub fn history(&self) -> Result<Arc<super::history::ReadHistory>, String> {
@@ -1658,6 +1703,136 @@ mod tests {
         }
         drop(refresh);
         worker.join().unwrap();
+    }
+    fn session_snapshot(
+        state: handy_tts_core::scheduler::PlaybackState,
+        progress: f64,
+        error: Option<&str>,
+    ) -> handy_tts_core::session::SessionSnapshot {
+        handy_tts_core::session::SessionSnapshot {
+            epoch: 0,
+            state,
+            source_start: 0,
+            source_end: 0,
+            elapsed_seconds: progress,
+            remaining_seconds: 0.0,
+            progress,
+            error: error.map(String::from),
+            output_fallback: false,
+            queued_audio_seconds: 0.0,
+            buffering_pauses: 0,
+            head_start_seconds: None,
+        }
+    }
+    #[test]
+    fn read_start_stop_finish_and_error_each_resync_the_tray_once() {
+        use handy_tts_core::scheduler::PlaybackState::{
+            Buffering, Error, Finished, Paused, Playing, Starting, Waiting,
+        };
+        let playing = AtomicBool::new(false);
+        let mut resyncs = Vec::new();
+        // The session's events in order, as the reader shows them; progress
+        // events repeat a state and must not re-sync the tray.
+        for (step, state, progress, error, expect_playing) in [
+            ("reader opens", Waiting, 0.0, None, false),
+            ("read starts", Starting, 0.0, None, true),
+            ("first sentence buffers", Buffering, 0.0, None, true),
+            ("audio plays", Playing, 0.1, None, true),
+            ("progress", Playing, 0.2, None, true),
+            ("paused", Paused, 0.2, None, false),
+            ("resumed", Playing, 0.3, None, true),
+            ("finished", Finished, 1.0, None, false),
+            ("replayed", Starting, 0.0, None, true),
+            ("stopped", Waiting, 0.0, None, false),
+            ("read again", Playing, 0.1, None, true),
+            (
+                "worker failed",
+                Error,
+                0.1,
+                Some("tts.errors.generic"),
+                false,
+            ),
+            ("read again", Playing, 0.1, None, true),
+            // A session that cannot start keeps the old state and sets the error.
+            (
+                "session failed",
+                Playing,
+                0.1,
+                Some("tts.errors.generic"),
+                false,
+            ),
+        ] {
+            let snapshot = session_snapshot(state, progress, error);
+            note_read_playing(&playing, read_playing(&snapshot), || resyncs.push(step));
+            assert_eq!(playing.load(Ordering::Acquire), expect_playing, "{step}");
+        }
+        assert_eq!(
+            resyncs,
+            [
+                "read starts",
+                "paused",
+                "resumed",
+                "finished",
+                "replayed",
+                "stopped",
+                "read again",
+                "worker failed",
+                "read again",
+                "session failed",
+            ]
+        );
+    }
+    #[test]
+    fn session_events_set_the_playing_flag_before_the_reader_gets_them() {
+        use handy_tts_core::scheduler::PlaybackState::{Finished, Playing, Starting};
+        let playing = Arc::new(AtomicBool::new(false));
+        let resyncs = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let forwarded = Arc::new(Mutex::new(Vec::new()));
+        let events = session_events(
+            playing.clone(),
+            {
+                let resyncs = resyncs.clone();
+                move || {
+                    resyncs.fetch_add(1, Ordering::SeqCst);
+                }
+            },
+            {
+                let forwarded = forwarded.clone();
+                let playing = playing.clone();
+                move |event: super::super::session::SessionEvent| {
+                    forwarded
+                        .lock()
+                        .unwrap()
+                        .push((event.snapshot.state, playing.load(Ordering::Acquire)));
+                }
+            },
+        );
+        for state in [Starting, Playing, Playing, Finished] {
+            events(super::super::session::SessionEvent {
+                client_revision: None,
+                document_id: 1,
+                text: None,
+                visible: true,
+                snapshot: session_snapshot(state, 0.0, None),
+            });
+        }
+        assert_eq!(resyncs.load(Ordering::SeqCst), 2, "start and finish");
+        assert_eq!(
+            *forwarded.lock().unwrap(),
+            [
+                (Starting, true),
+                (Playing, true),
+                (Playing, true),
+                (Finished, false)
+            ]
+        );
+        // The other end of the route: the tray snapshot reads the flag.
+        let tray = include_str!("../tray.rs");
+        let production = tray.split("#[cfg(test)]").next().unwrap();
+        assert!(
+            production.contains(".is_some_and(|service| service.read_playing())"),
+            "the tray snapshot reads whether a read is playing"
+        );
     }
     fn open_popup_referee(text: &str) -> Referee {
         let mut referee = Referee::default();

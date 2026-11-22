@@ -25,7 +25,11 @@
     "ttsReady": "Siap",
     "ttsStopping": "Menghentikan",
     "ttsFailed": "Gagal",
-    "ttsUnloaded": "Belum dimuat"
+    "ttsUnloaded": "Belum dimuat",
+    "stateReady": "Siap",
+    "stateRecording": "Merekam",
+    "stateTranscribing": "Mentranskripsikan",
+    "stateReadingAloud": "Membacakan"
   },
   "sidebar": {
     "general": "Umum",

@@ -25,7 +25,11 @@
     "ttsReady": "Готова",
     "ttsStopping": "Зупинка",
     "ttsFailed": "Збій",
-    "ttsUnloaded": "Не завантажена"
+    "ttsUnloaded": "Не завантажена",
+    "stateReady": "Готово",
+    "stateRecording": "Запис",
+    "stateTranscribing": "Обробка",
+    "stateReadingAloud": "Озвучення"
   },
   "sidebar": {
     "general": "Загальні",

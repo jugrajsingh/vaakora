@@ -25,7 +25,11 @@
     "ttsReady": "Sẵn sàng",
     "ttsStopping": "Đang dừng",
     "ttsFailed": "Thất bại",
-    "ttsUnloaded": "Chưa tải"
+    "ttsUnloaded": "Chưa tải",
+    "stateReady": "Sẵn sàng",
+    "stateRecording": "Đang ghi âm",
+    "stateTranscribing": "Đang chuyển đổi",
+    "stateReadingAloud": "Đang đọc to"
   },
   "sidebar": {
     "general": "Chung",

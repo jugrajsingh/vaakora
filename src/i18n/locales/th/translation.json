@@ -25,7 +25,11 @@
     "ttsReady": "พร้อมใช้งาน",
     "ttsStopping": "กำลังหยุด",
     "ttsFailed": "ไม่สำเร็จ",
-    "ttsUnloaded": "ยังไม่ได้โหลด"
+    "ttsUnloaded": "ยังไม่ได้โหลด",
+    "stateReady": "พร้อมใช้งาน",
+    "stateRecording": "กำลังบันทึกเสียง",
+    "stateTranscribing": "กำลังถอดเสียง",
+    "stateReadingAloud": "กำลังอ่านออกเสียง"
   },
   "sidebar": {
     "general": "ทั่วไป",

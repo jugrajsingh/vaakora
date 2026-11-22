@@ -25,7 +25,11 @@
     "ttsReady": "Ready",
     "ttsStopping": "Stopping",
     "ttsFailed": "Failed",
-    "ttsUnloaded": "Not loaded"
+    "ttsUnloaded": "Not loaded",
+    "stateReady": "Ready",
+    "stateRecording": "Recording",
+    "stateTranscribing": "Transcribing",
+    "stateReadingAloud": "Reading aloud"
   },
   "sidebar": {
     "general": "General",

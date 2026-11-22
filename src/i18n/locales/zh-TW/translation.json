@@ -25,7 +25,11 @@
     "ttsReady": "就緒",
     "ttsStopping": "停止中",
     "ttsFailed": "失敗",
-    "ttsUnloaded": "未載入"
+    "ttsUnloaded": "未載入",
+    "stateReady": "就緒",
+    "stateRecording": "正在錄音",
+    "stateTranscribing": "正在轉錄",
+    "stateReadingAloud": "正在朗讀"
   },
   "sidebar": {
     "general": "一般",

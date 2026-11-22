@@ -194,6 +194,8 @@ const TRAY_RASTERS = [
   "tray-dark-panel-recording.png",
   "tray-light-panel-recording.png",
   "tray-colored.png",
+  "tray-colored-recording.png",
+  "tray-colored-transcribing.png",
   "tray-dark-panel-warning.png",
   "tray-light-panel-warning.png",
   "tray-colored-warning.png",

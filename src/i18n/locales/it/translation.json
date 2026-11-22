@@ -25,7 +25,11 @@
     "ttsReady": "Pronto",
     "ttsStopping": "Arresto",
     "ttsFailed": "Non riuscito",
-    "ttsUnloaded": "Non caricato"
+    "ttsUnloaded": "Non caricato",
+    "stateReady": "Pronto",
+    "stateRecording": "Registrazione",
+    "stateTranscribing": "Trascrizione",
+    "stateReadingAloud": "Lettura ad alta voce"
   },
   "sidebar": {
     "general": "Generale",
