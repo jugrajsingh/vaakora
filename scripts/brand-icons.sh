@@ -34,8 +34,10 @@ DARK_WARN="#fbbf24"
 LIGHT_WARN="#9d5604"
 # Colored theme (the app tile; Linux): the 16 app master's own tile, bars and
 # cursor colours (brand.json mark). Recording lights the tile in the cursor's
-# mint with a forest glyph; Transcribing turns the tile pale with a forest glyph,
-# so the panel shows each state with the same silhouette.
+# mint with a forest glyph; Transcribing turns the tile pale with a forest glyph
+# and a thin forest outline (one 16-grid unit wide, drawn inside the tile), so
+# the pale tile still reads on a light panel and the panel shows each state with
+# the same silhouette.
 MARK_TILE="#2d583a"
 MARK_BARS="#f1f6f2"
 MARK_CURSOR="#a9e1b4"
@@ -156,6 +158,7 @@ tray_png "$MARK/vaakora-16.svg" "$OUT/tray-colored.png"
 colored_svg "$MARK_CURSOR" "$MARK_TILE" "$MARK_TILE" "$WORK/colored-rec.svg"
 tray_png "$WORK/colored-rec.svg" "$OUT/tray-colored-recording.png"
 colored_svg "$MARK_BARS" "$MARK_TILE" "$MARK_TILE" "$WORK/colored-busy.svg"
+sed -i "s|</svg>|<rect x=\"0.5\" y=\"0.5\" width=\"15\" height=\"15\" rx=\"3\" fill=\"none\" stroke=\"$MARK_TILE\" stroke-width=\"1\"/></svg>|" "$WORK/colored-busy.svg"
 tray_png "$WORK/colored-busy.svg" "$OUT/tray-colored-transcribing.png"
 
 cp "$OUT/tray-dark-panel.png" "$OUT/tray-dark-panel-warning.png"
