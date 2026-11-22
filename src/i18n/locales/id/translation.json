@@ -1,5 +1,6 @@
 {
   "tray": {
+    "importNotice": "Pengaturan Anda diimpor dari {path}. Tutup aplikasi lain sebelum mendikte; keduanya memakai pintasan yang sama.",
     "settings": "Pengaturan...",
     "checkUpdates": "Periksa Pembaruan...",
     "copyLastTranscript": "Salin Transkripsi Terakhir",
@@ -1974,5 +1975,15 @@
       "label": "Token Hugging Face",
       "help": "Setujui dulu ketentuan suara di Hugging Face. Token disimpan di memori sampai {{appName}} dimulai ulang."
     }
+  },
+  "dataImport": {
+    "copiedTitle": "Pengaturan dan data Anda telah disalin",
+    "copiedBody": "Menyalin {{size}} dari {{from}}: pengaturan, riwayat, rekaman, kosakata, dan model. Folder itu tidak diubah.",
+    "shared": "File dibagikan di disk jika sistem file mengizinkan, sehingga salinan mungkin memakai lebih sedikit ruang baru.",
+    "oldAutostart": "Jika aplikasi yang memakai folder ini masih berjalan saat Anda masuk, matikan itu di sana, agar hanya satu aplikasi yang menanggapi pintasan Anda.",
+    "startAtLogin": "Mulai saat masuk",
+    "failedTitle": "Pengaturan dan data Anda tidak dapat disalin",
+    "failedBody": "Penyalinan dari {{from}} gagal: {{error}}. Folder itu tidak diubah. Untuk mencoba lagi, tutup {{appName}}, hapus {{to}}, lalu jalankan {{appName}} lagi.",
+    "ok": "OK"
   }
 }

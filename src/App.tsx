@@ -16,6 +16,7 @@ import {
 } from "tauri-plugin-macos-permissions-api";
 import "./App.css";
 import SecureInputWarning from "./components/SecureInputWarning";
+import DataImportCard from "./components/DataImportCard";
 import Footer from "./components/footer";
 import { OnboardingFlow } from "./components/onboarding/OnboardingFlow";
 import ModelMigration from "./components/onboarding/ModelMigration";
@@ -305,9 +306,18 @@ function App() {
     return null;
   }
 
+  const importCard = (
+    <DataImportCard
+      startsAtLogin={settings?.autostart_enabled ?? false}
+      onStartAtLogin={() => updateSetting("autostart_enabled", true)}
+    />
+  );
   // Select the content for the current step. NoticePanel is rendered once,
   // beside this node, so errors surface on every step, including onboarding.
   let content: ReactNode;
+  // The settings pages show the data import card inline; every other step
+  // (a failed import starts a fresh profile, so onboarding) floats it on top.
+  let importCardInline = false;
   if (onboardingPreview) {
     // Previews render in the same top-level slot as real onboarding, inert:
     // no prompts, downloads or setting writes.
@@ -365,6 +375,7 @@ function App() {
       />
     );
   } else {
+    importCardInline = true;
     content = (
       <div
         dir={direction}
@@ -409,6 +420,7 @@ function App() {
               aria-labelledby={tabId(shown.tab)}
             >
               <div className="flex flex-col gap-4 p-4">
+                {importCard}
                 <SecureInputWarning />
                 <div className="mx-auto flex min-h-0 w-full min-w-0 max-w-3xl flex-1 flex-col">
                   <MainPage
@@ -433,6 +445,11 @@ function App() {
   return (
     <>
       {content}
+      {!importCardInline && !onboardingPreview && (
+        <div className="fixed inset-x-4 top-4 z-50 mx-auto max-w-xl rounded-lg shadow-lg">
+          {importCard}
+        </div>
+      )}
       <NoticePanel />
     </>
   );

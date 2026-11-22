@@ -7,31 +7,17 @@
 /// The product name shown to the user (window title, CLI help, notifications).
 pub const DISPLAY_NAME: &str = env!("BRAND_DISPLAY_NAME");
 /// The app id (`identifier` in `tauri.conf.json`); names the app data directory.
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "read by the first-start data copy (rebrand Task 8); tests read it now"
-    )
-)]
 pub const APP_ID: &str = env!("BRAND_APP_ID");
 /// The package and binary name (`vaakora`); names the log file.
 pub const PACKAGE_NAME: &str = env!("BRAND_PACKAGE_NAME");
 /// The previous app id whose data directory a first start may copy from.
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "read by the first-start data copy (rebrand Task 8); tests read it now"
-    )
-)]
 pub const LEGACY_APP_ID: &str = env!("BRAND_LEGACY_APP_ID");
 /// The directory the package installs the app's libraries and helpers into.
 #[cfg_attr(
     not(test),
     expect(
         dead_code,
-        reason = "the install paths read it through env! in const strings; tests read this constant (rebrand Task 8 removes this expectation)"
+        reason = "the install paths read the same value through env! in const strings; only tests read this constant"
     )
 )]
 pub const INSTALL_DIR: &str = env!("BRAND_INSTALL_DIR");
@@ -40,7 +26,7 @@ pub const INSTALL_DIR: &str = env!("BRAND_INSTALL_DIR");
     not(test),
     expect(
         dead_code,
-        reason = "the install paths read it through env! in const strings; tests read this constant (rebrand Task 8 removes this expectation)"
+        reason = "the install paths read the same value through env! in const strings; only tests read this constant"
     )
 )]
 pub const WORKER_BINARY: &str = env!("BRAND_WORKER_BINARY");

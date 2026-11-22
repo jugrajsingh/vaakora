@@ -1,5 +1,6 @@
 {
   "tray": {
+    "importNotice": "Deine Einstellungen wurden aus {path} importiert. Beende die andere App vor dem Diktieren; beide verwenden dasselbe Tastenkürzel.",
     "settings": "Einstellungen...",
     "checkUpdates": "Nach Updates suchen...",
     "copyLastTranscript": "Letzte Transkription kopieren",
@@ -1974,5 +1975,15 @@
       "label": "Hugging Face-Token",
       "help": "Akzeptiere zuerst die Stimmbedingungen auf Hugging Face. Das Token bleibt im Arbeitsspeicher, bis {{appName}} neu startet."
     }
+  },
+  "dataImport": {
+    "copiedTitle": "Deine Einstellungen und Daten wurden kopiert",
+    "copiedBody": "{{size}} aus {{from}} kopiert: Einstellungen, Verlauf, Aufnahmen, Vokabular und Modelle. Dieser Ordner wurde nicht verändert.",
+    "shared": "Dateien werden auf der Festplatte geteilt, wo das Dateisystem es erlaubt, daher belegt die Kopie eventuell weniger neuen Speicher.",
+    "oldAutostart": "Wenn die App, die diesen Ordner benutzt hat, beim Anmelden noch startet, schalte das dort aus, damit nur eine App auf deine Tastenkürzel reagiert.",
+    "startAtLogin": "Beim Anmelden starten",
+    "failedTitle": "Deine Einstellungen und Daten konnten nicht kopiert werden",
+    "failedBody": "Kopieren aus {{from}} fehlgeschlagen: {{error}}. Dieser Ordner wurde nicht verändert. Zum erneuten Versuch beende {{appName}}, lösche {{to}} und starte {{appName}} neu.",
+    "ok": "OK"
   }
 }

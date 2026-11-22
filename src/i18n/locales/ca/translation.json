@@ -1,5 +1,6 @@
 {
   "tray": {
+    "importNotice": "S'ha importat la teva configuració des de {path}. Tanca l'altra aplicació abans de dictar; totes dues fan servir la mateixa drecera.",
     "settings": "Configuració...",
     "checkUpdates": "Comprova si hi ha actualitzacions...",
     "copyLastTranscript": "Copia l'última transcripció",
@@ -1974,5 +1975,15 @@
       "label": "Testimoni de Hugging Face",
       "help": "Accepta primer les condicions de la veu a Hugging Face. El testimoni es conserva a la memòria fins que {{appName}} es reiniciï."
     }
+  },
+  "dataImport": {
+    "copiedTitle": "S'han copiat la teva configuració i les teves dades",
+    "copiedBody": "S'han copiat {{size}} de {{from}}: configuració, historial, enregistraments, vocabulari i models. Aquella carpeta no s'ha modificat.",
+    "shared": "Els fitxers es comparteixen al disc on el sistema de fitxers ho permet, així que la còpia pot ocupar menys espai nou.",
+    "oldAutostart": "Si l'aplicació que feia servir aquesta carpeta encara s'inicia quan inicies la sessió, desactiva-ho allà, perquè només una aplicació respongui a les teves dreceres.",
+    "startAtLogin": "Inicia en iniciar la sessió",
+    "failedTitle": "No s'han pogut copiar la teva configuració i les teves dades",
+    "failedBody": "La còpia des de {{from}} ha fallat: {{error}}. Aquella carpeta no s'ha modificat. Per tornar-ho a provar, surt de {{appName}}, suprimeix {{to}} i torna a iniciar {{appName}}.",
+    "ok": "D'acord"
   }
 }

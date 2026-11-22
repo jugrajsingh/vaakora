@@ -1,5 +1,6 @@
 {
   "tray": {
+    "importNotice": "Dina inställningar importerades från {path}. Avsluta den andra appen innan du dikterar; båda använder samma kortkommando.",
     "settings": "Inställningar...",
     "checkUpdates": "Sök efter uppdateringar...",
     "copyLastTranscript": "Kopiera senaste transkriptionen",
@@ -1974,5 +1975,15 @@
       "label": "Hugging Face-token",
       "help": "Godkänn först rösttermerna på Hugging Face. Token sparas i minnet tills {{appName}} startas om."
     }
+  },
+  "dataImport": {
+    "copiedTitle": "Dina inställningar och data har kopierats",
+    "copiedBody": "Kopierade {{size}} från {{from}}: inställningar, historik, inspelningar, ordlista och modeller. Den mappen ändrades inte.",
+    "shared": "Filer delas på disken där filsystemet tillåter det, så kopian kan ta mindre nytt utrymme.",
+    "oldAutostart": "Om appen som använde den här mappen fortfarande startar när du loggar in, stäng av det där, så att bara en app svarar på dina kortkommandon.",
+    "startAtLogin": "Starta vid inloggning",
+    "failedTitle": "Dina inställningar och data kunde inte kopieras",
+    "failedBody": "Kopieringen från {{from}} misslyckades: {{error}}. Den mappen ändrades inte. För att försöka igen, avsluta {{appName}}, ta bort {{to}} och starta {{appName}} igen.",
+    "ok": "OK"
   }
 }

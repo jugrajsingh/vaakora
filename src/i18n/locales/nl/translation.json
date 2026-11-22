@@ -1,5 +1,6 @@
 {
   "tray": {
+    "importNotice": "Je instellingen zijn geïmporteerd uit {path}. Sluit de andere app voordat je dicteert; beide gebruiken dezelfde sneltoets.",
     "settings": "Instellingen...",
     "checkUpdates": "Controleren op updates...",
     "copyLastTranscript": "Laatste transcriptie kopiëren",
@@ -1974,5 +1975,15 @@
       "label": "Hugging Face-token",
       "help": "Accepteer eerst de stemvoorwaarden op Hugging Face. Het token blijft in het geheugen tot {{appName}} opnieuw start."
     }
+  },
+  "dataImport": {
+    "copiedTitle": "Je instellingen en gegevens zijn gekopieerd",
+    "copiedBody": "{{size}} gekopieerd uit {{from}}: instellingen, geschiedenis, opnamen, woordenlijst en modellen. Die map is niet gewijzigd.",
+    "shared": "Bestanden worden op de schijf gedeeld waar het bestandssysteem dat toestaat, dus de kopie neemt mogelijk minder nieuwe ruimte in.",
+    "oldAutostart": "Als de app die deze map gebruikte nog start wanneer je inlogt, schakel dat daar uit, zodat maar één app op je sneltoetsen reageert.",
+    "startAtLogin": "Starten bij inloggen",
+    "failedTitle": "Je instellingen en gegevens konden niet worden gekopieerd",
+    "failedBody": "Kopiëren uit {{from}} is mislukt: {{error}}. Die map is niet gewijzigd. Om het opnieuw te proberen: sluit {{appName}} af, verwijder {{to}} en start {{appName}} opnieuw.",
+    "ok": "OK"
   }
 }

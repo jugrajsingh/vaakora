@@ -1,6 +1,7 @@
 {
   "tray": {
     "settings": "Settings...",
+    "importNotice": "Imported your settings from {path}. Quit the other app before dictating; both use the same shortcut.",
     "checkUpdates": "Check for updates...",
     "copyLastTranscript": "Copy last transcript",
     "unloadModel": "Unload dictation model",
@@ -1974,5 +1975,15 @@
       "label": "Hugging Face token",
       "help": "Accept the voice terms on Hugging Face first. The token is kept in memory until {{appName}} restarts."
     }
+  },
+  "dataImport": {
+    "copiedTitle": "Your settings and data were copied",
+    "copiedBody": "Copied {{size}} from {{from}}: settings, history, recordings, vocabulary and models. That folder was not changed.",
+    "shared": "Files are shared on disk where the filesystem allows, so the copy may use less new space.",
+    "oldAutostart": "If the app that used this folder still starts when you log in, turn that off there, so only one app answers your shortcuts.",
+    "startAtLogin": "Start at login",
+    "failedTitle": "Your settings and data could not be copied",
+    "failedBody": "Copying from {{from}} failed: {{error}}. That folder was not changed. To try again, quit {{appName}}, delete {{to}} and start {{appName}} again.",
+    "ok": "OK"
   }
 }

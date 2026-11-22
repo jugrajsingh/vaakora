@@ -1,5 +1,6 @@
 {
   "tray": {
+    "importNotice": "Se importó tu configuración desde {path}. Cierra la otra aplicación antes de dictar; ambas usan el mismo atajo.",
     "settings": "Configuración...",
     "checkUpdates": "Buscar actualizaciones...",
     "copyLastTranscript": "Copiar la última transcripción",
@@ -1974,5 +1975,15 @@
       "label": "Token de Hugging Face",
       "help": "Acepta primero las condiciones de la voz en Hugging Face. El token se conserva en memoria hasta que {{appName}} se reinicie."
     }
+  },
+  "dataImport": {
+    "copiedTitle": "Se copiaron tu configuración y tus datos",
+    "copiedBody": "Se copiaron {{size}} desde {{from}}: configuración, historial, grabaciones, vocabulario y modelos. Esa carpeta no se modificó.",
+    "shared": "Los archivos se comparten en el disco donde el sistema de archivos lo permite, así que la copia puede ocupar menos espacio nuevo.",
+    "oldAutostart": "Si la aplicación que usaba esta carpeta todavía se inicia al iniciar sesión, desactívalo allí, para que solo una aplicación responda a tus atajos.",
+    "startAtLogin": "Iniciar al iniciar sesión",
+    "failedTitle": "No se pudieron copiar tu configuración y tus datos",
+    "failedBody": "La copia desde {{from}} falló: {{error}}. Esa carpeta no se modificó. Para volver a intentarlo, cierra {{appName}}, elimina {{to}} y vuelve a iniciar {{appName}}.",
+    "ok": "Aceptar"
   }
 }

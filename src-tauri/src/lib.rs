@@ -10,6 +10,7 @@ mod chinese_script;
 pub mod cli;
 mod clipboard;
 mod commands;
+mod data_import;
 pub mod engine_supervisor;
 mod helpers;
 mod input;
@@ -817,6 +818,10 @@ pub fn run(cli_args: CliArgs) {
     // Detect portable mode before anything else
     portable::init();
 
+    // First start: copy the previous app's data before anything opens the
+    // data dir. `setup` logs the result once the log plugin runs.
+    let data_import = data_import::import_on_first_start();
+
     // Parse console logging directives from RUST_LOG, falling back to info-level logging
     // when the variable is unset
     let console_filter = build_console_filter();
@@ -867,6 +872,8 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_theme_setting,
             shortcut::change_start_hidden_setting,
             shortcut::change_autostart_setting,
+            data_import::get_data_import_report,
+            data_import::dismiss_data_import_report,
             shortcut::change_translate_to_english_setting,
             shortcut::change_selected_language_setting,
             shortcut::change_spoken_languages_setting,
@@ -1154,6 +1161,10 @@ pub fn run(cli_args: CliArgs) {
                 utils::gamescope_wsi_disabled_by_handy(),
             );
             system_languages::log_system_languages();
+            match &data_import {
+                Some(report) => log::info!("data import: {report:?}"),
+                None => log::info!("data import: none this start"),
+            }
 
             specta_builder.mount_events(app);
 
@@ -1333,6 +1344,15 @@ pub fn run(cli_args: CliArgs) {
             let tray_available = settings.show_tray_icon && !cli_args.no_tray;
             if should_force_show || !should_hide || !tray_available {
                 show_main_window(&app_handle);
+            }
+
+            // The start that imported shows its result once, start_hidden or
+            // not; a successful copy also says so on the desktop.
+            if let Some(report) = &data_import {
+                show_main_window(&app_handle);
+                if report.status == data_import::ImportStatus::Copied {
+                    data_import::notify_copied(&settings.app_language, report);
+                }
             }
 
             Ok(())

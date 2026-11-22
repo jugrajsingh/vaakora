@@ -1,5 +1,6 @@
 {
   "tray": {
+    "importNotice": "Vaše nastavení byla importována z {path}. Před diktováním ukončete druhou aplikaci; obě používají stejnou zkratku.",
     "settings": "Nastavení...",
     "checkUpdates": "Zkontrolovat aktualizace...",
     "copyLastTranscript": "Zkopírovat poslední přepis",
@@ -1974,5 +1975,15 @@
       "label": "Token Hugging Face",
       "help": "Nejprve přijměte podmínky hlasu na Hugging Face. Token se uchovává v paměti, dokud se {{appName}} nerestartuje."
     }
+  },
+  "dataImport": {
+    "copiedTitle": "Vaše nastavení a data byla zkopírována",
+    "copiedBody": "Zkopírováno {{size}} z {{from}}: nastavení, historie, nahrávky, slovník a modely. Tato složka se nezměnila.",
+    "shared": "Soubory se na disku sdílejí, kde to souborový systém umožňuje, takže kopie může zabrat méně nového místa.",
+    "oldAutostart": "Pokud se aplikace, která tuto složku používala, stále spouští po přihlášení, vypněte to v ní, aby na vaše zkratky odpovídala jen jedna aplikace.",
+    "startAtLogin": "Spouštět po přihlášení",
+    "failedTitle": "Vaše nastavení a data se nepodařilo zkopírovat",
+    "failedBody": "Kopírování z {{from}} selhalo: {{error}}. Tato složka se nezměnila. Chcete-li to zkusit znovu, ukončete {{appName}}, smažte {{to}} a spusťte {{appName}} znovu.",
+    "ok": "OK"
   }
 }

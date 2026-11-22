@@ -1,5 +1,6 @@
 {
   "tray": {
+    "importNotice": "Đã nhập cài đặt của bạn từ {path}. Hãy thoát ứng dụng kia trước khi đọc chính tả; cả hai dùng cùng một phím tắt.",
     "settings": "Cài đặt...",
     "checkUpdates": "Kiểm tra cập nhật...",
     "copyLastTranscript": "Sao chép bản chép lời mới nhất",
@@ -1974,5 +1975,15 @@
       "label": "Token Hugging Face",
       "help": "Hãy chấp nhận điều khoản giọng nói trên Hugging Face trước. Mã thông báo được giữ trong bộ nhớ cho đến khi {{appName}} khởi động lại."
     }
+  },
+  "dataImport": {
+    "copiedTitle": "Đã sao chép cài đặt và dữ liệu của bạn",
+    "copiedBody": "Đã sao chép {{size}} từ {{from}}: cài đặt, lịch sử, bản ghi âm, từ vựng và mô hình. Thư mục đó không bị thay đổi.",
+    "shared": "Tệp được dùng chung trên đĩa ở nơi hệ thống tệp cho phép, nên bản sao có thể chiếm ít dung lượng mới hơn.",
+    "oldAutostart": "Nếu ứng dụng từng dùng thư mục này vẫn khởi động khi bạn đăng nhập, hãy tắt tùy chọn đó trong ứng dụng ấy, để chỉ một ứng dụng phản hồi phím tắt của bạn.",
+    "startAtLogin": "Khởi động khi đăng nhập",
+    "failedTitle": "Không thể sao chép cài đặt và dữ liệu của bạn",
+    "failedBody": "Sao chép từ {{from}} thất bại: {{error}}. Thư mục đó không bị thay đổi. Để thử lại, hãy thoát {{appName}}, xóa {{to}} rồi khởi động lại {{appName}}.",
+    "ok": "OK"
   }
 }

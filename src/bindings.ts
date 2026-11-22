@@ -394,6 +394,17 @@ async changeAutostartSetting(enabled: boolean) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async getDataImportReport() : Promise<DataImportReport | null> {
+    return await TAURI_INVOKE("get_data_import_report");
+},
+async dismissDataImportReport() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("dismiss_data_import_report") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async changeTranslateToEnglishSetting(enabled: boolean) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_translate_to_english_setting", { enabled }) };
@@ -1662,6 +1673,27 @@ export type ClipboardHandling = "dont_modify" | "copy_to_clipboard"
  */
 export type CorrectionRequest = { written: string; should_say: string; reading_model: string; scope: string | null; matching: [TermMatch, boolean] | null }
 export type CustomSounds = { start: boolean; stop: boolean }
+export type DataImportReport = { status: ImportStatus; 
+/**
+ * Allowlist entries found in the old dir and copied, in allowlist order.
+ */
+items: string[]; 
+/**
+ * Bytes of every file written into the new dir.
+ */
+bytesTotal: number; 
+/**
+ * The old data dir (the card names it by path only).
+ */
+from: string; 
+/**
+ * The new data dir (the failure card says to delete it before retrying).
+ */
+to: string; error: string | null; 
+/**
+ * Symlinks found under the allowlist and not followed.
+ */
+skipped: string[]; dismissed: boolean }
 /**
  * The derived rule for an edit, the exact-text alternative when the rule reaches further, and
  * the spoken text before and after.
@@ -1763,6 +1795,7 @@ export type ImplementationChangeResult = { success: boolean;
  * List of binding IDs that were reset to defaults due to incompatibility
  */
 reset_bindings: string[] }
+export type ImportStatus = "copied" | "failed"
 export type KeyboardDiagnosticReport = { secure_input_enabled: boolean; culprit_pid: number | null; culprit_name: string | null; 
 /**
  * Counts only — key identity is deliberately never captured.

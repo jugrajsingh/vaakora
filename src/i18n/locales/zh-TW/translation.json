@@ -1,5 +1,6 @@
 {
   "tray": {
+    "importNotice": "已從 {path} 匯入你的設定。聽寫前請結束另一個應用程式；兩者使用相同的快捷鍵。",
     "settings": "設定...",
     "checkUpdates": "檢查更新...",
     "copyLastTranscript": "複製最新轉錄",
@@ -1974,5 +1975,15 @@
       "label": "Hugging Face 權杖",
       "help": "請先在 Hugging Face 上接受語音條款。權杖會保存在記憶體中，直到 {{appName}} 重新啟動。"
     }
+  },
+  "dataImport": {
+    "copiedTitle": "已複製你的設定與資料",
+    "copiedBody": "已從 {{from}} 複製 {{size}}：設定、歷史記錄、錄音、詞彙與模型。該資料夾未被更改。",
+    "shared": "在檔案系統允許的情況下，檔案會在磁碟上共用，因此副本占用的新空間可能較少。",
+    "oldAutostart": "如果使用此資料夾的應用程式在登入時仍會啟動，請在該應用程式中關閉此選項，讓只有一個應用程式回應你的快捷鍵。",
+    "startAtLogin": "登入時啟動",
+    "failedTitle": "無法複製你的設定與資料",
+    "failedBody": "從 {{from}} 複製失敗：{{error}}。該資料夾未被更改。如需重試，請結束 {{appName}}，刪除 {{to}}，然後重新啟動 {{appName}}。",
+    "ok": "確定"
   }
 }

@@ -1,5 +1,6 @@
 {
   "tray": {
+    "importNotice": "Zaimportowano ustawienia z {path}. Zamknij drugą aplikację przed dyktowaniem; obie używają tego samego skrótu.",
     "settings": "Ustawienia...",
     "checkUpdates": "Sprawdź aktualizacje...",
     "copyLastTranscript": "Kopiuj ostatnią transkrypcję",
@@ -1974,5 +1975,15 @@
       "label": "Token Hugging Face",
       "help": "Najpierw zaakceptuj warunki głosu w Hugging Face. Token jest przechowywany w pamięci do ponownego uruchomienia {{appName}}."
     }
+  },
+  "dataImport": {
+    "copiedTitle": "Twoje ustawienia i dane zostały skopiowane",
+    "copiedBody": "Skopiowano {{size}} z {{from}}: ustawienia, historię, nagrania, słownik i modele. Ten folder nie został zmieniony.",
+    "shared": "Pliki są współdzielone na dysku tam, gdzie pozwala na to system plików, więc kopia może zająć mniej nowego miejsca.",
+    "oldAutostart": "Jeśli aplikacja, która używała tego folderu, nadal uruchamia się po zalogowaniu, wyłącz to w niej, aby na skróty reagowała tylko jedna aplikacja.",
+    "startAtLogin": "Uruchamiaj po zalogowaniu",
+    "failedTitle": "Nie udało się skopiować Twoich ustawień i danych",
+    "failedBody": "Kopiowanie z {{from}} nie powiodło się: {{error}}. Ten folder nie został zmieniony. Aby spróbować ponownie, zamknij {{appName}}, usuń {{to}} i uruchom {{appName}} ponownie.",
+    "ok": "OK"
   }
 }

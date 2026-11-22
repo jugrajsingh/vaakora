@@ -1,5 +1,6 @@
 {
   "tray": {
+    "importNotice": "已从 {path} 导入你的设置。听写前请退出另一个应用；两者使用相同的快捷键。",
     "settings": "设置...",
     "checkUpdates": "检查更新...",
     "copyLastTranscript": "复制最新转录",
@@ -1974,5 +1975,15 @@
       "label": "Hugging Face 令牌",
       "help": "请先在 Hugging Face 上接受语音条款。令牌会保存在内存中，直到 {{appName}} 重新启动。"
     }
+  },
+  "dataImport": {
+    "copiedTitle": "已复制你的设置和数据",
+    "copiedBody": "已从 {{from}} 复制 {{size}}：设置、历史记录、录音、词汇和模型。该文件夹未被更改。",
+    "shared": "在文件系统允许的情况下，文件会在磁盘上共享，因此副本占用的新空间可能更少。",
+    "oldAutostart": "如果使用此文件夹的应用在登录时仍会启动，请在该应用中关闭此选项，这样只有一个应用响应你的快捷键。",
+    "startAtLogin": "登录时启动",
+    "failedTitle": "无法复制你的设置和数据",
+    "failedBody": "从 {{from}} 复制失败：{{error}}。该文件夹未被更改。如需重试，请退出 {{appName}}，删除 {{to}}，然后重新启动 {{appName}}。",
+    "ok": "确定"
   }
 }

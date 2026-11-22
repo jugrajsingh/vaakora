@@ -1,5 +1,6 @@
 {
   "tray": {
+    "importNotice": "Vos réglages ont été importés depuis {path}. Quittez l'autre application avant de dicter ; les deux utilisent le même raccourci.",
     "settings": "Paramètres...",
     "checkUpdates": "Rechercher des mises à jour...",
     "copyLastTranscript": "Copier la dernière transcription",
@@ -1974,5 +1975,15 @@
       "label": "Jeton Hugging Face",
       "help": "Acceptez d'abord les conditions de la voix sur Hugging Face. Le jeton reste en mémoire jusqu'au redémarrage de {{appName}}."
     }
+  },
+  "dataImport": {
+    "copiedTitle": "Vos réglages et vos données ont été copiés",
+    "copiedBody": "{{size}} copiés depuis {{from}} : réglages, historique, enregistrements, vocabulaire et modèles. Ce dossier n'a pas été modifié.",
+    "shared": "Les fichiers sont partagés sur le disque quand le système de fichiers le permet, la copie peut donc occuper moins de nouvel espace.",
+    "oldAutostart": "Si l'application qui utilisait ce dossier démarre encore à l'ouverture de session, désactivez-le dans celle-ci, pour qu'une seule application réponde à vos raccourcis.",
+    "startAtLogin": "Démarrer à l'ouverture de session",
+    "failedTitle": "Vos réglages et vos données n'ont pas pu être copiés",
+    "failedBody": "La copie depuis {{from}} a échoué : {{error}}. Ce dossier n'a pas été modifié. Pour réessayer, quittez {{appName}}, supprimez {{to}} et relancez {{appName}}.",
+    "ok": "OK"
   }
 }

@@ -1,5 +1,6 @@
 {
   "tray": {
+    "importNotice": "Impostazioni importate da {path}. Chiudi l'altra app prima di dettare; entrambe usano la stessa scorciatoia.",
     "settings": "Impostazioni...",
     "checkUpdates": "Verifica aggiornamenti...",
     "copyLastTranscript": "Copia l'ultima trascrizione",
@@ -1974,5 +1975,15 @@
       "label": "Token Hugging Face",
       "help": "Accetta prima i termini della voce su Hugging Face. Il token resta in memoria fino al riavvio di {{appName}}."
     }
+  },
+  "dataImport": {
+    "copiedTitle": "Le tue impostazioni e i tuoi dati sono stati copiati",
+    "copiedBody": "Copiati {{size}} da {{from}}: impostazioni, cronologia, registrazioni, vocabolario e modelli. Quella cartella non è stata modificata.",
+    "shared": "I file sono condivisi sul disco dove il file system lo consente, quindi la copia potrebbe occupare meno spazio nuovo.",
+    "oldAutostart": "Se l'app che usava questa cartella si avvia ancora all'accesso, disattivalo lì, così solo un'app risponde alle tue scorciatoie.",
+    "startAtLogin": "Avvia all'accesso",
+    "failedTitle": "Impossibile copiare le tue impostazioni e i tuoi dati",
+    "failedBody": "La copia da {{from}} non è riuscita: {{error}}. Quella cartella non è stata modificata. Per riprovare, esci da {{appName}}, elimina {{to}} e avvia di nuovo {{appName}}.",
+    "ok": "OK"
   }
 }

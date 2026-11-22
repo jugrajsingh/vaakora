@@ -1,5 +1,6 @@
 {
   "tray": {
+    "importNotice": "Ayarlarınız {path} konumundan içe aktarıldı. Dikte etmeden önce diğer uygulamadan çıkın; ikisi de aynı kısayolu kullanıyor.",
     "settings": "Ayarlar...",
     "checkUpdates": "Güncellemeleri Kontrol Et...",
     "copyLastTranscript": "Son Transkripti Kopyala",
@@ -1974,5 +1975,15 @@
       "label": "Hugging Face belirteci",
       "help": "Önce Hugging Face üzerinde ses koşullarını kabul edin. Jeton, {{appName}} yeniden başlatılana kadar bellekte tutulur."
     }
+  },
+  "dataImport": {
+    "copiedTitle": "Ayarlarınız ve verileriniz kopyalandı",
+    "copiedBody": "{{from}} konumundan {{size}} kopyalandı: ayarlar, geçmiş, kayıtlar, sözcük dağarcığı ve modeller. O klasör değiştirilmedi.",
+    "shared": "Dosya sistemi izin verdiğinde dosyalar diskte paylaşılır, bu yüzden kopya daha az yeni alan kaplayabilir.",
+    "oldAutostart": "Bu klasörü kullanan uygulama oturum açtığınızda hâlâ başlıyorsa, bunu orada kapatın; böylece kısayollarınıza yalnızca bir uygulama yanıt verir.",
+    "startAtLogin": "Oturum açılınca başlat",
+    "failedTitle": "Ayarlarınız ve verileriniz kopyalanamadı",
+    "failedBody": "{{from}} konumundan kopyalama başarısız oldu: {{error}}. O klasör değiştirilmedi. Yeniden denemek için {{appName}} uygulamasından çıkın, {{to}} klasörünü silin ve {{appName}} uygulamasını yeniden başlatın.",
+    "ok": "Tamam"
   }
 }
