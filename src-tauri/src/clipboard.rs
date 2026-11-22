@@ -1271,84 +1271,131 @@ fn send_key_combo_with_first_tool(
     Ok(false)
 }
 
-/// Attempts to type text directly using Linux-native tools.
-/// Returns `Ok(true)` if a native tool handled it, `Ok(false)` to fall back to enigo.
+/// What the choice of a direct typing tool needs to know about the machine.
+/// The live implementation looks a tool up only when asked, so a tool the
+/// order never reaches is never probed.
 #[cfg(target_os = "linux")]
-fn try_direct_typing_linux(text: &str, preferred_tool: TypingTool) -> Result<bool, PasteError> {
-    // If user specified a tool, try only that one
-    if preferred_tool != TypingTool::Auto {
-        return match preferred_tool {
-            TypingTool::Wtype if is_wtype_available()? => {
-                info!("Using user-specified wtype");
-                type_text_via_wtype(text)?;
-                Ok(true)
-            }
-            TypingTool::Kwtype if is_kwtype_available()? => {
-                info!("Using user-specified kwtype");
-                type_text_via_kwtype(text)?;
-                Ok(true)
-            }
-            TypingTool::Dotool if is_dotool_available()? => {
-                info!("Using user-specified dotool");
-                type_text_via_dotool(text)?;
-                Ok(true)
-            }
-            TypingTool::Ydotool if is_ydotool_available()? => {
-                info!("Using user-specified ydotool");
-                type_text_via_ydotool(text)?;
-                Ok(true)
-            }
-            TypingTool::Xdotool if is_xdotool_available()? => {
-                info!("Using user-specified xdotool");
-                type_text_via_xdotool(text)?;
-                Ok(true)
-            }
-            _ => Err(unavailable_typing_tool(preferred_tool)),
-        };
-    }
+trait TypingEnvironment {
+    fn wayland(&self) -> bool;
+    fn kde_wayland(&self) -> bool;
+    fn gnome_wayland(&self) -> bool;
+    fn has_tool(&mut self, tool: TypingTool) -> Result<bool, PasteError>;
+}
 
-    // Auto mode - existing fallback chain
-    if is_wayland() {
+#[cfg(target_os = "linux")]
+struct LiveTypingEnvironment;
+
+#[cfg(target_os = "linux")]
+impl TypingEnvironment for LiveTypingEnvironment {
+    fn wayland(&self) -> bool {
+        is_wayland()
+    }
+    fn kde_wayland(&self) -> bool {
+        is_kde_wayland()
+    }
+    fn gnome_wayland(&self) -> bool {
+        is_gnome_wayland()
+    }
+    fn has_tool(&mut self, tool: TypingTool) -> Result<bool, PasteError> {
+        match tool {
+            TypingTool::Wtype => is_wtype_available(),
+            TypingTool::Kwtype => is_kwtype_available(),
+            TypingTool::Dotool => is_dotool_available(),
+            TypingTool::Ydotool => is_ydotool_available(),
+            TypingTool::Xdotool => is_xdotool_available(),
+            TypingTool::Auto => Ok(false),
+        }
+    }
+}
+
+/// The first of `order` that is installed; later tools are not looked up.
+#[cfg(target_os = "linux")]
+fn first_installed(
+    env: &mut impl TypingEnvironment,
+    order: &[TypingTool],
+) -> Result<Option<TypingTool>, PasteError> {
+    for &tool in order {
+        if env.has_tool(tool)? {
+            return Ok(Some(tool));
+        }
+    }
+    Ok(None)
+}
+
+/// The tool direct typing uses: the user's choice when it is installed, else
+/// (Auto) the first installed one of the fallback order. `None` when there is
+/// none; the caller decides what that means.
+#[cfg(target_os = "linux")]
+fn resolve_typing_tool(
+    preferred: TypingTool,
+    env: &mut impl TypingEnvironment,
+) -> Result<Option<TypingTool>, PasteError> {
+    if preferred != TypingTool::Auto {
+        return Ok(env.has_tool(preferred)?.then_some(preferred));
+    }
+    if env.wayland() {
         // KDE Wayland: prefer kwtype (uses KDE Fake Input protocol, supports umlauts)
-        if is_kde_wayland() && is_kwtype_available()? {
-            info!("Using kwtype for direct text input on KDE Wayland");
-            type_text_via_kwtype(text)?;
-            return Ok(true);
+        if env.kde_wayland() && env.has_tool(TypingTool::Kwtype)? {
+            return Ok(Some(TypingTool::Kwtype));
         }
         // Wayland: prefer wtype, then dotool, then ydotool
         // Note: wtype doesn't work on KDE (no zwp_virtual_keyboard_manager_v1 support)
-        // or on GNOME/Mutter (same reason — Mutter deliberately does not implement
+        // or on GNOME/Mutter (same reason - Mutter deliberately does not implement
         // the virtual-keyboard-v1 protocol).
-        if !is_kde_wayland() && !is_gnome_wayland() && is_wtype_available()? {
-            info!("Using wtype for direct text input");
-            type_text_via_wtype(text)?;
-            return Ok(true);
+        if !env.kde_wayland() && !env.gnome_wayland() && env.has_tool(TypingTool::Wtype)? {
+            return Ok(Some(TypingTool::Wtype));
         }
-        if is_dotool_available()? {
-            info!("Using dotool for direct text input");
-            type_text_via_dotool(text)?;
-            return Ok(true);
-        }
-        if is_ydotool_available()? {
-            info!("Using ydotool for direct text input");
-            type_text_via_ydotool(text)?;
-            return Ok(true);
-        }
+        first_installed(env, &[TypingTool::Dotool, TypingTool::Ydotool])
     } else {
         // X11: prefer xdotool, then ydotool
-        if is_xdotool_available()? {
-            info!("Using xdotool for direct text input");
-            type_text_via_xdotool(text)?;
-            return Ok(true);
-        }
-        if is_ydotool_available()? {
-            info!("Using ydotool for direct text input");
-            type_text_via_ydotool(text)?;
-            return Ok(true);
-        }
+        first_installed(env, &[TypingTool::Xdotool, TypingTool::Ydotool])
     }
+}
 
-    Ok(false)
+/// Resolves the direct typing tool on this machine. A tool the user chose that
+/// is not installed is an error; Auto with nothing installed is `None` (enigo).
+#[cfg(target_os = "linux")]
+fn resolve_direct_tool(preferred: TypingTool) -> Result<Option<TypingTool>, PasteError> {
+    match resolve_typing_tool(preferred, &mut LiveTypingEnvironment)? {
+        None if preferred != TypingTool::Auto => Err(unavailable_typing_tool(preferred)),
+        tool => Ok(tool),
+    }
+}
+
+#[cfg(target_os = "linux")]
+#[derive(Debug, PartialEq, Eq)]
+enum DirectRoute {
+    Type,
+    ClipboardChord,
+}
+
+/// ydotool maps characters to raw US-layout key codes and drops the rest of the
+/// string at the first one it cannot map, so non-ASCII text goes through the
+/// clipboard when ydotool is the typing tool; every other tool types it.
+#[cfg(target_os = "linux")]
+fn direct_route(text: &str, tool: Option<TypingTool>) -> DirectRoute {
+    if !text.is_ascii() && tool == Some(TypingTool::Ydotool) {
+        DirectRoute::ClipboardChord
+    } else {
+        DirectRoute::Type
+    }
+}
+
+/// Types text directly with the resolved Linux-native tool.
+/// Returns `Ok(true)` if a native tool handled it, `Ok(false)` to fall back to enigo.
+#[cfg(target_os = "linux")]
+fn try_direct_typing_linux(text: &str, tool: Option<TypingTool>) -> Result<bool, PasteError> {
+    match tool {
+        Some(TypingTool::Wtype) => type_text_via_wtype(text)?,
+        Some(TypingTool::Kwtype) => type_text_via_kwtype(text)?,
+        Some(TypingTool::Dotool) => type_text_via_dotool(text)?,
+        Some(TypingTool::Ydotool) => type_text_via_ydotool(text)?,
+        Some(TypingTool::Xdotool) => type_text_via_xdotool(text)?,
+        // Auto is never a resolved tool: resolution turns it into one or into None.
+        Some(TypingTool::Auto) | None => return Ok(false),
+    }
+    info!("Typed text directly with {:?}", tool);
+    Ok(true)
 }
 
 #[cfg(target_os = "linux")]
@@ -1916,10 +1963,10 @@ fn paste_via_external_script(text: &str, script_path: &str) -> Result<(), PasteE
 fn paste_direct(
     text: &str,
     app_handle: &AppHandle,
-    #[cfg(target_os = "linux")] typing_tool: TypingTool,
+    #[cfg(target_os = "linux")] typing_tool: Result<Option<TypingTool>, PasteError>,
 ) -> Result<(), PasteError> {
     #[cfg(target_os = "linux")]
-    let handled = try_direct_typing_linux(text, typing_tool);
+    let handled = typing_tool.and_then(|tool| try_direct_typing_linux(text, tool));
     #[cfg(not(target_os = "linux"))]
     let handled = Ok(false);
 
@@ -2078,12 +2125,27 @@ fn paste_inner(
             info!("PasteMethod::None selected - skipping paste action");
         }
         PasteMethod::Direct => {
-            paste_direct(
-                &text,
-                &app_handle,
-                #[cfg(target_os = "linux")]
-                settings.typing_tool,
-            )?;
+            #[cfg(target_os = "linux")]
+            {
+                let tool = resolve_direct_tool(settings.typing_tool);
+                if matches!(&tool, Ok(tool) if direct_route(&text, *tool) == DirectRoute::ClipboardChord)
+                {
+                    info!(
+                        "ydotool cannot type non-ASCII text; pasting it through the clipboard instead"
+                    );
+                    paste_via_clipboard(
+                        &text,
+                        &app_handle,
+                        &PasteMethod::CtrlV,
+                        paste_delay_ms,
+                        paste_delay_after_ms,
+                    )?;
+                } else {
+                    paste_direct(&text, &app_handle, tool)?;
+                }
+            }
+            #[cfg(not(target_os = "linux"))]
+            paste_direct(&text, &app_handle)?;
         }
         PasteMethod::CtrlV | PasteMethod::CtrlShiftV | PasteMethod::ShiftInsert => {
             // Debug-gated receipt-sequenced paste (#502): restore the clipboard
@@ -2237,6 +2299,329 @@ mod tests {
                 calls(),
                 ["probe present", "send failed", "probe present", "send ok"]
             );
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    mod typing_tool {
+        use super::super::PasteError;
+        use super::super::{direct_route, resolve_typing_tool, DirectRoute, TypingEnvironment};
+        use crate::settings::TypingTool;
+
+        #[derive(Clone, Copy)]
+        enum Session {
+            KdeWayland,
+            GnomeWayland,
+            OtherWayland,
+            X11,
+        }
+
+        /// A machine with a fixed session and set of installed tools; records
+        /// every tool it was asked about, in order.
+        struct Machine {
+            session: Session,
+            installed: Vec<TypingTool>,
+            probe_fails_for: Option<TypingTool>,
+            asked: Vec<TypingTool>,
+        }
+
+        fn machine(session: Session, installed: &[TypingTool]) -> Machine {
+            Machine {
+                session,
+                installed: installed.to_vec(),
+                probe_fails_for: None,
+                asked: Vec::new(),
+            }
+        }
+
+        impl TypingEnvironment for Machine {
+            fn wayland(&self) -> bool {
+                !matches!(self.session, Session::X11)
+            }
+            fn kde_wayland(&self) -> bool {
+                matches!(self.session, Session::KdeWayland)
+            }
+            fn gnome_wayland(&self) -> bool {
+                matches!(self.session, Session::GnomeWayland)
+            }
+            fn has_tool(&mut self, tool: TypingTool) -> Result<bool, PasteError> {
+                self.asked.push(tool);
+                if self.probe_fails_for == Some(tool) {
+                    return Err(PasteError::authored("availability probe timed out"));
+                }
+                Ok(self.installed.contains(&tool))
+            }
+        }
+
+        use Session::{GnomeWayland, KdeWayland, OtherWayland, X11};
+        use TypingTool::{Auto, Dotool, Kwtype, Wtype, Xdotool, Ydotool};
+
+        type Row = (
+            &'static str,
+            Session,
+            Vec<TypingTool>,
+            TypingTool,
+            Option<TypingTool>,
+        );
+
+        #[test]
+        fn resolve_typing_tool_matches_the_fallback_order() {
+            let all = vec![Wtype, Kwtype, Dotool, Ydotool, Xdotool];
+            let table: Vec<Row> = vec![
+                (
+                    "owner host: KDE Wayland, only ydotool",
+                    KdeWayland,
+                    vec![Ydotool],
+                    Auto,
+                    Some(Ydotool),
+                ),
+                (
+                    "KDE Wayland prefers kwtype",
+                    KdeWayland,
+                    vec![Wtype, Kwtype, Dotool, Ydotool],
+                    Auto,
+                    Some(Kwtype),
+                ),
+                (
+                    "KDE Wayland never uses wtype",
+                    KdeWayland,
+                    vec![Wtype, Ydotool],
+                    Auto,
+                    Some(Ydotool),
+                ),
+                (
+                    "KDE Wayland without kwtype takes dotool",
+                    KdeWayland,
+                    vec![Wtype, Dotool, Ydotool],
+                    Auto,
+                    Some(Dotool),
+                ),
+                (
+                    "KDE Wayland with only wtype has nothing",
+                    KdeWayland,
+                    vec![Wtype],
+                    Auto,
+                    None,
+                ),
+                (
+                    "Sway prefers wtype",
+                    OtherWayland,
+                    vec![Wtype, Dotool, Ydotool],
+                    Auto,
+                    Some(Wtype),
+                ),
+                (
+                    "Sway without wtype takes dotool",
+                    OtherWayland,
+                    vec![Dotool, Ydotool],
+                    Auto,
+                    Some(Dotool),
+                ),
+                (
+                    "Sway with only ydotool",
+                    OtherWayland,
+                    vec![Ydotool],
+                    Auto,
+                    Some(Ydotool),
+                ),
+                (
+                    "Sway never uses kwtype",
+                    OtherWayland,
+                    vec![Kwtype],
+                    Auto,
+                    None,
+                ),
+                ("Sway with nothing", OtherWayland, vec![], Auto, None),
+                (
+                    "GNOME Wayland never uses wtype",
+                    GnomeWayland,
+                    vec![Wtype, Ydotool],
+                    Auto,
+                    Some(Ydotool),
+                ),
+                (
+                    "GNOME Wayland with only wtype has nothing",
+                    GnomeWayland,
+                    vec![Wtype],
+                    Auto,
+                    None,
+                ),
+                (
+                    "GNOME Wayland takes dotool",
+                    GnomeWayland,
+                    vec![Wtype, Dotool],
+                    Auto,
+                    Some(Dotool),
+                ),
+                (
+                    "X11 prefers xdotool",
+                    X11,
+                    vec![Xdotool, Ydotool],
+                    Auto,
+                    Some(Xdotool),
+                ),
+                (
+                    "X11 with only ydotool",
+                    X11,
+                    vec![Ydotool],
+                    Auto,
+                    Some(Ydotool),
+                ),
+                (
+                    "X11 ignores the Wayland tools",
+                    X11,
+                    vec![Wtype, Kwtype, Dotool],
+                    Auto,
+                    None,
+                ),
+                ("X11 with nothing", X11, vec![], Auto, None),
+                ("user wtype", KdeWayland, all.clone(), Wtype, Some(Wtype)),
+                ("user kwtype", X11, all.clone(), Kwtype, Some(Kwtype)),
+                ("user dotool", X11, all.clone(), Dotool, Some(Dotool)),
+                (
+                    "user ydotool beats a better auto choice",
+                    KdeWayland,
+                    all.clone(),
+                    Ydotool,
+                    Some(Ydotool),
+                ),
+                ("user xdotool", OtherWayland, all, Xdotool, Some(Xdotool)),
+                (
+                    "user ydotool but missing",
+                    KdeWayland,
+                    vec![Kwtype, Dotool, Xdotool],
+                    Ydotool,
+                    None,
+                ),
+                (
+                    "user wtype but missing",
+                    OtherWayland,
+                    vec![Ydotool],
+                    Wtype,
+                    None,
+                ),
+            ];
+            for (name, session, installed, preferred, expected) in table {
+                let mut env = machine(session, &installed);
+                assert_eq!(
+                    resolve_typing_tool(preferred, &mut env),
+                    Ok(expected),
+                    "{name}"
+                );
+            }
+        }
+
+        #[test]
+        fn resolving_asks_only_about_tools_it_reaches() {
+            type AskedRow = (
+                &'static str,
+                Session,
+                Vec<TypingTool>,
+                TypingTool,
+                Vec<TypingTool>,
+            );
+            let table: Vec<AskedRow> = vec![
+                (
+                    "KDE kwtype found first",
+                    KdeWayland,
+                    vec![Kwtype, Ydotool],
+                    Auto,
+                    vec![Kwtype],
+                ),
+                (
+                    "KDE skips wtype",
+                    KdeWayland,
+                    vec![Ydotool],
+                    Auto,
+                    vec![Kwtype, Dotool, Ydotool],
+                ),
+                (
+                    "Sway wtype found first",
+                    OtherWayland,
+                    vec![Wtype, Ydotool],
+                    Auto,
+                    vec![Wtype],
+                ),
+                (
+                    "Sway dotool",
+                    OtherWayland,
+                    vec![Dotool, Ydotool],
+                    Auto,
+                    vec![Wtype, Dotool],
+                ),
+                (
+                    "GNOME skips wtype",
+                    GnomeWayland,
+                    vec![Ydotool],
+                    Auto,
+                    vec![Dotool, Ydotool],
+                ),
+                (
+                    "X11 xdotool found first",
+                    X11,
+                    vec![Xdotool, Ydotool],
+                    Auto,
+                    vec![Xdotool],
+                ),
+                (
+                    "user choice asks about itself only",
+                    KdeWayland,
+                    vec![Ydotool, Kwtype],
+                    Ydotool,
+                    vec![Ydotool],
+                ),
+                (
+                    "user choice missing asks about itself only",
+                    X11,
+                    vec![Xdotool],
+                    Dotool,
+                    vec![Dotool],
+                ),
+            ];
+            for (name, session, installed, preferred, asked) in table {
+                let mut env = machine(session, &installed);
+                resolve_typing_tool(preferred, &mut env).unwrap();
+                assert_eq!(env.asked, asked, "{name}");
+            }
+        }
+
+        #[test]
+        fn a_probe_error_stops_the_resolution_and_propagates() {
+            let mut env = machine(OtherWayland, &[Ydotool]);
+            env.probe_fails_for = Some(Dotool);
+            assert!(resolve_typing_tool(Auto, &mut env).is_err());
+            assert_eq!(env.asked, [Wtype, Dotool], "ydotool is never reached");
+
+            let mut env = machine(X11, &[Xdotool]);
+            env.probe_fails_for = Some(Xdotool);
+            assert!(resolve_typing_tool(Xdotool, &mut env).is_err());
+        }
+
+        #[test]
+        fn direct_route_sends_non_ascii_through_the_clipboard_only_for_ydotool() {
+            for text in ["ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ", "funkcioniše", "नमस्ते ", "ok é"]
+            {
+                assert_eq!(
+                    direct_route(text, Some(Ydotool)),
+                    DirectRoute::ClipboardChord,
+                    "{text}"
+                );
+            }
+            for text in ["hello world", "hello world ", ""] {
+                assert_eq!(
+                    direct_route(text, Some(Ydotool)),
+                    DirectRoute::Type,
+                    "{text:?}"
+                );
+            }
+            for tool in [Wtype, Kwtype, Dotool, Xdotool] {
+                assert_eq!(
+                    direct_route("ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ", Some(tool)),
+                    DirectRoute::Type,
+                    "{tool:?}"
+                );
+            }
+            assert_eq!(direct_route("funkcioniše", None), DirectRoute::Type);
         }
     }
 
