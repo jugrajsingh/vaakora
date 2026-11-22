@@ -24,9 +24,10 @@ Taken as rewritten changes, with the behaviour of the pull request and our own c
 
 ## Fork commits taken in part
 
-Changes found in a fork of upstream. 00cbe2ba0 is taken as a rewritten change, with our own code and tests, for its echo rule only. a9e714682 is declined: its rule (a length limit on every input) is not taken (see CHANGELOG.md, Fixed).
+Changes found in a fork of upstream. 00cbe2ba0 is taken as a rewritten change, with our own code and tests, for its echo rule only. a9e714682 is declined: its rule (a length limit on every input) is not taken (see CHANGELOG.md, Fixed). e45486388 is taken as a rewritten change: the same rule (non-ASCII text for ydotool goes through the clipboard), with one shared, lazily resolved choice of typing tool and our own tests.
 
 | Fork commit             | Subject                                                                  | Author             | Decision  | Our commit |
 | ----------------------- | ------------------------------------------------------------------------ | ------------------ | --------- | ---------- |
 | maxisme/Handy@00cbe2ba0 | fix: discard post-processing output that echoes the prompt's own example | Maximilian Mitchel | rewritten | 92c927ca   |
 | maxisme/Handy@a9e714682 | fix: discard post-processing output that echoes the prompt               | Maximilian Mitchel | declined  | 92c927ca   |
+| vlazic/Handy@e45486388  | fix: paste via clipboard when ydotool would type non-ASCII text          | Vladimir Lazić     | rewritten | 4d77bffa   |
