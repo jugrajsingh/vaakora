@@ -51,84 +51,131 @@ impl AppMethods {
         let settings = crate::settings::get_settings(&self.app);
         let selection = crate::tts::service::selection(&settings);
         let ready = self.ready().ok().map(|(_, ready)| ready);
-        let (reading, installed) = match &ready {
-            Some(ready) => {
-                let view = ready.session.snapshot();
-                (
-                    json!({
-                        "state": reading_state_name(view.snapshot.state),
-                        "visible": view.visible,
-                    }),
-                    handy_tts_core::catalog::entry(&selection.model_id).is_ok_and(|entry| {
-                        handy_tts_core::download::is_downloaded(&ready.root, entry)
-                    }),
-                )
-            }
-            None => (json!({ "state": "idle", "visible": false }), false),
-        };
+        let voice_installed = ready.as_ref().is_some_and(|ready| {
+            handy_tts_core::catalog::entry(&selection.model_id)
+                .is_ok_and(|entry| handy_tts_core::download::is_downloaded(&ready.root, entry))
+        });
         let stt_installed = self
             .app
             .try_state::<Arc<ModelManager>>()
             .and_then(|models| models.get_model_info(&settings.selected_model))
             .is_some_and(|info| info.is_downloaded);
-        json!({
-            "server": crate::brand::PACKAGE_NAME,
-            "protocol_version": PROTOCOL_VERSION,
-            "app_version": env!("CARGO_PKG_VERSION"),
-            "dictation": dictation_name(crate::tray::dictation_state(&self.app)),
-            "reading": reading,
-            "tts": {
-                "available": ready.is_some(),
-                "model_id": selection.model_id,
-                "voice": selection.voice,
-                "installed": installed,
-            },
-            "stt": {
-                "selected_model": settings.selected_model,
-                "installed": stt_installed,
-            },
+        status_result(StatusFacts {
+            dictation: crate::tray::dictation_state(&self.app),
+            reader: ready.map(|ready| {
+                let view = ready.session.snapshot();
+                (view.snapshot.state, view.visible)
+            }),
+            voice_model: &selection.model_id,
+            voice: &selection.voice,
+            voice_installed,
+            stt_model: &settings.selected_model,
+            stt_installed,
         })
     }
 
     fn control(&self, op: ReadControl) -> Result<Value, RpcError> {
         let (service, ready) = self.ready()?;
         let view = ready.session.snapshot();
-        let action = control_action(op, view.snapshot.state, view.visible);
-        match action {
-            Some(ControlAction::Pause) => service
-                .reading_command(SessionCommand::Pause)
-                .map_err(reader_error)?,
-            Some(ControlAction::Play) => service
-                .reading_command(SessionCommand::Play)
-                .map_err(reader_error)?,
-            Some(ControlAction::Close) => service.close(),
-            None => {}
-        }
-        Ok(json!({ "changed": action.is_some() }))
+        run_control(
+            op,
+            view.snapshot.state,
+            view.visible,
+            |command| service.reading_command(command),
+            || service.close(),
+        )
     }
 
     fn voices(&self) -> Result<Value, RpcError> {
         let (_, ready) = self.ready()?;
         let selection = crate::tts::service::selection(&crate::settings::get_settings(&self.app));
         let entries = handy_tts_core::catalog::entries().map_err(|_| unavailable())?;
-        let models: Vec<Value> = entries
-            .iter()
-            .filter(|entry| handy_tts_core::download::is_downloaded(&ready.root, entry))
-            .map(|entry| {
-                json!({
-                    "id": entry.id,
-                    "name": entry.name,
-                    "voices": entry.voices,
-                    "default_voice": entry.default_voice,
-                })
-            })
-            .collect();
-        Ok(json!({
-            "model_id": selection.model_id,
-            "voice": selection.voice,
-            "models": models,
-        }))
+        Ok(voices_result(
+            entries,
+            |entry| handy_tts_core::download::is_downloaded(&ready.root, entry),
+            &selection.model_id,
+            &selection.voice,
+        ))
     }
+}
+
+/// What `status` reports, gathered from the app.
+pub(crate) struct StatusFacts<'a> {
+    pub dictation: TrayIconState,
+    /// The reader's playback state and visibility; `None` when read aloud is
+    /// not available.
+    pub reader: Option<(PlaybackState, bool)>,
+    pub voice_model: &'a str,
+    pub voice: &'a str,
+    pub voice_installed: bool,
+    pub stt_model: &'a str,
+    pub stt_installed: bool,
+}
+
+/// The `status` result. Without read aloud the reader reads `idle`, not
+/// visible, and the voice model counts as not installed.
+pub(crate) fn status_result(facts: StatusFacts) -> Value {
+    let (state, visible) = facts.reader.unwrap_or((PlaybackState::Waiting, false));
+    json!({
+        "server": crate::brand::PACKAGE_NAME,
+        "protocol_version": PROTOCOL_VERSION,
+        "app_version": env!("CARGO_PKG_VERSION"),
+        "dictation": dictation_name(facts.dictation),
+        "reading": { "state": reading_state_name(state), "visible": visible },
+        "tts": {
+            "available": facts.reader.is_some(),
+            "model_id": facts.voice_model,
+            "voice": facts.voice,
+            "installed": facts.reader.is_some() && facts.voice_installed,
+        },
+        "stt": {
+            "selected_model": facts.stt_model,
+            "installed": facts.stt_installed,
+        },
+    })
+}
+
+/// Runs `op` on a reader in `state`: Pause and Play go to `command` (the
+/// reader's own command path), Close to `close`. The result says whether
+/// anything was done.
+pub(crate) fn run_control(
+    op: ReadControl,
+    state: PlaybackState,
+    visible: bool,
+    command: impl FnOnce(SessionCommand) -> Result<(), String>,
+    close: impl FnOnce(),
+) -> Result<Value, RpcError> {
+    let action = control_action(op, state, visible);
+    match action {
+        Some(ControlAction::Pause) => command(SessionCommand::Pause).map_err(reader_error)?,
+        Some(ControlAction::Play) => command(SessionCommand::Play).map_err(reader_error)?,
+        Some(ControlAction::Close) => close(),
+        None => {}
+    }
+    Ok(json!({ "changed": action.is_some() }))
+}
+
+/// The `tts.voices` result: the catalog entries `downloaded` accepts, and the
+/// selected model and voice.
+pub(crate) fn voices_result(
+    entries: &[handy_tts_core::catalog::ModelEntry],
+    downloaded: impl Fn(&handy_tts_core::catalog::ModelEntry) -> bool,
+    model_id: &str,
+    voice: &str,
+) -> Value {
+    let models: Vec<Value> = entries
+        .iter()
+        .filter(|entry| downloaded(entry))
+        .map(|entry| {
+            json!({
+                "id": entry.id,
+                "name": entry.name,
+                "voices": entry.voices,
+                "default_voice": entry.default_voice,
+            })
+        })
+        .collect();
+    json!({ "model_id": model_id, "voice": voice, "models": models })
 }
 
 impl Methods for AppMethods {
@@ -580,6 +627,167 @@ mod tests {
             let other = reader_error("tts.errors.generic".into());
             assert_eq!(other.kind, ErrorKind::Internal);
             assert_eq!(other.message, "Read aloud failed.");
+        }
+    }
+
+    mod results {
+        use super::*;
+        use crate::tray::TrayIconState;
+        use std::cell::RefCell;
+
+        fn facts(reader: Option<(PlaybackState, bool)>) -> StatusFacts<'static> {
+            StatusFacts {
+                dictation: TrayIconState::Recording,
+                reader,
+                voice_model: "pocket-en",
+                voice: "alba",
+                voice_installed: true,
+                stt_model: "parakeet",
+                stt_installed: true,
+            }
+        }
+
+        #[test]
+        fn status_reports_every_field() {
+            let result = status_result(facts(Some((PlaybackState::Paused, true))));
+            assert_eq!(
+                result,
+                json!({
+                    "server": "vaakora",
+                    "protocol_version": 1,
+                    "app_version": env!("CARGO_PKG_VERSION"),
+                    "dictation": "recording",
+                    "reading": { "state": "paused", "visible": true },
+                    "tts": {
+                        "available": true,
+                        "model_id": "pocket-en",
+                        "voice": "alba",
+                        "installed": true,
+                    },
+                    "stt": { "selected_model": "parakeet", "installed": true },
+                })
+            );
+        }
+
+        #[test]
+        fn status_without_read_aloud_uses_the_defaults() {
+            let mut unavailable = facts(None);
+            unavailable.stt_model = "";
+            unavailable.stt_installed = false;
+            let result = status_result(unavailable);
+            assert_eq!(
+                result["reading"],
+                json!({ "state": "idle", "visible": false })
+            );
+            assert_eq!(
+                result["tts"],
+                json!({
+                    "available": false,
+                    "model_id": "pocket-en",
+                    "voice": "alba",
+                    "installed": false,
+                })
+            );
+            assert_eq!(
+                result["stt"],
+                json!({ "selected_model": "", "installed": false })
+            );
+            assert_eq!(result["server"], "vaakora");
+        }
+
+        /// Runs a control, recording the reader commands sent and whether it was closed.
+        fn control(
+            op: ReadControl,
+            state: PlaybackState,
+            visible: bool,
+            reply: Result<(), String>,
+        ) -> (Result<Value, RpcError>, Vec<&'static str>, bool) {
+            let sent = RefCell::new(Vec::new());
+            let closed = RefCell::new(false);
+            let result = run_control(
+                op,
+                state,
+                visible,
+                |command| {
+                    sent.borrow_mut().push(match command {
+                        SessionCommand::Pause => "pause",
+                        SessionCommand::Play => "play",
+                        _ => "other",
+                    });
+                    reply
+                },
+                || *closed.borrow_mut() = true,
+            );
+            (result, sent.into_inner(), closed.into_inner())
+        }
+
+        #[test]
+        fn controls_invoke_their_operation() {
+            let changed = Ok(json!({ "changed": true }));
+            assert_eq!(
+                control(ReadControl::Pause, PlaybackState::Playing, true, Ok(())),
+                (changed.clone(), vec!["pause"], false)
+            );
+            assert_eq!(
+                control(ReadControl::Resume, PlaybackState::Paused, true, Ok(())),
+                (changed.clone(), vec!["play"], false)
+            );
+            assert_eq!(
+                control(ReadControl::Stop, PlaybackState::Playing, true, Ok(())),
+                (changed, vec![], true)
+            );
+        }
+
+        #[test]
+        fn controls_that_change_nothing_touch_nothing() {
+            let unchanged = Ok(json!({ "changed": false }));
+            for (op, state, visible) in [
+                (ReadControl::Stop, PlaybackState::Playing, false),
+                (ReadControl::Resume, PlaybackState::Paused, false),
+                (ReadControl::Pause, PlaybackState::Paused, true),
+                (ReadControl::Resume, PlaybackState::Playing, true),
+            ] {
+                assert_eq!(
+                    control(op, state, visible, Ok(())),
+                    (unchanged.clone(), vec![], false),
+                    "{op:?} {state:?} visible={visible}"
+                );
+            }
+        }
+
+        #[test]
+        fn refused_play_is_busy() {
+            let (result, sent, closed) = control(
+                ReadControl::Resume,
+                PlaybackState::Paused,
+                true,
+                Err("tts.errors.busy".into()),
+            );
+            assert_eq!(result.unwrap_err().kind, ErrorKind::Busy);
+            assert_eq!((sent, closed), (vec!["play"], false));
+        }
+
+        #[test]
+        fn voices_lists_downloaded_models_only() {
+            let entries = handy_tts_core::catalog::entries().unwrap();
+            assert!(entries.len() >= 2, "the catalog has more than one model");
+            let kept = &entries[1];
+            let result = voices_result(entries, |entry| entry.id == kept.id, "pocket-en", "alba");
+            assert_eq!(
+                result,
+                json!({
+                    "model_id": "pocket-en",
+                    "voice": "alba",
+                    "models": [{
+                        "id": kept.id,
+                        "name": kept.name,
+                        "voices": kept.voices,
+                        "default_voice": kept.default_voice,
+                    }],
+                })
+            );
+            let none = voices_result(entries, |_| false, "pocket-en", "alba");
+            assert_eq!(none["models"], json!([]));
         }
     }
 
