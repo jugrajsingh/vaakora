@@ -34,20 +34,40 @@ function readFile(name: string): string | null {
   return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null;
 }
 
+// The import commit carries the same LICENSE as the upstream base, which a clone of this repository does not hold.
+function licenseBaseCommit(): string | null {
+  try {
+    git("cat-file", "-e", `${BASE_SHORT}^{commit}`);
+    return BASE_SHORT;
+  } catch {
+    const roots = git("rev-list", "--max-parents=0", "HEAD")
+      .split("\n")
+      .filter(Boolean);
+    return roots.length === 1 ? roots[0] : null;
+  }
+}
+
 function checkLicense(problems: string[]): void {
   const actual = readFile("LICENSE");
   if (actual === null) {
     problems.push("LICENSE: file is missing");
     return;
   }
-  const upstream = git("show", `${BASE_SHORT}:LICENSE`);
+  const baseCommit = licenseBaseCommit();
+  if (baseCommit === null) {
+    problems.push(
+      `LICENSE: cannot find ${BASE_SHORT} or a single root commit to compare against`,
+    );
+    return;
+  }
+  const upstream = git("show", `${baseCommit}:LICENSE`);
   const expected = upstream.replace(
     UPSTREAM_COPYRIGHT,
     `${OWN_COPYRIGHT}\n${UPSTREAM_COPYRIGHT}`,
   );
   if (actual !== expected) {
     problems.push(
-      `LICENSE: differs from the base text at ${BASE_SHORT} with the lines "${OWN_COPYRIGHT}" then "${UPSTREAM_COPYRIGHT}" in place of the single copyright line`,
+      `LICENSE: differs from the base text at ${baseCommit} with the lines "${OWN_COPYRIGHT}" then "${UPSTREAM_COPYRIGHT}" in place of the single copyright line`,
     );
   }
 }

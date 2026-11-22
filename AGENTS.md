@@ -229,10 +229,6 @@ Access debug features: `Cmd+Shift+D` (macOS) or `Ctrl+Shift+D` (Windows/Linux)
 - **Linux**: OpenBLAS + Vulkan, limited Wayland support, overlay uses GTK layer shell (disable with `HANDY_NO_GTK_LAYER_SHELL=1`)
 - **Immutable installs**: `HANDY_DISABLE_UPDATER=1` force-disables the self-updater at runtime without touching the persisted setting
 
-## Troubleshooting
-
-See the [Troubleshooting](README.md#troubleshooting) section in README.md.
-
 ## Commits
 
 Use conventional commit prefixes (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`). Focus the message on _why_, not _what_.
