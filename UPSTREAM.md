@@ -20,6 +20,7 @@ Taken as rewritten changes, with the behaviour of the pull request and our own c
 | #2110        | fix(audio): don't abort startup when the always-on microphone can't open                     | Niels Kootstra | rewritten | 8abb23b8   |
 | #2374        | fix: frame the structured post-processing dictation in <transcript> tags                     | Rahul          | rewritten | 024cc059   |
 | #2440        | fix: keep the transcript in post-processing when a prompt has no ${output} placeholder       | Ahmed Saeed    | rewritten | 024cc059   |
+| #2452        | Keep Wayland paste text out of clipboard history                                             | alanshurafa    | rewritten | 6ba7a752   |
 
 ## Fork commits taken in part
 
