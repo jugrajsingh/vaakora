@@ -190,6 +190,7 @@ Packaging
 - A reason shown beside a slider (Volume with audio feedback off) keeps a gap from the slider in every language.
 - The Sound theme preview button's tooltip is translated.
 - Dictation model descriptions follow the app language.
+- Start and stop sounds play on outputs that reject a fixed 2048-frame buffer (some Bluetooth headsets); the device picks the buffer size.
 
 ### Platform support
 
@@ -210,7 +211,7 @@ Packaging
 - New user data file: `tts-vocabulary.json` in the app data directory, created on first use. The built-in vocabulary is compiled in from `src-tauri/resources/tts/vocabulary.json`, so nothing extra has to be staged for it.
 - Build requirements: a static, CPU-only `llama-server` must be staged as `llm-bin/`, and the text-to-speech worker with its OpenVINO libraries as `tts-bin/`. The RPM bundle installs them at `/usr/lib/Handy/llm` and `/usr/lib/Handy/tts` (`bundle.linux.rpm.files` in `tauri.conf.json`).
 - Upstream files that gain hunks, grouped:
-  - Backend core: `actions.rs`, `settings.rs`, `lib.rs`, `tray.rs`, `notices.rs`, `overlay.rs`, `input.rs`, `utils.rs`, `clipboard.rs` (paste hardening), `primary_selection.rs` (bounded helpers), `transcription_coordinator.rs`, `managers/transcription_jobs.rs`, `commands/mod.rs`, `commands/transcription.rs`.
+  - Backend core: `actions.rs`, `settings.rs`, `lib.rs`, `tray.rs`, `notices.rs`, `overlay.rs`, `input.rs`, `utils.rs`, `audio_feedback.rs`, `clipboard.rs` (paste hardening), `primary_selection.rs` (bounded helpers), `transcription_coordinator.rs`, `managers/transcription_jobs.rs`, `commands/mod.rs`, `commands/transcription.rs`.
   - History and models: `managers/history.rs`, `commands/history.rs`, `managers/model.rs`, `managers/model/download.rs`, `managers/transcription.rs`.
   - Shortcuts: `shortcut/mod.rs`, `shortcut/handler.rs`, `shortcut/handy_keys.rs`, `shortcut/tauri_impl.rs`.
   - Paste transactions: `paste_tx/mod.rs`, `paste_tx/windows.rs`, `paste_tx/macos.rs`.
