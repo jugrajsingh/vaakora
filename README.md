@@ -33,7 +33,7 @@ To build the Linux RPM from this repository in one step, use [packaging/README.m
 
 Vaakora began as a fork of [Handy](https://github.com/cjpais/Handy) by CJ Pais, used under the MIT licence. Handy's name, logo and brand assets are not part of Vaakora. Vaakora is not affiliated with or endorsed by Handy or its author.
 
-The transcription engines and models are upstream's, and Vaakora does not change how speech is recognised. Its additions are the local post-processing, read aloud and the dictation changes above. [UPSTREAM.md](UPSTREAM.md) records the upstream base and what was decided for each upstream commit since, and the "Relationship to upstream" section of [CHANGELOG.md](CHANGELOG.md) lists every setting, event, command, dependency and upstream file that Vaakora touches.
+The transcription engines and models are upstream's. Vaakora pins the speech-to-text engine, transcribe.cpp, to a revision past upstream's v0.4.2 that adds phrase boosting: offline Parakeet models with a TDT or RNN-T decoder take your custom words while they recognise speech, while live (streaming) models never get them and keep correcting them afterwards. Vaakora's other additions are the local post-processing, read aloud and the dictation changes above. [UPSTREAM.md](UPSTREAM.md) records the upstream base and what was decided for each upstream commit since, and the "Relationship to upstream" section of [CHANGELOG.md](CHANGELOG.md) lists every setting, event, command, dependency and upstream file that Vaakora touches.
 
 The models the app can download have their own licences, which the app shows on each model's card.
 

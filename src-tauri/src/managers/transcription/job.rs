@@ -87,7 +87,7 @@ impl TranscriptionManager {
                     // A fresh mark per chunk: a dictation's cancel stops only
                     // the chunk it caught, which is then tried again.
                     let mark = self.engine.cancel_mark();
-                    match self.run_batch(mark, chunk.clone(), &setup.run_options, &active_model) {
+                    match self.run_batch(mark, chunk.clone(), &setup, &active_model) {
                         Ok(transcript) => break transcript,
                         Err(EngineError::Cancelled) if attempts < MAX_CHUNK_ATTEMPTS => {
                             warn!("A background chunk was cancelled; trying it again");

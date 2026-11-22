@@ -639,7 +639,7 @@ impl TranscriptionManager {
             caps.supports_streaming,
             caps.supports_translate,
             caps.supports_language_detect,
-            info.supports_vocabulary,
+            native_vocabulary(&info),
             caps.languages.clone(),
         );
         // The bound backend may differ from the request (e.g. CPU
@@ -1204,7 +1204,7 @@ impl TranscriptionManager {
                 .map_err(engine_error)?,
                 BatchDecode::Whole => {
                     let transcript = self
-                        .run_batch(mark, audio, &setup.run_options, &active_model)
+                        .run_batch(mark, audio, &setup, &active_model)
                         .map_err(engine_error)?;
                     (vec![transcript], setup)
                 }
@@ -1224,24 +1224,18 @@ impl TranscriptionManager {
         &self,
         mark: CancelMark,
         pcm: Vec<f32>,
-        run_options: &RunOptions,
+        setup: &RunSetup,
         active_model: &str,
     ) -> Result<Transcript, EngineError> {
         self.touch_activity();
         self.engine
-            .transcribe_since(mark, pcm, run_options.clone())
+            .transcribe_since(mark, pcm, setup.run_options.clone())
             .inspect_err(|e| {
                 if !matches!(e, EngineError::Cancelled) {
                     self.forget_model_if_engine_dropped(active_model, &e.to_string());
                 }
             })
-            .map(|mut transcript| {
-                if echoes_vocabulary(&transcript.text, &run_options.vocabulary) {
-                    info!("The model returned the custom words, not speech; dropping them");
-                    transcript.text.clear();
-                }
-                transcript
-            })
+            .map(|transcript| setup.checked_transcript(transcript))
     }
 }
 
@@ -1299,12 +1293,28 @@ struct RunSetup {
     languages: Vec<String>,
     applied_language_hint: Option<String>,
     output_was_translated: bool,
+    /// Whether a run's transcript that is only the custom words read back is
+    /// dropped. Not for Parakeet: its phrase boosting cannot invent speech, so
+    /// saying the words is a transcript.
+    drop_vocabulary_echo: bool,
 }
 
 impl RunSetup {
     /// Custom words went to the model as vocabulary; skip fuzzy correction.
     fn custom_words_prompted(&self) -> bool {
         !self.run_options.vocabulary.is_empty()
+    }
+
+    /// One run's transcript, cleared when it is the custom words read back
+    /// instead of speech.
+    fn checked_transcript(&self, mut transcript: Transcript) -> Transcript {
+        if self.drop_vocabulary_echo
+            && echoes_vocabulary(&transcript.text, &self.run_options.vocabulary)
+        {
+            info!("The model returned the custom words, not speech; dropping them");
+            transcript.text.clear();
+        }
+        transcript
     }
 
     /// The language the runs were in. When the model decided, the language
@@ -1390,7 +1400,7 @@ fn run_setup(info: &LoadedInfo, settings: &AppSettings, language: LanguageDecisi
         task: run_plan.task,
         language: run_plan.language,
         target_language: run_plan.target_language,
-        vocabulary: vocabulary_for_model(info.supports_vocabulary, &settings.custom_words),
+        vocabulary: vocabulary_for_model(native_vocabulary(info), &settings.custom_words),
         ..Default::default()
     };
 
@@ -1407,6 +1417,7 @@ fn run_setup(info: &LoadedInfo, settings: &AppSettings, language: LanguageDecisi
         languages,
         applied_language_hint,
         output_was_translated,
+        drop_vocabulary_echo: info.arch != PHRASE_BOOSTING_ARCH,
     }
 }
 
@@ -1621,6 +1632,19 @@ fn with_model_detected_language(
         }
         (evidence, _) => evidence,
     }
+}
+
+/// The architecture whose models take custom words as phrase boosting: the
+/// `.name` of transcribe.cpp's `src/arch/parakeet` (`general.architecture` of
+/// every Parakeet GGUF).
+const PHRASE_BOOSTING_ARCH: &str = "parakeet";
+
+/// Whether the loaded model gets the custom words as vocabulary: it takes them
+/// and does not stream. transcribe.cpp ignores vocabulary on a stream, so a
+/// streaming model never gets it, and its text keeps the fuzzy custom-word
+/// correction. Models shows the same answer.
+fn native_vocabulary(info: &LoadedInfo) -> bool {
+    info.supports_vocabulary && !info.capabilities.supports_streaming
 }
 
 /// Custom words for transcribe-cpp's `vocabulary` slot, in priority order.
@@ -2491,6 +2515,130 @@ mod tests {
             assert!(!echoes_vocabulary(speech, &words), "{speech}");
         }
         assert!(!echoes_vocabulary("Handy Qwen VRAM", &[]));
+    }
+
+    /// A loaded model as the worker reports it.
+    fn loaded(arch: &str, supports_vocabulary: bool, supports_streaming: bool) -> LoadedInfo {
+        LoadedInfo {
+            arch: arch.to_string(),
+            variant: String::new(),
+            backend: "CPU".to_string(),
+            device: "CPU".to_string(),
+            on_gpu: false,
+            capabilities: transcribe_cpp::Capabilities {
+                native_sample_rate: 16_000,
+                languages: languages(&["en"]),
+                translate_target_languages: Vec::new(),
+                max_timestamp_kind: transcribe_cpp::TimestampKind::None,
+                supports_language_detect: false,
+                supports_translate: false,
+                supports_streaming,
+                supports_spec_decode: false,
+                max_audio_ms: 0,
+            },
+            supports_initial_prompt: false,
+            supports_long_form: false,
+            supports_vocabulary,
+        }
+    }
+
+    fn english_with_words(words: &[&str]) -> AppSettings {
+        AppSettings {
+            selected_language: "en".to_string(),
+            custom_words: words.iter().map(|word| (*word).to_string()).collect(),
+            ..Default::default()
+        }
+    }
+
+    fn setup_with_words(info: &LoadedInfo, words: &[&str]) -> RunSetup {
+        run_setup(
+            info,
+            &english_with_words(words),
+            LanguageDecision {
+                language: Some("en".to_string()),
+                source: LanguageSource::Selected,
+            },
+        )
+    }
+
+    /// The production part of this file, without the tests.
+    fn production_source() -> &'static str {
+        let source = include_str!("transcription.rs");
+        &source[..source.find("\n#[cfg(test)]\nmod tests {").unwrap()]
+    }
+
+    #[test]
+    fn streams_start_without_vocabulary_and_keep_fuzzy_correction() {
+        // Parakeet Unified at the pinned engine: an RNN-T head, which takes
+        // vocabulary offline, and a stream, which ignores it.
+        let stream = setup_with_words(&loaded("parakeet", true, true), &["Kubernetes"]);
+        assert!(stream.run_options.vocabulary.is_empty());
+        assert!(!stream.custom_words_prompted());
+
+        // The same head offline gets the words, and fuzzy correction steps back.
+        let offline = setup_with_words(&loaded("parakeet", true, false), &["Kubernetes"]);
+        assert_eq!(
+            offline.run_options.vocabulary,
+            vec!["Kubernetes".to_string()]
+        );
+        assert!(offline.custom_words_prompted());
+
+        // The stream's text still gets the custom-word correction.
+        let corrected = post_process_transcription_text(
+            "kubernetis".to_string(),
+            &english_with_words(&["Kubernetes"]),
+            stream.custom_words_prompted(),
+            &OutputLanguageEvidence::UserSelected("en".to_string()),
+            &languages(&["en"]),
+        );
+        assert_eq!(corrected, "Kubernetes");
+
+        // A live stream takes its setup from run_setup, through setup_for.
+        let live = include_str!("transcription/live.rs");
+        assert!(live.contains("let setup = tm.setup_for(info, &settings, &plan, &[]);"));
+        assert!(live.contains("StreamSession::begin(tm, info, &settings, &setup, model_id)"));
+        assert!(production_source().contains("        run_setup(info, settings, language)\n"));
+    }
+
+    #[test]
+    fn streaming_models_report_no_native_vocabulary() {
+        assert!(!native_vocabulary(&loaded("parakeet", true, true)));
+        assert!(native_vocabulary(&loaded("parakeet", true, false)));
+        assert!(!native_vocabulary(&loaded("parakeet", false, false)));
+        assert!(!native_vocabulary(&loaded("parakeet", false, true)));
+
+        // The capability shown in Models is the same predicate.
+        let source = production_source();
+        assert_eq!(source.matches("set_runtime_capabilities(").count(), 1);
+        let call = source.split("set_runtime_capabilities(").nth(1).unwrap();
+        let call = &call[..call.find(");").unwrap()];
+        assert!(call.contains("native_vocabulary(&info),"), "{call}");
+        assert!(!call.contains("supports_vocabulary"), "{call}");
+    }
+
+    #[test]
+    fn phrase_boosting_models_skip_the_echo_drop() {
+        let words = ["Kubernetes", "Postgres", "Redis"];
+        let said = || Transcript {
+            text: "Kubernetes, Postgres, Redis.".to_string(),
+            ..Default::default()
+        };
+
+        // Parakeet takes the words as phrase boosting, which cannot invent
+        // speech: saying the three of them is a transcript.
+        let boosted = setup_with_words(&loaded("parakeet", true, false), &words);
+        assert!(!boosted.drop_vocabulary_echo);
+        assert_eq!(
+            boosted.checked_transcript(said()).text,
+            "Kubernetes, Postgres, Redis."
+        );
+
+        // A model that takes them as a prompt can read them back on silence.
+        for arch in ["whisper", "qwen3_asr"] {
+            let prompted = setup_with_words(&loaded(arch, true, false), &words);
+            assert!(prompted.drop_vocabulary_echo, "{arch}");
+            assert_eq!(prompted.checked_transcript(said()).text, "", "{arch}");
+        }
     }
 }
 

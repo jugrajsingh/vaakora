@@ -147,13 +147,10 @@ impl<'a> ChunkedDecode<'a> {
                 return;
             }
             // The first chunk picks the language for every chunk.
-            let run_options = self.setup.resolve(self.tm, &chunk).run_options.clone();
+            let setup = self.setup.resolve(self.tm, &chunk);
             let audio_secs = chunk.len() as f64 / 16_000.0;
             let started = Instant::now();
-            match self
-                .tm
-                .run_batch(self.mark, chunk, &run_options, &self.model_id)
-            {
+            match self.tm.run_batch(self.mark, chunk, setup, &self.model_id) {
                 Ok(transcript) => {
                     self.transcripts.push(transcript);
                     // Real-time factor: audio seconds decoded per second of
