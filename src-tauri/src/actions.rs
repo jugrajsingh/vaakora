@@ -23,7 +23,7 @@ use log::{debug, error, warn};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -238,6 +238,49 @@ fn non_blank_post_processed_text(text: String) -> Option<String> {
     } else {
         Some(text)
     }
+}
+
+/// Lower-cased alphanumeric runs of `text`.
+fn word_set(text: &str) -> HashSet<String> {
+    text.split(|c: char| !c.is_alphanumeric())
+        .filter(|word| !word.is_empty())
+        .map(str::to_lowercase)
+        .collect()
+}
+
+/// True when `reply` only repeats a prompt: at least 8 characters, contained
+/// verbatim in one of `prompts`, and sharing under half of the transcript's
+/// words. A model that answers a one-word dictation with the prompt's own
+/// worked example or instructions does this; an edit of the transcript such as
+/// "fifty pounds" to "£50" is not contained in the prompt, and one that keeps
+/// the transcript's words ("Hey, what is the time?") overlaps it.
+fn echoes_prompt(transcript: &str, reply: &str, prompts: &[&str]) -> bool {
+    let reply = reply.trim();
+    if reply.chars().count() < 8 || !prompts.iter().any(|prompt| prompt.contains(reply)) {
+        return false;
+    }
+    let transcript_words = word_set(transcript);
+    let overlap = if transcript_words.is_empty() {
+        0.0
+    } else {
+        transcript_words.intersection(&word_set(reply)).count() as f64
+            / transcript_words.len() as f64
+    };
+    overlap < 0.5
+}
+
+/// Prompt texts a cleanup reply may echo, whichever provider ran: the selected
+/// template and the S1-mini system prompt.
+fn echo_sources(settings: &AppSettings) -> Vec<&str> {
+    let selected = settings
+        .post_process_selected_prompt_id
+        .as_ref()
+        .and_then(|id| settings.post_process_prompts.iter().find(|p| &p.id == id))
+        .map(|prompt| prompt.prompt.as_str());
+    selected
+        .into_iter()
+        .chain([crate::local_llm::prompt::S1_SYSTEM_PROMPT])
+        .collect()
 }
 
 async fn complete_unless_cancelled<F, C>(operation: F, is_cancelled: C) -> Option<F::Output>
@@ -618,8 +661,18 @@ where
             None => Some(cleaned.await),
         };
         let outcome = match reply {
-            Some(Some(text)) => non_blank_post_processed_text(text)
-                .map_or(PostProcessOutcome::Failed, PostProcessOutcome::Done),
+            Some(Some(text)) => match non_blank_post_processed_text(text) {
+                Some(text) if echoes_prompt(&final_text, &text, &echo_sources(&settings)) => {
+                    warn!(
+                        "Post-processing reply discarded: it repeats the prompt ({} chars in, {} chars out). Pasting the original transcription",
+                        final_text.chars().count(),
+                        text.trim().chars().count()
+                    );
+                    PostProcessOutcome::Failed
+                }
+                Some(text) => PostProcessOutcome::Done(text),
+                None => PostProcessOutcome::Failed,
+            },
             Some(None) if is_blank_transcription(&final_text) => PostProcessOutcome::Skipped,
             Some(None) => PostProcessOutcome::Failed,
             None => {
@@ -1492,11 +1545,12 @@ mod tests {
     }
 
     use super::{
-        cleanup_provenance, complete_unless_cancelled, frame_transcript, is_blank_transcription,
-        legacy_prompt, non_blank_post_processed_text, post_process_route,
-        post_process_transcription, process_transcription_output_with_dependencies,
-        should_use_streaming_overlay, strip_invisible_chars, strip_think_block, PostProcessOutcome,
-        PostProcessRoute,
+        cleanup_provenance, complete_unless_cancelled, echo_sources, echoes_prompt,
+        frame_transcript, is_blank_transcription, legacy_prompt, non_blank_post_processed_text,
+        post_process_route, post_process_transcription,
+        process_transcription_output_with_dependencies, should_use_streaming_overlay,
+        strip_invisible_chars, strip_think_block, PostProcessOutcome, PostProcessRoute,
+        ProcessedTranscription,
     };
     use crate::settings::{get_default_settings, AppSettings, OverlayStyle};
     use std::future;
@@ -1807,6 +1861,130 @@ mod tests {
             assert_eq!(processed.post_process_prompt, None);
             assert!(processed.provenance.is_none());
         }
+    }
+
+    /// The shipped default prompt, selected (no prompt is selected out of the box).
+    fn settings_with_default_prompt() -> AppSettings {
+        let mut settings = get_default_settings();
+        settings.post_process_selected_prompt_id =
+            Some(settings.post_process_prompts[0].id.clone());
+        settings
+    }
+
+    fn cleaned_with(
+        settings: AppSettings,
+        transcript: &str,
+        reply: &str,
+    ) -> ProcessedTranscription {
+        let reply = reply.to_string();
+        tauri::async_runtime::block_on(process_transcription_output_with_dependencies(
+            transcript,
+            true,
+            || settings,
+            |_, _| future::ready(None),
+            |_, _| future::ready(Some(reply)),
+        ))
+    }
+
+    #[test]
+    fn echoed_example_falls_back_to_the_transcript() {
+        // The default prompt's worked example, returned for a one-word dictation.
+        let processed = cleaned_with(
+            settings_with_default_prompt(),
+            "notification",
+            "Hey, what is the time?",
+        );
+        assert_eq!(processed.final_text, "notification");
+        assert!(processed.post_process_failed);
+        assert_eq!(processed.post_processed_text, None);
+        assert_eq!(processed.post_process_prompt, None);
+        assert!(processed.provenance.is_none());
+    }
+
+    #[test]
+    fn echoed_s1_prompt_is_discarded() {
+        let mut settings = settings_with_default_prompt();
+        settings.post_process_provider_id = crate::settings::LOCAL_LLM_PROVIDER_ID.into();
+        settings.local_llm_model_id = Some("s1-mini-q4km".into());
+        let processed = cleaned_with(
+            settings,
+            "notification",
+            crate::local_llm::prompt::S1_SYSTEM_PROMPT,
+        );
+        assert_eq!(processed.final_text, "notification");
+        assert!(processed.post_process_failed);
+        assert_eq!(processed.post_processed_text, None);
+    }
+
+    #[test]
+    fn ordinary_short_cleanups_are_kept() {
+        for (transcript, reply) in [
+            ("notification", "Notification."),
+            ("fifty pounds", "£50"),
+            ("ten percent", "10%"),
+            ("um ok", "OK."),
+            ("Hey, uhh what is the um time", "Hey, what is the time?"),
+        ] {
+            let processed = cleaned_with(settings_with_default_prompt(), transcript, reply);
+            assert_eq!(processed.final_text, reply, "reply to {transcript:?}");
+            assert!(!processed.post_process_failed, "reply to {transcript:?}");
+            assert_eq!(processed.post_processed_text.as_deref(), Some(reply));
+        }
+    }
+
+    #[test]
+    fn echo_rule_boundaries() {
+        let prompts = ["Clean it. Return only the cleaned text."];
+        let echo = |transcript: &str, reply: &str| echoes_prompt(transcript, reply, &prompts);
+        // Contained in the prompt and sharing no word with the transcript.
+        assert!(echo("notification", "Return only the cleaned text."));
+        assert!(echo("notification", "  Return only the cleaned text.\n"));
+        // Under 8 characters, or not contained in any prompt.
+        assert!(!echo("notification", "cleaned"));
+        assert!(!echo("notification", "Return the cleaned text."));
+        // A transcript with no words shares none.
+        assert!(echo("", "Return only the cleaned text."));
+        assert!(echo("...", "Return only the cleaned text."));
+        // Half the transcript's words is enough to keep the reply.
+        assert!(!echo("return banana", "Return only the cleaned text."));
+        assert!(echo("banana mango", "Return only the cleaned text."));
+        // No prompts, nothing to echo.
+        assert!(!echoes_prompt(
+            "notification",
+            "Return only the cleaned text.",
+            &[]
+        ));
+    }
+
+    #[test]
+    fn echo_sources_hold_the_selected_template_and_the_s1_prompt() {
+        let mut settings = settings_with_default_prompt();
+        let selected = settings.post_process_prompts[0].prompt.clone();
+        for provider in ["anthropic", crate::settings::LOCAL_LLM_PROVIDER_ID] {
+            settings.post_process_provider_id = provider.into();
+            assert_eq!(
+                echo_sources(&settings),
+                [
+                    selected.as_str(),
+                    crate::local_llm::prompt::S1_SYSTEM_PROMPT
+                ]
+            );
+        }
+        settings.post_process_selected_prompt_id = None;
+        assert_eq!(
+            echo_sources(&settings),
+            [crate::local_llm::prompt::S1_SYSTEM_PROMPT]
+        );
+    }
+
+    #[test]
+    fn echoed_custom_template_line_is_discarded() {
+        let mut settings = settings_with_default_prompt();
+        settings.post_process_prompts[0].prompt =
+            "Fix the casing of ${output} and keep the order of the words.".into();
+        let processed = cleaned_with(settings, "notification", "keep the order of the words.");
+        assert_eq!(processed.final_text, "notification");
+        assert!(processed.post_process_failed);
     }
 
     #[test]
