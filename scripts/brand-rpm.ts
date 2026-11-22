@@ -132,10 +132,27 @@ function run(
     },
   );
   return {
-    ok: r.status === 0,
+    ok: r.status === 0 && !r.error,
     out: r.stdout ?? Buffer.alloc(0),
-    err: String(r.stderr ?? ""),
+    err: `${r.error ? `${r.error.message} ` : ""}${String(r.stderr ?? "")}`,
   };
+}
+
+/**
+ * `strings -a` on the extracted binary, run directly: a tool that is missing
+ * or exits non-zero is a problem (never an empty, passing scan), and its output
+ * goes to `stringsProblems`. `env` lets a test control PATH.
+ */
+export function binaryScanProblems(
+  binary: string,
+  env: NodeJS.ProcessEnv = process.env,
+): string[] {
+  const r = spawnSync("strings", ["-a", binary], { env, maxBuffer: 1 << 30 });
+  if (r.error) return [`strings could not run: ${r.error.message}`];
+  if (r.status !== 0) {
+    return [`strings exited ${String(r.status)}: ${String(r.stderr).trim()}`];
+  }
+  return stringsProblems(r.stdout.toString("latin1"), STRINGS_ALLOW);
 }
 
 /**
@@ -275,18 +292,23 @@ export function rpmProblems(
         ),
       );
     } else {
-      console.log(
-        "NOTE rpm: handy is not installed, so path overlap with it was not checked",
-      );
+      // rpm -ql exits 1 for an absent package; any other failure is a problem.
+      const asked = run(root, "rpm -q handy");
+      if (
+        /is not installed/.test(`${asked.out.toString("utf8")}${asked.err}`)
+      ) {
+        console.log(
+          "NOTE rpm: handy is not installed, so path overlap with it was not checked",
+        );
+      } else {
+        problems.push(`rpm -ql handy failed: ${handy.err.trim()}`);
+      }
     }
 
     const binary = join(scratch, "app.bin");
     const binaryWhy = extract(`./usr/bin/${brand.packageName}`, binary);
     if (binaryWhy === null) {
-      const found = run(root, `strings -a "$1" | rg -i handy || true`, binary);
-      problems.push(
-        ...stringsProblems(found.out.toString("utf8"), STRINGS_ALLOW),
-      );
+      problems.push(...binaryScanProblems(binary));
     } else {
       problems.push(
         `RPM has no /usr/bin/${brand.packageName} to scan (${binaryWhy})`,

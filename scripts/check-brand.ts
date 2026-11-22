@@ -15,7 +15,6 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { decodePng, transcribingOutlineProblems } from "./brand-png";
 import { rpmProblems } from "./brand-rpm";
 import { svgProblems } from "./brand-svg";
 import { THEME_TOKENS, themeProblems, type BrandTheme } from "./brand-theme";
@@ -216,25 +215,6 @@ const TRAY_RASTERS = [
 ];
 const APP_SIZES = [16, 22, 24, 32, 48, 64, 128, 256, 512, 1024];
 
-/** The Colored Transcribing tray icon: pale tile, thin forest outline (owner decision). */
-function checkTranscribingOutline() {
-  const rel = "brand/generated/tray-colored-transcribing.png";
-  const path = join(ROOT, rel);
-  const brand = mirroredBrand();
-  if (!existsSync(path) || !brand?.mark) return; // reported by the size check
-  try {
-    for (const message of transcribingOutlineProblems(
-      decodePng(readFileSync(path)),
-      brand.mark.tile,
-      brand.mark.bars,
-    )) {
-      fail("source", `${rel} ${message}`);
-    }
-  } catch (e) {
-    fail("source", `${rel} cannot be read: ${String(e)}`);
-  }
-}
-
 function checkRasters() {
   const want: [string, number][] = [
     ...APP_SIZES.map((s): [string, number] => [`app-${s}.png`, s]),
@@ -253,7 +233,6 @@ function checkRasters() {
       fail("source", `${rel} is ${got[0]}x${got[1]}, want ${size}x${size}`);
     }
   }
-  checkTranscribingOutline();
   if (!existsSync(join(ROOT, "brand/generated/wordmark-latin.json"))) {
     fail("source", "brand/generated/wordmark-latin.json is missing");
   }

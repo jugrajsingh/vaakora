@@ -1,5 +1,15 @@
-import { describe, expect, it } from "bun:test";
+import { afterAll, describe, expect, it } from "bun:test";
 import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+import {
+  binaryScanProblems,
   desktopProblems,
   headerProblems,
   licenceProblems,
@@ -133,5 +143,64 @@ describe("rpm brand checks", () => {
       expect(rule.why.length).toBeGreaterThan(10);
       expect(rule.at.source.startsWith("^")).toBe(true);
     }
+  });
+});
+
+// The scan runs `strings` from PATH. These tests put a stand-in first (or no
+// `strings` at all) on a PATH of their own, under target/ in the repository.
+const TARGET = fileURLToPath(new URL("../target/", import.meta.url));
+mkdirSync(TARGET, { recursive: true });
+const work = mkdtempSync(join(TARGET, "brand-rpm-test-"));
+afterAll(() => rmSync(work, { recursive: true, force: true }));
+const BINARY = join(work, "app.bin");
+writeFileSync(BINARY, "not scanned by the stand-in");
+
+/** A PATH holding only a `strings` stand-in with this shell body (none when null). */
+function pathWith(body: string | null, name: string): NodeJS.ProcessEnv {
+  const dir = join(work, name);
+  mkdirSync(dir);
+  if (body !== null) {
+    const tool = join(dir, "strings");
+    writeFileSync(tool, `#!/bin/sh\n${body}\n`);
+    chmodSync(tool, 0o755);
+  }
+  return { PATH: dir };
+}
+
+describe("rpm binary scan runs strings and fails closed", () => {
+  it("rpm_scan_fails_when_strings_exits_non_zero", () => {
+    const problems = binaryScanProblems(
+      BINARY,
+      pathWith('echo "partial output Handy"; echo broke >&2; exit 3', "exit3"),
+    );
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain("strings exited 3");
+    expect(problems[0]).toContain("broke");
+  });
+
+  it("rpm_scan_fails_when_strings_is_missing", () => {
+    const problems = binaryScanProblems(BINARY, pathWith(null, "missing"));
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain("strings could not run");
+  });
+
+  it("rpm_scan_passes_when_strings_succeeds_with_no_match", () => {
+    expect(
+      binaryScanProblems(BINARY, pathWith("echo vaakora; echo tray", "clean")),
+    ).toEqual([]);
+  });
+
+  it("rpm_scan_allows_listed_identifiers_and_reports_the_rest", () => {
+    const allowed = binaryScanProblems(
+      BINARY,
+      pathWith("echo HANDY_TTS_WORKER; echo handy-keys:", "allowed"),
+    );
+    expect(allowed).toEqual([]);
+    const bad = binaryScanProblems(
+      BINARY,
+      pathWith("echo HANDY_TTS_WORKER; echo 'set by Handy: x'", "bad"),
+    );
+    expect(bad).toHaveLength(1);
+    expect(bad[0]).toContain("set by Handy: x");
   });
 });

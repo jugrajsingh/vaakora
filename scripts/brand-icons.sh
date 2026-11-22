@@ -11,7 +11,9 @@
 #   scripts/brand-icons.sh --check   render into target/brand-check and cmp every file
 #                                    with brand/generated, and the five src-tauri/icons rasters
 #                                    and the src-tauri/resources tray rasters with their
-#                                    brand/generated sources; exit 1 on any difference
+#                                    brand/generated sources, and read seven pixels of the
+#                                    Transcribing tray raster (outline, tile, corner); exit 1
+#                                    on any difference
 #
 # Needs ImageMagick with the RSVG delegate (`magick -list format | grep SVG`).
 # The density is 96 x scale, so one SVG user unit is one pixel at scale 1. Every
@@ -194,6 +196,28 @@ if [[ "$mode" == check ]]; then
       bad=1
     fi
   done
+  # The Transcribing tray icon keeps its thin outline: forest on the four edges
+  # (one 16-grid unit = 4 px wide), pale tile inside, transparent outside the
+  # rounded corner. Pixels are read back with ImageMagick as RRGGBBAA.
+  transcribing="$GENERATED/tray-colored-transcribing.png"
+  forest="${MARK_TILE#\#}FF"
+  pale="${MARK_BARS#\#}FF"
+  while read -r label x y want; do
+    got="$(magick "$transcribing" -format "%[hex:p{$x,$y}]" info: 2>&1)" || got="magick failed: $got"
+    want="$(tr '[:lower:]' '[:upper:]' <<<"${want}")"
+    if [[ "$got" != "$want" ]]; then
+      echo "PIXEL brand/generated/tray-colored-transcribing.png $label ($x,$y) is $got, want $want"
+      bad=1
+    fi
+  done <<EOF_PIXELS
+left-outline 1 32 ${forest}
+right-outline 62 32 ${forest}
+top-outline 32 1 ${forest}
+bottom-outline 32 62 ${forest}
+tile-inside-outline 5 32 ${pale}
+tile-centre 32 32 ${pale}
+corner-outside-tile 0 0 00000000
+EOF_PIXELS
   if [[ "$bad" -ne 0 ]]; then
     exit 1
   fi
