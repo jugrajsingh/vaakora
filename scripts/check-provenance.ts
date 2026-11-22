@@ -81,6 +81,44 @@ function checkReadme(problems: string[]): void {
   }
 }
 
+// One row of the pull request table: number, subject, author, decision, our commit.
+function checkPullRequestRow(
+  cells: string[],
+  line: string,
+  problems: string[],
+): void {
+  if (cells.length !== 5) {
+    problems.push(
+      `UPSTREAM.md: pull request row has ${cells.length} cells, need 5: ${line}`,
+    );
+    return;
+  }
+  const [pull, , , decision, ours] = cells;
+  if (!/^#\d+$/.test(pull)) {
+    problems.push(
+      `UPSTREAM.md: pull request row "${pull}" is not # and digits: ${line}`,
+    );
+  }
+  if (!DECISIONS.has(decision)) {
+    problems.push(
+      `UPSTREAM.md: pull request row ${pull} has decision "${decision}", need one of ${[...DECISIONS].join("|")}`,
+    );
+  }
+  if (!/^[0-9a-f]{7,40}$/.test(ours)) {
+    problems.push(
+      `UPSTREAM.md: pull request row ${pull} has our commit "${ours}", need a hex commit id`,
+    );
+    return;
+  }
+  try {
+    git("merge-base", "--is-ancestor", `${ours}^{commit}`, "HEAD");
+  } catch {
+    problems.push(
+      `UPSTREAM.md: pull request row ${pull} names our commit ${ours}, which is not a commit in the history of HEAD`,
+    );
+  }
+}
+
 function checkUpstreamLedger(problems: string[]): void {
   const ledger = readFile("UPSTREAM.md");
   if (ledger === null) {
@@ -97,14 +135,30 @@ function checkUpstreamLedger(problems: string[]): void {
   }
 
   const rowHashes: string[] = [];
+  // The ledger holds two tables, told apart by their header: upstream commits
+  // (4 cells) and open upstream pull requests (5 cells).
+  let table: "commits" | "pulls" = "commits";
   for (const line of lines) {
     if (!line.startsWith("|")) continue;
     const cells = line
       .split("|")
       .slice(1, -1)
       .map((cell) => cell.trim());
+    const [first] = cells;
+    if (first === "Upstream commit") {
+      table = "commits";
+      continue;
+    }
+    if (first === "Pull request") {
+      table = "pulls";
+      continue;
+    }
+    if (/^-+$/.test(first ?? "")) continue;
+    if (table === "pulls") {
+      checkPullRequestRow(cells, line, problems);
+      continue;
+    }
     const [hash, , decision] = cells;
-    if (hash === "Upstream commit" || /^-+$/.test(hash ?? "")) continue;
     if (cells.length !== 4) {
       problems.push(
         `UPSTREAM.md: row has ${cells.length} cells, need 4: ${line}`,
