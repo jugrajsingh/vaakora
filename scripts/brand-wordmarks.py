@@ -9,8 +9,10 @@ Each Anek variable font is instantiated at wght 600, wdth 100, the word is
 shaped with HarfBuzz (the font's own kerning and mark positioning) and every
 glyph is drawn with fontTools' SVGPathPen at its shaped position, so the app
 ships outlines and no font. Writes brand/wordmark/vaakora-{latin,pa,hi}.svg
-(fill currentColor) and brand/generated/wordmark-latin.json. With --check it
-writes nothing and exits 1 naming every file that differs.
+(fill currentColor) and brand/generated/wordmark-latin.json. Each viewBox is
+the union of the advance width by hhea ascent/descent box and the outline
+bounds, rounded outward. With --check it writes nothing and exits 1 naming
+every file that differs.
 
 The fonts are SIL OFL 1.1; brand/fonts/OFL.txt is their licence and applies
 to the outlines too.
@@ -18,12 +20,15 @@ to the outlines too.
 
 import io
 import json
+import math
 import sys
 from pathlib import Path
 
 import uharfbuzz as hb
+from fontTools.pens.boundsPen import BoundsPen
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
+from fontTools.svgLib.path import parse_path
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
 
@@ -79,9 +84,36 @@ def outline(font_file: str, text: str) -> dict:
         "upm": upm,
         "cap": cap,
         "width": x,
-        "viewBox": f"0 {-ascent} {x} {ascent - descent}",
+        "viewBox": view_box(x, ascent, descent, paths),
         "paths": paths,
     }
+
+
+def view_box(width: int, ascent: int, descent: int, paths: list[str]) -> str:
+    """Union of the advance/ascent/descent box and the exact outline bounds.
+
+    Marks and overshoots can sit outside the metrics box (Gurmukhi marks above
+    hhea ascent, Devanagari side bearings), so the bounds are measured on the
+    shipped path data and rounded outward to whole units.
+
+    Args:
+        width: Total advance width in font units.
+        ascent: hhea ascent (positive, y-up).
+        descent: hhea descent (negative, y-up).
+        paths: SVG path data, y-down, baseline at y=0.
+
+    Returns:
+        The viewBox attribute value "x y width height".
+    """
+    bounds = BoundsPen(None)
+    for d in paths:
+        parse_path(d, bounds)
+    x0, y0, x1, y1 = 0, -ascent, width, -descent
+    if bounds.bounds is not None:
+        bx0, by0, bx1, by1 = bounds.bounds
+        x0, y0 = min(x0, math.floor(bx0)), min(y0, math.floor(by0))
+        x1, y1 = max(x1, math.ceil(bx1)), max(y1, math.ceil(by1))
+    return f"{x0} {y0} {x1 - x0} {y1 - y0}"
 
 
 def render() -> dict[Path, str]:

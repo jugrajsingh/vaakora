@@ -8,6 +8,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { svgProblems } from "./brand-svg";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const problems: string[] = [];
@@ -148,26 +149,6 @@ function checkBrandJson() {
   }
 }
 
-/** Tag-balance parse: enough to prove an SVG is well formed XML. */
-function svgParses(svg: string): string | null {
-  const stack: string[] = [];
-  let seenRoot = false;
-  for (const m of svg.matchAll(/<(\/?)([A-Za-z][\w:-]*)([^>]*?)(\/?)>/g)) {
-    const [, close, name, , selfClose] = m;
-    if (close) {
-      if (stack.pop() !== name) return `unbalanced </${name}>`;
-    } else {
-      if (!seenRoot) {
-        if (name !== "svg") return "root element is not svg";
-        seenRoot = true;
-      }
-      if (!selfClose) stack.push(name);
-    }
-  }
-  if (!seenRoot) return "no svg root";
-  return stack.length ? `unclosed <${stack.pop()}>` : null;
-}
-
 const MASTERS = [
   ...["16", "22", "24", "large"].flatMap((s) => [
     `brand/mark/vaakora-${s}.svg`,
@@ -186,15 +167,8 @@ function checkMasters() {
       fail("source", `${rel} is missing`);
       continue;
     }
-    const svg = readFileSync(path, "utf8");
-    const bad = svgParses(svg);
-    if (bad) fail("source", `${rel} does not parse: ${bad}`);
-    if (/filter/i.test(svg)) fail("source", `${rel} uses a filter`);
-    const root = /<svg\b[^>]*>/.exec(svg)?.[0] ?? "";
-    if (!/\sviewBox="[^"]+"/.test(root))
-      fail("source", `${rel} has no viewBox`);
-    if (/\s(width|height)=/.test(root)) {
-      fail("source", `${rel} has width or height on the root (viewBox only)`);
+    for (const problem of svgProblems(readFileSync(path, "utf8"))) {
+      fail("source", `${rel}: ${problem}`);
     }
   }
 }
