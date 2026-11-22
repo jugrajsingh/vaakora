@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT AND Apache-2.0"
 
+# The installed worker is named for the app (rebrand); the crate keeps its name.
+[[bin]]
+name = "vaakora-tts"
+path = "src/main.rs"
+
 [lints]
 workspace = true
 

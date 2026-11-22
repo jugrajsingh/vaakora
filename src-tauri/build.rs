@@ -1,4 +1,6 @@
 fn main() {
+    let brand = emit_brand_env();
+
     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     build_apple_intelligence_bridge();
 
@@ -6,17 +8,20 @@ fn main() {
 
     // Linux ships transcribe-cpp as a shared libtranscribe + loadable ggml
     // backend modules (the `dynamic-backends` posture in Cargo.toml). Bake an
-    // $ORIGIN-relative rpath into the `handy` binary so it finds libtranscribe
+    // $ORIGIN-relative rpath into the app binary so it finds libtranscribe
     // next to it in the package — deb/rpm install into the app-private
-    // `/usr/lib/Handy` (the dir tauri already uses for resources; keeps
-    // Handy's libs out of the ldconfig-scanned `/usr/lib`, issue #1639) while
+    // `/usr/lib/<display name>` (the dir tauri already uses for resources; keeps
+    // the app's libs out of the ldconfig-scanned `/usr/lib`, issue #1639) while
     // the AppImage keeps them in `usr/lib` (linuxdeploy's layout), hence both
     // entries. transcribe's
     // init_backends_default() then loads the ggml modules co-located there.
     // (Windows resolves DLLs from the exe directory, so it needs no rpath;
     // macOS links transcribe-cpp statically via the `metal` feature.)
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("linux") {
-        println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN/../lib/Handy:$ORIGIN/../lib");
+        println!(
+            "cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN/../lib/{}:$ORIGIN/../lib",
+            brand.display_name
+        );
     }
 
     // CPAL (handy-recorder's and rodio's) links two CoreAudio functions that
@@ -37,6 +42,65 @@ fn main() {
     stage_vc_runtime_dlls();
 
     tauri_build::build()
+}
+
+/// The fields of `../brand.json` the Rust side reads.
+struct Brand {
+    display_name: String,
+}
+
+/// Read `../brand.json` and hand the app its identity as compile-time
+/// constants (`src/brand.rs`). The one source of the name, id, install dir,
+/// repository link and update channel; a null update endpoint becomes the empty
+/// string, which `brand.rs` maps to `None`.
+fn emit_brand_env() -> Brand {
+    println!("cargo:rerun-if-changed=../brand.json");
+    let text = std::fs::read_to_string("../brand.json").expect("../brand.json must be readable");
+    let json: serde_json::Value =
+        serde_json::from_str(&text).expect("../brand.json must be valid JSON");
+    let string = |value: Option<&serde_json::Value>, what: &str| -> String {
+        value
+            .and_then(|v| v.as_str())
+            .unwrap_or_else(|| panic!("brand.json: {what} must be a string"))
+            .to_string()
+    };
+    let display_name = string(json.get("displayName"), "displayName");
+    let install_dir = string(json.get("installDir"), "installDir");
+    assert_eq!(
+        install_dir,
+        format!("/usr/lib/{display_name}"),
+        "brand.json: installDir must be /usr/lib/<displayName> (Tauri's Linux resource rule)"
+    );
+    let update_endpoint = match json.pointer("/updater/endpoint") {
+        Some(serde_json::Value::Null) | None => String::new(),
+        value => string(value, "updater.endpoint"),
+    };
+    let vars = [
+        ("BRAND_DISPLAY_NAME", display_name.clone()),
+        ("BRAND_APP_ID", string(json.get("appId"), "appId")),
+        (
+            "BRAND_PACKAGE_NAME",
+            string(json.get("packageName"), "packageName"),
+        ),
+        (
+            "BRAND_LEGACY_APP_ID",
+            string(json.pointer("/legacy/appId"), "legacy.appId"),
+        ),
+        ("BRAND_INSTALL_DIR", install_dir),
+        (
+            "BRAND_WORKER_BINARY",
+            string(json.get("workerBinaryName"), "workerBinaryName"),
+        ),
+        (
+            "BRAND_REPO_URL",
+            string(json.pointer("/links/repo"), "links.repo"),
+        ),
+        ("BRAND_UPDATE_ENDPOINT", update_endpoint),
+    ];
+    for (name, value) in vars {
+        println!("cargo:rustc-env={name}={value}");
+    }
+    Brand { display_name }
 }
 
 /// Link clang's compiler runtime, which provides `__isPlatformVersionAtLeast`.
@@ -145,8 +209,8 @@ fn stage_vc_runtime_dlls() {
 /// this is a no-op there. `RUNTIME_DIR` (core libs) and `MODULE_DIR` (dlopen'd
 /// ggml modules) may be the same dir — the `BTreeSet` below dedups them.
 ///
-/// Where the staged dir lands: Windows bundles it beside `handy.exe` (DLLs resolve
-/// from the exe dir); Linux deb/rpm map it into the app-private `/usr/lib/Handy`
+/// Where the staged dir lands: Windows bundles it beside the app executable (DLLs resolve
+/// from the exe dir); Linux deb/rpm map it into the app-private `/usr/lib/<display name>`
 /// and the AppImage into `usr/lib`, both on the binary's rpath.
 fn stage_transcribe_runtime_libs() {
     use std::collections::BTreeSet;

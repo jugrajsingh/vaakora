@@ -5,12 +5,12 @@
 
 use anyhow::{bail, ensure, Context, Result};
 use clap::{Parser, Subcommand};
-use handy_app_lib::audio_toolkit::audio::decode_audio_file;
 use handy_tts_core::audit::{self, Corpus, ModelResults};
 use handy_tts_core::catalog;
 use handy_tts_core::vocabulary::{Vocabulary, VocabularyFile};
 use std::path::{Path, PathBuf};
 use transcribe_cpp::{Model, RunOptions};
+use vaakora_app_lib::audio_toolkit::audio::decode_audio_file;
 
 #[derive(Parser)]
 #[command(about = "Audit the built-in read-aloud vocabulary one voice at a time")]

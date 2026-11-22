@@ -23,7 +23,7 @@ use std::time::{Duration, Instant};
 /// Dev-only override for the binary path.
 pub const BINARY_ENV: &str = "HANDY_LLAMA_SERVER";
 /// Where the RPM installs the static CPU build.
-pub const INSTALLED_BINARY: &str = "/usr/lib/Handy/llm/llama-server";
+pub const INSTALLED_BINARY: &str = concat!(env!("BRAND_INSTALL_DIR"), "/llm/llama-server");
 
 const LOCAL_AUTHORITY: &str = "localhost";
 const HEALTH_POLL: Duration = Duration::from_millis(100);
@@ -691,6 +691,19 @@ pub(crate) mod tests {
     use crate::local_llm::registry;
     use std::io::Write;
     use std::sync::Arc;
+
+    #[test]
+    fn installed_binary_lives_under_the_install_dir() {
+        assert!(
+            INSTALLED_BINARY.starts_with(crate::brand::INSTALL_DIR),
+            "{INSTALLED_BINARY} is not under {}",
+            crate::brand::INSTALL_DIR
+        );
+        assert_eq!(
+            INSTALLED_BINARY,
+            format!("{}/llm/llama-server", crate::brand::INSTALL_DIR)
+        );
+    }
 
     /// Serves scripted responses and returns the raw request headers and bodies.
     fn serve(

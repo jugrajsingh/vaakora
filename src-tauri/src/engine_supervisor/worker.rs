@@ -455,7 +455,7 @@ fn init_logger() {
 }
 
 /// SIGUSR2 toggles transcription in the app (and WebKitGTK uses SIGUSR1).
-/// Aimed at Handy by name, e.g. the README's `pkill -USR2 -n handy`, one
+/// Aimed at the app by name, e.g. `pkill -USR2 -n vaakora`, one
 /// can reach this worker instead, and its default action would kill it.
 #[cfg(unix)]
 fn ignore_app_signals() {
@@ -467,13 +467,13 @@ fn ignore_app_signals() {
 }
 
 /// Started from /proc/self/exe, the kernel names this process "exe". Name it
-/// as Handy's, but not `handy`: `pkill`/`killall` match names case-sensitively,
-/// so `pkill -USR2 -n handy` keeps reaching the app, never this newer process.
+/// as the app's, but not `vaakora`: `pkill`/`killall` match names case-sensitively,
+/// so `pkill -USR2 -n vaakora` keeps reaching the app, never this newer process.
 #[cfg(target_os = "linux")]
 fn set_process_name() {
     // SAFETY: PR_SET_NAME copies a NUL-terminated name of up to 16 bytes.
     unsafe {
-        libc::prctl(libc::PR_SET_NAME, c"Handy-worker".as_ptr());
+        libc::prctl(libc::PR_SET_NAME, c"Vaakora-worker".as_ptr());
     }
 }
 

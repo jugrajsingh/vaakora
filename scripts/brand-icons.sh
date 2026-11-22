@@ -2,8 +2,13 @@
 # Render every Vaakora raster from the SVG masters in brand/ into brand/generated/.
 #
 #   scripts/brand-icons.sh           write brand/generated/*.png
+#   scripts/brand-icons.sh --sync-app  write brand/generated, then copy the app icons into
+#                                    src-tauri/icons: the five rasters from brand/generated, and
+#                                    icon.ico, icon.icns and the Windows Square/Store logos from
+#                                    `tauri icon` run on app-1024.png into target/brand-app-icons
 #   scripts/brand-icons.sh --check   render into target/brand-check and cmp every file
-#                                    with brand/generated; exit 1 on any difference
+#                                    with brand/generated, and the five src-tauri/icons rasters
+#                                    with their brand/generated sources; exit 1 on any difference
 #
 # Needs ImageMagick with the RSVG delegate (`magick -list format | grep SVG`).
 # The density is 96 x scale, so one SVG user unit is one pixel at scale 1. Every
@@ -26,18 +31,30 @@ DARK_WARN="#fbbf24"
 LIGHT_WARN="#9d5604"
 
 mode="write"
+sync_app=0
 case "${1:-}" in
   "") ;;
   --check) mode="check" ;;
+  --sync-app) sync_app=1 ;;
   *)
-    echo "usage: scripts/brand-icons.sh [--check]" >&2
+    echo "usage: scripts/brand-icons.sh [--check|--sync-app]" >&2
     exit 2
     ;;
 esac
 if [[ $# -gt 1 ]]; then
-  echo "usage: scripts/brand-icons.sh [--check]" >&2
+  echo "usage: scripts/brand-icons.sh [--check|--sync-app]" >&2
   exit 2
 fi
+
+# The raster app icons Tauri bundles, from brand/generated: <icons file> <generated file>.
+ICONS="$ROOT/src-tauri/icons"
+APP_RASTERS=(
+  "32x32.png app-32.png"
+  "64x64.png app-64.png"
+  "128x128.png app-128.png"
+  "128x128@2x.png app-256.png"
+  "icon.png app-512.png"
+)
 
 if ! magick -list format | grep -q 'SVG.*RSVG'; then
   echo "refusing: ImageMagick has no RSVG delegate" >&2
@@ -114,6 +131,13 @@ badge "$OUT/tray-colored-warning.png" "$DARK_WARN" 1 12
 
 if [[ "$mode" == check ]]; then
   bad=0
+  for pair in "${APP_RASTERS[@]}"; do
+    read -r icon generated <<<"$pair"
+    if ! cmp -s "$ICONS/$icon" "$GENERATED/$generated"; then
+      echo "DIFFERS src-tauri/icons/$icon from brand/generated/$generated"
+      bad=1
+    fi
+  done
   for f in "$OUT"/*.png; do
     name="$(basename "$f")"
     if [[ ! -f "$GENERATED/$name" ]]; then
@@ -131,4 +155,22 @@ if [[ "$mode" == check ]]; then
   echo "brand icons: no difference"
 else
   echo "rendered $(find "$OUT" -maxdepth 1 -name '*.png' | wc -l) PNGs into brand/generated"
+fi
+
+if [[ "$sync_app" -eq 1 ]]; then
+  for pair in "${APP_RASTERS[@]}"; do
+    read -r icon generated <<<"$pair"
+    cp "$GENERATED/$generated" "$ICONS/$icon"
+  done
+  # icon.ico, icon.icns and the Windows logos are built by `tauri icon` from the
+  # 1024 px raster; only those files are taken from its output.
+  TAURI_OUT="$ROOT/target/brand-app-icons"
+  rm -rf "$TAURI_OUT"
+  mkdir -p "$TAURI_OUT"
+  (cd "$ROOT" && bunx tauri icon "$GENERATED/app-1024.png" -o "$TAURI_OUT")
+  for f in icon.ico icon.icns StoreLogo.png "$TAURI_OUT"/Square*Logo.png; do
+    cp "$TAURI_OUT/$(basename "$f")" "$ICONS/$(basename "$f")"
+  done
+  rm -rf "$TAURI_OUT"
+  echo "synced app icons into src-tauri/icons"
 fi

@@ -36,7 +36,7 @@ packaging/install.sh [--dry-run]
 
 Picks the newest RPM in `packaging/dist/` whose name and version match this checkout and runs `sudo dnf` install, upgrade, downgrade or reinstall with `--nogpgcheck` (the local RPM is unsigned).
 
-The bootstrap build still names the package `handy`: do not install it. Install only after the rebrand has renamed the package.
+The package is named `vaakora` and installs `/usr/bin/vaakora` and `/usr/lib/Vaakora/` (with `llm/llama-server` and `tts/vaakora-tts`) plus `/usr/share/licenses/vaakora/LICENSE`.
 
 ## Dev loop
 

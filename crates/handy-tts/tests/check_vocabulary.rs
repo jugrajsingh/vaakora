@@ -2,11 +2,11 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_handy-tts"))
+    Command::new(env!("CARGO_BIN_EXE_vaakora-tts"))
         .arg("--check-vocabulary")
         .args(args)
         .output()
-        .expect("run handy-tts --check-vocabulary")
+        .expect("run vaakora-tts --check-vocabulary")
 }
 
 fn scratch_file(name: &str, json: &str) -> PathBuf {

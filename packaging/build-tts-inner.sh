@@ -13,10 +13,10 @@ cd "$source_root"
 staging="$source_root/.build-tmp/rpm-stage"
 rm -rf "$staging" "$source_root/src-tauri/tts-bin"
 mkdir -p "$source_root/.build-tmp"
-cargo build --locked --release --package handy-tts --bin handy-tts
-bash "$stager" "$CARGO_TARGET_DIR/release/handy-tts" "$runtime" "$staging" "$notices"
+cargo build --locked --release --package handy-tts --bin vaakora-tts
+bash "$stager" "$CARGO_TARGET_DIR/release/vaakora-tts" "$runtime" "$staging" "$notices"
 mkdir -p "$source_root/src-tauri/tts-bin"
-cp -a "$staging/usr/lib/Handy/tts/." "$source_root/src-tauri/tts-bin/"
+cp -a "$staging/usr/lib/Vaakora/tts/." "$source_root/src-tauri/tts-bin/"
 install -D -m 0644 "$source_root/crates/handy-tts/INDIC-TINY-TTS-CODE-LICENSE" "$source_root/src-tauri/tts-bin/notices/INDIC-TINY-TTS-CODE-LICENSE"
 bun install --frozen-lockfile
 bun run build

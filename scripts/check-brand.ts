@@ -2,7 +2,8 @@
  * Brand gate: `bun scripts/check-brand.ts`. Prints `BRAND PASS`, or one FAIL
  * line per problem and exits 1. Sections are added by the tasks that own them;
  * this file holds `source` (brand.json, the SVG masters, the pinned fonts and
- * the generated rasters).
+ * the generated rasters) and `mirrors` (files that cannot read brand.json carry
+ * literals of it, proven equal here).
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
@@ -243,10 +244,145 @@ function checkRasters() {
   }
 }
 
+/** The brand fields the mirrored files must equal. */
+interface Mirrored {
+  displayName: string;
+  appId: string;
+  packageName: string;
+  workerBinaryName: string;
+  installDir: string;
+  copyright: string[];
+}
+
+function readText(rel: string): string | null {
+  const path = join(ROOT, rel);
+  if (!existsSync(path)) {
+    fail("mirrors", `${rel} is missing`);
+    return null;
+  }
+  return readFileSync(path, "utf8");
+}
+
+function readJson(rel: string): Record<string, unknown> | null {
+  const text = readText(rel);
+  if (text === null) return null;
+  try {
+    const value: unknown = JSON.parse(text);
+    if (isRecord(value)) return value;
+    fail("mirrors", `${rel} is not an object`);
+  } catch (e) {
+    fail("mirrors", `${rel} does not parse: ${String(e)}`);
+  }
+  return null;
+}
+
+function readToml(rel: string): Record<string, unknown> | null {
+  const text = readText(rel);
+  if (text === null) return null;
+  try {
+    return Bun.TOML.parse(text) as Record<string, unknown>;
+  } catch (e) {
+    fail("mirrors", `${rel} does not parse: ${String(e)}`);
+    return null;
+  }
+}
+
+function mirroredBrand(): Mirrored | null {
+  const text = readText("brand.json");
+  if (text === null) return null;
+  try {
+    const b = JSON.parse(text) as Mirrored;
+    return b;
+  } catch {
+    return null; // `source` already reports an unparsable brand.json
+  }
+}
+
+function equalLiteral(where: string, got: unknown, want: string) {
+  if (got !== want) {
+    fail(
+      "mirrors",
+      `${where} is ${JSON.stringify(got)}, want ${JSON.stringify(want)}`,
+    );
+  }
+}
+
+/** `bundle.linux.<kind>.files`: every key under the install dir or the licence. */
+function checkBundleFiles(kind: "rpm" | "deb", files: unknown, b: Mirrored) {
+  const where = `tauri.conf.json bundle.linux.${kind}.files`;
+  if (!isRecord(files)) return fail("mirrors", `${where} is missing`);
+  const licence = `/usr/share/licenses/${b.packageName}/LICENSE`;
+  for (const key of Object.keys(files)) {
+    const underInstallDir =
+      key === b.installDir || key.startsWith(`${b.installDir}/`);
+    if (!underInstallDir && key !== licence) {
+      fail(
+        "mirrors",
+        `${where} key ${key} is neither under ${b.installDir} nor ${licence}`,
+      );
+    }
+  }
+  if (files[licence] !== "../LICENSE") {
+    fail(
+      "mirrors",
+      `${where}[${licence}] is ${JSON.stringify(files[licence])}, want "../LICENSE"`,
+    );
+  }
+}
+
+function checkMirrors() {
+  const b = mirroredBrand();
+  if (!b) return;
+  const tauri = readJson("src-tauri/tauri.conf.json");
+  if (tauri) {
+    equalLiteral(
+      "tauri.conf.json productName",
+      tauri.productName,
+      b.displayName,
+    );
+    equalLiteral("tauri.conf.json identifier", tauri.identifier, b.appId);
+    const bundle = isRecord(tauri.bundle) ? tauri.bundle : {};
+    equalLiteral(
+      "tauri.conf.json bundle.copyright",
+      bundle.copyright,
+      b.copyright.join("; "),
+    );
+    const linux = isRecord(bundle.linux) ? bundle.linux : {};
+    for (const kind of ["rpm", "deb"] as const) {
+      const section = linux[kind];
+      checkBundleFiles(kind, isRecord(section) ? section.files : undefined, b);
+    }
+  }
+  const cargo = readToml("src-tauri/Cargo.toml");
+  if (cargo) {
+    const pkg = isRecord(cargo.package) ? cargo.package : {};
+    equalLiteral("src-tauri/Cargo.toml package name", pkg.name, b.packageName);
+  }
+  const pkgJson = readJson("package.json");
+  if (pkgJson) equalLiteral("package.json name", pkgJson.name, b.packageName);
+  const html = readText("index.html");
+  if (html !== null) {
+    const title = /<title>([^<]*)<\/title>/.exec(html)?.[1];
+    equalLiteral("index.html title", title, b.displayName);
+  }
+  const tts = readToml("crates/handy-tts/Cargo.toml");
+  if (tts) {
+    const bins = Array.isArray(tts.bin) ? tts.bin : [];
+    const names = bins.map((x) => (isRecord(x) ? x.name : undefined));
+    if (!names.includes(b.workerBinaryName)) {
+      fail(
+        "mirrors",
+        `crates/handy-tts/Cargo.toml has no [[bin]] named ${b.workerBinaryName} (found ${JSON.stringify(names)})`,
+      );
+    }
+  }
+}
+
 checkBrandJson();
 checkMasters();
 checkFonts();
 checkRasters();
+checkMirrors();
 
 if (problems.length) {
   console.log(problems.join("\n"));

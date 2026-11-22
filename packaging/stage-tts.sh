@@ -26,9 +26,9 @@ for notice in "${notice_files[@]}"; do
     exit 1
   fi
 done
-destination="$staging/usr/lib/Handy/tts"
+destination="$staging/usr/lib/Vaakora/tts"
 mkdir -p "$destination"
-install -m 0755 "$worker" "$destination/handy-tts"
+install -m 0755 "$worker" "$destination/vaakora-tts"
 for library in "${required[@]}"; do
   install -m 0644 "$runtime/$library" "$destination/$library"
 done
@@ -44,4 +44,4 @@ fi
 for notice in "${notice_files[@]}"; do
   install -D -m 0644 "$notices/$notice" "$destination/notices/$notice"
 done
-echo "staged handy-tts and OpenVINO 2026.4.1 runtime into $destination"
+echo "staged vaakora-tts and OpenVINO 2026.4.1 runtime into $destination"

@@ -11,7 +11,7 @@ impl ProcessBackend for WorkerProcess {
     type Error = std::io::Error;
     fn start(&mut self) -> Result<(), Self::Error> {
         self.child = Some(
-            Command::new(env!("CARGO_BIN_EXE_handy-tts"))
+            Command::new(env!("CARGO_BIN_EXE_vaakora-tts"))
                 .args(["--model", "pocket-en"])
                 .stdin(Stdio::piped())
                 .stdout(Stdio::null())

@@ -57,15 +57,15 @@ class StageTests(unittest.TestCase):
         (self.runtime / "libze_intel_npu.so.1").write_bytes(b"must-not-bundle")
         result = self.run_stage(self.worker, self.runtime, self.staging, self.notices)
         self.assertEqual(result.returncode, 0, result.stderr)
-        destination = self.staging / "usr/lib/Handy/tts"
+        destination = self.staging / "usr/lib/Vaakora/tts"
         self.assertEqual(
             {p.name for p in destination.iterdir()},
-            set(REQUIRED) | {"handy-tts", "notices"},
+            set(REQUIRED) | {"vaakora-tts", "notices"},
         )
-        self.assertTrue(os.access(destination / "handy-tts", os.X_OK))
+        self.assertTrue(os.access(destination / "vaakora-tts", os.X_OK))
 
     def test_existing_driver_in_destination_is_refused(self) -> None:
-        destination = self.staging / "usr/lib/Handy/tts"
+        destination = self.staging / "usr/lib/Vaakora/tts"
         destination.mkdir(parents=True)
         (destination / "libze_intel_npu.so.1").write_bytes(b"must-not-bundle")
         self.assertEqual(
@@ -108,7 +108,7 @@ class StageTests(unittest.TestCase):
         )
         for name in NOTICES:
             self.assertEqual(
-                (self.staging / "usr/lib/Handy/tts/notices" / name).read_text(),
+                (self.staging / "usr/lib/Vaakora/tts/notices" / name).read_text(),
                 "fixture notice",
             )
 

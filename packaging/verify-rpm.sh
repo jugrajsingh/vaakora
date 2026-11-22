@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-INSTALL_DIR=/usr/lib/Handy
-WORKER=handy-tts
+INSTALL_DIR=/usr/lib/Vaakora
+WORKER=vaakora-tts
+LICENCE=/usr/share/licenses/vaakora/LICENSE
 if [[ $# -ne 1 || "$1" != /* || ! -f "$1" ]]; then
   echo 'usage: verify-rpm.sh ABSOLUTE_RPM_FILE' >&2
   exit 2
@@ -17,6 +18,10 @@ for path in "${required[@]}"; do
     exit 1
   fi
 done
+if ! grep -Fxq "$LICENCE" <<<"$files"; then
+  echo "refusing: missing $LICENCE" >&2
+  exit 1
+fi
 if grep -Eiq '/(libze_intel_npu|intel_npu|npu_driver)' <<<"$files"; then
   echo 'refusing: RPM bundles an NPU driver' >&2
   exit 1

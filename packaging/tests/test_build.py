@@ -9,7 +9,7 @@ from roots import PACKAGING, ROOT, SCRATCH
 REQUIRED = (
     "resources/tts/ratings.json",
     "llm/llama-server",
-    "tts/handy-tts",
+    "tts/vaakora-tts",
     "tts/libopenvino.so.2641",
     "tts/libopenvino_c.so.2641",
     "tts/libopenvino_onnx_frontend.so.2641",
@@ -26,6 +26,7 @@ REQUIRED = (
     "tts/notices/INDIC-TINY-TTS-CODE-LICENSE",
 )
 INDIC_NOTICE = "crates/handy-tts/INDIC-TINY-TTS-CODE-LICENSE"
+LICENCE = "/usr/share/licenses/vaakora/LICENSE"
 DEPS = (
     "intel-compute-runtime",
     "intel-level-zero",
@@ -66,19 +67,22 @@ class BuildTests(unittest.TestCase):
         }
         self.script(
             "cargo",
-            'echo cargo >>"$TRACE"\nif [ "${CARGO_RC:-0}" != 0 ]; then exit "$CARGO_RC"; fi\nif [ "${NO_WORKER:-0}" = 0 ]; then mkdir -p "$CARGO_TARGET_DIR/release"; printf "#!/bin/sh\\nexit 0\\n" >"$CARGO_TARGET_DIR/release/handy-tts"; chmod +x "$CARGO_TARGET_DIR/release/handy-tts"; fi\n',
+            'echo cargo >>"$TRACE"\nif [ "${CARGO_RC:-0}" != 0 ]; then exit "$CARGO_RC"; fi\nif [ "${NO_WORKER:-0}" = 0 ]; then mkdir -p "$CARGO_TARGET_DIR/release"; printf "#!/bin/sh\\nexit 0\\n" >"$CARGO_TARGET_DIR/release/vaakora-tts"; chmod +x "$CARGO_TARGET_DIR/release/vaakora-tts"; fi\n',
         )
         self.script(
             "bun",
-            'echo "bun $*" >>"$TRACE"\ncase "$*" in "run tauri"*) if [ "${TAURI_RC:-0}" != 0 ]; then exit "$TAURI_RC"; fi; mkdir -p "$CARGO_TARGET_DIR/release/bundle/rpm"; touch "$CARGO_TARGET_DIR/release/bundle/rpm/Handy-1.0.0-x86_64.rpm";; esac\n',
+            'echo "bun $*" >>"$TRACE"\ncase "$*" in "run tauri"*) if [ "${TAURI_RC:-0}" != 0 ]; then exit "$TAURI_RC"; fi; mkdir -p "$CARGO_TARGET_DIR/release/bundle/rpm"; touch "$CARGO_TARGET_DIR/release/bundle/rpm/Vaakora-1.0.0-x86_64.rpm";; esac\n',
         )
         self.files = self.scratch / "files"
         self.files.write_text(
-            "\n".join("/usr/lib/Handy/" + name for name in REQUIRED) + "\n"
+            "\n".join("/usr/lib/Vaakora/" + name for name in REQUIRED)
+            + "\n"
+            + LICENCE
+            + "\n"
         )
         self.dependencies = self.scratch / "dependencies"
         self.dependencies.write_text("\n".join(DEPS) + "\n")
-        self.package = self.scratch / "Handy.rpm"
+        self.package = self.scratch / "Vaakora.rpm"
         self.package.touch()
         self.environment.update(
             {"RPM_FILES": str(self.files), "RPM_DEPS": str(self.dependencies)}
@@ -212,14 +216,14 @@ class BuildTests(unittest.TestCase):
 
     def test_tauri_failure_and_no_rpm_are_not_swallowed(self) -> None:
         self.stager.write_text(
-            'set -eu\necho stage >>"$TRACE"\nmkdir -p "$3/usr/lib/Handy/tts"\ncp "$1" "$3/usr/lib/Handy/tts/handy-tts"\n'
+            'set -eu\necho stage >>"$TRACE"\nmkdir -p "$3/usr/lib/Vaakora/tts"\ncp "$1" "$3/usr/lib/Vaakora/tts/vaakora-tts"\n'
         )
         result = self.build(TAURI_RC="23")
         self.assertEqual(result.returncode, 23, result.stderr)
         self.assertEqual(list(self.output.iterdir()), [])
         result = self.build()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertTrue((self.output / "Handy-1.0.0-x86_64.rpm").is_file())
+        self.assertTrue((self.output / "Vaakora-1.0.0-x86_64.rpm").is_file())
         self.script("bun", 'echo "bun $*" >>"$TRACE"\n')
         self.assertEqual(self.build().returncode, 1)
 
@@ -227,7 +231,7 @@ class BuildTests(unittest.TestCase):
         self,
     ) -> None:
         self.stager.write_text(
-            'set -eu\necho stage >>"$TRACE"\nmkdir -p "$3/usr/lib/Handy/tts"\ncp "$1" "$3/usr/lib/Handy/tts/handy-tts"\n'
+            'set -eu\necho stage >>"$TRACE"\nmkdir -p "$3/usr/lib/Vaakora/tts"\ncp "$1" "$3/usr/lib/Vaakora/tts/vaakora-tts"\n'
         )
         result = self.build()
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -253,7 +257,7 @@ class BuildTests(unittest.TestCase):
         for name in REQUIRED:
             with self.subTest(file=name):
                 self.files.write_text(
-                    complete_files.replace("/usr/lib/Handy/" + name + "\n", "")
+                    complete_files.replace("/usr/lib/Vaakora/" + name + "\n", "")
                 )
                 self.assertEqual(self.verify().returncode, 1)
         self.files.write_text(complete_files)
@@ -263,27 +267,36 @@ class BuildTests(unittest.TestCase):
                 self.assertEqual(self.verify().returncode, 1)
         self.dependencies.write_text(complete_deps)
         self.files.write_text(
-            complete_files + "/usr/lib/Handy/tts/libze_intel_npu.so.1\n"
+            complete_files + "/usr/lib/Vaakora/tts/libze_intel_npu.so.1\n"
         )
         self.assertEqual(self.verify().returncode, 1)
 
     def test_package_without_ratings_is_refused(self) -> None:
         self.files.write_text(
             self.files.read_text().replace(
-                "/usr/lib/Handy/resources/tts/ratings.json\n", ""
+                "/usr/lib/Vaakora/resources/tts/ratings.json\n", ""
             )
         )
         result = self.verify()
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertIn(
-            "missing /usr/lib/Handy/resources/tts/ratings.json", result.stderr
+            "missing /usr/lib/Vaakora/resources/tts/ratings.json", result.stderr
         )
+
+    def test_licence_is_required(self) -> None:
+        self.assertEqual(self.verify().returncode, 0)
+        self.files.write_text(
+            self.files.read_text().replace(LICENCE + "\n", "")
+        )
+        result = self.verify()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("missing " + LICENCE, result.stderr)
 
     def test_rpm_mapping_and_weak_dependencies(self) -> None:
         config = json.loads((ROOT / "src-tauri/tauri.conf.json").read_text())["bundle"][
             "linux"
         ]["rpm"]
-        self.assertEqual(config["files"]["/usr/lib/Handy/tts"], "tts-bin")
+        self.assertEqual(config["files"]["/usr/lib/Vaakora/tts"], "tts-bin")
         self.assertEqual(config["recommends"], list(DEPS))
 
 

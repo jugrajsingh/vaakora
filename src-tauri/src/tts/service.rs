@@ -18,6 +18,12 @@ use std::{
     },
 };
 use tauri::{Emitter, Manager};
+/// Where the RPM installs the read-aloud worker.
+const INSTALLED_WORKER: &str = concat!(
+    env!("BRAND_INSTALL_DIR"),
+    "/tts/",
+    env!("BRAND_WORKER_BINARY")
+);
 #[derive(Clone)]
 pub struct Ready {
     pub manager: Arc<TtsManager>,
@@ -416,7 +422,7 @@ impl TtsService {
         .map_err(|_| "tts.errors.invalidRatings".to_string())?;
         let binary = std::env::var_os("HANDY_TTS_WORKER")
             .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from("/usr/lib/Handy/tts/handy-tts"));
+            .unwrap_or_else(|| PathBuf::from(INSTALLED_WORKER));
         let mut command = std::process::Command::new(&binary);
         command
             .arg("--list-devices")
@@ -971,6 +977,15 @@ mod tests {
     use crate::notices::NoticeSource;
     use crate::overlay::OverlayHold;
     use crate::tts::vocabulary::{testing, UserVocabulary};
+    #[test]
+    fn installed_worker_lives_under_the_install_dir() {
+        assert_eq!(
+            INSTALLED_WORKER,
+            format!("{}/tts/vaakora-tts", crate::brand::INSTALL_DIR)
+        );
+        assert!(crate::brand::WORKER_BINARY.starts_with("vaakora"));
+        assert!(INSTALLED_WORKER.ends_with(crate::brand::WORKER_BINARY));
+    }
     #[test]
     fn clearing_read_aloud_notices_forgets_reported_vocabulary_errors() {
         let dir = testing::scratch("service-forget");

@@ -185,15 +185,21 @@ fn build_headers(provider: &PostProcessProvider, api_key: &str) -> Result<Header
 
     // Common headers
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-    headers.insert(
-        REFERER,
-        HeaderValue::from_static("https://github.com/cjpais/Handy"),
-    );
+    headers.insert(REFERER, HeaderValue::from_static(crate::brand::REPO_URL));
     headers.insert(
         USER_AGENT,
-        HeaderValue::from_static("Handy/1.0 (+https://github.com/cjpais/Handy)"),
+        HeaderValue::from_str(&format!(
+            "{}/{} (+{})",
+            crate::brand::DISPLAY_NAME,
+            env!("CARGO_PKG_VERSION"),
+            crate::brand::REPO_URL
+        ))
+        .map_err(|e| format!("Invalid User-Agent header value: {}", e))?,
     );
-    headers.insert("X-Title", HeaderValue::from_static("Handy"));
+    headers.insert(
+        "X-Title",
+        HeaderValue::from_static(crate::brand::DISPLAY_NAME),
+    );
 
     // Provider-specific auth headers
     if !api_key.is_empty() {
@@ -728,6 +734,32 @@ mod tests {
         PostProcessProvider {
             api_format: PostProcessApiFormat::Anthropic,
             ..provider("custom", base_url)
+        }
+    }
+
+    #[test]
+    fn identifying_headers_name_vaakora() {
+        let headers = build_headers(&provider("custom", "https://example.invalid"), "").unwrap();
+        let text = |name: &str| headers.get(name).unwrap().to_str().unwrap().to_string();
+        assert_eq!(text("X-Title"), crate::brand::DISPLAY_NAME);
+        assert_eq!(text("X-Title"), "Vaakora");
+        assert_eq!(text("Referer"), crate::brand::REPO_URL);
+        let agent = text("User-Agent");
+        assert!(agent.starts_with("Vaakora/"), "User-Agent: {agent}");
+        assert_eq!(
+            agent,
+            format!(
+                "Vaakora/{} (+{})",
+                env!("CARGO_PKG_VERSION"),
+                crate::brand::REPO_URL
+            )
+        );
+        for (name, value) in headers.iter() {
+            let value = value.to_str().unwrap().to_lowercase();
+            assert!(
+                !value.contains("handy") && !value.contains("cjpais"),
+                "{name} carries the old identity: {value}"
+            );
         }
     }
 

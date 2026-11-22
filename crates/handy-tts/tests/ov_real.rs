@@ -276,7 +276,7 @@ fn real_worker_cancellation_returns_cancelled_and_next_chunk_can_synthesize() {
     }
     traced_cancel_probe(device);
     let mut child = Worker(
-        Command::new(env!("CARGO_BIN_EXE_handy-tts"))
+        Command::new(env!("CARGO_BIN_EXE_vaakora-tts"))
             .args(["--model", "supertonic-3"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -348,7 +348,7 @@ fn real_oversized_npu_chunk_returns_complete_audio_after_word_boundary_splitting
         return;
     }
     let mut child = Worker(
-        Command::new(env!("CARGO_BIN_EXE_handy-tts"))
+        Command::new(env!("CARGO_BIN_EXE_vaakora-tts"))
             .args(["--model", "supertonic-3"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -460,7 +460,7 @@ fn gpu_cancel_one_lane_other_completes() {
     }
     traced_cancel_probe(device);
     let mut child = Worker(
-        Command::new(env!("CARGO_BIN_EXE_handy-tts"))
+        Command::new(env!("CARGO_BIN_EXE_vaakora-tts"))
             .args(["--model", "supertonic-3"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())

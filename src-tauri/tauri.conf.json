@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Handy",
+  "productName": "Vaakora",
   "version": "0.10.1",
-  "identifier": "com.pais.handy",
+  "identifier": "dev.jugraj.vaakora",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -29,6 +29,11 @@
     "targets": "all",
     "resources": ["resources/**/*"],
     "license": "MIT",
+    "publisher": "Jugraj Singh",
+    "copyright": "Copyright (c) 2026 Jugraj Singh; Copyright (c) 2025 CJ Pais",
+    "homepage": "https://github.com/jugrajsingh/vaakora",
+    "shortDescription": "Speech to text and read aloud on your own computer",
+    "longDescription": "Press a shortcut, speak, and the text is typed where you are working. Dictation and read aloud run on your own computer, and so can text cleanup.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -51,7 +56,8 @@
           "libssl3t64 | libssl3"
         ],
         "files": {
-          "/usr/lib/Handy": "transcribe-libs"
+          "/usr/lib/Vaakora": "transcribe-libs",
+          "/usr/share/licenses/vaakora/LICENSE": "../LICENSE"
         }
       },
       "rpm": {
@@ -63,9 +69,10 @@
           "type": "none"
         },
         "files": {
-          "/usr/lib/Handy": "transcribe-libs",
-          "/usr/lib/Handy/llm": "llm-bin",
-          "/usr/lib/Handy/tts": "tts-bin"
+          "/usr/lib/Vaakora": "transcribe-libs",
+          "/usr/lib/Vaakora/llm": "llm-bin",
+          "/usr/lib/Vaakora/tts": "tts-bin",
+          "/usr/share/licenses/vaakora/LICENSE": "../LICENSE"
         },
         "recommends": [
           "intel-compute-runtime",
@@ -82,7 +89,6 @@
       }
     },
     "windows": {
-      "signCommand": "trusted-signing-cli -e https://eus.codesigning.azure.net/ -a CJ-Signing -c cjpais-dev -d Handy %1",
       "nsis": {
         "template": "nsis/installer.nsi",
         "installerIcon": "icons/icon.ico"
