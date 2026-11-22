@@ -8,6 +8,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::thread;
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
 
 pub enum SoundType {
@@ -135,7 +136,67 @@ fn play_audio_file(
 
     let player = rodio::play(mixer, buf_reader)?;
     player.set_volume(volume);
-    player.sleep_until_end();
+
+    // Bound the wait: when the output device wedges (on Linux/ALSA the hardware
+    // can keep a stale open handle), an unbounded wait parks this thread for
+    // good while the stream keeps the device's output side locked, and every
+    // other consumer of the device gets EBUSY for as long as the app lives.
+    // Giving up drops the player and the stream, which releases the device.
+    if !wait_until_done(|| player.empty(), FEEDBACK_MAX, FEEDBACK_POLL) {
+        warn!(
+            "Feedback sound did not finish within {}s (wedged output device?); dropping the output stream",
+            FEEDBACK_MAX.as_secs()
+        );
+    }
 
     Ok(())
+}
+
+/// The longest a start or stop sound may keep the output device open.
+const FEEDBACK_MAX: Duration = Duration::from_secs(30);
+const FEEDBACK_POLL: Duration = Duration::from_millis(50);
+
+/// Polls `done` every `poll` until it returns true or `cap` has passed.
+/// Returns whether `done` returned true within `cap`.
+fn wait_until_done(mut done: impl FnMut() -> bool, cap: Duration, poll: Duration) -> bool {
+    let started = Instant::now();
+    while !done() {
+        if started.elapsed() >= cap {
+            return false;
+        }
+        thread::sleep(poll);
+    }
+    true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn wait_returns_once_done() {
+        let mut polls = 0;
+        let done = wait_until_done(
+            || {
+                polls += 1;
+                polls == 4
+            },
+            Duration::from_secs(5),
+            Duration::from_millis(1),
+        );
+        assert!(done);
+        assert_eq!(polls, 4);
+    }
+
+    #[test]
+    fn wait_gives_up_after_the_cap() {
+        let started = Instant::now();
+        let done = wait_until_done(
+            || false,
+            Duration::from_millis(30),
+            Duration::from_millis(5),
+        );
+        assert!(!done);
+        assert!(started.elapsed() >= Duration::from_millis(30));
+    }
 }

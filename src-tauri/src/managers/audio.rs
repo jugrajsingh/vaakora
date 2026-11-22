@@ -448,6 +448,20 @@ fn open_microphone_on_channel(
     }
 }
 
+/// Opens the always-on microphone when the manager is created. A failed open
+/// (no input device, audio daemon unreachable) must not abort startup: the app
+/// would never show a window or tray, and the setting could only be reset by
+/// editing the store by hand. Every recording start reopens the stream and
+/// reports the error to the user, so the manager stays in always-on mode with
+/// the stream closed until then.
+fn open_always_on_at_startup<E: std::fmt::Display>(open: impl FnOnce() -> Result<(), E>) {
+    if let Err(e) = open() {
+        warn!(
+            "Failed to open the always-on microphone stream at startup ({e}); will retry on the next recording start"
+        );
+    }
+}
+
 /* ──────────────────────────────────────────────────────────────── */
 
 /// One recording session's first-sample notification. Waiting on this never
@@ -559,7 +573,7 @@ impl AudioRecordingManager {
 
         // Always-on?  Open immediately.
         if matches!(mode, MicrophoneMode::AlwaysOn) {
-            manager.start_microphone_stream()?;
+            open_always_on_at_startup(|| manager.start_microphone_stream());
         }
 
         Ok(manager)
@@ -1387,6 +1401,18 @@ mod tests {
             Some(ErrorKind::UnsupportedFormat)
         );
         assert_eq!(recording_notice_code(&wrapped), NoticeCode::RecordingFailed);
+    }
+
+    #[test]
+    fn always_on_open_failure_does_not_abort_startup() {
+        let mut opened = 0;
+        // Binding to `()` pins the signature: a function that returned the
+        // error to its caller would not compile here.
+        let () = open_always_on_at_startup(|| {
+            opened += 1;
+            Err("no device")
+        });
+        assert_eq!(opened, 1);
     }
 
     #[test]
