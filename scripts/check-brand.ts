@@ -7,13 +7,16 @@
  * brand.json colour pairs and wires every active token to them) and `ui` (no
  * Handy name in locale values, its marks and release notes gone). `--dist` adds `dist`: the built frontend
  * bundle (`bun run build`) carries no Handy name in any value and no upstream
- * host.
+ * host. `--rpm <absolute rpm>` adds `rpm` (scripts/brand-rpm.ts): the built
+ * package's header, file list, desktop entry, licence and `vaakora` binary
+ * strings carry no Handy name, and no path overlaps the installed handy package.
  */
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { decodePng, transcribingOutlineProblems } from "./brand-png";
+import { rpmProblems } from "./brand-rpm";
 import { svgProblems } from "./brand-svg";
 import { THEME_TOKENS, themeProblems, type BrandTheme } from "./brand-theme";
 
@@ -598,6 +601,13 @@ function checkDist() {
   }
 }
 
+/** `--rpm <abs rpm>`: the built package carries only the Vaakora name. */
+function checkRpm(rpm: string) {
+  const b = mirroredBrand();
+  if (!b) return fail("rpm", "brand.json is unreadable");
+  for (const message of rpmProblems(rpm, ROOT, b)) fail("rpm", message);
+}
+
 checkBrandJson();
 checkMasters();
 checkFonts();
@@ -606,6 +616,8 @@ checkMirrors();
 checkTheme();
 checkUi();
 if (process.argv.includes("--dist")) checkDist();
+const rpmFlag = process.argv.indexOf("--rpm");
+if (rpmFlag >= 0) checkRpm(process.argv[rpmFlag + 1] ?? "");
 
 if (problems.length) {
   console.log(problems.join("\n"));

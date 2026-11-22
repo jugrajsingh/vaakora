@@ -38,6 +38,10 @@ Picks the newest RPM in `packaging/dist/` whose name and version match this chec
 
 The package is named `vaakora` and installs `/usr/bin/vaakora` and `/usr/lib/Vaakora/` (with `llm/llama-server` and `tts/vaakora-tts`) plus `/usr/share/licenses/vaakora/LICENSE`.
 
+### Next to Handy
+
+`vaakora` installs alongside `handy`: the two packages own no common path (`/usr/bin/vaakora` and `/usr/lib/Vaakora/` against `/usr/bin/handy` and `/usr/lib/Handy/`), and `dnf` accepts both. They are still two apps with one shortcut. If only one should answer the dictation and read-aloud shortcuts, quit Handy from its tray and turn off its "Start at login" before the first Vaakora start. Vaakora copies Handy's settings and data on that first start and leaves the Handy folder untouched; the copy has Vaakora's own "Start at login" off, and you turn it on in the app.
+
 ## Dev loop
 
 ```bash
@@ -45,6 +49,14 @@ packaging/dev.sh [--mount <host-path>:<container-path>]... [--env NAME=VALUE]...
 ```
 
 Runs one command (cargo, bun, ...) in `/src` inside the build image, with its own caches. Mounts are read-only and devices are opt-in. The image must already exist, so run `build.sh` once first.
+
+## Brand check of the RPM
+
+```bash
+mise exec -- bun scripts/check-brand.ts --dist --rpm <absolute path of the RPM>
+```
+
+Prints `BRAND PASS` or one line per problem. The `rpm` section reads the package with `rpm`, `rpm2cpio`, `cpio` and `strings` (so it runs on the host, not in the build image, and the overlap check needs the `handy` package installed): the header (name, summary, URL, vendor, licence, description) names neither Handy nor its author; every path is `/usr/bin/vaakora`, under `/usr/lib/Vaakora/`, `/usr/share/applications/Vaakora.desktop`, a `vaakora.png` icon or `/usr/share/licenses/vaakora/LICENSE`; the desktop entry has `Name=Vaakora`, `Exec=vaakora`, `Icon=vaakora` and no Handy; the licence equals the repository `LICENSE`; no path is also owned by the installed `handy` package; and the `vaakora` binary holds no "handy" string except the internal identifiers listed in `STRINGS_ALLOW` in `scripts/brand-rpm.ts`. Its unit tests are `bun test ./scripts/brand-rpm.test.ts`.
 
 ## Tests
 
