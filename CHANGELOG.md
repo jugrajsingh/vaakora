@@ -4,6 +4,8 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 
 ## [Unreleased]
 
+Vaakora starts from Handy v0.10.1 plus the changes below; see UPSTREAM.md.
+
 ### Added
 
 Read aloud (text to speech)
