@@ -25,6 +25,7 @@ const fail = (section: string, message: string) =>
 type Kind = "string" | "string|null" | "string[]" | "object";
 
 const HEX = /^#[0-9a-f]{6}$/;
+const SEMVER = /^\d+\.\d+\.\d+$/;
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -67,6 +68,8 @@ function checkBrandJson() {
     return fail("source", `brand.json does not parse: ${String(e)}`);
   }
   checkObject("brand", data, {
+    version: "string",
+    upstream: "object",
     displayName: "string",
     shortName: "string",
     appId: "string",
@@ -82,6 +85,13 @@ function checkBrandJson() {
     theme: "object",
   });
   if (!isRecord(data)) return;
+  if (typeof data.version === "string" && !SEMVER.test(data.version)) {
+    fail("source", `brand.version ${data.version} is not major.minor.patch`);
+  }
+  checkObject("brand.upstream", data.upstream, {
+    name: "string",
+    version: "string",
+  });
   checkObject("brand.nativeNames", data.nativeNames, {
     pa: "string",
     hi: "string",
@@ -248,6 +258,8 @@ function checkRasters() {
 
 /** The brand fields the mirrored files must equal. */
 interface Mirrored {
+  version: string;
+  upstream: { name: string; version: string };
   displayName: string;
   appId: string;
   packageName: string;
@@ -363,6 +375,23 @@ function checkUpdaterOff(
   }
 }
 
+/** A mirrored version equals brand.json `version` (`source` reports a missing one). */
+function equalVersion(where: string, got: unknown, b: Mirrored) {
+  if (typeof b.version === "string") equalLiteral(where, got, b.version);
+}
+
+/** The app package's own entry in Cargo.lock carries the brand version. */
+function checkLockVersion(b: Mirrored) {
+  const lock = readText("Cargo.lock");
+  if (lock === null) return;
+  const entry = new RegExp(
+    `\\[\\[package\\]\\]\\nname = "${b.packageName}"\\nversion = "([^"]*)"`,
+  ).exec(lock);
+  if (!entry)
+    return fail("mirrors", `Cargo.lock has no ${b.packageName} entry`);
+  equalVersion(`Cargo.lock ${b.packageName} version`, entry[1], b);
+}
+
 function checkMirrors() {
   const b = mirroredBrand();
   if (!b) return;
@@ -374,6 +403,7 @@ function checkMirrors() {
       b.displayName,
     );
     equalLiteral("tauri.conf.json identifier", tauri.identifier, b.appId);
+    equalVersion("tauri.conf.json version", tauri.version, b);
     const bundle = isRecord(tauri.bundle) ? tauri.bundle : {};
     equalLiteral(
       "tauri.conf.json bundle.copyright",
@@ -391,9 +421,22 @@ function checkMirrors() {
   if (cargo) {
     const pkg = isRecord(cargo.package) ? cargo.package : {};
     equalLiteral("src-tauri/Cargo.toml package name", pkg.name, b.packageName);
+    equalVersion("src-tauri/Cargo.toml package version", pkg.version, b);
   }
+  checkLockVersion(b);
   const pkgJson = readJson("package.json");
-  if (pkgJson) equalLiteral("package.json name", pkgJson.name, b.packageName);
+  if (pkgJson) {
+    equalLiteral("package.json name", pkgJson.name, b.packageName);
+    equalVersion("package.json version", pkgJson.version, b);
+  }
+  const upstream = readText("UPSTREAM.md");
+  const base = b.upstream?.version; // `source` reports a missing upstream
+  if (upstream !== null && base && !upstream.includes(`(v${base})`)) {
+    fail(
+      "mirrors",
+      `UPSTREAM.md does not name the base as (v${base}), brand.json upstream.version`,
+    );
+  }
   const html = readText("index.html");
   if (html !== null) {
     const title = /<title>([^<]*)<\/title>/.exec(html)?.[1];
@@ -515,6 +558,9 @@ function distFiles(dir: string): string[] {
 const HANDY_HIT = /Handy(?!Keys)/g;
 const UPSTREAM_HOSTS = ["handy.computer", "github.com/cjpais"];
 
+const escapeRegExp = (text: string) =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 function checkDist() {
   const dir = join(ROOT, "dist");
   if (!existsSync(dir))
@@ -525,9 +571,19 @@ function checkDist() {
   // object keys and as t() arguments; they are ids, so mask them before scanning.
   const keyNames = new Set<string>();
   for (const [, data] of readLocales()) keyNamesWithHandy(data, keyNames);
+  // The one allowed name: the About row "Based on Handy 0.10.1" (owner decision)
+  // reads brand.json `upstream`, which the bundle carries as that exact object.
+  const upstream = mirroredBrand()?.upstream;
+  const credit = upstream
+    ? new RegExp(
+        `\\{\\s*"?name"?\\s*:\\s*"${escapeRegExp(upstream.name)}"\\s*,\\s*"?version"?\\s*:\\s*"${escapeRegExp(upstream.version)}"\\s*\\}`,
+        "g",
+      )
+    : null;
   for (const file of files) {
     let text = readFileSync(file, "utf8");
     for (const key of keyNames) text = text.split(key).join("");
+    if (credit) text = text.replace(credit, "");
     const rel = file.slice(ROOT.length + 1);
     for (const m of text.matchAll(HANDY_HIT)) {
       const at = m.index ?? 0;

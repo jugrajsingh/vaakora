@@ -1302,6 +1302,10 @@
         "title": "Verze",
         "description": "Aktuální verze {{appName}}"
       },
+      "basedOn": {
+        "title": "Vychází z",
+        "description": "Projekt, ze kterého {{appName}} vychází"
+      },
       "updates": {
         "title": "Aktualizace",
         "description": "Zkontrolujte, zda je dostupná novější verze"

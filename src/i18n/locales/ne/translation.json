@@ -1302,6 +1302,10 @@
         "title": "संस्करण",
         "description": "{{appName}} को हालको संस्करण"
       },
+      "basedOn": {
+        "title": "आधारित",
+        "description": "{{appName}} जुन परियोजनामा आधारित छ"
+      },
       "updates": {
         "title": "अपडेटहरू",
         "description": "नयाँ संस्करण उपलब्ध छ कि छैन जाँच गर्नुहोस्"

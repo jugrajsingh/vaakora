@@ -1302,6 +1302,10 @@
         "title": "Versie",
         "description": "Huidige versie van {{appName}}"
       },
+      "basedOn": {
+        "title": "Gebaseerd op",
+        "description": "Het project waarop {{appName}} is gebouwd"
+      },
       "updates": {
         "title": "Updates",
         "description": "Controleer of er een nieuwere versie beschikbaar is"

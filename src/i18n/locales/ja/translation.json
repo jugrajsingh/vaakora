@@ -1302,6 +1302,10 @@
         "title": "バージョン",
         "description": "{{appName}} の現在のバージョン"
       },
+      "basedOn": {
+        "title": "ベース",
+        "description": "{{appName}} のもとになっているプロジェクト"
+      },
       "updates": {
         "title": "アップデート",
         "description": "新しいバージョンが利用可能か確認します"

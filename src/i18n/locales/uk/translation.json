@@ -1302,6 +1302,10 @@
         "title": "Версія",
         "description": "Поточна версія {{appName}}"
       },
+      "basedOn": {
+        "title": "Заснований на",
+        "description": "Проєкт, на основі якого створено {{appName}}"
+      },
       "updates": {
         "title": "Оновлення",
         "description": "Перевірка наявності новішої версії"

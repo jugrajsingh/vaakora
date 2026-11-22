@@ -1302,6 +1302,10 @@
         "title": "Version",
         "description": "Version actuelle de {{appName}}"
       },
+      "basedOn": {
+        "title": "Basé sur",
+        "description": "Le projet à partir duquel {{appName}} a été créé"
+      },
       "updates": {
         "title": "Mises à jour",
         "description": "Vérifier si une version plus récente est disponible"

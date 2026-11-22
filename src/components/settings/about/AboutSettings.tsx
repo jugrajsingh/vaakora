@@ -16,7 +16,9 @@ export const openSourceCode = () => openUrl(brand.links.repo);
 
 export const AboutSettings: React.FC = () => {
   const { t } = useTranslation();
-  const [version, setVersion] = useState("");
+  // brand.version is what the build carries (check-brand proves the mirrors
+  // equal), so the row is right before, and without, the runtime lookup.
+  const [version, setVersion] = useState<string>(brand.version);
 
   useEffect(() => {
     const fetchVersion = async () => {
@@ -25,7 +27,7 @@ export const AboutSettings: React.FC = () => {
         setVersion(appVersion);
       } catch (error) {
         console.error("Failed to get app version:", error);
-        setVersion("0.1.2");
+        setVersion(brand.version);
       }
     };
 
@@ -40,8 +42,17 @@ export const AboutSettings: React.FC = () => {
           description={t("settings.about.version.description")}
           grouped={true}
         >
-          {/* eslint-disable-next-line i18next/no-literal-string */}
-          <span className="text-sm font-mono">v{version}</span>
+          <span className="text-sm font-mono">{`v${version}`}</span>
+        </SettingContainer>
+
+        <SettingContainer
+          title={t("settings.about.basedOn.title")}
+          description={t("settings.about.basedOn.description")}
+          grouped={true}
+        >
+          <span className="text-sm font-mono">
+            {`${brand.upstream.name} v${brand.upstream.version}`}
+          </span>
         </SettingContainer>
 
         <SettingContainer

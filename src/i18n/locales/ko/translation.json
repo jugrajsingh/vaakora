@@ -1302,6 +1302,10 @@
         "title": "버전",
         "description": "{{appName}}의 현재 버전"
       },
+      "basedOn": {
+        "title": "기반",
+        "description": "{{appName}}의 바탕이 된 프로젝트"
+      },
       "updates": {
         "title": "업데이트",
         "description": "새 버전이 있는지 확인합니다"

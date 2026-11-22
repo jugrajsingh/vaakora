@@ -1302,6 +1302,10 @@
         "title": "वर्शन",
         "description": "{{appName}} का मौजूदा वर्शन"
       },
+      "basedOn": {
+        "title": "आधारित",
+        "description": "वह प्रोजेक्ट जिस पर {{appName}} बना है"
+      },
       "updates": {
         "title": "अपडेट",
         "description": "जांचें कि कोई नया संस्करण उपलब्ध है या नहीं"

@@ -1302,6 +1302,10 @@
         "title": "版本",
         "description": "{{appName}} 的目前版本"
       },
+      "basedOn": {
+        "title": "基於",
+        "description": "{{appName}} 所基於的專案"
+      },
       "updates": {
         "title": "更新",
         "description": "檢查是否有新版本可用"

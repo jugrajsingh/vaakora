@@ -1,4 +1,6 @@
 {
+  "version": "0.1.0",
+  "upstream": { "name": "Handy", "version": "0.10.1" },
   "displayName": "Vaakora",
   "shortName": "Vaakora",
   "appId": "dev.jugraj.vaakora",

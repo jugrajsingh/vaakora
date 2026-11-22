@@ -1302,6 +1302,10 @@
         "title": "Version",
         "description": "Nuværende version af {{appName}}"
       },
+      "basedOn": {
+        "title": "Baseret på",
+        "description": "Projektet, som {{appName}} er bygget på"
+      },
       "updates": {
         "title": "Opdateringer",
         "description": "Tjek om en nyere version er tilgængelig"

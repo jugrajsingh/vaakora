@@ -477,6 +477,32 @@ describe("settings inventory", () => {
     assert.ok(!output.includes("settings.sound.outputDevice.title"));
   });
 
+  it("about_shows_the_version_and_the_upstream_base", () => {
+    const html = markup(<AboutSettings />);
+    const about = en.settings.about;
+    assert.equal(brand.version, "0.1.0");
+    const version = html.indexOf(">v" + brand.version + "<");
+    const basedOn = html.indexOf(">" + about.basedOn.title + "<");
+    const updates = html.indexOf(">" + about.updates.title + "<");
+    assert.ok(version >= 0, "the version is rendered as v" + brand.version);
+    assert.ok(basedOn >= 0, "the Based on row is rendered");
+    assert.ok(
+      version < basedOn && basedOn < updates,
+      "Based on follows Version and precedes Updates",
+    );
+    assert.equal(about.basedOn.title, "Based on");
+    assert.ok(
+      html.includes(
+        ">" + brand.upstream.name + " v" + brand.upstream.version + "<",
+      ),
+      "the upstream name and version are rendered",
+    );
+    assert.equal(
+      brand.upstream.name + " v" + brand.upstream.version,
+      "Handy v0.10.1",
+    );
+  });
+
   it("about_has_no_donate_and_opens_the_brand_repository", async () => {
     const html = markup(<AboutSettings />);
     assert.ok(html.includes(">" + en.settings.about.sourceCode.title + "<"));

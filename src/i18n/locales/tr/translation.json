@@ -1302,6 +1302,10 @@
         "title": "Sürüm",
         "description": "{{appName}}'nin mevcut sürümü"
       },
+      "basedOn": {
+        "title": "Temel alınan",
+        "description": "{{appName}} uygulamasının temel aldığı proje"
+      },
       "updates": {
         "title": "Güncellemeler",
         "description": "Daha yeni bir sürümün olup olmadığını denetleyin"

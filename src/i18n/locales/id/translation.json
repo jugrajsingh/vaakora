@@ -1302,6 +1302,10 @@
         "title": "Versi",
         "description": "Versi {{appName}} saat ini"
       },
+      "basedOn": {
+        "title": "Berdasarkan",
+        "description": "Proyek yang menjadi dasar {{appName}}"
+      },
       "updates": {
         "title": "Pembaruan",
         "description": "Periksa apakah versi yang lebih baru tersedia"
