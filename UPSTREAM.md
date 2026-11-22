@@ -18,3 +18,5 @@ Taken as rewritten changes, with the behaviour of the pull request and our own c
 | ------------ | -------------------------------------------------------------------------------------------- | -------------- | --------- | ---------- |
 | #2148        | fix(linux): bound feedback sound playback so a wedged output device cannot lock the mic/sink | Taha Kotil     | rewritten | 8abb23b8   |
 | #2110        | fix(audio): don't abort startup when the always-on microphone can't open                     | Niels Kootstra | rewritten | 8abb23b8   |
+| #2374        | fix: frame the structured post-processing dictation in <transcript> tags                     | Rahul          | rewritten | 024cc059   |
+| #2440        | fix: keep the transcript in post-processing when a prompt has no ${output} placeholder       | Ahmed Saeed    | rewritten | 024cc059   |
