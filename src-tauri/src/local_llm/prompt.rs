@@ -95,7 +95,9 @@ pub fn system_prompt(style: PromptStyle, settings: &AppSettings) -> Result<Strin
     }
 }
 
-/// Chat messages for one chunk in the model's prompt style.
+/// Chat messages for one chunk in the model's prompt style. Plain frames the chunk in
+/// `<transcript>` tags unless the system prompt leaves no room for the frame
+/// (`plain_frame_allowance`).
 pub fn build_messages(
     style: PromptStyle,
     system: &str,
@@ -104,7 +106,10 @@ pub fn build_messages(
 ) -> Vec<ChatMessage> {
     let user = match style {
         PromptStyle::S1ControlLine => format!("{control}\n{chunk}"),
-        PromptStyle::PlainSystemPrompt => crate::actions::frame_transcript(chunk),
+        PromptStyle::PlainSystemPrompt => match plain_frame_allowance(system) {
+            Some(_) => crate::actions::frame_transcript(chunk),
+            None => chunk.to_string(),
+        },
     };
     vec![
         ChatMessage {
@@ -171,14 +176,29 @@ pub fn chunk_budget(system: &str, control: &str) -> u32 {
         .max(MIN_CHUNK_BUDGET)
 }
 
+/// Transcript tokens left for one framed Plain chunk once the system prompt, template and
+/// `<transcript>` frame are paid for, or `None` when not even one token is left. No floor, so
+/// a framed chunk never gets more than the space left under `CHUNK_TOKEN_LIMIT`.
+fn plain_frame_allowance(system: &str) -> Option<u32> {
+    let frame = est_tokens(&crate::actions::frame_transcript(""));
+    let fixed = est_tokens(system)
+        .saturating_add(TEMPLATE_OVERHEAD_TOKENS)
+        .saturating_add(frame);
+    CHUNK_TOKEN_LIMIT
+        .checked_sub(fixed)
+        .filter(|&allowance| allowance >= 1)
+}
+
 /// Transcript tokens allowed per chunk for a request in the model's prompt style. S1 pays its
-/// control line before the floor (`chunk_budget`); Plain pays the frame after it, so a framed
-/// request fits whenever the unframed one would.
+/// control line before the floor (`chunk_budget`). Plain gets the space left after the frame
+/// (`plain_frame_allowance`); a system prompt leaving no room for the frame keeps the
+/// pre-frame budget and is sent unframed (`build_messages`).
 pub fn chunk_budget_for(style: PromptStyle, system: &str, settings: &AppSettings) -> u32 {
     match style {
         PromptStyle::S1ControlLine => chunk_budget(system, &control_line_for(settings)),
-        PromptStyle::PlainSystemPrompt => chunk_budget(system, "")
-            .saturating_sub(est_tokens(&crate::actions::frame_transcript(""))),
+        PromptStyle::PlainSystemPrompt => {
+            plain_frame_allowance(system).unwrap_or_else(|| chunk_budget(system, ""))
+        }
     }
 }
 
@@ -737,23 +757,132 @@ mod tests {
         assert!(chunks.len() > 1, "the frame forces a split");
     }
 
-    #[test]
-    fn a_prompt_too_long_for_any_request_keeps_the_floor_total_with_the_frame() {
+    /// Estimated total of a request as `build_messages` really builds it (system + user + template).
+    fn request_total(messages: &[ChatMessage]) -> u32 {
+        messages
+            .iter()
+            .map(|message| est_tokens(&message.content))
+            .sum::<u32>()
+            + TEMPLATE_OVERHEAD_TOKENS
+    }
+
+    /// `word` repeated and cut so the text estimates to exactly `tokens` (no trailing space).
+    fn text_of(word: &str, tokens: u32) -> String {
+        let text: String = word.chars().cycle().take(tokens as usize * 3).collect();
+        let text = text.trim_end().to_string();
+        assert_eq!(est_tokens(&text), tokens);
+        text
+    }
+
+    /// Every Plain request for `transcript` as the manager sends them (budget, chunking, messages).
+    fn plain_requests(system: &str, transcript: &str) -> (Vec<String>, Vec<Vec<ChatMessage>>) {
         let settings = crate::settings::get_default_settings();
-        let system = "word ".repeat(594);
-        assert_eq!(est_tokens(&system), 990);
-        let transcript = (0..400)
-            .map(|i| format!("w{}", i % 97))
-            .collect::<Vec<_>>()
-            .join(" ");
-        let budget = chunk_budget_for(PromptStyle::PlainSystemPrompt, &system, &settings);
-        let chunks = chunk_transcript(&transcript, budget);
-        assert!(chunks.len() > 1);
-        for chunk in &chunks {
-            assert!(
-                framed_total(&system, chunk)
-                    <= est_tokens(&system) + MIN_CHUNK_BUDGET + TEMPLATE_OVERHEAD_TOKENS,
-                "no worse than the unframed request at the floor"
+        let budget = chunk_budget_for(PromptStyle::PlainSystemPrompt, system, &settings);
+        let chunks = chunk_transcript(transcript, budget);
+        let requests = chunks
+            .iter()
+            .map(|chunk| build_messages(PromptStyle::PlainSystemPrompt, system, "", chunk))
+            .collect();
+        (chunks, requests)
+    }
+
+    #[test]
+    fn fitting_930_token_custom_prompt_stays_within_the_limit() {
+        let system = "Fix grammar. ".repeat(214) + "Be brief";
+        let transcript = "hello ".repeat(26) + "friend";
+        assert_eq!(est_tokens(&system), 930);
+        assert_eq!(est_tokens(&transcript), 54);
+        assert!(
+            est_tokens(&system) + est_tokens(&transcript) + TEMPLATE_OVERHEAD_TOKENS
+                <= CHUNK_TOKEN_LIMIT,
+            "the unframed request fits"
+        );
+        let (chunks, requests) = plain_requests(&system, &transcript);
+        for messages in &requests {
+            let total = request_total(messages);
+            assert!(total <= CHUNK_TOKEN_LIMIT, "framed total {total}");
+            assert!(messages[1].content.starts_with("<transcript>\n"));
+        }
+        assert!(chunks.len() > 1, "the frame forces a split");
+        assert_eq!(chunks.join(" "), transcript);
+    }
+
+    /// Exhaustive over system prompts of 850..=1000 estimated tokens and transcripts of 1..=200
+    /// (both step 1): whenever the unframed single request fits, every request sent fits, and the
+    /// chunks always rebuild the transcript. Budgets under one word split words at char
+    /// boundaries, so the rebuild compares the text without whitespace.
+    #[test]
+    fn plain_requests_fit_whenever_the_unframed_request_fits() {
+        let mut checked = 0;
+        let mut split = 0;
+        for system_tokens in 850..=1000 {
+            let system = text_of("Fix grammar. ", system_tokens);
+            for transcript_tokens in 1..=200 {
+                let transcript = text_of("Hello there. How are you? ", transcript_tokens);
+                let (chunks, requests) = plain_requests(&system, &transcript);
+                assert_eq!(
+                    chunks.concat().split_whitespace().collect::<String>(),
+                    transcript.split_whitespace().collect::<String>(),
+                    "system={system_tokens} transcript={transcript_tokens}"
+                );
+                if system_tokens + transcript_tokens + TEMPLATE_OVERHEAD_TOKENS > CHUNK_TOKEN_LIMIT
+                {
+                    continue;
+                }
+                checked += 1;
+                if chunks.len() > 1 {
+                    split += 1;
+                }
+                for (index, messages) in requests.iter().enumerate() {
+                    let total = request_total(messages);
+                    assert!(
+                        total <= CHUNK_TOKEN_LIMIT,
+                        "first failing pair: system={system_tokens} transcript={transcript_tokens} \
+                         chunk={index} of {} total={total} limit={CHUNK_TOKEN_LIMIT}",
+                        chunks.len()
+                    );
+                }
+            }
+        }
+        println!("pairs where the unframed request fits: {checked}; split by the frame: {split}");
+        assert_eq!(checked, 9045);
+        assert!(split > 0);
+    }
+
+    #[test]
+    fn plain_prompt_without_room_for_the_frame_is_sent_unframed() {
+        let settings = crate::settings::get_default_settings();
+        // 974 leaves exactly one token after the template and frame: framed, one token a chunk.
+        let fits = text_of("Fix grammar. ", 974);
+        let (chunks, requests) = plain_requests(&fits, "hello there");
+        assert!(chunks.iter().all(|chunk| est_tokens(chunk) <= 1));
+        for messages in &requests {
+            assert!(messages[1].content.starts_with("<transcript>\n"));
+            assert!(request_total(messages) <= CHUNK_TOKEN_LIMIT);
+        }
+        // 975 and longer leave no token: the request is the pre-frame one, unframed, floor budget.
+        for system_tokens in [975, 990, 1000, 1200] {
+            let system = text_of("Fix grammar. ", system_tokens);
+            assert_eq!(
+                chunk_budget_for(PromptStyle::PlainSystemPrompt, &system, &settings),
+                chunk_budget(&system, ""),
+                "system={system_tokens}"
+            );
+            assert_eq!(chunk_budget(&system, ""), MIN_CHUNK_BUDGET);
+            let transcript = "hello ".repeat(31) + "friend";
+            assert_eq!(
+                build_messages(PromptStyle::PlainSystemPrompt, &system, "", &transcript),
+                vec![
+                    ChatMessage {
+                        role: "system",
+                        content: system.clone(),
+                    },
+                    ChatMessage {
+                        role: "user",
+                        content: transcript.clone(),
+                    },
+                ],
+                "system={system_tokens}"
             );
         }
     }

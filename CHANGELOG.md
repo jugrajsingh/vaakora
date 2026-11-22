@@ -193,7 +193,7 @@ Packaging
 - Dictation model descriptions follow the app language.
 - Start and stop sounds play on outputs that reject a fixed 2048-frame buffer (some Bluetooth headsets); the device picks the buffer size.
 - A wedged output device can no longer hold a start or stop sound open forever (playback gives up after 30 s and releases the device); an always-on microphone that cannot open at startup no longer stops the app from starting.
-- Cleanup always hands the model the transcript inside <transcript> tags: structured-output providers and local plain-prompt models no longer see an empty tag block with the dictation as a bare message (models sometimes followed a dictated command or returned nothing), and a custom prompt without ${output} no longer drops the transcript. A prompt with ${output} and the S1-mini request are sent exactly as before. Based on the fixes proposed in upstream pull requests #2374 (Rahul) and #2440 (Ahmed Saeed).
+- Cleanup always hands the model the transcript inside <transcript> tags: structured-output providers and local plain-prompt models no longer see an empty tag block with the dictation as a bare message (models sometimes followed a dictated command or returned nothing), and a custom prompt without ${output} no longer drops the transcript. A prompt with ${output} and the S1-mini request are sent exactly as before. Local plain-prompt requests are split so the tags never push one over the model's per-request limit; a local prompt so long that it leaves no room for the tags is sent untagged, as before. Based on the fixes proposed in upstream pull requests #2374 (Rahul) and #2440 (Ahmed Saeed).
 
 ### Platform support
 
