@@ -20,3 +20,12 @@ Taken as rewritten changes, with the behaviour of the pull request and our own c
 | #2110        | fix(audio): don't abort startup when the always-on microphone can't open                     | Niels Kootstra | rewritten | 8abb23b8   |
 | #2374        | fix: frame the structured post-processing dictation in <transcript> tags                     | Rahul          | rewritten | 024cc059   |
 | #2440        | fix: keep the transcript in post-processing when a prompt has no ${output} placeholder       | Ahmed Saeed    | rewritten | 024cc059   |
+
+## Fork commits taken in part
+
+Taken as rewritten changes from a fork of upstream, with our own code and tests; the fork's other rules in the same commits are not taken (see CHANGELOG.md, Fixed).
+
+| Fork commit             | Subject                                                                  | Author             | Decision  | Our commit |
+| ----------------------- | ------------------------------------------------------------------------ | ------------------ | --------- | ---------- |
+| maxisme/Handy@00cbe2ba0 | fix: discard post-processing output that echoes the prompt's own example | Maximilian Mitchel | rewritten | 92c927ca   |
+| maxisme/Handy@a9e714682 | fix: discard post-processing output that echoes the prompt               | Maximilian Mitchel | rewritten | 92c927ca   |

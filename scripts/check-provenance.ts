@@ -81,32 +81,48 @@ function checkReadme(problems: string[]): void {
   }
 }
 
-// One row of the pull request table: number, subject, author, decision, our commit.
-function checkPullRequestRow(
+// One row of a table of changes taken from outside the upstream history:
+// id, subject, author, decision, our commit.
+const TAKEN_TABLES = {
+  pulls: {
+    label: "pull request",
+    id: /^#\d+$/,
+    idHint: "# and digits",
+  },
+  forks: {
+    label: "fork commit",
+    id: /^[\w.-]+\/[\w.-]+@[0-9a-f]{7,40}$/,
+    idHint: "<owner>/<repo>@ and a hex commit id",
+  },
+} as const;
+
+function checkTakenRow(
+  table: keyof typeof TAKEN_TABLES,
   cells: string[],
   line: string,
   problems: string[],
 ): void {
+  const { label, id, idHint } = TAKEN_TABLES[table];
   if (cells.length !== 5) {
     problems.push(
-      `UPSTREAM.md: pull request row has ${cells.length} cells, need 5: ${line}`,
+      `UPSTREAM.md: ${label} row has ${cells.length} cells, need 5: ${line}`,
     );
     return;
   }
-  const [pull, , , decision, ours] = cells;
-  if (!/^#\d+$/.test(pull)) {
+  const [first, , , decision, ours] = cells;
+  if (!id.test(first)) {
     problems.push(
-      `UPSTREAM.md: pull request row "${pull}" is not # and digits: ${line}`,
+      `UPSTREAM.md: ${label} row "${first}" is not ${idHint}: ${line}`,
     );
   }
   if (!DECISIONS.has(decision)) {
     problems.push(
-      `UPSTREAM.md: pull request row ${pull} has decision "${decision}", need one of ${[...DECISIONS].join("|")}`,
+      `UPSTREAM.md: ${label} row ${first} has decision "${decision}", need one of ${[...DECISIONS].join("|")}`,
     );
   }
   if (!/^[0-9a-f]{7,40}$/.test(ours)) {
     problems.push(
-      `UPSTREAM.md: pull request row ${pull} has our commit "${ours}", need a hex commit id`,
+      `UPSTREAM.md: ${label} row ${first} has our commit "${ours}", need a hex commit id`,
     );
     return;
   }
@@ -114,7 +130,7 @@ function checkPullRequestRow(
     git("merge-base", "--is-ancestor", `${ours}^{commit}`, "HEAD");
   } catch {
     problems.push(
-      `UPSTREAM.md: pull request row ${pull} names our commit ${ours}, which is not a commit in the history of HEAD`,
+      `UPSTREAM.md: ${label} row ${first} names our commit ${ours}, which is not a commit in the history of HEAD`,
     );
   }
 }
@@ -135,9 +151,9 @@ function checkUpstreamLedger(problems: string[]): void {
   }
 
   const rowHashes: string[] = [];
-  // The ledger holds two tables, told apart by their header: upstream commits
-  // (4 cells) and open upstream pull requests (5 cells).
-  let table: "commits" | "pulls" = "commits";
+  // The ledger holds three tables, told apart by their header: upstream commits
+  // (4 cells), open upstream pull requests and fork commits (5 cells each).
+  let table: "commits" | keyof typeof TAKEN_TABLES = "commits";
   for (const line of lines) {
     if (!line.startsWith("|")) continue;
     const cells = line
@@ -153,9 +169,13 @@ function checkUpstreamLedger(problems: string[]): void {
       table = "pulls";
       continue;
     }
+    if (first === "Fork commit") {
+      table = "forks";
+      continue;
+    }
     if (/^-+$/.test(first ?? "")) continue;
-    if (table === "pulls") {
-      checkPullRequestRow(cells, line, problems);
+    if (table !== "commits") {
+      checkTakenRow(table, cells, line, problems);
       continue;
     }
     const [hash, , decision] = cells;
