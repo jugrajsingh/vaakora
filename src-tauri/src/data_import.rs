@@ -119,7 +119,7 @@ pub fn import_if_needed(
     sweep_stale(base, &name);
     let staging = base.join(format!("{}{}", staging_prefix(&name), unique_suffix()));
     let mut copied = report(ImportStatus::Copied, None);
-    let built = create_private_dir(&staging, None)
+    let built = create_private_dir(&staging)
         .and_then(|()| copy_allowlist(&paths.old, &staging, copy, &mut copied))
         .and_then(|()| write_report(&staging, &copied));
     let result = built.and_then(|()| {
@@ -143,11 +143,18 @@ pub fn import_if_needed(
 /// Create the new dir holding only `failed`, unless the new dir exists by now
 /// (then it and its contents are left alone and nothing is reported).
 fn fail(paths: &ImportPaths, failed: DataImportReport) -> Option<DataImportReport> {
-    create_private_dir(&paths.new, None).ok()?;
+    create_private_dir(&paths.new).ok()?;
     if let Err(e) = write_report(&paths.new, &failed) {
         eprintln!("[data import] could not write the failure report: {e}");
     }
     Some(failed)
+}
+
+fn remove_if_present(path: &Path) -> io::Result<()> {
+    match fs::remove_file(path) {
+        Err(e) if e.kind() != io::ErrorKind::NotFound => Err(with_path(e, path)),
+        _ => Ok(()),
+    }
 }
 
 fn exists(path: &Path) -> bool {
@@ -158,46 +165,29 @@ fn with_path(e: io::Error, path: &Path) -> io::Error {
     io::Error::new(e.kind(), format!("{}: {e}", path.display()))
 }
 
-/// `mode`, narrowed to the source's permission bits when a source is given.
-#[cfg(unix)]
-fn private_mode(mode: u32, source: Option<&Path>) -> io::Result<u32> {
-    use std::os::unix::fs::PermissionsExt;
-    match source {
-        Some(source) => {
-            let meta = fs::metadata(source).map_err(|e| with_path(e, source))?;
-            Ok(mode & meta.permissions().mode())
-        }
-        None => Ok(mode),
-    }
-}
-
-/// A directory only its owner can enter (0700, or the source's mode where
-/// stricter), set at creation so nothing copied into it is ever reachable
-/// by other users, whatever the umask.
-fn create_private_dir(path: &Path, source: Option<&Path>) -> io::Result<()> {
+/// A directory only its owner can use (exactly 0700), set at creation so
+/// nothing copied into it is ever reachable by other users, whatever the
+/// umask, and always writable by the import, whatever the source's mode.
+fn create_private_dir(path: &Path) -> io::Result<()> {
     let mut builder = fs::DirBuilder::new();
     #[cfg(unix)]
     {
         use std::os::unix::fs::DirBuilderExt;
-        builder.mode(private_mode(0o700, source)?);
+        builder.mode(0o700);
     }
-    #[cfg(not(unix))]
-    let _ = source;
     builder.create(path).map_err(|e| with_path(e, path))
 }
 
-/// An empty file only its owner can read (0600, or the source's mode where
-/// stricter), created before a database copy writes into it.
-fn create_private_file(path: &Path, source: &Path) -> io::Result<()> {
+/// An empty file only its owner can read and write (exactly 0600), created
+/// before a database copy writes into it.
+fn create_private_file(path: &Path) -> io::Result<()> {
     let mut options = fs::OpenOptions::new();
     options.write(true).create_new(true);
     #[cfg(unix)]
     {
         use std::os::unix::fs::OpenOptionsExt;
-        options.mode(private_mode(0o600, Some(source))?);
+        options.mode(0o600);
     }
-    #[cfg(not(unix))]
-    let _ = source;
     options.open(path).map(drop).map_err(|e| with_path(e, path))
 }
 
@@ -299,6 +289,9 @@ fn copy_settings(
 ) -> io::Result<u64> {
     let mut last = String::new();
     for _ in 0..ATTEMPTS {
+        // A read-only source gives a read-only copy: replace it, never open it
+        // for writing.
+        remove_if_present(dst)?;
         copy(src, dst).map_err(|e| with_path(e, src))?;
         let bytes = fs::read(dst).map_err(|e| with_path(e, dst))?;
         match serde_json::from_slice::<serde_json::Value>(&bytes) {
@@ -307,7 +300,12 @@ fn copy_settings(
                     settings.insert("autostart_enabled".into(), serde_json::Value::Bool(false));
                 }
                 let out = serde_json::to_vec_pretty(&value).map_err(io::Error::other)?;
+                let permissions = fs::metadata(dst)
+                    .map_err(|e| with_path(e, dst))?
+                    .permissions();
+                remove_if_present(dst)?;
                 fs::write(dst, &out).map_err(|e| with_path(e, dst))?;
+                fs::set_permissions(dst, permissions).map_err(|e| with_path(e, dst))?;
                 return Ok(out.len() as u64);
             }
             Err(e) => last = e.to_string(),
@@ -332,7 +330,7 @@ fn copy_tree(
     sqlite: bool,
     report: &mut DataImportReport,
 ) -> io::Result<u64> {
-    create_private_dir(dst, Some(src))?;
+    create_private_dir(dst)?;
     let mut entries = fs::read_dir(src)
         .map_err(|e| with_path(e, src))?
         .collect::<Result<Vec<_>, _>>()
@@ -418,7 +416,7 @@ fn copy_sqlite(
                 format!("{}: not UTF-8", dst.display()),
             )
         })?;
-        create_private_file(dst, src)?;
+        create_private_file(dst)?;
         conn.execute("VACUUM INTO ?1", [target])
             .map_err(|e| sqlite_error(e, src))?;
     }
@@ -461,10 +459,10 @@ fn snapshot_wal(
     let (src_wal, dst_wal) = (sidecar(src, "-wal"), sidecar(dst, "-wal"));
     for _ in 0..ATTEMPTS {
         let before = (stamp(src)?, stamp(&src_wal)?);
-        create_private_file(dst, src)?;
+        create_private_file(dst)?;
         copy(src, dst).map_err(|e| with_path(e, src))?;
         if before.1.is_some() {
-            create_private_file(&dst_wal, &src_wal)?;
+            create_private_file(&dst_wal)?;
             copy(&src_wal, &dst_wal).map_err(|e| with_path(e, &src_wal))?;
         }
         if (stamp(src)?, stamp(&src_wal)?) == before {
@@ -1205,6 +1203,41 @@ mod tests {
             mode(&new.join("recordings/a.wav")),
             mode(&old.join("recordings/a.wav"))
         );
+    }
+
+    #[test]
+    fn read_only_source_dir_and_db_are_copied() {
+        // Readable but read-only sources: the copies stay owner-writable as
+        // they are built.
+        let f = fixture();
+        let old = &f.paths.old;
+        let ro = |path: &Path, bits: u32| {
+            fs::set_permissions(path, fs::Permissions::from_mode(bits)).unwrap();
+        };
+        ro(&old.join("models/tts/v/y.onnx"), 0o444);
+        ro(&old.join("models/tts/v"), 0o555);
+        ro(&old.join("history.db"), 0o444);
+        ro(&old.join("settings_store.json"), 0o444);
+        let report = import_if_needed(&f.paths, false, &fs_copy).expect("an import");
+        assert_eq!(report.status, ImportStatus::Copied, "{:?}", report.error);
+        let new = &f.paths.new;
+        assert_eq!(
+            fs::read(new.join("models/tts/v/y.onnx")).unwrap(),
+            fs::read(old.join("models/tts/v/y.onnx")).unwrap()
+        );
+        assert_eq!(mode(&new.join("models/tts/v")), 0o700);
+        assert_eq!(
+            rows(&new.join("history.db")),
+            ["first dictation", "second dictation"]
+        );
+        assert_eq!(mode(&new.join("history.db")), 0o600);
+        assert_eq!(
+            settings_json(&new.join("settings_store.json"))["settings"]["autostart_enabled"],
+            false
+        );
+        assert_eq!(mode(&new.join("settings_store.json")), 0o444, "source mode");
+        // Let TempDir remove the tree.
+        ro(&old.join("models/tts/v"), 0o755);
     }
 
     #[test]
