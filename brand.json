@@ -1,0 +1,81 @@
+{
+  "displayName": "Vaakora",
+  "shortName": "Vaakora",
+  "appId": "dev.jugraj.vaakora",
+  "packageName": "vaakora",
+  "workerBinaryName": "vaakora-tts",
+  "installDir": "/usr/lib/Vaakora",
+  "nativeNames": { "pa": "ਵਾਕੋਰਾ", "hi": "वाकोरा" },
+  "links": {
+    "repo": "https://github.com/jugrajsingh/vaakora",
+    "issues": "https://github.com/jugrajsingh/vaakora/issues",
+    "docs": null,
+    "website": null
+  },
+  "updater": { "endpoint": null, "pubkey": null },
+  "legacy": { "appId": "com.pais.handy" },
+  "copyright": [
+    "Copyright (c) 2026 Jugraj Singh",
+    "Copyright (c) 2025 CJ Pais"
+  ],
+  "mark": {
+    "tile": "#2d583a",
+    "bars": "#f1f6f2",
+    "cursor": "#a9e1b4",
+    "keyline": "#658b6f"
+  },
+  "theme": {
+    "light": {
+      "text": "#121a15",
+      "background": "#f4f6f4",
+      "surface": "#ffffff",
+      "logo-primary": "#376b43",
+      "background-ui": "#376b43",
+      "accent-on": "#ffffff",
+      "ink-2": "#435046",
+      "ink-3": "#546157",
+      "line": "#d8e0da",
+      "line-strong": "#73857a",
+      "wash": "color-mix(in srgb, var(--color-text) 5%, var(--color-surface))",
+      "sel": "#e4e9e5",
+      "sel-ink": "#121a15",
+      "control": "#2a2b2c",
+      "knob": "#ffffff",
+      "moss": "#376b43",
+      "error": "#b42318",
+      "warning": "#9d5604",
+      "voice": "#a9e1b4",
+      "pill": "#2a2b2c",
+      "pill-text": "#f3f3f0",
+      "plum": "var(--light-color-text)",
+      "wordmark": "var(--color-text)",
+      "mark-keyline": "transparent"
+    },
+    "dark": {
+      "text": "#e8efe9",
+      "background": "#161c18",
+      "surface": "#1f2621",
+      "logo-primary": "#9dd8a9",
+      "background-ui": "#7cc58c",
+      "accent-on": "#101f13",
+      "ink-2": "#c0cac2",
+      "ink-3": "#b1b8b2",
+      "line": "#2c3830",
+      "line-strong": "#63786a",
+      "wash": "color-mix(in srgb, var(--color-text) 7%, var(--color-surface))",
+      "sel": "#303832",
+      "sel-ink": "#e8efe9",
+      "control": "#e8efe9",
+      "knob": "#161c18",
+      "moss": "#9dd8a9",
+      "error": "#ff9b93",
+      "warning": "#fbbf24",
+      "voice": "#a9e1b4",
+      "pill": "#2a2b2c",
+      "pill-text": "#f3f3f0",
+      "plum": "var(--dark-color-text)",
+      "wordmark": "var(--color-text)",
+      "mark-keyline": "#658b6f"
+    }
+  }
+}
