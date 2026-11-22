@@ -5,7 +5,7 @@
 //! deleting one). Verification runs outside the backend mutex.
 
 use super::backend::{BackendOpts, GenerateRequest, KillSwitch, TextModelBackend};
-use super::registry::{self, ModelEntry};
+use super::registry::{self, ModelEntry, PromptStyle};
 use super::{prompt, LocalLlmError};
 use crate::settings::{AppSettings, ModelUnloadTimeout};
 use log::{info, warn};
@@ -848,9 +848,12 @@ fn run_chunks(
     transcript: &str,
     settings: &AppSettings,
 ) -> Result<String, LocalLlmError> {
-    let control = prompt::chunk_control(entry.prompt_style, settings);
+    let control = match entry.prompt_style {
+        PromptStyle::S1ControlLine => prompt::control_line_for(settings),
+        PromptStyle::PlainSystemPrompt => String::new(),
+    };
     let system = prompt::system_prompt(entry.prompt_style, settings)?;
-    let budget = prompt::chunk_budget(&system, &control);
+    let budget = prompt::chunk_budget_for(entry.prompt_style, &system, settings);
     let mut outputs = Vec::new();
     for chunk in prompt::chunk_transcript(transcript, budget) {
         let req = GenerateRequest {
@@ -882,7 +885,6 @@ fn on_std_thread<T: Send>(work: impl FnOnce() -> T + Send) -> T {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use super::registry::PromptStyle;
     use super::*;
     use crate::settings::{get_default_settings, LOCAL_LLM_PROVIDER_ID};
     use std::collections::VecDeque;

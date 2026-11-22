@@ -74,15 +74,6 @@ pub fn control_line_for(settings: &AppSettings) -> String {
     )
 }
 
-/// What each request carries besides the chunk, for `chunk_budget`: the control line for S1,
-/// the empty frame for Plain (its user message is the chunk inside the frame).
-pub fn chunk_control(style: PromptStyle, settings: &AppSettings) -> String {
-    match style {
-        PromptStyle::S1ControlLine => control_line_for(settings),
-        PromptStyle::PlainSystemPrompt => crate::actions::frame_transcript(""),
-    }
-}
-
 /// System message for a prompt style.
 pub fn system_prompt(style: PromptStyle, settings: &AppSettings) -> Result<String, LocalLlmError> {
     match style {
@@ -178,6 +169,17 @@ pub fn chunk_budget(system: &str, control: &str) -> u32 {
     CHUNK_TOKEN_LIMIT
         .saturating_sub(est_tokens(system) + est_tokens(control) + TEMPLATE_OVERHEAD_TOKENS)
         .max(MIN_CHUNK_BUDGET)
+}
+
+/// Transcript tokens allowed per chunk for a request in the model's prompt style. S1 pays its
+/// control line before the floor (`chunk_budget`); Plain pays the frame after it, so a framed
+/// request fits whenever the unframed one would.
+pub fn chunk_budget_for(style: PromptStyle, system: &str, settings: &AppSettings) -> u32 {
+    match style {
+        PromptStyle::S1ControlLine => chunk_budget(system, &control_line_for(settings)),
+        PromptStyle::PlainSystemPrompt => chunk_budget(system, "")
+            .saturating_sub(est_tokens(&crate::actions::frame_transcript(""))),
+    }
 }
 
 /// Splits after `.`, `!` or `?` followed by whitespace; pieces are trimmed.
@@ -695,16 +697,65 @@ mod tests {
     }
 
     #[test]
-    fn chunk_control_is_the_frame_for_plain_and_the_control_line_for_s1() {
+    fn chunk_budget_for_s1_is_the_control_line_budget() {
         let settings = crate::settings::get_default_settings();
         assert_eq!(
-            chunk_control(PromptStyle::S1ControlLine, &settings),
-            control_line_for(&settings)
+            chunk_budget_for(PromptStyle::S1ControlLine, S1_SYSTEM_PROMPT, &settings),
+            chunk_budget(S1_SYSTEM_PROMPT, &control_line_for(&settings))
         );
+        let long = "x".repeat(9000);
         assert_eq!(
-            chunk_control(PromptStyle::PlainSystemPrompt, &settings),
-            "<transcript>\n\n</transcript>"
+            chunk_budget_for(PromptStyle::S1ControlLine, &long, &settings),
+            MIN_CHUNK_BUDGET
         );
+    }
+
+    /// The framed request total (system + framed chunk + template overhead) in estimated tokens.
+    fn framed_total(system: &str, chunk: &str) -> u32 {
+        est_tokens(system)
+            + est_tokens(&crate::actions::frame_transcript(chunk))
+            + TEMPLATE_OVERHEAD_TOKENS
+    }
+
+    #[test]
+    fn framed_request_stays_within_the_limit_at_the_minimum_chunk_allowance() {
+        let settings = crate::settings::get_default_settings();
+        let system = "Fix grammar. ".repeat(211).trim().to_string() + " Go";
+        let transcript = "hello ".repeat(31) + "friend";
+        assert_eq!(est_tokens(&system), 915);
+        assert_eq!(est_tokens(&transcript), 64);
+        assert!(
+            est_tokens(&system) + est_tokens(&transcript) + TEMPLATE_OVERHEAD_TOKENS
+                <= CHUNK_TOKEN_LIMIT,
+            "the unframed request fits"
+        );
+        let budget = chunk_budget_for(PromptStyle::PlainSystemPrompt, &system, &settings);
+        let chunks = chunk_transcript(&transcript, budget);
+        for chunk in &chunks {
+            assert!(framed_total(&system, chunk) <= CHUNK_TOKEN_LIMIT);
+        }
+        assert!(chunks.len() > 1, "the frame forces a split");
+    }
+
+    #[test]
+    fn a_prompt_too_long_for_any_request_keeps_the_floor_total_with_the_frame() {
+        let settings = crate::settings::get_default_settings();
+        let system = "word ".repeat(594);
+        assert_eq!(est_tokens(&system), 990);
+        let transcript = (0..400)
+            .map(|i| format!("w{}", i % 97))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let budget = chunk_budget_for(PromptStyle::PlainSystemPrompt, &system, &settings);
+        let chunks = chunk_transcript(&transcript, budget);
+        assert!(chunks.len() > 1);
+        for chunk in &chunks {
+            assert!(
+                framed_total(&system, chunk)
+                    <= est_tokens(&system) + MIN_CHUNK_BUDGET + TEMPLATE_OVERHEAD_TOKENS,
+                "no worse than the unframed request at the floor"
+            );
+        }
     }
 
     #[test]
@@ -713,7 +764,6 @@ mod tests {
         settings.post_process_selected_prompt_id =
             Some(settings.post_process_prompts[0].id.clone());
         let system = system_prompt(PromptStyle::PlainSystemPrompt, &settings).unwrap();
-        let control = chunk_control(PromptStyle::PlainSystemPrompt, &settings);
         // One long sentence, so chunks fill the budget to within a word.
         let transcript = (0..4000)
             .map(|i| format!("w{}", i % 97))
@@ -731,7 +781,8 @@ mod tests {
                 .any(|chunk| request_tokens(chunk) > CHUNK_TOKEN_LIMIT),
             "a chunk sized without the frame overshoots the limit once framed"
         );
-        let framed = chunk_transcript(&transcript, chunk_budget(&system, &control));
+        let budget = chunk_budget_for(PromptStyle::PlainSystemPrompt, &system, &settings);
+        let framed = chunk_transcript(&transcript, budget);
         assert!(framed.len() >= unframed.len());
         for chunk in &framed {
             assert!(request_tokens(chunk) <= CHUNK_TOKEN_LIMIT);
