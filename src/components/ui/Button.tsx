@@ -25,7 +25,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantClasses = {
     primary:
-      "text-white bg-background-ui border-background-ui hover:bg-background-ui/80 hover:border-background-ui/80",
+      "text-accent-on bg-background-ui border-background-ui hover:bg-background-ui/90 hover:border-background-ui/90",
     "primary-soft":
       "text-text bg-logo-primary/20 border-transparent hover:bg-logo-primary/20",
     secondary:
@@ -33,7 +33,7 @@ export const Button: React.FC<ButtonProps> = ({
     // For screens where secondary's grey fill reads as disabled (onboarding)
     outline: "text-text bg-background border-line-strong hover:border-plum",
     // Secondary's neutral resting look, but hover uses the semantic
-    // --color-warning token (theme.css) instead of the pink accent — for
+    // --color-warning token (theme.css) instead of the brand accent, for
     // buttons sitting on warning surfaces like SecureInputWarning
     warning:
       "text-text bg-wash border-line hover:bg-warning-wash hover:border-warning",

@@ -3,6 +3,11 @@ import { createRequire } from "node:module";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  THEME_TOKENS,
+  themeProblems,
+  type BrandTheme,
+} from "../../scripts/brand-theme";
 
 const {
   describe,
@@ -20,6 +25,9 @@ const SELF_FILE = fileURLToPath(import.meta.url);
 const EXTENSIONS = [".ts", ".tsx", ".css"];
 const read = (path: string) =>
   readFileSync(resolvePath(SRC_ROOT, path), "utf8");
+const BRAND = JSON.parse(
+  readFileSync(resolvePath(SRC_ROOT, "..", "brand.json"), "utf8"),
+) as { theme: BrandTheme; mark: { keyline: string } };
 
 function walk(dir: string): string[] {
   const out: string[] = [];
@@ -141,7 +149,9 @@ const THEME_CSS = readFileSync(THEME_FILE, "utf8");
 function resolve(token: string, theme: Theme, surface = "background"): Rgb {
   const palette = parsePalette(THEME_CSS, theme);
   const ref = (name: string) =>
-    name.startsWith("#") ? name : `var(--color-${name})`;
+    name.startsWith("#") || name.startsWith("color-mix(")
+      ? name
+      : `var(--color-${name})`;
   const page = evaluate(ref("background"), palette, [0, 0, 0]);
   const under =
     surface === "background" ? page : evaluate(ref(surface), palette, page);
@@ -170,31 +180,59 @@ interface Pair {
   themes?: Theme[];
 }
 
-const onBoth = (fg: string, min: number, role: string): Pair[] =>
-  ["background", "wash"].map((on) => ({ fg, on, min, role }));
+/** The opacity of every primary hover fill (`hover:bg-background-ui/<n>` next
+ * to `text-accent-on`), read from the sources that paint one. */
+function primaryHoverPercents(): number[] {
+  const out: number[] = [];
+  for (const file of [
+    "components/ui/Button.tsx",
+    "components/update-checker/UpdateChecker.tsx",
+  ]) {
+    const hover = read(file).match(/hover:bg-background-ui\/(\d+)/);
+    assert.ok(hover, `${file} has no hover:bg-background-ui/<n>`);
+    out.push(Number(hover[1]));
+  }
+  return out;
+}
 
-/* Contrast pairs. Out of the table: `line` and `wash` (dividers and fills, not
- * boundaries) and illustration tokens (demo-*, wordmark, mascot-line, logo-pastel). */
+const onAll = (fg: string, min: number, role: string): Pair[] =>
+  ["background", "surface", "wash"].map((on) => ({ fg, on, min, role }));
+
+/* Contrast pairs (WCAG 2.x: 4.5 for text, 3 for edges, rings and graphics).
+ * Out of the table: `line` and `wash` (dividers and fills, not boundaries) and
+ * illustration tokens (demo-*, wordmark). */
 const PAIRS: Pair[] = [
   ...["text", "ink-2", "ink-3", "logo-primary"].flatMap((fg) =>
-    onBoth(fg, 4.5, "text"),
+    onAll(fg, 4.5, "text"),
   ),
   ...["error", "warning", "moss"].flatMap((fg) => [
     { fg, on: "background", min: 4.5, role: "status text" },
     { fg, on: `${fg}-wash`, min: 4.5, role: "Alert text" },
   ]),
-  ...onBoth("line-strong", 3, "control boundary"),
-  ...onBoth("logo-primary", 3, "focus ring and slider thumb"),
-  ...onBoth("background-ui", 3, "focus ring and filled control"),
-  // Dark keeps #da5893: white on it is 3.62:1.
-  {
-    fg: "#ffffff",
-    on: "background-ui",
-    min: 4.5,
-    role: "primary button label",
-    themes: ["light"],
-  },
+  ...["background", "surface"].map((on) => ({
+    fg: "line-strong",
+    on,
+    min: 3,
+    role: "control boundary",
+  })),
+  ...onAll("logo-primary", 3, "focus ring and slider thumb"),
+  ...onAll("background-ui", 3, "filled control"),
+  { fg: "accent-on", on: "background-ui", min: 4.5, role: "primary label" },
+  { fg: "sel-ink", on: "sel", min: 4.5, role: "selected row text" },
+  { fg: "text", on: "sel", min: 4.5, role: "chip text" },
+  { fg: "knob", on: "control", min: 3, role: "switch knob on its track" },
+  { fg: "control", on: "background", min: 3, role: "switch track" },
   { fg: "background", on: "error", min: 4.5, role: "danger button label" },
+  ...primaryHoverPercents().flatMap((percent) =>
+    ["background", "surface"].map((ground) => ({
+      fg: "accent-on",
+      on: `color-mix(in srgb, var(--color-background-ui) ${percent}%, var(--color-${ground}))`,
+      min: 4.5,
+      role: `primary label on hover over ${ground}`,
+    })),
+  ),
+  { fg: "pill-text", on: "pill", min: 4.5, role: "recording pill text" },
+  { fg: "voice", on: "pill", min: 3, role: "live waveform on the pill" },
 ];
 
 /** Every pair that misses its target, one line each. */
@@ -320,24 +358,21 @@ describe("theme tokens", () => {
     );
   });
 
-  it("illustrations_keep_the_pastel", () => {
-    const pastel = (theme: Theme) => resolve("logo-pastel", theme).join(",");
-    assert.equal(pastel("light"), hex("#faa2ca").join(","));
-    assert.equal(pastel("dark"), resolve("logo-primary", "dark").join(","));
+  it("illustrations_use_the_voice_colour", () => {
+    const voice = (theme: Theme) => resolve("voice", theme).join(",");
+    assert.equal(voice("light"), hex("#a9e1b4").join(","));
+    assert.equal(voice("dark"), hex("#a9e1b4").join(","));
     const root = parsePalette(THEME_CSS, "light");
-    assert.equal(
-      root["light-color-wordmark"],
-      "var(--light-color-logo-pastel)",
-    );
+    assert.equal(root["light-color-wordmark"], "var(--color-text)");
     assert.match(
       root["light-demo-wallpaper"],
-      /^radial-gradient\( 110% 80% at 90% 105%, color-mix\(in srgb, var\(--light-color-logo-pastel\) 50%, #fbfbfb\)/,
+      /^radial-gradient\( 110% 80% at 90% 105%, color-mix\(in srgb, var\(--light-color-voice\) 50%, #fbfbfb\)/,
     );
     const overlay = read("overlay/RecordingOverlay.css");
     assert.match(
       overlay,
-      /--s-accent: var\(--color-logo-pastel\);/,
-      "the recording overlay accent is not the pastel",
+      /--s-accent: var\(--color-voice\);/,
+      "the recording overlay accent is not the voice colour",
     );
     assert.ok(
       !overlay.includes("--color-logo-primary"),
@@ -346,20 +381,184 @@ describe("theme tokens", () => {
     const demo = new Map(rules(read("components/onboarding/screens/demo.css")));
     assert.match(
       demo.get(".demo-pill-dot") ?? "",
-      /background: var\(--color-logo-pastel\);/,
+      /background: var\(--color-voice\);/,
     );
     assert.match(
       demo.get(".demo-pill-spin") ?? "",
-      /border-top-color: var\(--color-logo-pastel\);/,
+      /border-top-color: var\(--color-voice\);/,
     );
     assert.match(
       read("components/onboarding/screens/Demo.tsx"),
-      /className="h-\[3px\] w-\[4px\] rounded-\[2px\] bg-logo-pastel /,
+      /className="h-\[3px\] w-\[4px\] rounded-\[2px\] bg-voice /,
     );
     assert.match(
       block(read("App.css"), "@theme inline"),
-      /--color-logo-pastel: var\(--color-logo-pastel\);/,
+      /--color-voice: var\(--color-voice\);/,
     );
+  });
+
+  it("recording_pill_is_neutral_in_both_themes", () => {
+    const overlay = read("overlay/RecordingOverlay.css");
+    const root = declarations(block(overlay, ":root"));
+    assert.match(root["s-surface"], /var\(--color-pill\)/, "pill ground");
+    assert.equal(root["s-ink"], "var(--color-pill-text)", "pill text");
+    for (const theme of ["light", "dark"] as Theme[]) {
+      const palette = parsePalette(THEME_CSS, theme);
+      const ground = evaluate("var(--color-pill)", palette, [0, 0, 0]);
+      for (const name of ["s-muted", "s-faint", "s-ink"]) {
+        const got = ratio(evaluate(root[name], palette, ground), ground);
+        assert.ok(
+          got >= 4.5,
+          `${theme}: --${name} on the pill ${got.toFixed(2)}`,
+        );
+      }
+      for (const level of ["error", "warning"]) {
+        const rule = rules(overlay).find(
+          ([selector]) => selector === `.scard.level-${level}`,
+        );
+        assert.ok(rule, `no .scard.level-${level} rule`);
+        const colour = rule[1].match(/--notice:\s*var\(--(dark-color-\w+)\)/);
+        assert.ok(colour, `${level} notice is not read from the dark pair`);
+        const got = ratio(
+          evaluate(`var(--${colour[1]})`, palette, ground),
+          ground,
+        );
+        assert.ok(
+          got >= 4.5,
+          `${theme}: ${level} notice on the pill ${got.toFixed(2)}`,
+        );
+      }
+    }
+  });
+
+  it("theme_matches_brand_json", () => {
+    assert.deepEqual(THEME_TOKENS.length, 24);
+    assert.deepEqual(
+      themeProblems(THEME_CSS, BRAND.theme, BRAND.mark.keyline),
+      [],
+    );
+    // the same function must see a drifted value and an unwired token
+    const drifted = THEME_CSS.replace(
+      "--dark-color-accent-on: #101f13;",
+      "--dark-color-accent-on: #ffffff;",
+    );
+    assert.notEqual(drifted, THEME_CSS, "fixture did not change");
+    assert.ok(
+      themeProblems(drifted, BRAND.theme, BRAND.mark.keyline).some((p) =>
+        p.includes("--dark-color-accent-on"),
+      ),
+    );
+    const unwired = THEME_CSS.replace(
+      /(:root\[data-theme="dark"\] \{[\s\S]*?)--color-knob: var\(--dark-color-knob\);/,
+      "$1",
+    );
+    assert.notEqual(unwired, THEME_CSS, "fixture did not change");
+    assert.ok(
+      themeProblems(unwired, BRAND.theme, BRAND.mark.keyline).some(
+        (p) => p.includes("data-theme") && p.includes("--color-knob"),
+      ),
+    );
+  });
+
+  it("mark_keyline_is_transparent_in_light_and_the_mark_keyline_in_dark", () => {
+    const literal = (theme: Theme): string => {
+      let value = parsePalette(THEME_CSS, theme)["color-mark-keyline"];
+      for (let hop = 0; hop < 4 && value?.startsWith("var("); hop++) {
+        value = parsePalette(THEME_CSS, theme)[value.slice(6, -1)];
+      }
+      return value;
+    };
+    assert.equal(literal("light"), "transparent");
+    assert.equal(literal("dark"), BRAND.mark.keyline);
+    assert.equal(BRAND.theme.light["mark-keyline"], "transparent");
+    // the mark paints its keyline with this token, so the dark ground shows it
+    assert.match(
+      read("components/brand/BrandMark.tsx"),
+      /stroke:var\(--color-mark-keyline,transparent\)/,
+    );
+  });
+
+  it("no_pink_left_in_the_theme", () => {
+    const pink = new RegExp(
+      ["c62c72", "f28cbb", "da5893", "faa2ca", "382731"].join("|"),
+      "i",
+    );
+    const hits: string[] = [];
+    for (const file of walk(SRC_ROOT)) {
+      if (file === SELF_FILE) continue;
+      readFileSync(file, "utf8")
+        .split("\n")
+        .forEach((line, index) => {
+          if (
+            pink.test(line) ||
+            /logo-pastel|mascot-line|logo-stroke/.test(line)
+          ) {
+            hits.push(`${relative(SRC_ROOT, file)}:${index + 1}`);
+          }
+        });
+    }
+    assert.deepEqual(
+      hits,
+      [],
+      `old pink tokens or values at:\n${hits.join("\n")}`,
+    );
+  });
+
+  it("selection_and_switches_are_neutral", () => {
+    const sidebar = read("components/Sidebar.tsx");
+    const active = sidebar.match(/isActive \? "([^"]*)" : "hover:bg-wash"/);
+    assert.ok(active, "no active class string in Sidebar.tsx");
+    assert.ok(active[1].includes("bg-sel text-sel-ink"), active[1]);
+    assert.ok(!active[1].includes("logo-primary"), active[1]);
+    for (const file of ["ToggleSwitch", "Switch"]) {
+      const source = read(`components/ui/${file}.tsx`);
+      assert.ok(
+        !/peer-checked:bg-(?:background-ui|logo-primary)/.test(source),
+        file,
+      );
+    }
+    const track = read("components/ui/Switch.tsx");
+    assert.ok(track.includes("peer-checked:bg-control"), "Switch on track");
+    assert.ok(track.includes("after:bg-knob"), "Switch knob");
+    assert.ok(!track.includes("after:bg-white"), "Switch knob is white");
+    assert.ok(!track.includes("peer-checked:after:border-white"), "knob edge");
+    assert.ok(
+      read("components/ui/ToggleSwitch.tsx").includes("<Switch"),
+      "ToggleSwitch no longer renders Switch",
+    );
+    const primary = read("components/ui/Button.tsx").match(
+      /primary:\s*"([^"]*)"/,
+    );
+    assert.ok(primary, "no primary variant in Button.tsx");
+    assert.ok(primary[1].includes("text-accent-on"), primary[1]);
+    assert.ok(!primary[1].includes("text-white"), primary[1]);
+    const radio = read("components/ui/Radio.tsx");
+    assert.ok(!radio.includes("text-white"), "Radio paints text-white");
+    assert.ok(
+      radio.includes("bg-control") && radio.includes("text-knob"),
+      "Radio checked is not control and knob",
+    );
+    const update = read("components/update-checker/UpdateChecker.tsx");
+    assert.ok(
+      !update.includes("text-white"),
+      "UpdateChecker paints text-white",
+    );
+    assert.ok(
+      update.includes("bg-background-ui text-accent-on"),
+      "UpdateChecker download button is not the primary action",
+    );
+    for (const [file, needle] of [
+      ["components/settings/PositionGrid.tsx", "bg-control"],
+      ["components/settings/LanguageSelector.tsx", "bg-sel text-sel-ink"],
+      ["components/ui/Dropdown.tsx", "bg-sel"],
+      ["components/settings/tts/history/ReadingView.tsx", "bg-sel ring-2"],
+      [
+        "components/settings/tts/vocabulary/VoiceChips.tsx",
+        "bg-sel text-sel-ink",
+      ],
+    ] as const) {
+      assert.ok(read(file).includes(needle), `${file} lacks ${needle}`);
+    }
   });
 
   it("slider_thumb_is_tinted", () => {

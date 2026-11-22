@@ -214,7 +214,7 @@ const UpdateChecker: React.FC<UpdateCheckerProps> = ({ className = "" }) => {
                 {t("common.close")}
               </button>
               <button
-                className="px-3 py-1.5 text-sm rounded bg-logo-primary text-white hover:bg-logo-primary/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
+                className="px-3 py-1.5 text-sm rounded bg-background-ui text-accent-on hover:bg-background-ui/90 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
                 onClick={() => {
                   openUrl(portableInstallerUrl);
                   setShowPortableUpdateDialog(false);

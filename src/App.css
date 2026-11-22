@@ -8,9 +8,15 @@
 @theme inline {
   --color-text: var(--color-text);
   --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
   --color-background-ui: var(--color-background-ui);
+  --color-accent-on: var(--color-accent-on);
   --color-logo-primary: var(--color-logo-primary);
-  --color-logo-pastel: var(--color-logo-pastel);
+  --color-sel: var(--color-sel);
+  --color-sel-ink: var(--color-sel-ink);
+  --color-control: var(--color-control);
+  --color-knob: var(--color-knob);
+  --color-voice: var(--color-voice);
   --color-warning: var(--color-warning);
   --color-error: var(--color-error);
   --color-moss: var(--color-moss);
@@ -18,7 +24,7 @@
   --color-plum-pick: var(--color-plum-pick);
   --color-shadow: var(--color-shadow);
   --color-demo-window: var(--color-demo-window);
-  --color-mascot-line: var(--color-mascot-line);
+  --color-wordmark: var(--color-wordmark);
   --color-wash: var(--color-wash);
   --color-moss-wash: var(--color-moss-wash);
   --color-warning-wash: var(--color-warning-wash);
@@ -248,7 +254,7 @@
   background-color: var(--scrollbar-thumb-hover);
 }
 
-/* Slider and audio player thumb in the app's pink. */
+/* Slider and audio player thumb in the link and focus colour. */
 input[type="range"].appearance-none::-webkit-slider-thumb {
   appearance: none;
   width: 14px;
@@ -256,14 +262,4 @@ input[type="range"].appearance-none::-webkit-slider-thumb {
   border-radius: 9999px;
   background: var(--color-logo-primary);
   border: 2px solid var(--color-background);
-}
-
-.logo-primary {
-  fill: var(--color-wordmark);
-}
-
-.logo-stroke {
-  fill: var(--color-wordmark-stroke);
-  stroke: var(--color-wordmark-stroke);
-  stroke-width: 1;
 }

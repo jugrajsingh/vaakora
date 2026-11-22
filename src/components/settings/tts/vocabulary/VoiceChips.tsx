@@ -19,7 +19,7 @@ export function VoiceChips({
     <div className="flex flex-wrap items-center gap-1">
       {group.all ? (
         <>
-          <span className={`${CHIP} border-logo-primary text-logo-primary`}>
+          <span className={`${CHIP} border-line-strong bg-sel text-sel-ink`}>
             {t("tts.vocabulary.models.all")}
           </span>
           {group.except.length > 0 && (

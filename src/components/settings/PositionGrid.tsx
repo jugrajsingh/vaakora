@@ -108,7 +108,7 @@ export function PositionGrid({
             }}
             className={`h-4 w-6 cursor-pointer rounded-sm border focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
               checked
-                ? "border-logo-primary bg-logo-primary"
+                ? "border-control bg-control"
                 : "border-line-strong bg-wash hover:border-logo-primary"
             }`}
           />

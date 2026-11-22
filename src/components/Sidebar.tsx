@@ -61,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ active, navigate }) => {
               }}
               aria-current={isActive ? "page" : undefined}
               className={`flex min-h-9 w-full items-center gap-2 rounded-lg px-2 py-1 text-sm text-start cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
-                isActive ? "bg-logo-primary/30 font-semibold" : "hover:bg-wash"
+                isActive ? "bg-sel text-sel-ink font-semibold" : "hover:bg-wash"
               }`}
               onClick={() => navigate(destination)}
               onKeyDown={(event) => {

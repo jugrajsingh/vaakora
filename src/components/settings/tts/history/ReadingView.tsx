@@ -49,7 +49,7 @@ export function ReadingView({
             aria-pressed={selected}
             data-changed={token.changed}
             className={`inline-flex max-w-full flex-col rounded px-1 cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-logo-primary ${
-              selected ? "bg-logo-primary/20 ring-2 ring-logo-primary" : ""
+              selected ? "bg-sel ring-2 ring-logo-primary" : ""
             }`}
             onPointerDown={(event) => {
               event.preventDefault();

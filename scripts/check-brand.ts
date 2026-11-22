@@ -3,8 +3,9 @@
  * line per problem and exits 1. Sections are added by the tasks that own them;
  * this file holds `source` (brand.json, the SVG masters, the pinned fonts and
  * the generated rasters), `mirrors` (files that cannot read brand.json carry
- * literals of it, proven equal here) and `ui` (no Handy name in locale values,
- * its marks and release notes gone). `--dist` adds `dist`: the built frontend
+ * literals of it, proven equal here), `theme` (src/styles/theme.css carries the
+ * brand.json colour pairs and wires every active token to them) and `ui` (no
+ * Handy name in locale values, its marks and release notes gone). `--dist` adds `dist`: the built frontend
  * bundle (`bun run build`) carries no Handy name in any value and no upstream
  * host.
  */
@@ -13,6 +14,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { svgProblems } from "./brand-svg";
+import { THEME_TOKENS, themeProblems, type BrandTheme } from "./brand-theme";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const problems: string[] = [];
@@ -22,32 +24,6 @@ const fail = (section: string, message: string) =>
 type Kind = "string" | "string|null" | "string[]" | "object";
 
 const HEX = /^#[0-9a-f]{6}$/;
-const THEME_TOKENS = [
-  "text",
-  "background",
-  "surface",
-  "logo-primary",
-  "background-ui",
-  "accent-on",
-  "ink-2",
-  "ink-3",
-  "line",
-  "line-strong",
-  "wash",
-  "sel",
-  "sel-ink",
-  "control",
-  "knob",
-  "moss",
-  "error",
-  "warning",
-  "voice",
-  "pill",
-  "pill-text",
-  "plum",
-  "wordmark",
-  "mark-keyline",
-];
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -381,6 +357,23 @@ function checkMirrors() {
   }
 }
 
+/** `theme.css` mirrors `brand.json` theme: every pair equal, every active token wired. */
+function checkTheme() {
+  const text = readText("brand.json");
+  const css = readText("src/styles/theme.css");
+  if (text === null || css === null) return;
+  let data: { theme?: BrandTheme; mark?: { keyline?: string } };
+  try {
+    data = JSON.parse(text) as typeof data;
+  } catch {
+    return; // `source` already reports an unparsable brand.json
+  }
+  if (!data.theme || !data.mark?.keyline) return; // `source` reports it
+  for (const problem of themeProblems(css, data.theme, data.mark.keyline)) {
+    fail("theme", problem);
+  }
+}
+
 type Json = string | { [key: string]: Json };
 
 /** Every string leaf of a locale file as `path`, value. */
@@ -499,6 +492,7 @@ checkMasters();
 checkFonts();
 checkRasters();
 checkMirrors();
+checkTheme();
 checkUi();
 if (process.argv.includes("--dist")) checkDist();
 

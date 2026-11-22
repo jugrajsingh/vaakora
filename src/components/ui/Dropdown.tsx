@@ -61,7 +61,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
   // The trigger's hover; in the menu, hover is grey so it never looks chosen.
   const hover =
     tone === "neutral" ? "hover:bg-wash" : "hover:bg-logo-primary/10";
-  const chosen = tone === "neutral" ? "bg-line" : "bg-logo-primary/15";
+  const chosen = tone === "neutral" ? "bg-line" : "bg-sel";
 
   const selectedOption = options.find(
     (option) => option.value === selectedValue,

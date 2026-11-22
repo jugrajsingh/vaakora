@@ -2,21 +2,17 @@
 
 :root {
   --s-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  /* Near-opaque app surface (theme.css --color-background at 98%). Auto-flips
-     light/dark with --color-background, so no dark-mode override is needed. */
-  --s-surface: color-mix(in srgb, var(--color-background) 98%, transparent);
-  /* Accent = logo pink; flips automatically via --color-logo-pastel. */
-  --s-accent: var(--color-logo-pastel);
-  /* The rest come from theme.css, which already follows the theme setting. */
-  --s-accent-soft: color-mix(
-    in srgb,
-    var(--color-logo-pastel) 20%,
-    transparent
-  );
-  --s-muted: var(--color-ink-2);
-  --s-faint: var(--color-ink-3);
-  --s-border: var(--color-line);
-  --s-hair: var(--color-wash);
+  /* The recording pill is graphite with light text in both themes (theme.css
+     pill / pill-text); the card keeps 98% opacity. */
+  --s-surface: color-mix(in srgb, var(--color-pill) 98%, transparent);
+  --s-ink: var(--color-pill-text);
+  /* Accent = mint, the live waveform and the mark's cursor. */
+  --s-accent: var(--color-voice);
+  --s-accent-soft: color-mix(in srgb, var(--color-voice) 20%, transparent);
+  --s-muted: color-mix(in srgb, var(--color-pill-text) 75%, var(--color-pill));
+  --s-faint: color-mix(in srgb, var(--color-pill-text) 62%, var(--color-pill));
+  --s-border: color-mix(in srgb, var(--color-pill-text) 12%, var(--color-pill));
+  --s-hair: color-mix(in srgb, var(--color-pill-text) 10%, var(--color-pill));
 
   /* Card geometry — single source of truth for the visible overlay sizes. The
      native overlay window (overlay.rs) is sized from these: it must be at least
@@ -177,10 +173,10 @@
   border-radius: 24px;
 }
 .scard.level-error {
-  --notice: var(--color-error);
+  --notice: var(--dark-color-error);
 }
 .scard.level-warning {
-  --notice: var(--color-warning);
+  --notice: var(--dark-color-warning);
 }
 .sbase.snotice {
   grid-template-columns: auto minmax(0, max-content);
@@ -197,7 +193,7 @@
 }
 .nlabel {
   font-size: 12px;
-  color: var(--color-text);
+  color: var(--s-ink);
   white-space: nowrap;
   min-width: 0;
   overflow: hidden;
@@ -246,7 +242,7 @@
   font-size: 15px;
   line-height: 1.35;
   letter-spacing: -0.003em;
-  color: var(--color-text);
+  color: var(--s-ink);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12px);
   mask-image: linear-gradient(to bottom, transparent 0, #000 12px);
 }
@@ -440,7 +436,7 @@
 }
 .sx:hover {
   background: var(--s-accent-soft);
-  color: var(--color-text);
+  color: var(--s-ink);
   transform: scale(1.05);
 }
 .sx:active {

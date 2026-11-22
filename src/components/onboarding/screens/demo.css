@@ -44,7 +44,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--color-logo-pastel);
+  background: var(--color-voice);
   animation: demo-pill-pulse 1.9s infinite;
 }
 @keyframes demo-pill-pulse {
@@ -61,7 +61,7 @@
   height: 13px;
   border-radius: 50%;
   border: 2px solid var(--color-line);
-  border-top-color: var(--color-logo-pastel);
+  border-top-color: var(--color-voice);
   animation: demo-spin 0.7s linear infinite;
 }
 @keyframes demo-spin {

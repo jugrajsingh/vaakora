@@ -219,7 +219,7 @@ const PLAIN_CONTROLS: ReadonlyArray<readonly [string, string, string]> = [
   [
     "UpdateChecker Download",
     "components/update-checker/UpdateChecker.tsx",
-    "bg-logo-primary text-white",
+    "bg-background-ui text-accent-on",
   ],
   ["Onboarding preview exit", "App.tsx", "setOnboardingPreview(null)}"],
   [
