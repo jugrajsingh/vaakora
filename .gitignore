@@ -36,3 +36,7 @@ recording_*
 __pycache__/
 
 /src-tauri/tts-bin/
+
+# Packaging build output
+/packaging/.work/
+/packaging/dist/

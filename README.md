@@ -27,6 +27,8 @@ The full list of changes is in [CHANGELOG.md](CHANGELOG.md). Its new interface s
 
 Follow [BUILD.md](BUILD.md), plus the extra build requirements in the "Relationship to upstream" section of [CHANGELOG.md](CHANGELOG.md): a static, CPU-only `llama-server` staged as `llm-bin/`, and the text-to-speech worker with its OpenVINO libraries staged as `tts-bin/`.
 
+To build the Linux RPM from this repository in one step, use [packaging/README.md](packaging/README.md).
+
 ## Built on Handy
 
 Vaakora began as a fork of [Handy](https://github.com/cjpais/Handy) by CJ Pais, used under the MIT licence. Handy's name, logo and brand assets are not part of Vaakora. Vaakora is not affiliated with or endorsed by Handy or its author.

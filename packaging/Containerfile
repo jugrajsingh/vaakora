@@ -1,0 +1,18 @@
+FROM registry.fedoraproject.org/fedora:45
+RUN dnf install -y --setopt=install_weak_deps=False \
+    webkit2gtk4.1-devel gtk3-devel libappindicator-gtk3-devel librsvg2-devel \
+    alsa-lib-devel openssl-devel openblas-devel pkgconf \
+    vulkan-loader-devel vulkan-headers vulkan-devel glslc glslang \
+    spirv-headers-devel spirv-tools-devel \
+    gtk-layer-shell gtk-layer-shell-devel \
+    clang clang-devel libevdev-devel \
+    rust cargo rustfmt clippy rpm-build cmake gcc gcc-c++ make git curl unzip patchelf file \
+    && dnf clean all
+ENV BUN_INSTALL=/opt/bun
+RUN curl -fsSL https://bun.sh/install | bash && ln -s /opt/bun/bin/bun /usr/local/bin/bun
+ENV PATH="/opt/bun/bin:${PATH}"
+RUN useradd -u 1000 -m builder || true
+ENV CARGO_HOME=/cache/cargo BUN_INSTALL_CACHE_DIR=/cache/bun CARGO_TARGET_DIR=/cache/target
+# ort-sys downloads a prebuilt static ONNX Runtime into $HOME/.cache/ort.pyke.io and bakes that absolute path into its cached build output; that dir must be a persistent volume or the final link fails.
+WORKDIR /src
+USER builder

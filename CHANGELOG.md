@@ -91,6 +91,11 @@ Translations
 
 - All new post-processing and read aloud strings are translated into the 25 other languages. The translations are machine-generated and have not yet been reviewed by native speakers.
 
+Packaging
+
+- `packaging/` builds the Linux RPM from this repository in rootless podman: `build.sh` archives `HEAD`, builds the static CPU-only `llama-server` (llama.cpp tag `b11260`, pinned to its commit), fetches the OpenVINO 2026.4.1 runtime from a sha256-pinned wheel, compiles the application and the read aloud worker, and verifies the RPM contents. `install.sh` installs the result and `dev.sh` runs cargo and bun in the same image. See `packaging/README.md`.
+- `llama-server` is built for x86-64-v3 (AVX2, FMA, F16C) by default instead of the build machine's CPU, so the RPM runs on other CPUs; `packaging/build.sh --cpu native` keeps the machine-tuned build.
+
 ### Changed
 
 - The fork is now built on upstream v0.10.1 (it was v0.10.0). Upstream's changes in that release are described in its own release notes; where they meet the fork's additions, the entries under Fixed say what the fork does differently.
