@@ -1,4 +1,5 @@
 use super::{
+    history::ReadOrigin,
     manager::ManagerConfig,
     session::{ReadAloudSession, SessionCommand},
     window, TtsManager,
@@ -810,6 +811,7 @@ impl TtsService {
                                     client_revision: None,
                                     text,
                                     autoplay: true,
+                                    origin: ReadOrigin::App,
                                 });
                             }
                         },
@@ -1855,6 +1857,7 @@ mod tests {
             client_revision: Some(1),
             text: text.into(),
             autoplay: false,
+            origin: ReadOrigin::App,
         }
     }
     #[test]
@@ -1903,6 +1906,7 @@ mod tests {
             client_revision: None,
             text: "autoplayed".into(),
             autoplay: true,
+            origin: ReadOrigin::App,
         };
         let result = forward_reading_command(&mut referee, command, |_| panic!("sent"));
         assert_eq!(result, Err("tts.errors.busy".into()));

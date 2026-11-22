@@ -1623,7 +1623,8 @@
         "message": "現在刪除 {{count}} 則紀錄？你的詞彙表不會改變。",
         "action": "刪除項目"
       },
-      "copyFailed": "無法將文字複製到剪貼簿。"
+      "copyFailed": "無法將文字複製到剪貼簿。",
+      "fromAgent": "來自代理"
     },
     "vocabulary": {
       "columns": {

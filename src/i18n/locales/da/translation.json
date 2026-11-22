@@ -1623,7 +1623,8 @@
         "message": "Slet {{count}} poster nu? Din ordliste ændres ikke.",
         "action": "Slet poster"
       },
-      "copyFailed": "Teksten kunne ikke kopieres til udklipsholderen."
+      "copyFailed": "Teksten kunne ikke kopieres til udklipsholderen.",
+      "fromAgent": "fra agent"
     },
     "vocabulary": {
       "columns": {

@@ -18,8 +18,9 @@ pub const FILE_NAME: &str = "tts-history.db";
 /// The highest count limit the setting accepts.
 pub const MAX_LIMIT: usize = 1000;
 
-static MIGRATIONS: &[M] = &[M::up(
-    "CREATE TABLE read_history (
+static MIGRATIONS: &[M] = &[
+    M::up(
+        "CREATE TABLE read_history (
         id INTEGER PRIMARY KEY,
         timestamp INTEGER NOT NULL,
         model_id TEXT NOT NULL,
@@ -29,7 +30,39 @@ static MIGRATIONS: &[M] = &[M::up(
         source TEXT NOT NULL,
         chunks TEXT NOT NULL
     );",
-)];
+    ),
+    M::up("ALTER TABLE read_history ADD COLUMN origin TEXT NOT NULL DEFAULT 'app';"),
+];
+
+/// Who asked for a read: the owner in the app, or a client of the command-line socket (an
+/// agent). Stored as `app` or `agent`.
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize, specta::Type,
+)]
+#[serde(rename_all = "lowercase")]
+pub enum ReadOrigin {
+    #[default]
+    App,
+    Agent,
+}
+
+impl ReadOrigin {
+    /// The text stored in the `origin` column.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::App => "app",
+            Self::Agent => "agent",
+        }
+    }
+
+    /// The origin a stored value names; a value this version does not know counts as the owner's.
+    pub fn from_stored(value: &str) -> Self {
+        match value {
+            "agent" => Self::Agent,
+            _ => Self::App,
+        }
+    }
+}
 
 /// One read as it started: the written source, every chunk sent to the voice with its word
 /// spans, and the voice and speed it was read with.
@@ -41,6 +74,7 @@ pub struct ReadRecord {
     pub speed: f32,
     pub technical: bool,
     pub source: String,
+    pub origin: ReadOrigin,
     pub chunks: Vec<AlignedChunk>,
 }
 
@@ -54,6 +88,7 @@ pub struct ReadHistoryEntry {
     pub speed: f32,
     pub technical: bool,
     pub source: String,
+    pub origin: ReadOrigin,
     pub chunks: Vec<AlignedChunk>,
 }
 
@@ -166,8 +201,8 @@ impl ReadHistory {
             None
         } else {
             transaction.execute(
-                "INSERT INTO read_history (timestamp, model_id, voice, speed, technical, source, chunks)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                "INSERT INTO read_history (timestamp, model_id, voice, speed, technical, source, chunks, origin)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
                 params![
                     record.timestamp,
                     record.model_id,
@@ -176,6 +211,7 @@ impl ReadHistory {
                     record.technical,
                     record.source,
                     serde_json::to_string(&record.chunks)?,
+                    record.origin.as_str(),
                 ],
             )?;
             Some(transaction.last_insert_rowid())
@@ -189,7 +225,7 @@ impl ReadHistory {
     pub fn entries(&self) -> Result<Vec<ReadHistoryEntry>> {
         let conn = self.connection();
         let mut statement = conn.prepare(
-            "SELECT id, timestamp, model_id, voice, speed, technical, source, chunks
+            "SELECT id, timestamp, model_id, voice, speed, technical, source, chunks, origin
              FROM read_history ORDER BY timestamp DESC, id DESC",
         )?;
         let rows = statement.query_map([], |row| {
@@ -202,6 +238,7 @@ impl ReadHistory {
                     speed: row.get::<_, f64>(4)? as f32,
                     technical: row.get(5)?,
                     source: row.get(6)?,
+                    origin: ReadOrigin::from_stored(&row.get::<_, String>(8)?),
                     chunks: Vec::new(),
                 },
                 row.get::<_, String>(7)?,
@@ -316,6 +353,7 @@ pub struct ReadSnapshot {
     pub document: u64,
     pub timestamp: i64,
     pub source: Arc<str>,
+    pub origin: ReadOrigin,
     pub selection: Selection,
     pub vocabulary: Option<Arc<Vocabulary>>,
 }
@@ -392,6 +430,7 @@ where
             speed: chosen.speed,
             technical: chosen.technical,
             source: snapshot.source.to_string(),
+            origin: snapshot.origin,
             chunks,
         };
         match history.record(
@@ -466,6 +505,7 @@ mod tests {
             speed: 1.25,
             technical: true,
             source: source.into(),
+            origin: ReadOrigin::App,
             chunks: vec![AlignedChunk {
                 chunk: TextChunk {
                     index: 0,
@@ -723,6 +763,7 @@ mod tests {
             document,
             timestamp: NOW,
             source: Arc::from("Edit lib.sh today."),
+            origin: ReadOrigin::App,
             selection: Selection {
                 model_id: model_id.into(),
                 voice: voice.into(),
@@ -815,5 +856,204 @@ mod tests {
             stored = history.entries().unwrap().len();
         }
         assert_eq!(stored, 1);
+    }
+
+    /// The schema exactly as migration 1 created it (frozen here: the fixture must not follow
+    /// later edits to the migration list).
+    const VERSION_1_SQL: &str = "CREATE TABLE read_history (
+        id INTEGER PRIMARY KEY,
+        timestamp INTEGER NOT NULL,
+        model_id TEXT NOT NULL,
+        voice TEXT NOT NULL,
+        speed REAL NOT NULL,
+        technical INTEGER NOT NULL,
+        source TEXT NOT NULL,
+        chunks TEXT NOT NULL
+    );";
+
+    /// The rows the version-1 fixture holds: (id, timestamp, model, voice, speed, technical, source, chunks).
+    type OldRow = (
+        i64,
+        i64,
+        &'static str,
+        &'static str,
+        f64,
+        i64,
+        &'static str,
+        &'static str,
+    );
+    const OLD_ROWS: [OldRow; 2] = [
+        (
+            7,
+            NOW - DAY,
+            "pocket-en",
+            "alba",
+            1.25,
+            1,
+            "Old read one.",
+            "[]",
+        ),
+        (9, NOW, "supertonic-3", "F1", 1.0, 0, "Old read two.", "[]"),
+    ];
+
+    /// A `tts-history.db` as version 1 of the app left it, holding [`OLD_ROWS`], closed.
+    fn version_1_database(name: &str) -> PathBuf {
+        let dir = scratch(name);
+        let mut conn = Connection::open(dir.join(FILE_NAME)).unwrap();
+        Migrations::new(vec![M::up(VERSION_1_SQL)])
+            .to_latest(&mut conn)
+            .unwrap();
+        for row in OLD_ROWS {
+            conn.execute(
+                "INSERT INTO read_history (id, timestamp, model_id, voice, speed, technical, source, chunks)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                params![row.0, row.1, row.2, row.3, row.4, row.5, row.6, row.7],
+            )
+            .unwrap();
+        }
+        assert_eq!(user_version(&conn), 1);
+        drop(conn);
+        dir
+    }
+
+    fn user_version(conn: &Connection) -> i64 {
+        conn.query_row("PRAGMA user_version", [], |row| row.get(0))
+            .unwrap()
+    }
+
+    #[test]
+    fn migration_keeps_old_rows_as_app() {
+        let dir = version_1_database("origin-migration");
+        let history = ReadHistory::open(&dir).unwrap();
+        let entries = history.entries().unwrap();
+        assert_eq!(entries.len(), 2);
+        for (entry, row) in entries.iter().zip(OLD_ROWS.iter().rev()) {
+            assert_eq!(entry.id, row.0);
+            assert_eq!(entry.timestamp, row.1);
+            assert_eq!(entry.model_id, row.2);
+            assert_eq!(entry.voice, row.3);
+            assert_eq!(f64::from(entry.speed), row.4);
+            assert_eq!(entry.technical, row.5 == 1);
+            assert_eq!(entry.source, row.6);
+            assert!(entry.chunks.is_empty());
+            assert_eq!(entry.origin, ReadOrigin::App);
+        }
+        drop(history);
+        let conn = Connection::open(dir.join(FILE_NAME)).unwrap();
+        assert_eq!(user_version(&conn), 2);
+        let stored: Vec<(i64, String)> = conn
+            .prepare("SELECT id, origin FROM read_history ORDER BY id")
+            .unwrap()
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
+        assert_eq!(stored, vec![(7, "app".to_string()), (9, "app".to_string())]);
+    }
+
+    #[test]
+    fn reopening_a_migrated_store_changes_nothing() {
+        let dir = version_1_database("origin-reopen");
+        let first = ReadHistory::open(&dir).unwrap().entries().unwrap();
+        let second = ReadHistory::open(&dir).unwrap().entries().unwrap();
+        assert_eq!(first, second);
+        assert_eq!(second.len(), 2);
+    }
+
+    #[test]
+    fn version_1_code_refuses_a_migrated_store_and_leaves_its_rows() {
+        let dir = version_1_database("origin-downgrade");
+        let history = ReadHistory::open(&dir).unwrap();
+        history
+            .record(
+                &ReadRecord {
+                    origin: ReadOrigin::Agent,
+                    ..read_at("from an agent")
+                },
+                0,
+                || keep(100, ReadHistoryRetention::KeepLimit),
+                NOW,
+            )
+            .unwrap();
+        drop(history);
+        // What 0.1.0 ran: one migration. A database at version 2 is refused, not rewritten.
+        let mut conn = Connection::open(dir.join(FILE_NAME)).unwrap();
+        let old_app = Migrations::new(vec![M::up(VERSION_1_SQL)]).to_latest(&mut conn);
+        assert!(
+            old_app.is_err(),
+            "version-1 code accepted a version-2 store"
+        );
+        let rows: i64 = conn
+            .query_row("SELECT COUNT(*) FROM read_history", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(rows, 3);
+        let sources: Vec<String> = conn
+            .prepare("SELECT source FROM read_history ORDER BY id")
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
+        assert_eq!(sources, ["Old read one.", "Old read two.", "from an agent"]);
+        assert_eq!(user_version(&conn), 2);
+    }
+
+    #[test]
+    fn agent_origin_round_trips() {
+        let history = ReadHistory::open(&scratch("origin-agent")).unwrap();
+        let rule = keep(5, ReadHistoryRetention::KeepLimit);
+        let agent = ReadRecord {
+            origin: ReadOrigin::Agent,
+            ..read_at("agent read")
+        };
+        history.record(&agent, 0, || rule, NOW).unwrap();
+        history
+            .record(&read("own read", NOW - 1), 0, || rule, NOW)
+            .unwrap();
+        let entries = history.entries().unwrap();
+        assert_eq!(entries[0].origin, ReadOrigin::Agent);
+        assert_eq!(entries[1].origin, ReadOrigin::App);
+    }
+
+    #[test]
+    fn unknown_stored_origin_reads_as_app() {
+        assert_eq!(ReadOrigin::from_stored("robot"), ReadOrigin::App);
+        assert_eq!(ReadOrigin::from_stored(""), ReadOrigin::App);
+        assert_eq!(ReadOrigin::from_stored("agent"), ReadOrigin::Agent);
+        assert_eq!(ReadOrigin::from_stored("app"), ReadOrigin::App);
+        assert_eq!(ReadOrigin::App.as_str(), "app");
+        assert_eq!(ReadOrigin::Agent.as_str(), "agent");
+        assert_eq!(ReadOrigin::default(), ReadOrigin::App);
+    }
+
+    #[test]
+    fn the_origin_serializes_in_lower_case() {
+        assert_eq!(
+            serde_json::to_string(&ReadOrigin::Agent).unwrap(),
+            "\"agent\""
+        );
+        assert_eq!(serde_json::to_string(&ReadOrigin::App).unwrap(), "\"app\"");
+    }
+
+    #[test]
+    fn writer_saves_the_snapshot_origin() {
+        let slot = open_slot("writer-origin");
+        let mut writer = Writer::new(
+            slot.clone(),
+            || keep(5, ReadHistoryRetention::KeepLimit),
+            prepare,
+        );
+        writer.write(
+            0,
+            &ReadSnapshot {
+                origin: ReadOrigin::Agent,
+                ..snapshot(1, true, "supertonic-3", "F1")
+            },
+        );
+        writer.write(0, &snapshot(2, true, "supertonic-3", "F1"));
+        let entries = slot.get().unwrap().entries().unwrap();
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].origin, ReadOrigin::App);
+        assert_eq!(entries[1].origin, ReadOrigin::Agent);
     }
 }

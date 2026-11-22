@@ -18,6 +18,7 @@ const entryOf = (source: string, chunks: AlignedChunk[]): ReadHistoryEntry => ({
   speed: 1,
   technical: true,
   source,
+  origin: "app",
   chunks,
 });
 

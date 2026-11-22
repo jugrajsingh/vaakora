@@ -1623,7 +1623,8 @@
         "message": "Delete {{count}} entries now? Your vocabulary is not changed.",
         "action": "Delete entries"
       },
-      "copyFailed": "Could not copy the text to the clipboard."
+      "copyFailed": "Could not copy the text to the clipboard.",
+      "fromAgent": "from agent"
     },
     "vocabulary": {
       "columns": {

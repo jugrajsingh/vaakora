@@ -1,4 +1,5 @@
 use super::{
+    history::ReadOrigin,
     service::{selection, TtsService},
     session::{SessionCommand, SessionView},
 };
@@ -183,6 +184,7 @@ pub async fn read_aloud_replace_text(
             client_revision: Some(client_revision),
             text,
             autoplay: false,
+            origin: ReadOrigin::App,
         })
     })
     .await

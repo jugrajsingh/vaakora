@@ -1623,7 +1623,8 @@
         "message": "Smazat nyní záznamy ({{count}})? Slovník se nezmění.",
         "action": "Smazat záznamy"
       },
-      "copyFailed": "Text se nepodařilo zkopírovat do schránky."
+      "copyFailed": "Text se nepodařilo zkopírovat do schránky.",
+      "fromAgent": "od agenta"
     },
     "vocabulary": {
       "columns": {

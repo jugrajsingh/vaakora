@@ -158,6 +158,7 @@ function reads(now: number): ReadHistoryEntry[] {
     speed: 1,
     technical: false,
     source: "s",
+    origin: "app",
     chunks: [],
   }));
 }

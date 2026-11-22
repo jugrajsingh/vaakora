@@ -1623,7 +1623,8 @@
         "message": "Voleu suprimir ara {{count}} entrades? El vostre vocabulari no canvia.",
         "action": "Suprimeix les entrades"
       },
-      "copyFailed": "No s'ha pogut copiar el text al porta-retalls."
+      "copyFailed": "No s'ha pogut copiar el text al porta-retalls.",
+      "fromAgent": "d'un agent"
     },
     "vocabulary": {
       "columns": {

@@ -1623,7 +1623,8 @@
         "message": "现在删除 {{count}} 条记录？你的词汇表不会改变。",
         "action": "删除条目"
       },
-      "copyFailed": "无法将文本复制到剪贴板。"
+      "copyFailed": "无法将文本复制到剪贴板。",
+      "fromAgent": "来自代理"
     },
     "vocabulary": {
       "columns": {

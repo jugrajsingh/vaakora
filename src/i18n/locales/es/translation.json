@@ -1623,7 +1623,8 @@
         "message": "¿Eliminar ahora {{count}} entradas? Tu vocabulario no cambia.",
         "action": "Eliminar entradas"
       },
-      "copyFailed": "No se pudo copiar el texto al portapapeles."
+      "copyFailed": "No se pudo copiar el texto al portapapeles.",
+      "fromAgent": "de un agente"
     },
     "vocabulary": {
       "columns": {

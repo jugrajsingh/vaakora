@@ -1623,7 +1623,8 @@
         "message": "Supprimer {{count}} entrées maintenant ? Votre vocabulaire n'est pas modifié.",
         "action": "Supprimer les entrées"
       },
-      "copyFailed": "Le texte n'a pas pu être copié dans le presse-papiers."
+      "copyFailed": "Le texte n'a pas pu être copié dans le presse-papiers.",
+      "fromAgent": "d'un agent"
     },
     "vocabulary": {
       "columns": {

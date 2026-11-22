@@ -1623,7 +1623,8 @@
         "message": "항목 {{count}}개를 지금 삭제할까요? 어휘는 바뀌지 않습니다.",
         "action": "항목 삭제"
       },
-      "copyFailed": "텍스트를 클립보드에 복사하지 못했습니다."
+      "copyFailed": "텍스트를 클립보드에 복사하지 못했습니다.",
+      "fromAgent": "에이전트에서"
     },
     "vocabulary": {
       "columns": {

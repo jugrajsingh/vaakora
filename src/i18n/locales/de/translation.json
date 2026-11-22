@@ -1623,7 +1623,8 @@
         "message": "{{count}} Einträge jetzt löschen? Ihr Vokabular bleibt unverändert.",
         "action": "Einträge löschen"
       },
-      "copyFailed": "Der Text konnte nicht in die Zwischenablage kopiert werden."
+      "copyFailed": "Der Text konnte nicht in die Zwischenablage kopiert werden.",
+      "fromAgent": "vom Agenten"
     },
     "vocabulary": {
       "columns": {

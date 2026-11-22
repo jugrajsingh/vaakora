@@ -1623,7 +1623,8 @@
         "message": "Nu {{count}} items verwijderen? Je woordenlijst verandert niet.",
         "action": "Items verwijderen"
       },
-      "copyFailed": "De tekst kon niet naar het klembord worden gekopieerd."
+      "copyFailed": "De tekst kon niet naar het klembord worden gekopieerd.",
+      "fromAgent": "van agent"
     },
     "vocabulary": {
       "columns": {

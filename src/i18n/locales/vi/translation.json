@@ -1623,7 +1623,8 @@
         "message": "Xóa {{count}} mục ngay bây giờ? Từ vựng của bạn không thay đổi.",
         "action": "Xóa mục"
       },
-      "copyFailed": "Không thể sao chép văn bản vào bảng nhớ tạm."
+      "copyFailed": "Không thể sao chép văn bản vào bảng nhớ tạm.",
+      "fromAgent": "từ tác nhân"
     },
     "vocabulary": {
       "columns": {

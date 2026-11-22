@@ -1623,7 +1623,8 @@
         "message": "{{count}} kayıt şimdi silinsin mi? Sözlüğünüz değişmez.",
         "action": "Kayıtları sil"
       },
-      "copyFailed": "Metin panoya kopyalanamadı."
+      "copyFailed": "Metin panoya kopyalanamadı.",
+      "fromAgent": "ajandan"
     },
     "vocabulary": {
       "columns": {

@@ -2071,12 +2071,17 @@ export type Reach =
 /**
  * A stored read.
  */
-export type ReadHistoryEntry = { id: number; timestamp: number; model_id: string; voice: string; speed: number; technical: boolean; source: string; chunks: AlignedChunk[] }
+export type ReadHistoryEntry = { id: number; timestamp: number; model_id: string; voice: string; speed: number; technical: boolean; source: string; origin: ReadOrigin; chunks: AlignedChunk[] }
 /**
  * How long read-aloud history keeps reads. Unlike `RecordingRetentionPeriod::Never`, which
  * never deletes, `KeepNothing` stores no read at all; the count limit applies to every choice.
  */
 export type ReadHistoryRetention = "keep_nothing" | "keep_limit" | "days_3" | "weeks_2" | "months_3"
+/**
+ * Who asked for a read: the owner in the app, or a client of the command-line socket (an
+ * agent). Stored as `app` or `agent`.
+ */
+export type ReadOrigin = "app" | "agent"
 /**
  * Recording phase events for windows that follow along (onboarding's Try it).
  */

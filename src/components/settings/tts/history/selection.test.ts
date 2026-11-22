@@ -44,6 +44,7 @@ const ENTRY: ReadHistoryEntry = {
   speed: 1,
   technical: true,
   source: "Open README.md now",
+  origin: "app",
   chunks: [chunk],
 };
 

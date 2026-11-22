@@ -285,6 +285,7 @@ const FIRST: ReadHistoryEntry = {
   speed: 1,
   technical: true,
   source: "Open\n  README.md   now",
+  origin: "app",
   chunks: [
     {
       chunk: {
@@ -360,6 +361,18 @@ describe("ReadHistoryRows", () => {
       "whitespace in the excerpt is collapsed",
     );
     assert.ok(!html.includes("Copy text</button>"), "no labelled Copy text");
+  });
+
+  it("an agent read shows the from-agent tag", () => {
+    const html = renderRows(NO_READ_VIEW, [
+      { ...FIRST, origin: "agent" },
+      SECOND,
+    ]);
+    const agent = rowMarkup(html, 1);
+    assert.ok(agent.includes(">Pocket TTS, alba, from agent</span>"), "agent");
+    const own = rowMarkup(html, 2);
+    assert.ok(own.includes(">Pocket TTS, alba</span>"), "an app read");
+    assert.ok(!own.includes("from agent"), "no tag on an app read");
   });
 
   it("open_row_shows_the_reading_view_at_full_width", () => {

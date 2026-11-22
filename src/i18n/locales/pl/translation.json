@@ -1623,7 +1623,8 @@
         "message": "Usunąć teraz wpisy ({{count}})? Twój słownik się nie zmieni.",
         "action": "Usuń wpisy"
       },
-      "copyFailed": "Nie udało się skopiować tekstu do schowka."
+      "copyFailed": "Nie udało się skopiować tekstu do schowka.",
+      "fromAgent": "od agenta"
     },
     "vocabulary": {
       "columns": {

@@ -1,5 +1,5 @@
 use super::{
-    history::{HistoryRecorder, ReadSnapshot},
+    history::{HistoryRecorder, ReadOrigin, ReadSnapshot},
     TtsError, TtsManager,
 };
 use handy_tts_core::{
@@ -261,6 +261,7 @@ pub enum SessionCommand {
         client_revision: Option<u64>,
         text: String,
         autoplay: bool,
+        origin: ReadOrigin,
     },
     Play,
     Pause,
@@ -504,6 +505,7 @@ impl ReadAloudSession {
             let mut selected = selection;
             let mut visible = false;
             let mut autoplay = false;
+            let mut origin = ReadOrigin::default();
             let mut epoch = 0;
             let mut last_emit = Instant::now() - Duration::from_secs(1);
             'document: loop {
@@ -567,6 +569,7 @@ impl ReadAloudSession {
                             text,
                             autoplay: start,
                             client_revision: applied_revision,
+                            origin: asked_by,
                         }) => {
                             session.stop();
                             epoch = session.queue.epoch;
@@ -577,6 +580,7 @@ impl ReadAloudSession {
                                 document_id += 1;
                             }
                             autoplay = start;
+                            origin = asked_by;
                             visible = true;
                             continue 'document;
                         }
@@ -631,6 +635,7 @@ impl ReadAloudSession {
                                 document: reads,
                                 timestamp: chrono::Utc::now().timestamp(),
                                 source: read_source.clone(),
+                                origin,
                                 selection: chosen.clone(),
                                 vocabulary: Some(read_vocabulary.clone()),
                             });
@@ -1345,6 +1350,7 @@ pub(super) mod tests {
                     text: text.into(),
                     autoplay: true,
                     client_revision: None,
+                    origin: ReadOrigin::App,
                 })
                 .unwrap();
             (reading, texts)
@@ -1396,6 +1402,7 @@ pub(super) mod tests {
                     text: "Then edit lib.sh once more today.".into(),
                     autoplay: true,
                     client_revision: None,
+                    origin: ReadOrigin::App,
                 })
                 .unwrap();
             let second = texts.recv_timeout(Duration::from_secs(3)).unwrap();
@@ -1538,11 +1545,15 @@ pub(super) mod tests {
             (history, records)
         }
         fn replace(reading: &ReadAloudSession, text: &str) {
+            replace_as(reading, text, ReadOrigin::App);
+        }
+        fn replace_as(reading: &ReadAloudSession, text: &str, origin: ReadOrigin) {
             reading
                 .send(SessionCommand::Replace {
                     text: text.into(),
                     autoplay: true,
                     client_revision: None,
+                    origin,
                 })
                 .unwrap();
         }
@@ -1583,6 +1594,24 @@ pub(super) mod tests {
             let second = next(&records);
             assert_eq!(&*second.source, "Then commit the change.");
             assert_ne!(second.document, first.document);
+            assert!(reading.shutdown());
+        }
+
+        #[test]
+        fn agent_replace_records_agent_origin() {
+            let (engine, _texts) = ToneEngine::new(false);
+            let (history, records) = collect();
+            let reading = spawn(engine, technical(true), history);
+            replace_as(&reading, "Read this for the agent.", ReadOrigin::Agent);
+            let first = next(&records);
+            assert_eq!(&*first.source, "Read this for the agent.");
+            assert_eq!(first.origin, ReadOrigin::Agent);
+            replace_as(&reading, "Then the owner's own read.", ReadOrigin::App);
+            let second = next(&records);
+            assert_eq!(&*second.source, "Then the owner's own read.");
+            assert_eq!(second.origin, ReadOrigin::App);
+            replace_as(&reading, "And another agent read.", ReadOrigin::Agent);
+            assert_eq!(next(&records).origin, ReadOrigin::Agent);
             assert!(reading.shutdown());
         }
 
@@ -1800,6 +1829,7 @@ pub(super) mod tests {
                     text: "Read the saved options.".into(),
                     client_revision: None,
                     autoplay: true,
+                    origin: ReadOrigin::App,
                 })
                 .unwrap();
             assert_eq!(
@@ -1890,6 +1920,7 @@ pub(super) mod tests {
                     text: "Read the selected model.".into(),
                     client_revision: None,
                     autoplay: true,
+                    origin: ReadOrigin::App,
                 })
                 .unwrap();
             assert_eq!(
@@ -1911,6 +1942,7 @@ pub(super) mod tests {
                     text: "stale".into(),
                     autoplay: true,
                     client_revision: None,
+                    origin: ReadOrigin::App,
                 })
                 .unwrap();
         }
@@ -1947,6 +1979,7 @@ pub(super) mod tests {
                 text: "A complete sentence for output settings.".into(),
                 autoplay: false,
                 client_revision: None,
+                origin: ReadOrigin::App,
             })
             .unwrap();
         reading.pause_and_wait().unwrap();
@@ -2097,6 +2130,7 @@ pub(super) mod tests {
                 text: "Open again".into(),
                 autoplay: false,
                 client_revision: None,
+                origin: ReadOrigin::App,
             })
             .unwrap();
         assert!(events.recv_timeout(Duration::from_secs(2)).unwrap().visible);
@@ -2151,6 +2185,7 @@ pub(super) mod tests {
                 text: "A".into(),
                 autoplay: false,
                 client_revision: Some(7),
+                origin: ReadOrigin::App,
             })
             .unwrap();
         let first = text_event(&rx);
@@ -2173,6 +2208,7 @@ pub(super) mod tests {
                 text: "A".into(),
                 autoplay: false,
                 client_revision: Some(9),
+                origin: ReadOrigin::App,
             })
             .unwrap();
         let repeated = text_event(&rx);
@@ -2183,6 +2219,7 @@ pub(super) mod tests {
                 text: "A".into(),
                 autoplay: false,
                 client_revision: None,
+                origin: ReadOrigin::App,
             })
             .unwrap();
         let external = text_event(&rx);
@@ -2209,6 +2246,7 @@ pub(super) mod tests {
                 client_revision: None,
                 text: "Retained document.".into(),
                 autoplay: true,
+                origin: ReadOrigin::App,
             })
             .unwrap();
         reading.pause_and_wait().unwrap();
@@ -2230,6 +2268,7 @@ pub(super) mod tests {
                 client_revision: None,
                 text: "Retain me.".into(),
                 autoplay: true,
+                origin: ReadOrigin::App,
             })
             .unwrap();
         reading.pause_and_wait().unwrap();
@@ -2267,6 +2306,7 @@ pub(super) mod tests {
                 client_revision: None,
                 text: document.into(),
                 autoplay: true,
+                origin: ReadOrigin::App,
             })
             .unwrap();
         let before = wait_for_state(&reading, PlaybackState::Buffering).snapshot;
@@ -2284,6 +2324,7 @@ pub(super) mod tests {
                         client_revision: None,
                         text: "Independent preview text.".into(),
                         autoplay: true,
+                        origin: ReadOrigin::App,
                     })
                     .unwrap();
             },

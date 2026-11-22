@@ -95,7 +95,7 @@ export function ReadHistoryRows({
             long: formatDateTime(String(entry.timestamp), i18n.language),
           }}
           excerpt={entry.source.replace(/\s+/g, " ").trim()}
-          tag={entryTag(models, entry)}
+          tag={entryTag(models, entry, t("tts.history.fromAgent"))}
           actions={
             <button
               type="button"

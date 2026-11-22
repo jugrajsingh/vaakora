@@ -1623,7 +1623,8 @@
         "message": "Hapus {{count}} entri sekarang? Kosakata Anda tidak berubah.",
         "action": "Hapus entri"
       },
-      "copyFailed": "Teks tidak dapat disalin ke papan klip."
+      "copyFailed": "Teks tidak dapat disalin ke papan klip.",
+      "fromAgent": "dari agen"
     },
     "vocabulary": {
       "columns": {

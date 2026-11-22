@@ -1623,7 +1623,8 @@
         "message": "Eliminare ora {{count}} voci? Il tuo vocabolario non cambia.",
         "action": "Elimina voci"
       },
-      "copyFailed": "Impossibile copiare il testo negli appunti."
+      "copyFailed": "Impossibile copiare il testo negli appunti.",
+      "fromAgent": "da un agente"
     },
     "vocabulary": {
       "columns": {

@@ -1623,7 +1623,8 @@
         "message": "Ta bort {{count}} poster nu? Din ordlista ändras inte.",
         "action": "Ta bort poster"
       },
-      "copyFailed": "Texten kunde inte kopieras till urklipp."
+      "copyFailed": "Texten kunde inte kopieras till urklipp.",
+      "fromAgent": "från agent"
     },
     "vocabulary": {
       "columns": {
