@@ -1547,7 +1547,7 @@ describe("Models, Dictation rows", () => {
   it("legend_never_claims_this_machine", () => {
     const dir = new URL("../../../i18n/locales/", import.meta.url);
     const codes = readdirSync(dir).sort();
-    assert.equal(codes.length, 26);
+    assert.equal(codes.length, 27);
     const shared = (a: string, b: string) => {
       let i = 0;
       for (; i < a.length && a[i] === b[i]; i += 1);
@@ -1699,7 +1699,7 @@ describe("Dictation model descriptions", () => {
     );
     const dir = new URL("../../../i18n/locales/", import.meta.url);
     const codes = readdirSync(dir).sort();
-    assert.equal(codes.length, 26);
+    assert.equal(codes.length, 27);
     for (const code of codes) {
       const file = JSON.parse(
         readFileSync(new URL(`${code}/translation.json`, dir), "utf8"),

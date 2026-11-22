@@ -229,7 +229,7 @@ describe("PositionGrid", () => {
   });
 
   it("every_locale_renders_nine_distinct_cell_labels_and_both_help_texts", () => {
-    assert.equal(localeDirs.length, 26);
+    assert.equal(localeDirs.length, 27);
     for (const dir of localeDirs) {
       const locale = locales[dir];
       const labels = radios(gridMarkup(locale, "center")).map((c) => c.label);

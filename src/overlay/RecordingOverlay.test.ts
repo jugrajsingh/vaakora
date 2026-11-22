@@ -276,7 +276,7 @@ describe("recording overlay", () => {
       "Clipboard not readable",
     );
     const others = readdirSync(locales).filter((locale) => locale !== "en");
-    assert.equal(others.length, 25);
+    assert.equal(others.length, 26);
     for (const locale of others) {
       const errors = errorsOf(locale);
       for (const key of keys)

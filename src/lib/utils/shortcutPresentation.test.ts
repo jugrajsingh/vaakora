@@ -231,7 +231,7 @@ const newDescription =
 assert.equal(en.settings.cleanup.enable.description, newDescription);
 const localesDir = new URL("../../i18n/locales/", import.meta.url);
 const others = readdirSync(localesDir).filter((dir) => dir !== "en");
-assert.equal(others.length, 25);
+assert.equal(others.length, 26);
 for (const dir of others) {
   const { default: locale } = await import(
     `../../i18n/locales/${dir}/translation.json`
@@ -249,8 +249,9 @@ assert.equal(
   en.settings.shortcuts.cancelLinuxHelp,
   "On Linux the cancel shortcut does not stop a dictation, because shortcuts registered during a dictation are unreliable there. Use the X on the overlay, Cancel in the tray menu, or run handy --cancel.",
 );
+// Thai joined after cfce1b85, so it has no snapshot text to differ from.
 assert.deepEqual(
   Object.keys(CFCE1B85_CLEANUP_DESCRIPTION).sort(),
-  others.slice().sort(),
+  others.filter((dir) => dir !== "th").sort(),
 );
 console.log("shortcutPresentation: all assertions passed");

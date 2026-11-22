@@ -415,7 +415,7 @@ describe("settings inventory", () => {
     // Retired fork keys are gone from every locale.
     const root = new URL("../../i18n/locales/", import.meta.url);
     const languages = readdirSync(root);
-    assert.equal(languages.length, 26);
+    assert.equal(languages.length, 27);
     const forbidden =
       /post-?processing|post-processed|text-to-speech|speech-to-text|\bTTS\b|MiB|GiB|stored reads?|retry icon/i;
     const scoped = [
@@ -466,5 +466,32 @@ describe("settings inventory", () => {
     const output = sources("./OutputDeviceSelector.tsx");
     assert.ok(output.includes("settings.sound.feedbackOutputDevice"));
     assert.ok(!output.includes("settings.sound.outputDevice.title"));
+  });
+
+  it("thai_keeps_every_interpolation_and_tag_of_english", () => {
+    const thai = JSON.parse(
+      readFileSync(
+        new URL("../../i18n/locales/th/translation.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    const leaves = (node: unknown, path: string): [string, string][] =>
+      typeof node === "string"
+        ? [[path, node]]
+        : Object.entries(node as Record<string, unknown>).flatMap(
+            ([key, child]) => leaves(child, `${path}.${key}`),
+          );
+    const marks = (text: string) =>
+      (text.match(/\{\{[^}]+\}\}|<\/?[A-Za-z][^>]*>/g) ?? []).sort();
+    const theirs = new Map(leaves(thai, ""));
+    const english = leaves(en, "");
+    assert.equal(theirs.size, english.length);
+    for (const [path, text] of english) {
+      assert.deepEqual(
+        marks(theirs.get(path) ?? ""),
+        marks(text),
+        `th${path} keeps the marks of English`,
+      );
+    }
   });
 });

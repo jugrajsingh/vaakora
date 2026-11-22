@@ -309,7 +309,7 @@ describe("finish line", () => {
   it("finish_line_renders_keys_and_link_in_every_locale", async () => {
     const dir = new URL("../../../i18n/locales/", import.meta.url);
     const locales = readdirSync(dir);
-    assert.equal(locales.length, 26);
+    assert.equal(locales.length, 27);
     for (const locale of locales) {
       const translation = JSON.parse(
         readFileSync(new URL(`${locale}/translation.json`, dir), "utf8"),

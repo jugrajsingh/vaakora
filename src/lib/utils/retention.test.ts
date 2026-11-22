@@ -851,7 +851,7 @@ describe("retention", () => {
   it("summaries_keep_their_count_in_every_locale", async () => {
     const root = new URL("../../i18n/locales/", import.meta.url);
     const languages = readdirSync(root);
-    assert.equal(languages.length, 26);
+    assert.equal(languages.length, 27);
     const resources = Object.fromEntries(
       languages.map((language) => [
         language,
@@ -890,12 +890,18 @@ describe("retention", () => {
           }
         }
       }
-      const lastSentence = (key: string) =>
-        all
-          .t(key, { lng: language, count: 50 })
+      // Thai writes no full stop, so its sentences are not split by punctuation.
+      const THAI_STARRED = "รายการที่ติดดาวจะถูกเก็บไว้";
+      const lastSentence = (key: string) => {
+        const text = all.t(key, { lng: language, count: 50 });
+        if (language === "th" && text.endsWith(THAI_STARRED)) {
+          return THAI_STARRED;
+        }
+        return text
           .split(/(?<=[.。।])\s*/u)
           .filter(Boolean)
           .pop();
+      };
       const shared = lastSentence("history.summary.dictation.latest");
       for (const key of ["never", "days3", "weeks2", "months3"]) {
         const full = `history.summary.dictation.${key}`;
@@ -914,7 +920,7 @@ describe("retention", () => {
   it("summaries_in_every_locale", () => {
     const root = new URL("../../i18n/locales/", import.meta.url);
     const languages = readdirSync(root);
-    assert.equal(languages.length, 26);
+    assert.equal(languages.length, 27);
     const keys = [
       "history.change",
       "history.changeLabel",

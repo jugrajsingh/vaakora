@@ -746,6 +746,7 @@ const buttonNames = (html: string) =>
     pt: "Falhou",
     ru: "Не удалось",
     sv: "Misslyckades",
+    th: "ไม่สำเร็จ",
     tr: "Başarısız",
     uk: "Не вдалося",
     vi: "Thất bại",
@@ -753,7 +754,7 @@ const buttonNames = (html: string) =>
     "zh-TW": "失敗",
   };
   const locales = readdirSync(new URL("../i18n/locales/", import.meta.url));
-  assert.equal(locales.length, 26);
+  assert.equal(locales.length, 27);
   for (const locale of locales) {
     const translation = JSON.parse(
       readFileSync(

@@ -12,7 +12,7 @@ Vaakora is a desktop application. Press a shortcut, speak, and your words appear
 
 **Read aloud.** A shortcut (Super+Alt+R by default) reads the text you last copied, in a popup that highlights the sentence being read. Eight downloadable voice models are offered: Pocket TTS, Supertonic 3, Kokoro-82M, Paradee-8M, Phonon 31m English and Indic Tiny TTS for Indian English, Hindi and Punjabi. Each runs on the CPU, or on an Intel GPU or NPU through OpenVINO (Paradee-8M and Phonon on the CPU only, Indic Tiny on the CPU and GPU), and the app picks the best device that works on the machine. Reading is streamed and has speed and pitch controls. Markdown marks are not spoken and code blocks are skipped unless you ask for them. Technical reading speaks paths, file names, flags, versions and code names the way an engineer would say them, using a vocabulary file you can extend (`tts-vocabulary.json` in the app data directory, which also accepts entries for one voice model only). Dictation and reading never overlap.
 
-The full list of changes is in [CHANGELOG.md](CHANGELOG.md). Its new interface strings are translated into the other 25 languages by machine and have not been reviewed by native speakers.
+The full list of changes is in [CHANGELOG.md](CHANGELOG.md). Its new interface strings are translated into the other 26 languages by machine and have not been reviewed by native speakers.
 
 ## Platform support
 
