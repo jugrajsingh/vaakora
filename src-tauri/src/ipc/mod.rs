@@ -3,6 +3,7 @@
 //! processes running as this user can connect. See `socket` for where it lives
 //! and `server` for framing and logging.
 
+pub mod methods;
 pub mod protocol;
 pub mod server;
 pub mod socket;

@@ -1301,6 +1301,12 @@ pub fn run(cli_args: CliArgs) {
 
             initialize_core_logic(&app_handle);
 
+            // The control socket needs the coordinator and the core managers. It
+            // starts here, after the headless return above, so a headless run never
+            // takes the socket.
+            #[cfg(target_os = "linux")]
+            ipc::start(ipc::methods::AppMethods::new(app_handle.clone()));
+
             // Secure Input monitor (macOS): detects stuck secure input that
             // silently blocks keyed shortcuts, warns the user, and activates
             // the Carbon fallback. See secure_input.rs and issue #1578.

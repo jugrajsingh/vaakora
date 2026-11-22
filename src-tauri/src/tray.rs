@@ -583,6 +583,13 @@ pub fn dictation_in_progress(app: &AppHandle) -> bool {
         .is_some_and(|state| state.lock().icon_state.is_busy())
 }
 
+/// What the dictation is doing, as the tray shows it; `Idle` before the tray
+/// state exists.
+pub fn dictation_state(app: &AppHandle) -> TrayIconState {
+    app.try_state::<TrayState>()
+        .map_or(TrayIconState::Idle, |state| state.lock().icon_state)
+}
+
 /// Re-syncs the tray after something other than the recording state changed
 /// (theme, Secure Input warning, notices). The recording state itself is
 /// preserved.

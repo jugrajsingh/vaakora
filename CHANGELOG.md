@@ -8,6 +8,7 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 
 - A local control socket: while Vaakora runs it listens on `$XDG_RUNTIME_DIR/vaakora.sock` (or `$VAAKORA_SOCKET`), readable and writable only by you, and answers only processes running as your user. It speaks JSON-RPC 2.0, one message per line, in the shape of upstream pull request #1906, with protocol version 1. The socket's folder must belong to you and be closed to other users, as `$XDG_RUNTIME_DIR` is, or the socket is not opened; a file, or the socket of a Vaakora that is still running, is never removed from the socket path.
 - Read aloud, History marks reads that came from the command line or an agent: the row's tag ends with "from agent". Reads saved before this version count as your own. The first start of this version adds an `origin` column to `tts-history.db` and changes no stored read; going back to 0.1.0 afterwards leaves read-aloud history unavailable but intact, and starting this version again brings it back.
+- The socket can read text aloud (`tts.read`, saved in history as from agent), pause, resume and stop the reader, list downloaded voices, report what the app is doing (`status`), and toggle or cancel a dictation exactly as `--toggle-transcription`, `--toggle-post-process` and `--cancel` do. A read sent during a dictation is refused and the dictation goes on. A one-shot run (`--transcribe-file`, `--list-models`, `--list-devices`) never opens the socket.
 
 ## [0.1.0] - 2026-11-23
 
@@ -239,6 +240,7 @@ Packaging
 - New user data file: `handy-import.json` in the app data directory, the first-start data copy's report (status, items, bytes, source and target paths, error, dismissed).
 - New user data file: `tts-vocabulary.json` in the app data directory, created on first use. The built-in vocabulary is compiled in from `src-tauri/resources/tts/vocabulary.json`, so nothing extra has to be staged for it.
 - Build requirements: a static, CPU-only `llama-server` must be staged as `llm-bin/`, and the text-to-speech worker with its OpenVINO libraries as `tts-bin/`. The RPM bundle installs them at `/usr/lib/Vaakora/llm` and `/usr/lib/Vaakora/tts` (`bundle.linux.rpm.files` in `tauri.conf.json`).
+- The control socket: `lib.rs` starts it in `setup` after the core managers, past the headless return, and `tray.rs` gains `dictation_state` for its `status`; the socket's own code lives in `src-tauri/src/ipc/`.
 - Upstream files that gain hunks, grouped:
   - Backend core: `actions.rs`, `settings.rs`, `lib.rs`, `tray.rs`, `notices.rs`, `overlay.rs`, `input.rs`, `utils.rs`, `audio_feedback.rs`, `clipboard.rs` (paste hardening), `primary_selection.rs` (bounded helpers), `transcription_coordinator.rs`, `managers/audio.rs`, `managers/transcription_jobs.rs`, `commands/mod.rs`, `commands/transcription.rs`.
   - History and models: `managers/history.rs`, `commands/history.rs`, `managers/model.rs`, `managers/model/download.rs`, `managers/transcription.rs`, `managers/transcription/chunked.rs` and `managers/transcription/job.rs` (the vocabulary-echo check follows the run setup).
