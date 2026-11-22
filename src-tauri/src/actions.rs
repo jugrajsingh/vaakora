@@ -1917,6 +1917,24 @@ mod tests {
     }
 
     #[test]
+    fn s1_echo_is_discarded_when_no_prompt_is_selected() {
+        // Out of the box no prompt is selected; S1-mini still runs, with its own
+        // system prompt as the only prompt that is sent.
+        let mut settings = get_default_settings();
+        assert_eq!(settings.post_process_selected_prompt_id, None);
+        settings.post_process_provider_id = crate::settings::LOCAL_LLM_PROVIDER_ID.into();
+        settings.local_llm_model_id = Some("s1-mini-q4km".into());
+        let processed = cleaned_with(
+            settings,
+            "notification",
+            crate::local_llm::prompt::S1_SYSTEM_PROMPT,
+        );
+        assert_eq!(processed.final_text, "notification");
+        assert!(processed.post_process_failed);
+        assert_eq!(processed.post_processed_text, None);
+    }
+
+    #[test]
     fn ordinary_short_cleanups_are_kept() {
         for (transcript, reply) in [
             ("notification", "Notification."),
