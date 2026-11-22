@@ -74,6 +74,15 @@ pub fn control_line_for(settings: &AppSettings) -> String {
     )
 }
 
+/// What each request carries besides the chunk, for `chunk_budget`: the control line for S1,
+/// the empty frame for Plain (its user message is the chunk inside the frame).
+pub fn chunk_control(style: PromptStyle, settings: &AppSettings) -> String {
+    match style {
+        PromptStyle::S1ControlLine => control_line_for(settings),
+        PromptStyle::PlainSystemPrompt => crate::actions::frame_transcript(""),
+    }
+}
+
 /// System message for a prompt style.
 pub fn system_prompt(style: PromptStyle, settings: &AppSettings) -> Result<String, LocalLlmError> {
     match style {
@@ -104,7 +113,7 @@ pub fn build_messages(
 ) -> Vec<ChatMessage> {
     let user = match style {
         PromptStyle::S1ControlLine => format!("{control}\n{chunk}"),
-        PromptStyle::PlainSystemPrompt => chunk.to_string(),
+        PromptStyle::PlainSystemPrompt => crate::actions::frame_transcript(chunk),
     };
     vec![
         ChatMessage {
@@ -633,8 +642,100 @@ mod tests {
         assert_eq!(messages[0].role, "system");
         assert_eq!(messages[0].content, system);
         assert_eq!(messages[1].role, "user");
-        assert_eq!(messages[1].content, transcript);
+        assert_eq!(
+            messages[1].content,
+            format!("<transcript>\n{transcript}\n</transcript>"),
+            "the transcript bytes pass through verbatim inside the frame"
+        );
         assert_eq!(messages.len(), 2);
+    }
+
+    #[test]
+    fn plain_style_frames_every_chunk() {
+        let messages = build_messages(PromptStyle::PlainSystemPrompt, "sys", "", "chunk one");
+        assert_eq!(messages[0].content, "sys");
+        assert_eq!(messages[1].role, "user");
+        assert_eq!(
+            messages[1].content,
+            "<transcript>\nchunk one\n</transcript>"
+        );
+        assert_eq!(
+            build_messages(
+                PromptStyle::PlainSystemPrompt,
+                "sys",
+                "ignored",
+                "chunk one"
+            ),
+            messages,
+            "a Plain request does not use the control line"
+        );
+    }
+
+    #[test]
+    fn s1_control_line_request_is_unchanged() {
+        let messages = build_messages(
+            PromptStyle::S1ControlLine,
+            S1_SYSTEM_PROMPT,
+            "[Styling: casual]",
+            "hello",
+        );
+        assert_eq!(
+            messages,
+            vec![
+                ChatMessage {
+                    role: "system",
+                    content: S1_SYSTEM_PROMPT.to_string(),
+                },
+                ChatMessage {
+                    role: "user",
+                    content: "[Styling: casual]\nhello".to_string(),
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn chunk_control_is_the_frame_for_plain_and_the_control_line_for_s1() {
+        let settings = crate::settings::get_default_settings();
+        assert_eq!(
+            chunk_control(PromptStyle::S1ControlLine, &settings),
+            control_line_for(&settings)
+        );
+        assert_eq!(
+            chunk_control(PromptStyle::PlainSystemPrompt, &settings),
+            "<transcript>\n\n</transcript>"
+        );
+    }
+
+    #[test]
+    fn chunk_budget_counts_the_frame() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.post_process_selected_prompt_id =
+            Some(settings.post_process_prompts[0].id.clone());
+        let system = system_prompt(PromptStyle::PlainSystemPrompt, &settings).unwrap();
+        let control = chunk_control(PromptStyle::PlainSystemPrompt, &settings);
+        // One long sentence, so chunks fill the budget to within a word.
+        let transcript = (0..4000)
+            .map(|i| format!("w{}", i % 97))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let request_tokens = |chunk: &str| {
+            est_tokens(&system)
+                + est_tokens(&crate::actions::frame_transcript(chunk))
+                + TEMPLATE_OVERHEAD_TOKENS
+        };
+        let unframed = chunk_transcript(&transcript, chunk_budget(&system, ""));
+        assert!(
+            unframed
+                .iter()
+                .any(|chunk| request_tokens(chunk) > CHUNK_TOKEN_LIMIT),
+            "a chunk sized without the frame overshoots the limit once framed"
+        );
+        let framed = chunk_transcript(&transcript, chunk_budget(&system, &control));
+        assert!(framed.len() >= unframed.len());
+        for chunk in &framed {
+            assert!(request_tokens(chunk) <= CHUNK_TOKEN_LIMIT);
+        }
     }
 
     #[test]

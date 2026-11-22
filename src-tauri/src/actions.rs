@@ -193,8 +193,29 @@ pub(crate) fn strip_think_block(s: &str) -> &str {
     s
 }
 
+/// The transcript inside `<transcript>` tags: the form every cleanup request hands the model
+/// (the shipped default prompt tells it not to follow instructions inside the tags).
+pub(crate) fn frame_transcript(text: &str) -> String {
+    format!("<transcript>\n{text}\n</transcript>")
+}
+
+/// The single-prompt request text. A template with `${output}` gets the transcript there
+/// (unchanged); one without it gets the framed transcript appended, so it is never dropped.
+fn legacy_prompt(template: &str, transcription: &str) -> String {
+    if template.contains("${output}") {
+        template.replace("${output}", transcription)
+    } else {
+        format!(
+            "{}\n\n{}",
+            template.trim_end(),
+            frame_transcript(transcription)
+        )
+    }
+}
+
 /// Build a system prompt from the user's prompt template.
-/// Removes `${output}` placeholder since the transcription is sent as the user message.
+/// Removes `${output}` placeholder since the transcription is sent as the user message,
+/// inside `<transcript>` tags (see `frame_transcript`).
 fn build_system_prompt(prompt_template: &str) -> String {
     prompt_template.replace("${output}", "").trim().to_string()
 }
@@ -366,7 +387,7 @@ async fn post_process_transcription(
         debug!("Using structured outputs for provider '{}'", provider.id);
 
         let system_prompt = build_system_prompt(&prompt);
-        let user_content = transcription.to_string();
+        let user_content = frame_transcript(transcription);
 
         // Handle Apple Intelligence separately since it uses native Swift APIs
         if provider.id == APPLE_INTELLIGENCE_PROVIDER_ID {
@@ -480,7 +501,8 @@ async fn post_process_transcription(
     }
 
     // Legacy mode: Replace ${output} variable in the prompt with the actual text
-    let processed_prompt = prompt.replace("${output}", transcription);
+    // (a prompt without ${output} gets the framed transcript appended)
+    let processed_prompt = legacy_prompt(&prompt, transcription);
     debug!("Processed prompt length: {} chars", processed_prompt.len());
 
     match crate::llm_client::send_chat_completion(
@@ -1470,10 +1492,11 @@ mod tests {
     }
 
     use super::{
-        cleanup_provenance, complete_unless_cancelled, is_blank_transcription,
-        non_blank_post_processed_text, post_process_route, post_process_transcription,
-        process_transcription_output_with_dependencies, should_use_streaming_overlay,
-        strip_invisible_chars, strip_think_block, PostProcessOutcome, PostProcessRoute,
+        cleanup_provenance, complete_unless_cancelled, frame_transcript, is_blank_transcription,
+        legacy_prompt, non_blank_post_processed_text, post_process_route,
+        post_process_transcription, process_transcription_output_with_dependencies,
+        should_use_streaming_overlay, strip_invisible_chars, strip_think_block, PostProcessOutcome,
+        PostProcessRoute,
     };
     use crate::settings::{get_default_settings, AppSettings, OverlayStyle};
     use std::future;
@@ -1523,6 +1546,177 @@ mod tests {
 
     fn run_post_process(settings: &AppSettings, transcription: &str) -> PostProcessOutcome {
         tauri::async_runtime::block_on(post_process_transcription(settings, transcription))
+    }
+
+    /// Answers one request with `body` and sends the request body it received down the channel.
+    fn serve_capture(body: &'static str) -> (String, std::sync::mpsc::Receiver<String>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let (sender, receiver) = std::sync::mpsc::channel();
+        thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut raw = Vec::new();
+            let mut chunk = [0; 4096];
+            let mut body_start = None;
+            while body_start.is_none() {
+                let read = stream.read(&mut chunk).unwrap();
+                assert_ne!(read, 0, "request ended before its headers did");
+                raw.extend_from_slice(&chunk[..read]);
+                body_start = raw
+                    .windows(4)
+                    .position(|w| w == b"\r\n\r\n")
+                    .map(|at| at + 4);
+            }
+            let body_start = body_start.unwrap();
+            let head = String::from_utf8_lossy(&raw[..body_start]).to_lowercase();
+            let length: usize = head
+                .lines()
+                .find_map(|line| line.strip_prefix("content-length:"))
+                .and_then(|value| value.trim().parse().ok())
+                .unwrap_or(0);
+            while raw.len() < body_start + length {
+                let read = stream.read(&mut chunk).unwrap();
+                assert_ne!(read, 0, "request ended before its body did");
+                raw.extend_from_slice(&chunk[..read]);
+            }
+            sender
+                .send(String::from_utf8_lossy(&raw[body_start..]).into_owned())
+                .unwrap();
+            let response = format!(
+                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes()).unwrap();
+        });
+        (format!("http://{address}"), receiver)
+    }
+
+    /// Default settings pointed at `provider_id` on `base_url`, with the shipped default prompt.
+    fn provider_settings(provider_id: &str, base_url: &str, structured: bool) -> AppSettings {
+        let mut settings = get_default_settings();
+        settings.post_process_provider_id = provider_id.to_string();
+        let provider = settings
+            .post_process_providers
+            .iter_mut()
+            .find(|provider| provider.id == provider_id)
+            .expect("the provider exists");
+        provider.base_url = base_url.to_string();
+        provider.supports_structured_output = structured;
+        settings
+            .post_process_models
+            .insert(provider_id.to_string(), "model".to_string());
+        settings.post_process_selected_prompt_id =
+            settings.post_process_prompts.first().map(|p| p.id.clone());
+        settings
+    }
+
+    #[test]
+    fn structured_user_message_is_framed() {
+        assert_eq!(
+            frame_transcript("check it"),
+            "<transcript>\ncheck it\n</transcript>"
+        );
+        let production = include_str!("actions.rs")
+            .split("#[cfg(test)]")
+            .next()
+            .unwrap();
+        assert!(
+            production.contains("let user_content = frame_transcript(transcription);"),
+            "the structured path must build its user message with frame_transcript"
+        );
+    }
+
+    #[test]
+    fn structured_request_sends_the_framed_transcript() {
+        let (url, request) =
+            serve_capture(r#"{"choices":[{"message":{"content":"{\"transcription\":\"ok\"}"}}]}"#);
+        let settings = provider_settings("openai", &url, true);
+        assert_eq!(
+            run_post_process(&settings, "check it"),
+            PostProcessOutcome::Done("ok".to_string())
+        );
+        let body: serde_json::Value = serde_json::from_str(&request.recv().unwrap()).unwrap();
+        let messages = body["messages"].as_array().unwrap();
+        assert_eq!(messages.len(), 2);
+        assert_eq!(messages[0]["role"], "system");
+        assert_eq!(messages[1]["role"], "user");
+        assert_eq!(
+            messages[1]["content"],
+            "<transcript>\ncheck it\n</transcript>"
+        );
+    }
+
+    #[test]
+    fn legacy_request_with_placeholder_is_byte_identical() {
+        let defaults = get_default_settings();
+        let default_prompt = &defaults.post_process_prompts[0].prompt;
+        assert!(default_prompt.contains("${output}"));
+        for transcript in ["check it", "two\nlines ${output}", "  spaced  "] {
+            assert_eq!(
+                legacy_prompt(default_prompt, transcript),
+                default_prompt.replace("${output}", transcript)
+            );
+        }
+    }
+
+    #[test]
+    fn legacy_prompt_without_placeholder_keeps_the_transcript() {
+        let prompt = legacy_prompt("Fix grammar.", "hello there");
+        assert!(prompt.starts_with("Fix grammar."));
+        assert!(prompt.ends_with("<transcript>\nhello there\n</transcript>"));
+        assert_eq!(
+            legacy_prompt("Fix grammar.\n\n", "hello there"),
+            "Fix grammar.\n\n<transcript>\nhello there\n</transcript>"
+        );
+    }
+
+    #[test]
+    fn legacy_request_without_placeholder_carries_the_framed_transcript() {
+        let (url, request) = serve_capture(r#"{"choices":[{"message":{"content":"ok"}}]}"#);
+        let mut settings = provider_settings("openai", &url, false);
+        settings.post_process_prompts[0].prompt = "Fix grammar.".to_string();
+        assert_eq!(
+            run_post_process(&settings, "hello there"),
+            PostProcessOutcome::Done("ok".to_string())
+        );
+        let body: serde_json::Value = serde_json::from_str(&request.recv().unwrap()).unwrap();
+        assert_eq!(
+            body["messages"][0]["content"],
+            "Fix grammar.\n\n<transcript>\nhello there\n</transcript>"
+        );
+    }
+
+    /// The owner's cleanup path: provider anthropic with the shipped default prompt. The request
+    /// body must equal the one the code sent before framing existed (the prompt with `${output}`
+    /// replaced, sent as one user message).
+    #[test]
+    fn anthropic_default_prompt_request_is_byte_identical() {
+        let reply = r#"{"content":[{"type":"text","text":"ok"}]}"#;
+        let (url, request) = serve_capture(reply);
+        let settings = provider_settings("anthropic", &url, false);
+        let transcript = "um so check it, ${output} twice";
+        assert_eq!(
+            run_post_process(&settings, transcript),
+            PostProcessOutcome::Done("ok".to_string())
+        );
+        let new_body = request.recv().unwrap();
+
+        let (old_url, old_request) = serve_capture(reply);
+        let mut provider = settings.active_post_process_provider().cloned().unwrap();
+        provider.base_url = old_url;
+        let old_prompt = settings.post_process_prompts[0]
+            .prompt
+            .replace("${output}", transcript);
+        let sent = tauri::async_runtime::block_on(crate::llm_client::send_chat_completion(
+            &provider,
+            String::new(),
+            "model",
+            old_prompt,
+            false,
+        ));
+        assert_eq!(sent, Ok(Some("ok".to_string())));
+        assert_eq!(new_body, old_request.recv().unwrap());
     }
 
     #[test]

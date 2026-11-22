@@ -5,7 +5,7 @@
 //! deleting one). Verification runs outside the backend mutex.
 
 use super::backend::{BackendOpts, GenerateRequest, KillSwitch, TextModelBackend};
-use super::registry::{self, ModelEntry, PromptStyle};
+use super::registry::{self, ModelEntry};
 use super::{prompt, LocalLlmError};
 use crate::settings::{AppSettings, ModelUnloadTimeout};
 use log::{info, warn};
@@ -848,10 +848,7 @@ fn run_chunks(
     transcript: &str,
     settings: &AppSettings,
 ) -> Result<String, LocalLlmError> {
-    let control = match entry.prompt_style {
-        PromptStyle::S1ControlLine => prompt::control_line_for(settings),
-        PromptStyle::PlainSystemPrompt => String::new(),
-    };
+    let control = prompt::chunk_control(entry.prompt_style, settings);
     let system = prompt::system_prompt(entry.prompt_style, settings)?;
     let budget = prompt::chunk_budget(&system, &control);
     let mut outputs = Vec::new();
@@ -885,6 +882,7 @@ fn on_std_thread<T: Send>(work: impl FnOnce() -> T + Send) -> T {
 
 #[cfg(test)]
 pub(crate) mod tests {
+    use super::registry::PromptStyle;
     use super::*;
     use crate::settings::{get_default_settings, LOCAL_LLM_PROVIDER_ID};
     use std::collections::VecDeque;
@@ -993,6 +991,11 @@ pub(crate) mod tests {
                     .map(|(_, text)| text)
                     .unwrap_or(user)
                     .to_string()
+            } else if let Some(text) = user
+                .strip_prefix("<transcript>\n")
+                .and_then(|framed| framed.strip_suffix("\n</transcript>"))
+            {
+                text.to_string()
             } else {
                 user.to_string()
             })
@@ -2412,6 +2415,33 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn long_s1_transcripts_chunk_exactly_as_before_the_plain_frame() {
+        let h = harness();
+        let transcript = (0..4000)
+            .map(|i| format!("w{}", i % 97))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let control = prompt::control_line_for(&h.settings);
+        let expected = prompt::chunk_transcript(
+            &transcript,
+            prompt::chunk_budget(prompt::S1_SYSTEM_PROMPT, &control),
+        );
+        assert!(expected.len() > 1);
+        h.manager.process(&transcript, &h.settings).unwrap();
+        let s = lock(&h.fake);
+        let sent: Vec<String> = s
+            .requests
+            .iter()
+            .map(|r| r.messages[1].content.clone())
+            .collect();
+        let wanted: Vec<String> = expected
+            .iter()
+            .map(|chunk| format!("{control}\n{chunk}"))
+            .collect();
+        assert_eq!(sent, wanted);
+    }
+
+    #[test]
     fn shutdown_during_a_request_returns_within_three_seconds() {
         let h = harness();
         h.manager.ensure_started(&h.settings).unwrap();
@@ -2533,7 +2563,10 @@ pub(crate) mod tests {
         let fake = h.fake.lock().unwrap();
         let request = &fake.requests[0];
         assert_eq!(request.messages[0].content, "Return only the transcript. ");
-        assert_eq!(request.messages[1].content, input);
+        assert_eq!(
+            request.messages[1].content,
+            format!("<transcript>\n{input}\n</transcript>")
+        );
         assert_eq!(request.max_tokens, prompt::max_tokens(input, 4096));
         assert_eq!(request.timeout, prompt::request_timeout(input));
         drop(fake);
@@ -2546,19 +2579,27 @@ pub(crate) mod tests {
         h.fake.lock().unwrap().replies.push_back(Ok(styled.into()));
         assert_eq!(h.manager.process(styled, &h.settings).unwrap(), styled);
         let fake = h.fake.lock().unwrap();
-        assert_eq!(fake.requests[1].messages[1].content, multiline);
-        assert_eq!(fake.requests[2].messages[1].content, styled);
+        assert_eq!(
+            fake.requests[1].messages[1].content,
+            format!("<transcript>\n{multiline}\n</transcript>")
+        );
+        assert_eq!(
+            fake.requests[2].messages[1].content,
+            format!("<transcript>\n{styled}\n</transcript>")
+        );
         let short_requests = fake.requests.len();
         drop(fake);
         let long = "hello there friend. ".repeat(300);
         h.manager.process(&long, &h.settings).unwrap();
-        let system = prompt::system_prompt(PromptStyle::PlainSystemPrompt, &h.settings).unwrap();
         let fake = h.fake.lock().unwrap();
         assert!(fake.requests.len() > short_requests + 1);
         for request in &fake.requests {
             assert!(
-                prompt::est_tokens(&request.messages[1].content)
-                    <= prompt::chunk_budget(&system, "")
+                prompt::est_tokens(&request.messages[0].content)
+                    + prompt::est_tokens(&request.messages[1].content)
+                    + 16
+                    <= prompt::CHUNK_TOKEN_LIMIT,
+                "a framed Plain request must fit the limit"
             );
         }
         drop(fake);
@@ -2602,9 +2643,16 @@ pub(crate) mod tests {
         prompt::est_tokens(&request.messages[1].content)
     }
 
+    /// Latin samples whose chunks differ from the evaluated request path because the
+    /// `<transcript>` frame takes 9 estimated tokens (681 to 672) off the chunk budget. Their
+    /// fixture requests, and those of the Indic samples that already re-chunked, were
+    /// regenerated with the framed budget; every other Latin sample chunks exactly as evaluated.
+    const FRAME_RECHUNKED: [&str; 4] = ["s120", "s123", "s124", "s125"];
+
     /// `testdata/muesli_parity.json` is what the evaluation's `handy` variant for
     /// `muesli-2b-q4km` sends for every eval sample: system prompt, chunks, `max_tokens`,
-    /// timeout and request flags. The app must send the same.
+    /// timeout and request flags. The app must send the same, except that the user message
+    /// carries the chunk inside `<transcript>` tags (the evaluated variant sent it bare).
     #[test]
     fn muesli_requests_match_the_evaluated_handy_variant() {
         let fixture: ParityFixture =
@@ -2661,7 +2709,7 @@ pub(crate) mod tests {
                 let mut body = fixture.body_flags.clone();
                 body["messages"] = serde_json::json!([
                     {"role": "system", "content": fixture.system},
-                    {"role": "user", "content": expected.user},
+                    {"role": "user", "content": crate::actions::frame_transcript(&expected.user)},
                 ]);
                 body["max_tokens"] = expected.max_tokens.into();
                 assert_eq!(
@@ -2697,7 +2745,7 @@ pub(crate) mod tests {
             let latin_only = case.input.chars().all(|c| {
                 matches!(c, '\u{0}'..='\u{24F}' | '\u{2000}'..='\u{206F}' | '\u{20A0}'..='\u{21FF}')
             });
-            if latin_only {
+            if latin_only && !FRAME_RECHUNKED.contains(&case.id.as_str()) {
                 assert_eq!(
                     case.requests.len(),
                     case.old_chunks,
@@ -2728,8 +2776,8 @@ pub(crate) mod tests {
                 .filter(|c| c.requests.len() != c.old_chunks)
                 .map(|c| c.id.as_str())
                 .collect::<Vec<_>>(),
-            ["s119", "v2-023", "v2-028"],
-            "only these Indic samples re-chunk against the evaluated request path"
+            ["s119", "s125", "v2-023", "v2-028"],
+            "only these samples change their chunk count against the evaluated request path"
         );
     }
 
