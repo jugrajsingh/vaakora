@@ -1655,6 +1655,7 @@
         "reset": "איפוס לברירת המחדל",
         "cancel": "ביטול"
       },
+      "listenPlays": "מנגן: {{sample}}",
       "match": {
         "whole": "מילה שלמה",
         "anywhere": "בכל מקום במילה",

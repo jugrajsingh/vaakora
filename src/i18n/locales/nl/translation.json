@@ -1655,6 +1655,7 @@
         "reset": "Terugzetten naar standaard",
         "cancel": "Annuleren"
       },
+      "listenPlays": "Speelt: {{sample}}",
       "match": {
         "whole": "Heel woord",
         "anywhere": "Overal in een woord",

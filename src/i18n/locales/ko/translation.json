@@ -1655,6 +1655,7 @@
         "reset": "기본값으로 초기화",
         "cancel": "취소"
       },
+      "listenPlays": "재생 내용: {{sample}}",
       "match": {
         "whole": "단어 전체",
         "anywhere": "단어 안 어디서나",

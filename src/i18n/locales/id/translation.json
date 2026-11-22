@@ -1655,6 +1655,7 @@
         "reset": "Atur ulang ke bawaan",
         "cancel": "Batal"
       },
+      "listenPlays": "Memutar: {{sample}}",
       "match": {
         "whole": "Kata utuh",
         "anywhere": "Di mana saja dalam kata",

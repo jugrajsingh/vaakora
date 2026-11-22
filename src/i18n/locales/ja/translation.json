@@ -1655,6 +1655,7 @@
         "reset": "既定に戻す",
         "cancel": "キャンセル"
       },
+      "listenPlays": "再生内容: {{sample}}",
       "match": {
         "whole": "単語全体",
         "anywhere": "単語内のどこでも",

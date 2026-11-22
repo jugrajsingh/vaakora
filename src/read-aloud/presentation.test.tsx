@@ -1133,3 +1133,91 @@ for (const event of [
   );
 }
 console.log("popup paste during an active read assertions passed");
+{
+  // reader_popup_is_rounded_themed_and_spec_sized
+  const classOf = (tag: string) =>
+    (tag.match(/class="([^"]*)"/)?.[1] ?? "").split(/\s+/);
+  for (const state of ["playing", "finished"] as const) {
+    const html = render({ ...snapshot, state });
+    const card = classOf(html.match(/<section[^>]*>/)?.[0] ?? "");
+    for (const token of [
+      "rounded-card",
+      "border",
+      "border-line-strong",
+      "bg-background",
+      "text-[14px]",
+      "leading-[20px]",
+    ])
+      assert.ok(card.includes(token), `${state}: card has ${token}`);
+    for (const token of ["rounded-xl", "border-line", "text-sm"])
+      assert.equal(
+        card.includes(token),
+        false,
+        `${state}: card drops ${token}`,
+      );
+
+    const close = [...html.matchAll(/<button[^>]*>.*?<\/button>/gs)]
+      .map(([button]) => button)
+      .find((button) => button.includes('aria-label="Close"'));
+    assert.ok(close, `${state}: Close renders`);
+    const closeClasses = classOf(close);
+    for (const token of [
+      "size-[28px]",
+      "rounded-full!",
+      "p-0!",
+      "bg-wash",
+      "focus-visible:ring-2",
+      "focus-visible:ring-logo-primary",
+    ])
+      assert.ok(closeClasses.includes(token), `${state}: Close has ${token}`);
+    const icon = classOf(close.match(/<svg[^>]*>/)?.[0] ?? "");
+    assert.ok(
+      icon.includes("h-[12px]") && icon.includes("w-[12px]"),
+      `${state}: Close X is 12 px: ${icon.join(" ")}`,
+    );
+
+    const time = html.match(/<span class="tabular-nums[^>]*>/)?.[0] ?? "";
+    assert.ok(classOf(time).includes("text-label"), `${state}: time label`);
+    assert.equal(classOf(time).includes("text-xs"), false, state);
+    const word = html.match(/<span role="status"[^>]*>/)?.[0] ?? "";
+    assert.ok(classOf(word).includes("text-label"), `${state}: state label`);
+    assert.equal(classOf(word).includes("text-xs"), false, state);
+
+    const fill = html.match(
+      /<div class="[^"]*bg-logo-primary[^"]*" style="width/,
+    )?.[0];
+    assert.ok(fill?.includes("rounded-full"), `${state}: progress fill`);
+    const markTag = html.match(/<mark[^>]*>/)?.[0] ?? "";
+    assert.ok(
+      classOf(markTag).includes("box-decoration-clone"),
+      `${state}: wrapped highlight keeps rounded ends`,
+    );
+  }
+}
+{
+  // reader_root_is_transparent: App.css paints `:root`, so the page needs a rule that outranks it
+  const page = readFileSync(new URL("./index.html", import.meta.url), "utf8");
+  assert.ok(
+    /html:root,\s*body\s*\{\s*background:\s*transparent;?\s*\}/.test(page),
+    "read-aloud/index.html makes the root transparent so only the rounded card paints",
+  );
+  const css = readFileSync(new URL("../App.css", import.meta.url), "utf8");
+  assert.ok(
+    /:root\s*\{[^}]*background-color:\s*var\(--color-background\)/.test(css),
+    "App.css still paints :root, which is why the rule must be html:root",
+  );
+}
+{
+  // reader_window_has_no_native_shadow
+  const source = readFileSync(
+    new URL("../../src-tauri/src/tts/window.rs", import.meta.url),
+    "utf8",
+  );
+  assert.ok(
+    /\.transparent\(true\)\s*\.shadow\(false\)/.test(source),
+    "the reader window builder drops the native shadow like the overlay",
+  );
+}
+console.log(
+  "popup rounded, themed, close-button and transparent-root assertions passed",
+);

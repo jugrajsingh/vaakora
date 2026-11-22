@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { TtsModelInfo } from "@/bindings";
 import { Button } from "@/components/ui/Button";
 import { Switch } from "@/components/ui/Switch";
+import { Tooltip } from "@/components/ui/Tooltip";
 import type { RowGroup } from "./groups";
 import {
   isCaseSensitive,
@@ -69,9 +70,19 @@ export function VocabularyTable({
                 {originLabel(t, group.origin)}
               </span>
               <div className="ms-auto flex shrink-0 gap-1">
-                <Button size="sm" variant="ghost" onClick={() => listen(group)}>
-                  {t("tts.vocabulary.buttons.listen")}
-                </Button>
+                <Tooltip
+                  text={t("tts.vocabulary.listenPlays", {
+                    sample: group.members[0].sample,
+                  })}
+                >
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => listen(group)}
+                  >
+                    {t("tts.vocabulary.buttons.listen")}
+                  </Button>
+                </Tooltip>
                 <Button
                   size="sm"
                   variant="ghost"

@@ -4,6 +4,11 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 
 ## [Unreleased]
 
+### Fixed
+
+- The Read aloud popup has rounded corners. Its page background no longer paints a square behind the rounded card, so the corners show the desktop. The popup keeps the app theme; its edge uses the stronger line colour so it shows on a dark or a light desktop, the card radius is the 12 px card radius, the text is 14 px on 20 px with 12 px time and state labels, the close button is a 28 px round button like the dictation pill's cancel, a highlighted sentence that wraps keeps rounded ends, and the progress fill is rounded. On Windows the popup no longer draws the native window shadow.
+- In the Vocabulary tab, Listen on a symbol plays natural words, `file_name` for `_`, `file.name` for `.`, `file/name` for `/` and `file~name` for `~`, in place of "alpha_beta" read as "alpha underscore beta". A currency sign added as a symbol plays an amount (`₹100`). Hovering or focusing Listen shows the text it plays ("Plays: file_name"). Listen in the entry dialog still plays the words you typed.
+
 ## [0.1.0] - 2026-11-23
 
 First Vaakora release. It starts from Handy v0.10.1 plus the changes below; see UPSTREAM.md.

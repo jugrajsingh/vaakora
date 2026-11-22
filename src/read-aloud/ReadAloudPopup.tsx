@@ -148,7 +148,7 @@ export function ReadAloudPopup({
   );
   return (
     <section
-      className="h-screen flex flex-col overflow-hidden rounded-xl border border-line bg-background text-text text-sm"
+      className="h-screen flex flex-col overflow-hidden rounded-card border border-line-strong bg-background text-text text-[14px] leading-[20px]"
       aria-label={t("tts.title")}
       onKeyDownCapture={(event) => routePopupKey(event, { close, toggle })}
     >
@@ -182,12 +182,12 @@ export function ReadAloudPopup({
             <Button
               variant="ghost"
               size="sm"
-              className={focusRing}
+              className={`size-[28px] rounded-full! p-0! inline-flex items-center justify-center bg-wash ${focusRing}`}
               onClick={close}
               aria-label={t("tts.close")}
               aria-keyshortcuts="Escape"
             >
-              <X className="h-4 w-4" aria-hidden="true" />
+              <X className="h-[12px] w-[12px]" aria-hidden="true" />
             </Button>
           </Tooltip>
         </div>
@@ -215,7 +215,10 @@ export function ReadAloudPopup({
             }
           >
             <span className="text-ink-2">{parts.before}</span>
-            <mark ref={mark} className="rounded bg-logo-primary/25 text-text">
+            <mark
+              ref={mark}
+              className="rounded box-decoration-clone bg-logo-primary/25 text-text"
+            >
               {parts.current}
             </mark>
             {parts.after}
@@ -310,15 +313,17 @@ export function ReadAloudPopup({
           className="h-1.5 min-w-8 flex-1 overflow-hidden rounded-full bg-line"
         >
           <div
-            className="h-full bg-logo-primary"
+            className="h-full rounded-full bg-logo-primary"
             style={{ width: `${progress.percent}%` }}
           />
         </div>
         {time && (
-          <span className="tabular-nums text-xs whitespace-nowrap">{time}</span>
+          <span className="tabular-nums text-label whitespace-nowrap">
+            {time}
+          </span>
         )}
         {word && (
-          <span role="status" className="text-xs text-ink-2">
+          <span role="status" className="text-label text-ink-2">
             {t(word)}
           </span>
         )}

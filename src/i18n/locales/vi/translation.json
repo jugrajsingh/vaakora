@@ -1655,6 +1655,7 @@
         "reset": "Đặt lại về mặc định",
         "cancel": "Hủy"
       },
+      "listenPlays": "Phát: {{sample}}",
       "match": {
         "whole": "Nguyên từ",
         "anywhere": "Bất kỳ đâu trong từ",

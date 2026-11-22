@@ -187,12 +187,19 @@ pub(super) fn contains(sections: &Sections, section: Section, key: &str) -> bool
     }
 }
 
-/// The text Listen reads for an entry: a file name for an extension, a word holding a symbol,
-/// the key itself for terms and acronyms.
+/// True for a currency sign: `$`, the signs of Latin-1 (`¢ £ ¤ ¥`) and the Currency Symbols block
+/// (`€ ₹ ...`).
+fn is_currency_sign(c: char) -> bool {
+    matches!(c, '$' | '\u{a2}'..='\u{a5}' | '\u{20a0}'..='\u{20c0}')
+}
+
+/// The text Listen reads for an entry: a file name for an extension, a file name holding a symbol
+/// (`file_name`), an amount for a currency sign (`₹100`), the key itself for terms and acronyms.
 fn sample(section: Section, key: &str) -> String {
     match section {
         Section::Extension => format!("notes.{key}"),
-        Section::Symbol => format!("alpha{key}beta"),
+        Section::Symbol if key.chars().all(is_currency_sign) => format!("{key}100"),
+        Section::Symbol => format!("file{key}name"),
         Section::Term | Section::Acronym => key.to_string(),
     }
 }
@@ -673,11 +680,38 @@ mod tests {
         assert_eq!(md.sample, "notes.md");
         let slash = row(&rows, &id(Origin::Builtin, Section::Symbol, None, "/"));
         assert_eq!(slash.matching, Matching::Symbol);
-        assert_eq!(slash.sample, "alpha/beta");
+        assert_eq!(slash.sample, "file/name");
         let gpu = row(&rows, &id(Origin::Builtin, Section::Acronym, None, "GPU"));
         assert_eq!(gpu.matching, Matching::Acronym);
         assert_eq!(gpu.spoken, "");
         assert_eq!(gpu.sample, "GPU");
+    }
+
+    #[test]
+    fn symbol_samples_are_natural_words_and_currency_gets_a_number() {
+        let rows = with_user(
+            r#"{"version":1,"symbols":{"₹":"rupees","$":"dollars"},
+                "terms":{"₹":{"say":"rupees"}}}"#,
+        )
+        .rows(&MODELS);
+        let sample = |section, key| {
+            row(&rows, &id(Origin::Owner, section, None, key))
+                .sample
+                .clone()
+        };
+        for (key, expected) in [("₹", "₹100"), ("$", "$100")] {
+            assert_eq!(sample(Section::Symbol, key), expected, "{key}");
+        }
+        for (key, expected) in [
+            ("_", "file_name"),
+            (".", "file.name"),
+            ("/", "file/name"),
+            ("~", "file~name"),
+        ] {
+            let builtin = row(&rows, &id(Origin::Builtin, Section::Symbol, None, key));
+            assert_eq!(builtin.sample, expected, "{key}");
+        }
+        assert_eq!(sample(Section::Term, "₹"), "₹", "a term plays its key");
     }
 
     #[test]

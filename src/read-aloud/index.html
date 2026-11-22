@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <style>
+      /* html:root outranks the :root background App.css paints, so only the rounded card shows. */
+      html:root,
+      body {
+        background: transparent;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

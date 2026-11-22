@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import type { AcronymStyleRow, VoiceCheck, VoiceText } from "@/bindings";
 import { models } from "./fixtures";
@@ -202,5 +203,33 @@ describe("createVoiceCheck", () => {
       checking: false,
       error: "tts.vocabulary.check.dictating",
     });
+  });
+});
+
+describe("the entry editor's play", () => {
+  it("plays the words typed in the editor, not a list sample", async () => {
+    const plays: VoiceText[][] = [];
+    const check = createVoiceCheck({
+      play: async (voices) => {
+        plays.push(voices);
+      },
+      check: async () => [],
+      update: () => {},
+    });
+    check.target(voiceTexts(["pocket-en"], "underscore", null, []), "whole");
+    await check.playAndCheck();
+    assert.deepEqual(plays, [
+      [{ model_id: "pocket-en", spoken: "underscore" }],
+    ]);
+  });
+  it("only the list reads a row's sample, to play it and to show it", () => {
+    const folder = new URL("./", import.meta.url);
+    const readers = readdirSync(folder)
+      .sort()
+      .filter((name) => /\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name))
+      .filter((name) =>
+        /\.sample\b/.test(readFileSync(new URL(name, folder), "utf8")),
+      );
+    assert.deepEqual(readers, ["VocabularyTable.tsx", "actions.ts"]);
   });
 });

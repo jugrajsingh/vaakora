@@ -1655,6 +1655,7 @@
         "reset": "恢复默认",
         "cancel": "取消"
       },
+      "listenPlays": "播放内容：{{sample}}",
       "match": {
         "whole": "整词",
         "anywhere": "词中任意位置",

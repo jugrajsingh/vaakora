@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -264,5 +265,19 @@ describe("VocabularyTable", () => {
       md.includes(">Pocket TTS</span>") && md.includes(">Supertonic 3</span>"),
     );
     assert.ok(md.includes("default for Pocket TTS: <s>markdown</s>"));
+  });
+  it("shows what Listen plays next to the button", () => {
+    const source = readFileSync(
+      new URL("./VocabularyTable.tsx", import.meta.url),
+      "utf8",
+    );
+    const tip = source.match(/<Tooltip\b[\s\S]*?<\/Tooltip>/)?.[0] ?? "";
+    assert.ok(
+      tip.includes('t("tts.vocabulary.listenPlays", {') &&
+        tip.includes("group.members[0].sample") &&
+        tip.includes("onClick={() => listen(group)}"),
+      "the Listen button sits in a Tooltip naming the sample it plays",
+    );
+    assert.equal(en.tts.vocabulary.listenPlays, "Plays: {{sample}}");
   });
 });
