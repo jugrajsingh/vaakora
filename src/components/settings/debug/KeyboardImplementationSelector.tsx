@@ -7,14 +7,6 @@ import { useSettings } from "../../../hooks/useSettings";
 import { commands } from "@/bindings";
 import { notify } from "@/stores/noticeStore";
 
-const KEYBOARD_IMPLEMENTATION_OPTIONS: DropdownOption[] = [
-  { value: "tauri", label: "Tauri Global Shortcut" },
-  { value: "handy_keys", label: "Handy Keys" },
-  // Linux only: for Wayland, where the compositor owns keybindings and
-  // triggers Handy via `handy --toggle-transcription`.
-  ...(type() === "linux" ? [{ value: "none", label: "None" }] : []),
-];
-
 interface KeyboardImplementationSelectorProps {
   descriptionMode?: "tooltip" | "inline";
   grouped?: boolean;
@@ -25,6 +17,17 @@ export const KeyboardImplementationSelector: React.FC<
 > = ({ descriptionMode = "tooltip", grouped = false }) => {
   const { t } = useTranslation();
   const { getSetting, isUpdating, refreshSettings } = useSettings();
+  const options: DropdownOption[] = [
+    { value: "tauri", label: "Tauri Global Shortcut" },
+    // The stored value stays `handy_keys`; only the label is the brand's.
+    {
+      value: "handy_keys",
+      label: t("settings.debug.keyboardImplementation.builtIn"),
+    },
+    // Linux only: for Wayland, where the compositor owns keybindings and
+    // triggers the app via `vaakora --toggle-transcription`.
+    ...(type() === "linux" ? [{ value: "none", label: "None" }] : []),
+  ];
   const currentImplementation =
     getSetting("keyboard_implementation") ?? "tauri";
 
@@ -67,7 +70,7 @@ export const KeyboardImplementationSelector: React.FC<
       layout="horizontal"
     >
       <Dropdown
-        options={KEYBOARD_IMPLEMENTATION_OPTIONS}
+        options={options}
         selectedValue={currentImplementation}
         onSelect={handleSelect}
         disabled={isUpdating("keyboard_implementation")}

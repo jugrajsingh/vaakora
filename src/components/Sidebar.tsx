@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Cog, Cpu, Mic, Volume2, type LucideIcon } from "lucide-react";
-import HandyTextLogo from "./icons/HandyTextLogo";
+import { BrandLockup } from "./brand/BrandLockup";
 import {
   DESTINATIONS,
   labelKey,
@@ -45,7 +45,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ active, navigate }) => {
 
   return (
     <nav className="flex w-[160px] shrink-0 flex-col border-e border-line px-2">
-      <HandyTextLogo width={100} className="mx-auto my-4" />
+      <div className="mx-auto my-4 flex justify-center">
+        <BrandLockup size={26} />
+      </div>
       <div className="flex flex-col gap-1 border-t border-line pt-2">
         {DESTINATIONS.map((destination, index) => {
           const Icon = ICONS[destination];

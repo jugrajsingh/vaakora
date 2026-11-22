@@ -2,11 +2,14 @@
  * Brand gate: `bun scripts/check-brand.ts`. Prints `BRAND PASS`, or one FAIL
  * line per problem and exits 1. Sections are added by the tasks that own them;
  * this file holds `source` (brand.json, the SVG masters, the pinned fonts and
- * the generated rasters) and `mirrors` (files that cannot read brand.json carry
- * literals of it, proven equal here).
+ * the generated rasters), `mirrors` (files that cannot read brand.json carry
+ * literals of it, proven equal here) and `ui` (no Handy name in locale values,
+ * its marks and release notes gone). `--dist` adds `dist`: the built frontend
+ * bundle (`bun run build`) carries no Handy name in any value and no upstream
+ * host.
  */
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { svgProblems } from "./brand-svg";
@@ -378,11 +381,126 @@ function checkMirrors() {
   }
 }
 
+type Json = string | { [key: string]: Json };
+
+/** Every string leaf of a locale file as `path`, value. */
+function leaves(node: Json, path: string): [string, string][] {
+  if (typeof node === "string") return [[path, node]];
+  return Object.entries(node).flatMap(([key, child]) =>
+    leaves(child, path ? `${path}.${key}` : key),
+  );
+}
+
+/** The locale keys whose own name carries Handy (internal ids, never shown). */
+function keyNamesWithHandy(node: Json, out = new Set<string>()): Set<string> {
+  if (typeof node === "string") return out;
+  for (const [key, child] of Object.entries(node)) {
+    if (/Handy/.test(key)) out.add(key);
+    keyNamesWithHandy(child, out);
+  }
+  return out;
+}
+
+const LOCALES_DIR = join(ROOT, "src/i18n/locales");
+
+function readLocales(): [string, Json][] {
+  return readdirSync(LOCALES_DIR)
+    .filter((d) => existsSync(join(LOCALES_DIR, d, "translation.json")))
+    .sort()
+    .flatMap((lang): [string, Json][] => {
+      try {
+        return [
+          [
+            lang,
+            JSON.parse(
+              readFileSync(join(LOCALES_DIR, lang, "translation.json"), "utf8"),
+            ) as Json,
+          ],
+        ];
+      } catch (e) {
+        fail("ui", `${lang}/translation.json does not parse: ${String(e)}`);
+        return [];
+      }
+    });
+}
+
+const GONE = [
+  "src/components/icons/HandyTextLogo.tsx",
+  "src/components/icons/HandyHand.tsx",
+  "src/components/icons/HandyMascot.tsx",
+  "src/components/shared/Mascot.tsx",
+  "public/release-notes",
+];
+
+function checkUi() {
+  const locales = readLocales();
+  if (locales.length !== 27) {
+    fail("ui", `${locales.length} locale files, want 27`);
+  }
+  for (const [lang, data] of locales) {
+    for (const [path, text] of leaves(data, "")) {
+      if (/\bhandy\b/i.test(text)) {
+        fail("ui", `${lang} ${path} names Handy: ${JSON.stringify(text)}`);
+      }
+    }
+  }
+  for (const rel of GONE) {
+    if (existsSync(join(ROOT, rel))) fail("ui", `${rel} must be deleted`);
+  }
+  const notes = join(ROOT, "src/content/release-notes");
+  if (existsSync(notes)) {
+    for (const name of readdirSync(notes)) {
+      if (name !== "README.md") fail("ui", `release note ${name} must go`);
+    }
+  }
+}
+
+function distFiles(dir: string): string[] {
+  return readdirSync(dir).flatMap((name) => {
+    const path = join(dir, name);
+    if (statSync(path).isDirectory()) return distFiles(path);
+    return /\.(js|css|html|json|svg|map)$/.test(name) ? [path] : [];
+  });
+}
+
+/** A `Handy` hit with 40 characters of context either side. */
+const HANDY_HIT = /Handy(?!Keys)/g;
+const UPSTREAM_HOSTS = ["handy.computer", "github.com/cjpais"];
+
+function checkDist() {
+  const dir = join(ROOT, "dist");
+  if (!existsSync(dir))
+    return fail("dist", "dist/ is missing; run bun run build");
+  const files = distFiles(dir);
+  if (files.length === 0) return fail("dist", "dist/ holds no scanned files");
+  // Locale key names that carry Handy (tts.sameAsHandy) appear in the bundle as
+  // object keys and as t() arguments; they are ids, so mask them before scanning.
+  const keyNames = new Set<string>();
+  for (const [, data] of readLocales()) keyNamesWithHandy(data, keyNames);
+  for (const file of files) {
+    let text = readFileSync(file, "utf8");
+    for (const key of keyNames) text = text.split(key).join("");
+    const rel = file.slice(ROOT.length + 1);
+    for (const m of text.matchAll(HANDY_HIT)) {
+      const at = m.index ?? 0;
+      const near = text
+        .slice(Math.max(0, at - 40), at + 40)
+        .replace(/\s+/g, " ");
+      fail("dist", `${rel} names Handy near ${JSON.stringify(near)}`);
+    }
+    for (const host of UPSTREAM_HOSTS) {
+      if (text.includes(host)) fail("dist", `${rel} contains ${host}`);
+    }
+  }
+}
+
 checkBrandJson();
 checkMasters();
 checkFonts();
 checkRasters();
 checkMirrors();
+checkUi();
+if (process.argv.includes("--dist")) checkDist();
 
 if (problems.length) {
   console.log(problems.join("\n"));

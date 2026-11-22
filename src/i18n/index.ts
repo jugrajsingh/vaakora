@@ -3,6 +3,7 @@ import { initReactI18next } from "react-i18next";
 import { locale } from "@tauri-apps/plugin-os";
 import { LANGUAGE_METADATA } from "./languages";
 import { commands } from "@/bindings";
+import { i18nInterpolation } from "@/lib/brand";
 import {
   getLanguageDirection,
   updateDocumentDirection,
@@ -91,9 +92,7 @@ i18n.use(initReactI18next).init({
   resources,
   lng: "en",
   fallbackLng: "en",
-  interpolation: {
-    escapeValue: false, // React already escapes values
-  },
+  interpolation: i18nInterpolation,
   react: {
     useSuspense: false, // Disable suspense for SSR compatibility
   },

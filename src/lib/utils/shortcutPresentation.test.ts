@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import i18next from "i18next";
+import { i18nInterpolation } from "../brand";
 import {
   canClearShortcut,
   clearButtonState,
@@ -167,7 +168,7 @@ const { default: en } = await import("../../i18n/locales/en/translation.json");
 await i18next.init({
   lng: "en",
   resources: { en: { translation: en } },
-  interpolation: { escapeValue: false },
+  interpolation: i18nInterpolation,
 });
 assert.equal(i18next.t(shortcutNameKey("transcribe")), "Dictate");
 assert.equal(
@@ -243,11 +244,14 @@ for (const dir of others) {
   const help = locale.settings.shortcuts.cancelLinuxHelp;
   assert.equal(typeof help, "string", dir);
   assert.notEqual(help, en.settings.shortcuts.cancelLinuxHelp, dir);
-  assert.ok(help.includes("handy --cancel"), `${dir} names the command`);
+  assert.ok(
+    help.includes("{{binaryName}} --cancel"),
+    `${dir} names the command`,
+  );
 }
 assert.equal(
   en.settings.shortcuts.cancelLinuxHelp,
-  "On Linux the cancel shortcut does not stop a dictation, because shortcuts registered during a dictation are unreliable there. Use the X on the overlay, Cancel in the tray menu, or run handy --cancel.",
+  "On Linux the cancel shortcut does not stop a dictation, because shortcuts registered during a dictation are unreliable there. Use the X on the overlay, Cancel in the tray menu, or run {{binaryName}} --cancel.",
 );
 // Thai joined after cfce1b85, so it has no snapshot text to differ from.
 assert.deepEqual(

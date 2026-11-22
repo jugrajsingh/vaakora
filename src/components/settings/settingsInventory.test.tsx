@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import i18next from "i18next";
 import { I18nextProvider } from "react-i18next";
 import en from "../../i18n/locales/en/translation.json";
+import { brand, i18nInterpolation } from "@/lib/brand";
 import { createRequire } from "node:module";
 const {
   describe,
@@ -23,7 +24,12 @@ mock.module("@tauri-apps/plugin-os", () => ({
   platform: () => "windows",
 }));
 mock.module("@tauri-apps/api/app", () => ({ getVersion: async () => "0.0.0" }));
-mock.module("@tauri-apps/plugin-opener", () => ({ openUrl: async () => {} }));
+const opened: string[] = [];
+mock.module("@tauri-apps/plugin-opener", () => ({
+  openUrl: async (url: string) => {
+    opened.push(url);
+  },
+}));
 const stored: Record<string, unknown> = {
   experimental_enabled: true,
   post_process_enabled: true,
@@ -126,10 +132,14 @@ mock.module("./debug/OnboardingPreview", () => ({
 const { DictationSettings } = await import("./dictation/DictationSettings");
 const { GeneralSettings } = await import("./general/GeneralSettings");
 const { AdvancedSettings } = await import("./advanced/AdvancedSettings");
-const { AboutSettings } = await import("./about/AboutSettings");
+const { AboutSettings, openSourceCode } = await import("./about/AboutSettings");
 const { DebugSettings } = await import("./debug/DebugSettings");
 const i18n = i18next.createInstance();
-await i18n.init({ lng: "en", resources: { en: { translation: en } } });
+await i18n.init({
+  lng: "en",
+  resources: { en: { translation: en } },
+  interpolation: i18nInterpolation,
+});
 
 function markup(page: React.ReactElement): string {
   return renderToStaticMarkup(
@@ -407,7 +417,6 @@ describe("settings inventory", () => {
         "Prompt instructions",
       "settings.about.appDataDirectory.title": "App data directory",
       "settings.about.sourceCode.title": "Source code",
-      "settings.about.supportDevelopment.title": "Support development",
     };
     for (const [key, value] of Object.entries(casing)) {
       assert.equal(read(key), value, key);
@@ -466,6 +475,75 @@ describe("settings inventory", () => {
     const output = sources("./OutputDeviceSelector.tsx");
     assert.ok(output.includes("settings.sound.feedbackOutputDevice"));
     assert.ok(!output.includes("settings.sound.outputDevice.title"));
+  });
+
+  it("about_has_no_donate_and_opens_the_brand_repository", async () => {
+    const html = markup(<AboutSettings />);
+    assert.ok(html.includes(">" + en.settings.about.sourceCode.title + "<"));
+    assert.ok(!html.includes("Support development"), "no donate row");
+    assert.ok(!html.includes("donate"), "no donate link");
+    assert.equal(
+      (en.settings.about as Record<string, unknown>).supportDevelopment,
+      undefined,
+      "the donate strings are gone",
+    );
+    opened.length = 0;
+    await openSourceCode();
+    assert.deepEqual(opened, [brand.links.repo]);
+  });
+
+  it("no_locale_value_names_handy", () => {
+    const root = new URL("../../i18n/locales/", import.meta.url);
+    const languages = readdirSync(root);
+    assert.equal(languages.length, 27);
+    type Leaf = [string, string];
+    const leaves = (node: unknown, path: string): Leaf[] =>
+      typeof node === "string"
+        ? [[path, node]]
+        : Object.entries(node as Record<string, unknown>).flatMap(
+            ([key, child]) => leaves(child, `${path}.${key}`),
+          );
+    for (const language of languages) {
+      const locale = JSON.parse(
+        readFileSync(new URL(`${language}/translation.json`, root), "utf8"),
+      );
+      for (const [path, text] of leaves(locale, language)) {
+        // Values only: key names (tts.sameAsHandy) are internal.
+        assert.ok(!/\bhandy\b/i.test(text), `${path} names Handy: ${text}`);
+        assert.ok(!/Handy/.test(text), `${path} names Handy: ${text}`);
+      }
+      // The tray strings are copied by build.rs and never interpolated.
+      const tray: Leaf[] = [
+        ...leaves(locale.tray, `${language}.tray`),
+        ...Object.entries(locale.errors as Record<string, string>)
+          .filter(([key]) => key.endsWith("Title"))
+          .map(([key, text]): Leaf => [`${language}.errors.${key}`, text]),
+      ];
+      for (const [path, text] of tray) {
+        assert.ok(!text.includes("{{"), `${path} carries a placeholder`);
+      }
+    }
+  });
+
+  it("renders_the_brand_name_through_interpolation", () => {
+    assert.equal(
+      i18n.t("settings.about.version.description"),
+      "Current version of Vaakora",
+    );
+    assert.equal(
+      i18n
+        .t("settings.shortcuts.cancelLinuxHelp")
+        .endsWith("run vaakora --cancel."),
+      true,
+    );
+    const index = readFileSync(
+      new URL("../../i18n/index.ts", import.meta.url),
+      "utf8",
+    );
+    assert.ok(
+      index.includes("interpolation: i18nInterpolation"),
+      "the app instance uses the shared interpolation",
+    );
   });
 
   it("thai_keeps_every_interpolation_and_tag_of_english", () => {

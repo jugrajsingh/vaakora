@@ -4,7 +4,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import { notify } from "@/stores/noticeStore";
 import { commands } from "@/bindings";
-import { SECURE_INPUT_HELP_URL } from "@/components/SecureInputWarning";
+import { brand } from "@/lib/brand";
 import { useSettings } from "@/hooks/useSettings";
 import { shortcutErrorText } from "@/lib/utils/shortcutPresentation";
 import {
@@ -98,10 +98,14 @@ export const useShortcutCapture = (
         if (String(result.error).includes("secure-input-active")) {
           notify({
             title: t("secureInput.recorderBlocked"),
-            action: {
-              label: t("secureInput.learnMore"),
-              onClick: () => openUrl(SECURE_INPUT_HELP_URL),
-            },
+            // Without a docs site the notice keeps its sentence, no action.
+            action:
+              brand.links.docs === null
+                ? undefined
+                : {
+                    label: t("secureInput.learnMore"),
+                    onClick: () => openUrl(String(brand.links.docs)),
+                  },
           });
         } else {
           notify({

@@ -32,7 +32,7 @@
 /* Noto Sans CJK subset (see src/lib/utils/cjkFont.ts): Windows' CJK fonts
    have no semibold to match Segoe UI. */
 @font-face {
-  font-family: "Handy CJK Subset";
+  font-family: "Vaakora CJK Subset";
   src: url("./assets/fonts/cjk-subset.woff2") format("woff2");
   font-weight: 100 900;
   font-display: block;
@@ -48,7 +48,7 @@
     system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", Roboto,
     "Noto Sans", sans-serif;
   --font-cjk-subset:
-    "Handy CJK Subset", -apple-system, "Segoe UI Variable Text", "Segoe UI",
+    "Vaakora CJK Subset", -apple-system, "Segoe UI Variable Text", "Segoe UI",
     system-ui, sans-serif;
 
   /* Tailwind's shadow steps in use, rebuilt on the shadow token with their
@@ -81,8 +81,6 @@
 
   --ease-glide: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* The mascot waves once on arrival (it rests tilted -8deg) */
-  --animate-wave: wave 1100ms var(--ease-glide) 250ms both;
   /* A high five: lunge, squash, settle; the burst over it */
   --animate-slap: slap 420ms var(--ease-glide);
   --animate-burst: burst 420ms var(--ease-glide);
@@ -95,29 +93,8 @@
   /* A shortcut being captured: the empty slot's dashed edge breathes */
   --animate-key-slot: key-slot 1.2s ease-in-out infinite;
 
-  @keyframes wave {
-    0% {
-      rotate: -8deg;
-    }
-    20% {
-      rotate: 10deg;
-    }
-    40% {
-      rotate: -14deg;
-    }
-    60% {
-      rotate: 8deg;
-    }
-    80% {
-      rotate: -10deg;
-    }
-    100% {
-      rotate: -8deg;
-    }
-  }
   @keyframes slap {
     0% {
-      rotate: -8deg;
       scale: 1;
     }
     30% {
@@ -129,7 +106,6 @@
       scale: 0.94 1.02;
     }
     100% {
-      rotate: -8deg;
       scale: 1;
     }
   }

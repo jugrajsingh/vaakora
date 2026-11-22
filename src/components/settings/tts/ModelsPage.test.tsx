@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import i18next from "i18next";
 import { I18nextProvider } from "react-i18next";
 import en from "../../../i18n/locales/en/translation.json";
+import { i18nInterpolation } from "@/lib/brand";
 import type { DeviceRating, TtsModelInfo } from "@/bindings";
 import type { DownloadSnapshot } from "./actions";
 import {
@@ -39,7 +40,11 @@ const {
 } = createRequire(import.meta.url)("bun:test");
 
 const i18n = i18next.createInstance();
-await i18n.init({ lng: "en", resources: { en: { translation: en } } });
+await i18n.init({
+  lng: "en",
+  resources: { en: { translation: en } },
+  interpolation: i18nInterpolation,
+});
 
 const supported: DeviceRating = {
   supported: true,
@@ -539,7 +544,7 @@ describe("Models, Read aloud rows", () => {
     assert.ok(without.includes("Hugging Face token"));
     assert.ok(
       without.includes(
-        "Accept the voice terms on Hugging Face first. The token is kept in memory until Handy restarts.",
+        "Accept the voice terms on Hugging Face first. The token is kept in memory until Vaakora restarts.",
       ),
     );
     assert.ok(without.includes(">Set token</button>"));

@@ -9,7 +9,7 @@ import { prefersReducedMotion } from "@/lib/utils/motion";
 import { Button } from "../../ui/Button";
 import { TextLink } from "../../ui/TextLink";
 import { CapturedKeys, captureHintKey, Keycaps } from "../../shared/Keycaps";
-import { Mascot } from "../../shared/Mascot";
+import { BrandMark } from "../../brand/BrandMark";
 import TrayIcon from "../../icons/TrayIcon";
 import { DesktopBar } from "../DesktopBar";
 import { WindowBar } from "../WindowBar";
@@ -645,11 +645,12 @@ export const TryIt: React.FC<TryItProps> = ({
                 }
               >
                 <span className="try-pose">
-                  <Mascot
+                  <span
                     key={fived ? "finale" : e.fives}
-                    size={88}
-                    animation={fived || e.fives ? "slap" : "wave"}
-                  />
+                    className={`block ${fived || e.fives ? "animate-slap" : ""}`}
+                  >
+                    <BrandMark size={88} />
+                  </span>
                 </span>
                 {(fived || e.fives > 0) && (
                   <span

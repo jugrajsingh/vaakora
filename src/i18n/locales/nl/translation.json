@@ -34,7 +34,7 @@
     "postProcessing": "Naverwerkingsmodellen",
     "history": "Geschiedenis",
     "debug": "Probleemoplossing",
-    "about": "Over Handy"
+    "about": "Over {{appName}}"
   },
   "nav": {
     "dictation": "Dicteren",
@@ -46,14 +46,14 @@
     "vocabulary": "Woordenschat",
     "general": "Algemeen",
     "advanced": "Geavanceerd",
-    "about": "Over Handy",
+    "about": "Over {{appName}}",
     "debug": "Probleemoplossing"
   },
   "onboarding": {
     "customModelDescription": "Niet officieel ondersteund",
     "migration": {
       "title": "Je modellen moeten worden bijgewerkt",
-      "description": "Handy gebruikt nu een nieuwer soort model. Download de nieuwe versie om te blijven transcriberen. Oude versies worden verwijderd.",
+      "description": "{{appName}} gebruikt nu een nieuwer soort model. Download de nieuwe versie om te blijven transcriberen. Oude versies worden verwijderd.",
       "replaces": "Vervangt {{name}}",
       "oldFormat": "Oud formaat",
       "failed": "Downloaden mislukt",
@@ -309,11 +309,11 @@
     "permissions": {
       "microphone": {
         "name": "Microfoon",
-        "why": "Zodat Handy je kan horen. Audio wordt op deze computer omgezet in tekst en nooit geüpload."
+        "why": "Zodat {{appName}} je kan horen. Audio wordt op deze computer omgezet in tekst en nooit geüpload."
       },
       "accessibility": {
         "name": "Toegankelijkheid",
-        "why": "Zodat je sneltoets in elke app werkt en Handy de tekst kan typen waar je cursor staat."
+        "why": "Zodat je sneltoets in elke app werkt en {{appName}} de tekst kan typen waar je cursor staat."
       },
       "errors": {
         "checkFailed": "Machtigingen controleren mislukt. Probeer het opnieuw.",
@@ -327,12 +327,12 @@
       "openSettings": "Instellingen openen",
       "allowed": "Toegestaan",
       "waiting": "Wachten",
-      "turnOnMac": "Zet Handy aan in Systeeminstellingen en kom dan hier terug.",
+      "turnOnMac": "Zet {{appName}} aan in Systeeminstellingen en kom dan hier terug.",
       "turnOnWindows": "Zet toegang tot de microfoon aan in Windows-instellingen en kom dan hier terug.",
       "hintBoth": "Sta beide toe om door te gaan",
       "hintMicrophone": "Sta de microfoon toe om door te gaan",
       "welcomeBack": "Welkom terug. We gaan verder waar je was gebleven.",
-      "relaunch": "Reageert de sneltoets hierna niet? <relaunch>Start Handy opnieuw</relaunch> en je komt direct weer hier uit."
+      "relaunch": "Reageert de sneltoets hierna niet? <relaunch>Start {{appName}} opnieuw</relaunch> en je komt direct weer hier uit."
     },
     "shell": {
       "back": "Terug",
@@ -343,11 +343,11 @@
       "title": "Praat in plaats van typen, in elke app",
       "subtitle": "Kies de talen waarin je gaat dicteren",
       "languagesLabel": "Talen",
-      "noMatch": "Geen taal gevonden voor „{{query}}”. De modellen van Handy dekken ongeveer 100 talen; meer vind je in de instellingen.",
+      "noMatch": "Geen taal gevonden voor „{{query}}”. De modellen van {{appName}} dekken ongeveer 100 talen; meer vind je in de instellingen.",
       "appLanguage": "App-taal",
       "menusIn": "Menu’s in het <b>{{language}}</b>",
       "chinese": {
-        "question": "Je spreekt {{languages}}. Welke tekens moet Handy schrijven?",
+        "question": "Je spreekt {{languages}}. Welke tekens moet {{appName}} schrijven?",
         "label": "Chinese tekens",
         "zh-Hans": "Vereenvoudigd",
         "zh-Hant": "Taiwan",
@@ -421,7 +421,7 @@
     },
     "try": {
       "title": "Probeer het maar!",
-      "subtitle": "Handy staat in de hoek om je er doorheen te helpen",
+      "subtitle": "{{appName}} staat in de hoek om je er doorheen te helpen",
       "noteLabel": "Notitie",
       "placeholder": "Nieuwe notitie",
       "hold": "Houd <keys/> ingedrukt en praat.",
@@ -449,17 +449,17 @@
     },
     "done": {
       "title": "Alles is klaar",
-      "subMac": "Handy staat nu in je menubalk. Houd <keys/> ingedrukt of tik erop in elke app om te praten.",
-      "subTray": "Handy staat nu in je systeemvak. Houd <keys/> ingedrukt of tik erop in elke app om te praten.",
+      "subMac": "{{appName}} staat nu in je menubalk. Houd <keys/> ingedrukt of tik erop in elke app om te praten.",
+      "subTray": "{{appName}} staat nu in je systeemvak. Houd <keys/> ingedrukt of tik erop in elke app om te praten.",
       "hint": "Je kunt dit later wijzigen in de instellingen",
       "highFiveLabel": "High five",
-      "atLogin": "Handy starten als ik inlog",
+      "atLogin": "{{appName}} starten als ik inlog",
       "finish": "Klaar",
       "readAloud": "Om een tekst te laten voorlezen, kopieer je de tekst en druk je op <keys/>.",
       "readAloudUnbound": "Om een tekst te laten voorlezen, stel je de sneltoets in bij Instellingen, Algemeen.",
       "chooseReadAloudModel": "Kies een voorleesmodel",
       "panel": {
-        "name": "Handy",
+        "name": "{{appName}}",
         "ready": "Klaar",
         "languages": "Talen",
         "model": "Spraakmodel",
@@ -629,7 +629,7 @@
       "readAloud": "Voorlezen",
       "activation": "Activering",
       "activationHelp": "Voor dicteersneltoetsen",
-      "cancelLinuxHelp": "Op Linux stopt de sneltoets voor annuleren een dictaat niet, omdat sneltoetsen die tijdens een dictaat worden geregistreerd daar onbetrouwbaar zijn. Gebruik het X op de overlay, Annuleren in het menu van het systeemvak, of voer handy --cancel uit.",
+      "cancelLinuxHelp": "Op Linux stopt de sneltoets voor annuleren een dictaat niet, omdat sneltoetsen die tijdens een dictaat worden geregistreerd daar onbetrouwbaar zijn. Gebruik het X op de overlay, Annuleren in het menu van het systeemvak, of voer {{binaryName}} --cancel uit.",
       "inUse": "Wordt al gebruikt door {{name}}",
       "cannotClear": "{{name}} kan niet worden gewist"
     },
@@ -685,7 +685,7 @@
       },
       "preferredLanguages": {
         "title": "Voorkeurstalen",
-        "description": "De talen die je spreekt. Handy gebruikt ze om modellen aan te bevelen.",
+        "description": "De talen die je spreekt. {{appName}} gebruikt ze om modellen aan te bevelen.",
         "noMatch": "Geen taal gevonden voor „{{query}}”",
         "weak": "Geen enkel model herkent {{languages}} al goed."
       },
@@ -712,17 +712,17 @@
         "fits": "Voor jouw talen",
         "untested": "Niet getest"
       },
-      "untestedNote": "Niet getest met Handy. Ze kunnen langzamer zijn of meer fouten maken.",
+      "untestedNote": "Niet getest met {{appName}}. Ze kunnen langzamer zijn of meer fouten maken.",
       "untestedHidden_one": "{{count}} ander model is niet afgestemd op dicteren. Zoek om het te vinden.",
       "untestedHidden_other": "{{count}} andere modellen zijn niet afgestemd op dicteren. Zoek om er een te vinden.",
-      "emptyYours": "Nog geen modellen. Kies hieronder een model: het wordt gedownload en daarna gebruikt Handy het.",
+      "emptyYours": "Nog geen modellen. Kies hieronder een model: het wordt gedownload en daarna gebruikt {{appName}} het.",
       "showMore": "{{count}} meer tonen",
       "showFewer": "Minder tonen",
       "download": "Downloaden en gebruiken",
       "downloadingThenUse": "{{percent}}% van {{total}}, daarna wordt overgeschakeld",
       "loading": "Laden…",
       "deleteAsk": "{{name}} verwijderen? Dit maakt {{size}} vrij.",
-      "deleteAskActive": "{{name}} verwijderen? Handy kan niet transcriberen totdat je een ander model kiest.",
+      "deleteAskActive": "{{name}} verwijderen? {{appName}} kan niet transcriberen totdat je een ander model kiest.",
       "cancel": "Annuleren",
       "deleteModel": "{{name}} verwijderen",
       "cancelDownload": "Downloaden van {{name}} stoppen",
@@ -736,14 +736,14 @@
         "marks": "? is nog niet gemeten. — verstaat die taal niet."
       },
       "retiredNotice": {
-        "title": "Oude modellen werken niet meer met Handy",
+        "title": "Oude modellen werken niet meer met {{appName}}",
         "description": "Ze nemen {{size}} in beslag op je computer.",
         "delete": "Modellen verwijderen",
         "deleteFailed": "Sommige oude modellen konden niet worden verwijderd. Bekijk het logboek voor details."
       },
       "rescan": {
         "label": "Opnieuw scannen",
-        "tooltip": "Scannen naar modellen die buiten Handy om zijn toegevoegd aan de modellenmap of Hugging Face-cache"
+        "tooltip": "Scannen naar modellen die buiten {{appName}} om zijn toegevoegd aan de modellenmap of Hugging Face-cache"
       }
     },
     "languages": {
@@ -817,11 +817,11 @@
       },
       "autostart": {
         "label": "Starten bij opstarten",
-        "description": "Handy automatisch starten zodra je inlogt op je computer."
+        "description": "{{appName}} automatisch starten zodra je inlogt op je computer."
       },
       "showTrayIcon": {
         "label": "Pictogram in systeemvak tonen",
-        "description": "Toon het Handy-pictogram in het systeemvak."
+        "description": "Toon het {{appName}}-pictogram in het systeemvak."
       },
       "overlay": {
         "style": {
@@ -1165,7 +1165,7 @@
       },
       "updateChecks": {
         "label": "Controleren op updates",
-        "description": "Automatisch controleren op nieuwe versies van Handy",
+        "description": "Automatisch controleren op nieuwe versies van {{appName}}",
         "lockedDescription": "Uitgeschakeld door systeemconfiguratie (HANDY_DISABLE_UPDATER)"
       },
       "whatsNewPreview": {
@@ -1243,6 +1243,7 @@
       "keyboardImplementation": {
         "title": "Toetsenbord-implementatie",
         "description": "Kies de backend voor sneltoetsen.",
+        "builtIn": "Ingebouwd",
         "bindingsReset": "Sneltoetsen waren incompatibel en zijn teruggezet naar de standaardwaarden"
       },
       "pasteDelay": {
@@ -1271,7 +1272,7 @@
       },
       "keyboardDiagnostic": {
         "title": "Toetsenborddiagnose",
-        "description": "Controleert of toetsenbordgebeurtenissen Handy bereiken. Alleen het aantal gebeurtenissen wordt vastgelegd — nooit welke toetsen je indrukt.",
+        "description": "Controleert of toetsenbordgebeurtenissen {{appName}} bereiken. Alleen het aantal gebeurtenissen wordt vastgelegd - nooit welke toetsen je indrukt.",
         "run": "Diagnose van 10 s uitvoeren",
         "running": "Luisteren… druk je sneltoets een paar keer in (bijv. Option+Space)",
         "secureInputLabel": "Secure Input",
@@ -1285,16 +1286,16 @@
         "mouse": "Muis",
         "verdictBlocked": "Secure Input blokkeert toetsgebeurtenissen — sneltoetsen met een gewone toets kunnen pas weer werken als dit is opgelost.",
         "verdictSuspicious": "Er kwamen wel modificatiegebeurtenissen binnen, maar geen toetsgebeurtenissen — iets onderdrukt toetsen terwijl Secure Input als uitgeschakeld wordt gemeld. Meld dit op GitHub.",
-        "verdictOk": "Toetsgebeurtenissen bereiken Handy normaal.",
+        "verdictOk": "Toetsgebeurtenissen bereiken {{appName}} normaal.",
         "verdictNoEvents": "Geen gebeurtenissen vastgelegd — heb je tijdens de test toetsen ingedrukt?",
         "failed": "Diagnose mislukt: {{error}}"
       }
     },
     "about": {
-      "title": "Over Handy",
+      "title": "Over {{appName}}",
       "version": {
         "title": "Versie",
-        "description": "Huidige versie van Handy"
+        "description": "Huidige versie van {{appName}}"
       },
       "updates": {
         "title": "Updates",
@@ -1302,28 +1303,23 @@
       },
       "whatsNewUpdates": {
         "label": "Toon 'Wat is er nieuw'",
-        "description": "Release-notes tonen nadat Handy is bijgewerkt"
+        "description": "Release-notes tonen nadat {{appName}} is bijgewerkt"
       },
       "appDataDirectory": {
         "title": "App-datamap",
-        "description": "Locatie waar Handy de gegevens opslaat"
+        "description": "Locatie waar {{appName}} de gegevens opslaat"
       },
       "sourceCode": {
         "title": "Broncode",
         "description": "Bekijk de broncode en draag bij",
         "button": "Bekijk op GitHub"
       },
-      "supportDevelopment": {
-        "title": "Ontwikkeling ondersteunen",
-        "description": "Help ons om te blijven bouwen aan Handy",
-        "button": "Doneren"
-      },
       "acknowledgments": {
         "title": "Dankbetuigingen",
         "ggml": {
           "title": "ggml",
           "description": "Krachtige tensorbibliotheek voor lokale AI-verwerking",
-          "details": "Handy's lokale spraak-naar-tekst is gebouwd op transcribe.cpp en ggml. Met dank aan het geweldige werk van Georgi Gerganov en alle bijdragers."
+          "details": "{{appName}}'s lokale spraak-naar-tekst is gebouwd op transcribe.cpp en ggml. Met dank aan het geweldige werk van Georgi Gerganov en alle bijdragers."
         }
       }
     }
@@ -1354,7 +1350,7 @@
     }
   },
   "whatsNew": {
-    "title": "Nieuw in Handy v{{version}}"
+    "title": "Nieuw in {{appName}} v{{version}}"
   },
   "common": {
     "playbackPosition": "Afspeelpositie",
@@ -1401,7 +1397,7 @@
     "microphoneSilentTitle": "Microfoon is stil",
     "microphoneSilent": "Je microfoon stuurde alleen stilte. Controleer of hij niet gedempt is, of kies een andere microfoon via Instellingen.",
     "recordingFailedTitle": "Opname starten mislukt",
-    "modelLoadFailed": "Handy kon dit model niet laden. Probeer het opnieuw of kies een ander model.",
+    "modelLoadFailed": "{{appName}} kon dit model niet laden. Probeer het opnieuw of kies een ander model.",
     "modelLoadFailedTitle": "Model laden mislukt",
     "noModelSelected": "Download of kies een model via Instellingen > Modellen.",
     "noModelSelectedTitle": "Geen model geselecteerd",
@@ -1409,7 +1405,7 @@
     "pasteFailedTitle": "Tekst plakken mislukt",
     "pasteFailed": "Tekst kon niet worden geplakt in de actieve applicatie.",
     "pasteBlockedElevatedTitle": "Kan niet plakken in admin-apps",
-    "pasteBlockedElevated": "De actieve applicatie draait als administrator, dus Handy kan er niet in plakken. Je kunt de transcriptie kopiëren vanuit Geschiedenis.",
+    "pasteBlockedElevated": "De actieve applicatie draait als administrator, dus {{appName}} kan er niet in plakken. Je kunt de transcriptie kopiëren vanuit Geschiedenis.",
     "postProcessFailedTitle": "Geplakt zonder naverwerking",
     "postProcessFailed": "De naverwerking is niet voltooid, dus de transcriptie is ongewijzigd geplakt.",
     "filePostProcessFailedTitle": "Getranscribeerd zonder naverwerking",
@@ -1428,11 +1424,11 @@
   },
   "appLanguage": {
     "title": "Interfacetaal",
-    "description": "Wijzig de taal van de Handy-interface"
+    "description": "Wijzig de taal van de {{appName}}-interface"
   },
   "theme": {
     "title": "App-thema",
-    "description": "Kies of Handy het systeemthema volgt of licht of donker blijft",
+    "description": "Kies of {{appName}} het systeemthema volgt of licht of donker blijft",
     "options": {
       "system": "Systeem",
       "light": "Licht",
@@ -1972,7 +1968,7 @@
     },
     "token": {
       "label": "Hugging Face-token",
-      "help": "Accepteer eerst de stemvoorwaarden op Hugging Face. Het token blijft in het geheugen tot Handy opnieuw start."
+      "help": "Accepteer eerst de stemvoorwaarden op Hugging Face. Het token blijft in het geheugen tot {{appName}} opnieuw start."
     }
   }
 }

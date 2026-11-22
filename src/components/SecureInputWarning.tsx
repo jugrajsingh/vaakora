@@ -4,16 +4,34 @@ import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ExternalLink, TriangleAlert, X } from "lucide-react";
 import { commands, type SecureInputStatus } from "@/bindings";
+import { brand } from "@/lib/brand";
 
-// Detailed remediation steps live in the docs rather than in the banner
-export const SECURE_INPUT_HELP_URL =
-  "https://handy.computer/docs/troubleshooting#shortcuts-stopped-working-on-macos-secure-input";
+/**
+ * The "Learn more" action: detailed remediation steps live in the docs rather
+ * than in the banner. Without a docs site (`brand.links.docs` is null) the
+ * banner keeps its sentence and shows no action.
+ */
+export const SecureInputHelp: React.FC<{ url: string | null }> = ({ url }) => {
+  const { t } = useTranslation();
+  if (url === null) return null;
+  return (
+    <button
+      onClick={() => openUrl(url)}
+      className="cursor-pointer whitespace-nowrap rounded px-2 py-1.5 text-sm font-medium text-text hover:text-warning focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
+    >
+      <span className="flex items-center gap-1 border-b border-current leading-4">
+        {t("secureInput.learnMore")}
+        <ExternalLink className="h-3.5 w-3.5" />
+      </span>
+    </button>
+  );
+};
 
 /**
  * Compact warning banner shown while macOS Secure Input is stuck on.
  *
  * Secure Input (password fields, Terminal's "Secure Keyboard Entry", a stuck
- * loginwindow) blocks key events from reaching Handy's keyboard listener, so
+ * loginwindow) blocks key events from reaching the app's keyboard listener, so
  * keyed shortcuts silently stop firing (issue #1578). The backend monitor
  * emits `secure-input-changed` on state transitions; `sustained` filters out
  * the normal momentary activation from focusing a password field.
@@ -96,15 +114,7 @@ const SecureInputWarning: React.FC = () => {
           {message}
         </p>
         <div className="flex shrink-0 items-center gap-1">
-          <button
-            onClick={() => openUrl(SECURE_INPUT_HELP_URL)}
-            className="cursor-pointer whitespace-nowrap rounded px-2 py-1.5 text-sm font-medium text-text hover:text-warning focus:outline-none focus:ring-1 focus:ring-warning"
-          >
-            <span className="flex items-center gap-1 border-b border-current leading-4">
-              {t("secureInput.learnMore")}
-              <ExternalLink className="h-3.5 w-3.5" />
-            </span>
-          </button>
+          <SecureInputHelp url={brand.links.docs} />
           <button
             onClick={() => setDismissed(true)}
             aria-label={t("secureInput.dismiss")}

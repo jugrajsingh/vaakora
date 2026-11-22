@@ -86,10 +86,6 @@ html[data-sflow="in"]::view-transition-new(sf-guide) {
 html[data-sflow="out"]::view-transition-old(sf-guide) {
   animation: sf-fade-out 0.14s ease both;
 }
-/* Don't wave until the glove is visible. */
-html[data-sflow="in"] .try-glove .animate-wave {
-  animation-play-state: paused;
-}
 
 @keyframes sf-fade-out {
   to {
