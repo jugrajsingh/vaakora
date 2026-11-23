@@ -1,10 +1,11 @@
-//! The app's methods behind the control socket: `status`, `tts.*` and
-//! `dictation.*`. [`parse_call`] checks the method name and params first, so
+//! The app's methods behind the control socket: `status`, `tts.*`,
+//! `dictation.*` and `transcribe.file`. [`parse_call`] checks the method name and params first, so
 //! bad input never reaches the app; the call then runs on the connection
 //! thread. Nothing here logs, and every error message is fixed English text
 //! that never quotes a request.
 
-use std::sync::Arc;
+use std::path::PathBuf;
+use std::sync::{mpsc, Arc};
 
 use handy_tts_core::scheduler::PlaybackState;
 use serde_json::{json, Value};
@@ -12,7 +13,11 @@ use tauri::{AppHandle, Manager};
 
 use super::protocol::{ErrorKind, RpcError, PROTOCOL_VERSION};
 use super::server::Methods;
+use crate::managers::history::{HistoryEntry, HistoryManager};
 use crate::managers::model::ModelManager;
+use crate::managers::transcription_jobs::{
+    AddFileError, TranscriptionJobManager, TranscriptionJobStatus,
+};
 use crate::tray::TrayIconState;
 use crate::tts::history::ReadOrigin;
 use crate::tts::service::{ExternalReadError, Ready, TtsService};
@@ -23,6 +28,13 @@ const UNAVAILABLE_MESSAGE: &str = "Read aloud is not available.";
 const READ_PARAMS_MESSAGE: &str = "text must be a non-empty string";
 const OBJECT_PARAMS_MESSAGE: &str = "params must be an object";
 const POST_PROCESS_MESSAGE: &str = "post_process must be true or false";
+const PATH_MESSAGE: &str = "path must be absolute";
+const NO_FILE_MESSAGE: &str = "No such file.";
+const SETUP_MESSAGE: &str = "Choose a speech-to-text model in Vaakora first.";
+const STT_MODEL_MESSAGE: &str = "The selected speech-to-text model is not downloaded.";
+const STOPPED_MESSAGE: &str = "The transcription stopped.";
+const NO_TEXT_MESSAGE: &str = "The transcription was cancelled or found no speech.";
+const READ_BACK_MESSAGE: &str = "The transcription could not be read back.";
 
 /// The running app's methods.
 pub struct AppMethods {
@@ -83,6 +95,31 @@ impl AppMethods {
             view.visible,
             |command| service.reading_command(command),
             || service.close(),
+        )
+    }
+
+    /// `transcribe.file`: the file goes through History's own job queue, so it
+    /// waits behind a dictation and shows in History. The queue registers the
+    /// watcher before it queues the job, so no status is missed.
+    fn transcribe(&self, path: PathBuf) -> Result<Value, RpcError> {
+        let settings = crate::settings::get_settings(&self.app);
+        let installed = self
+            .app
+            .try_state::<Arc<ModelManager>>()
+            .and_then(|models| models.get_model_info(&settings.selected_model))
+            .map(|info| info.is_downloaded);
+        let (Some(jobs), Some(history)) = (
+            self.app.try_state::<Arc<TranscriptionJobManager>>(),
+            self.app.try_state::<Arc<HistoryManager>>(),
+        ) else {
+            return Err(read_back_error());
+        };
+        run_transcribe(
+            path,
+            &settings.selected_model,
+            installed,
+            |path| jobs.transcribe_file_watched(path),
+            |id| tauri::async_runtime::block_on(history.get_entry_by_id(id)),
         )
     }
 
@@ -190,6 +227,7 @@ impl Methods for AppMethods {
             }
             Call::Control(op) => self.control(op),
             Call::Voices => self.voices(),
+            Call::Transcribe(path) => self.transcribe(path),
             Call::Toggle(binding) => {
                 crate::signal_handle::send_transcription_input(&self.app, binding, "IPC");
                 Ok(json!({}))
@@ -209,6 +247,8 @@ pub(crate) enum Call {
     Read(String),
     Control(ReadControl),
     Voices,
+    /// An absolute path to an existing file.
+    Transcribe(PathBuf),
     /// The binding id `send_transcription_input` toggles.
     Toggle(&'static str),
     Cancel,
@@ -224,6 +264,7 @@ pub(crate) fn parse_call(method: &str, params: Option<&Value>) -> Result<Call, R
         "tts.resume" => Call::Control(ReadControl::Resume),
         "tts.stop" => Call::Control(ReadControl::Stop),
         "tts.voices" => Call::Voices,
+        "transcribe.file" => return file_params(params).map(Call::Transcribe),
         "dictation.toggle" => return toggle_binding(params).map(Call::Toggle),
         "dictation.cancel" => Call::Cancel,
         _ => return Err(RpcError::new(ErrorKind::MethodNotFound, "unknown method")),
@@ -267,6 +308,101 @@ pub(crate) fn toggle_binding(params: Option<&Value>) -> Result<&'static str, Rpc
             POST_PROCESS_MESSAGE,
         )),
     }
+}
+
+/// `transcribe.file` `{path}`: absolute and a regular file (a symlink to one
+/// counts). The text never quotes the path.
+pub(crate) fn file_params(params: Option<&Value>) -> Result<PathBuf, RpcError> {
+    let path = params
+        .and_then(|params| params.get("path"))
+        .and_then(Value::as_str)
+        .map(PathBuf::from)
+        .filter(|path| path.is_absolute())
+        .ok_or_else(|| RpcError::new(ErrorKind::InvalidParams, PATH_MESSAGE))?;
+    if path.is_file() {
+        Ok(path)
+    } else {
+        Err(RpcError::new(ErrorKind::FileNotFound, NO_FILE_MESSAGE))
+    }
+}
+
+/// The speech-to-text model must be chosen and downloaded before a file is
+/// added to History. `installed` is `None` when the model is unknown.
+pub(crate) fn stt_ready(selected_model: &str, installed: Option<bool>) -> Result<(), RpcError> {
+    if selected_model.is_empty() {
+        return Err(RpcError::new(ErrorKind::SetupRequired, SETUP_MESSAGE));
+    }
+    if installed != Some(true) {
+        return Err(RpcError::new(
+            ErrorKind::ModelNotInstalled,
+            STT_MODEL_MESSAGE,
+        ));
+    }
+    Ok(())
+}
+
+/// A refusal to add the file to History, as the call's error.
+pub(crate) fn add_file_error(error: AddFileError) -> RpcError {
+    match error {
+        AddFileError::NoAudio(message) => RpcError::new(ErrorKind::UnsupportedAudio, message),
+        AddFileError::Storage(message) => RpcError::new(ErrorKind::Internal, message),
+    }
+}
+
+/// Waits for the job whose statuses arrive on `statuses`: `Finished` is
+/// success, `Failed` its error, a closed channel a stopped transcription;
+/// `Queued` and `Running` are skipped.
+pub(crate) fn wait_job(statuses: &mpsc::Receiver<TranscriptionJobStatus>) -> Result<(), RpcError> {
+    loop {
+        match statuses.recv() {
+            Ok(TranscriptionJobStatus::Finished) => return Ok(()),
+            Ok(TranscriptionJobStatus::Failed { error }) => {
+                return Err(RpcError::new(ErrorKind::Internal, error))
+            }
+            Ok(TranscriptionJobStatus::Queued | TranscriptionJobStatus::Running { .. }) => {}
+            Err(_) => return Err(RpcError::new(ErrorKind::Internal, STOPPED_MESSAGE)),
+        }
+    }
+}
+
+/// The entry's cleaned text when it has one, else its transcript; `None`
+/// when both are empty.
+pub(crate) fn entry_text(entry: &HistoryEntry) -> Option<String> {
+    entry
+        .post_processed_text
+        .as_deref()
+        .filter(|text| !text.is_empty())
+        .or(Some(entry.transcription_text.as_str()).filter(|text| !text.is_empty()))
+        .map(str::to_owned)
+}
+
+/// A file added to History and the statuses of its job.
+pub(crate) type Watched = (HistoryEntry, mpsc::Receiver<TranscriptionJobStatus>);
+
+/// The `transcribe.file` call: checks the model, adds the file with `add`
+/// (which also watches its job), waits for the job, then reads the entry
+/// again with `reload`.
+pub(crate) fn run_transcribe(
+    path: PathBuf,
+    selected_model: &str,
+    installed: Option<bool>,
+    add: impl FnOnce(PathBuf) -> Result<Watched, AddFileError>,
+    reload: impl FnOnce(i64) -> anyhow::Result<Option<HistoryEntry>>,
+) -> Result<Value, RpcError> {
+    stt_ready(selected_model, installed)?;
+    let (added, statuses) = add(path).map_err(add_file_error)?;
+    wait_job(&statuses)?;
+    let entry = reload(added.id)
+        .ok()
+        .flatten()
+        .ok_or_else(read_back_error)?;
+    let text =
+        entry_text(&entry).ok_or_else(|| RpcError::new(ErrorKind::Internal, NO_TEXT_MESSAGE))?;
+    Ok(json!({ "text": text, "history_id": entry.id }))
+}
+
+fn read_back_error() -> RpcError {
+    RpcError::new(ErrorKind::Internal, READ_BACK_MESSAGE)
 }
 
 /// What a `tts.pause`, `tts.resume` or `tts.stop` asks for.
@@ -551,6 +687,7 @@ mod tests {
                 "tts.voices",
                 "dictation.toggle",
                 "dictation.cancel",
+                "transcribe.file",
             ];
             for method in methods {
                 for bad in [json!([1]), json!("secret words"), json!(7), json!(true)] {
@@ -791,6 +928,319 @@ mod tests {
         }
     }
 
+    mod transcribe {
+        use super::*;
+        use crate::managers::history::HistoryEntry;
+        use crate::managers::transcription_jobs::{AddFileError, TranscriptionJobStatus};
+        use std::sync::mpsc;
+
+        fn entry(id: i64, raw: &str, cleaned: Option<&str>) -> HistoryEntry {
+            HistoryEntry {
+                id,
+                file_name: "handy-file-1.wav".into(),
+                timestamp: 0,
+                saved: false,
+                title: String::new(),
+                transcription_text: raw.into(),
+                post_processed_text: cleaned.map(str::to_owned),
+                post_process_prompt: None,
+                post_process_requested: false,
+                source_name: Some("a.wav".into()),
+                language: None,
+                language_source: None,
+                post_process_provider: None,
+                post_process_model: None,
+            }
+        }
+
+        /// A job that already sent `statuses` by the time the wait starts.
+        fn watched(
+            id: i64,
+            statuses: impl IntoIterator<Item = TranscriptionJobStatus>,
+        ) -> Result<Watched, AddFileError> {
+            let (tx, rx) = mpsc::channel();
+            for status in statuses {
+                tx.send(status).unwrap();
+            }
+            Ok((entry(id, "", None), rx))
+        }
+
+        fn finished() -> [TranscriptionJobStatus; 1] {
+            [TranscriptionJobStatus::Finished]
+        }
+
+        #[test]
+        fn file_params_rules() {
+            let dir = tempfile::tempdir().unwrap();
+            let file = dir.path().join("a.wav");
+            std::fs::write(&file, b"x").unwrap();
+            let relative = file_params(Some(&json!({"path": "a.wav"}))).unwrap_err();
+            assert_eq!(relative.kind, ErrorKind::InvalidParams);
+            assert_eq!(relative.message, "path must be absolute");
+            for params in [
+                None,
+                Some(json!({})),
+                Some(json!({"path": 7})),
+                Some(json!(["/a"])),
+            ] {
+                let error = file_params(params.as_ref()).unwrap_err();
+                assert_eq!(error.kind, ErrorKind::InvalidParams, "{params:?}");
+                assert_eq!(error.message, "path must be absolute");
+            }
+            let missing = dir.path().join("missing.wav");
+            let error = file_params(Some(&json!({"path": missing}))).unwrap_err();
+            assert_eq!(error.kind, ErrorKind::FileNotFound);
+            assert_eq!(error.message, "No such file.");
+            let error = file_params(Some(&json!({"path": dir.path()}))).unwrap_err();
+            assert_eq!(error.kind, ErrorKind::FileNotFound);
+            assert_eq!(file_params(Some(&json!({"path": file}))).unwrap(), file);
+        }
+
+        #[test]
+        fn parse_call_names_the_file() {
+            let dir = tempfile::tempdir().unwrap();
+            let file = dir.path().join("a.wav");
+            std::fs::write(&file, b"x").unwrap();
+            assert_eq!(
+                parse_call("transcribe.file", Some(&json!({"path": file}))).unwrap(),
+                Call::Transcribe(file)
+            );
+            assert_eq!(
+                parse_call("transcribe.file", None).unwrap_err().kind,
+                ErrorKind::InvalidParams
+            );
+        }
+
+        #[test]
+        fn wait_job_maps_outcomes() {
+            let (_, rx) = watched(7, finished()).unwrap();
+            assert!(wait_job(&rx).is_ok());
+
+            let (_, rx) = watched(
+                7,
+                [TranscriptionJobStatus::Failed {
+                    error: "Recording contains no speech".into(),
+                }],
+            )
+            .unwrap();
+            let error = wait_job(&rx).unwrap_err();
+            assert_eq!(error.kind, ErrorKind::Internal);
+            assert_eq!(error.message, "Recording contains no speech");
+
+            let (tx, rx) = mpsc::channel::<TranscriptionJobStatus>();
+            drop(tx);
+            let error = wait_job(&rx).unwrap_err();
+            assert_eq!(error.kind, ErrorKind::Internal);
+            assert_eq!(error.message, "The transcription stopped.");
+        }
+
+        #[test]
+        fn wait_job_skips_progress_and_stops_at_the_end() {
+            let (_, rx) = watched(
+                7,
+                [
+                    TranscriptionJobStatus::Queued,
+                    TranscriptionJobStatus::Running { percent: 40 },
+                    TranscriptionJobStatus::Finished,
+                    TranscriptionJobStatus::Queued,
+                ],
+            )
+            .unwrap();
+            assert!(wait_job(&rx).is_ok());
+            // It stopped at the end: the later status is still queued.
+            assert_eq!(rx.try_recv().unwrap(), TranscriptionJobStatus::Queued);
+        }
+
+        #[test]
+        fn entry_text_prefers_cleaned_text() {
+            assert_eq!(entry_text(&entry(1, "A", Some("B"))).as_deref(), Some("B"));
+            assert_eq!(entry_text(&entry(1, "A", Some(""))).as_deref(), Some("A"));
+            assert_eq!(entry_text(&entry(1, "A", None)).as_deref(), Some("A"));
+            assert_eq!(entry_text(&entry(1, "", Some(""))), None);
+            assert_eq!(entry_text(&entry(1, "", None)), None);
+        }
+
+        #[test]
+        fn add_file_error_kinds() {
+            let no_audio = add_file_error(AddFileError::NoAudio("The file has no audio".into()));
+            assert_eq!(no_audio.kind, ErrorKind::UnsupportedAudio);
+            assert_eq!(no_audio.kind.code(), 1004);
+            assert_eq!(no_audio.message, "The file has no audio");
+            let storage = add_file_error(AddFileError::Storage("disk full".into()));
+            assert_eq!(storage.kind, ErrorKind::Internal);
+            assert_eq!(storage.kind.code(), 1006);
+            assert_eq!(storage.message, "disk full");
+        }
+
+        #[test]
+        fn stt_ready_rules() {
+            let none = stt_ready("", Some(true)).unwrap_err();
+            assert_eq!(none.kind, ErrorKind::SetupRequired);
+            assert_eq!(
+                none.message,
+                "Choose a speech-to-text model in Vaakora first."
+            );
+            for installed in [None, Some(false)] {
+                let error = stt_ready("small", installed).unwrap_err();
+                assert_eq!(error.kind, ErrorKind::ModelNotInstalled, "{installed:?}");
+                assert_eq!(
+                    error.message,
+                    "The selected speech-to-text model is not downloaded."
+                );
+            }
+            assert!(stt_ready("small", Some(true)).is_ok());
+        }
+
+        fn run(
+            selected: &str,
+            installed: Option<bool>,
+            add: impl FnOnce(PathBuf) -> Result<Watched, AddFileError>,
+            reload: impl FnOnce(i64) -> anyhow::Result<Option<HistoryEntry>>,
+        ) -> Result<Value, RpcError> {
+            run_transcribe(PathBuf::from("/a.wav"), selected, installed, add, reload)
+        }
+
+        #[test]
+        fn a_missing_model_stops_before_the_file_is_added() {
+            let added = std::cell::Cell::new(false);
+            let error = run(
+                "",
+                Some(true),
+                |_| {
+                    added.set(true);
+                    watched(7, finished())
+                },
+                |_| Ok(None),
+            )
+            .unwrap_err();
+            assert_eq!(error.kind, ErrorKind::SetupRequired);
+            let error = run(
+                "small",
+                Some(false),
+                |_| {
+                    added.set(true);
+                    watched(7, finished())
+                },
+                |_| Ok(None),
+            )
+            .unwrap_err();
+            assert_eq!(error.kind, ErrorKind::ModelNotInstalled);
+            assert!(!added.get(), "the file reached History without a model");
+        }
+
+        #[test]
+        fn an_unreadable_file_is_unsupported_audio() {
+            let error = run(
+                "small",
+                Some(true),
+                |_| Err(AddFileError::NoAudio("The file has no audio".into())),
+                |_| Ok(None),
+            )
+            .unwrap_err();
+            assert_eq!(error.kind, ErrorKind::UnsupportedAudio);
+            let error = run(
+                "small",
+                Some(true),
+                |_| Err(AddFileError::Storage("disk full".into())),
+                |_| Ok(None),
+            )
+            .unwrap_err();
+            assert_eq!(error.kind, ErrorKind::Internal);
+        }
+
+        #[test]
+        fn the_result_carries_the_text_and_the_history_id() {
+            let asked = std::cell::RefCell::new(None);
+            let result = run(
+                "small",
+                Some(true),
+                |path| {
+                    *asked.borrow_mut() = Some(path);
+                    watched(7, finished())
+                },
+                |id| {
+                    assert_eq!(id, 7);
+                    Ok(Some(entry(7, "raw", Some("cleaned"))))
+                },
+            )
+            .unwrap();
+            assert_eq!(result, json!({"text": "cleaned", "history_id": 7}));
+            assert_eq!(asked.take(), Some(PathBuf::from("/a.wav")));
+        }
+
+        #[test]
+        fn a_job_that_ended_before_the_wait_started_is_still_seen() {
+            let result = run(
+                "small",
+                Some(true),
+                |_| {
+                    watched(
+                        7,
+                        [
+                            TranscriptionJobStatus::Queued,
+                            TranscriptionJobStatus::Running { percent: 0 },
+                            TranscriptionJobStatus::Finished,
+                        ],
+                    )
+                },
+                |_| Ok(Some(entry(7, "raw", None))),
+            )
+            .unwrap();
+            assert_eq!(result, json!({"text": "raw", "history_id": 7}));
+        }
+
+        #[test]
+        fn a_failed_job_is_internal_with_its_error() {
+            let error = run(
+                "small",
+                Some(true),
+                |_| {
+                    watched(
+                        7,
+                        [TranscriptionJobStatus::Failed {
+                            error: "Failed to load audio".into(),
+                        }],
+                    )
+                },
+                |_| Ok(None),
+            )
+            .unwrap_err();
+            assert_eq!(error.kind, ErrorKind::Internal);
+            assert_eq!(error.message, "Failed to load audio");
+        }
+
+        #[test]
+        fn a_cancelled_or_silent_entry_is_internal() {
+            let error = run(
+                "small",
+                Some(true),
+                |_| watched(7, finished()),
+                |_| Ok(Some(entry(7, "", Some("")))),
+            )
+            .unwrap_err();
+            assert_eq!(error.kind, ErrorKind::Internal);
+            assert_eq!(
+                error.message,
+                "The transcription was cancelled or found no speech."
+            );
+        }
+
+        #[test]
+        fn a_lost_or_unreadable_entry_is_internal() {
+            for reloaded in [Ok(None), Err(anyhow::anyhow!("secret db path"))] {
+                let error = run(
+                    "small",
+                    Some(true),
+                    |_| watched(7, finished()),
+                    |_| reloaded,
+                )
+                .unwrap_err();
+                assert_eq!(error.kind, ErrorKind::Internal);
+                assert_eq!(error.message, "The transcription could not be read back.");
+            }
+        }
+    }
+
     mod wiring {
         use super::*;
 
@@ -819,6 +1269,13 @@ mod tests {
                     .count(),
                 1
             );
+        }
+
+        #[test]
+        fn the_call_adds_the_file_with_a_watcher() {
+            let source = production_source(include_str!("methods.rs"));
+            assert_eq!(source.matches(".transcribe_file_watched(").count(), 1);
+            assert_eq!(source.matches(".transcribe_file(").count(), 0);
         }
 
         #[test]

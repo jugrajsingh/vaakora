@@ -10,7 +10,7 @@ use std::collections::VecDeque;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Condvar, Mutex, MutexGuard};
+use std::sync::{mpsc, Arc, Condvar, Mutex, MutexGuard};
 use std::thread;
 use std::time::Duration;
 use tauri::{AppHandle, Manager};
@@ -48,6 +48,49 @@ pub enum TranscriptionJobStatus {
 pub struct TranscriptionJob {
     pub entry_id: i64,
     pub status: TranscriptionJobStatus,
+}
+
+/// Why a file could not be added to History.
+#[derive(Debug, thiserror::Error)]
+pub enum AddFileError {
+    /// There is no audio in the file that can be decoded.
+    #[error("{0}")]
+    NoAudio(String),
+    /// The recording or its History entry could not be saved.
+    #[error("{0}")]
+    Storage(String),
+}
+
+/// Who waits for the end of an entry's job. A watcher is told every status
+/// of its entry up to `Finished` or `Failed`, then dropped.
+#[derive(Default)]
+pub(crate) struct JobWatchers(Mutex<Vec<(i64, mpsc::Sender<TranscriptionJobStatus>)>>);
+
+impl JobWatchers {
+    fn lock(&self) -> MutexGuard<'_, Vec<(i64, mpsc::Sender<TranscriptionJobStatus>)>> {
+        self.0
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
+    /// Starts watching `entry_id`: the statuses arrive on the receiver.
+    pub(crate) fn add(&self, entry_id: i64) -> mpsc::Receiver<TranscriptionJobStatus> {
+        let (sender, receiver) = mpsc::channel();
+        self.lock().push((entry_id, sender));
+        receiver
+    }
+
+    /// Sends `status` to the watchers of `entry_id`. A watcher is removed
+    /// after the end of the job, and when nobody listens any more.
+    pub(crate) fn notify(&self, entry_id: i64, status: &TranscriptionJobStatus) {
+        let ends = matches!(
+            status,
+            TranscriptionJobStatus::Finished | TranscriptionJobStatus::Failed { .. }
+        );
+        self.lock().retain(|(id, sender)| {
+            *id != entry_id || (sender.send(status.clone()).is_ok() && !ends)
+        });
+    }
 }
 
 struct Running {
@@ -134,6 +177,7 @@ pub struct TranscriptionJobManager {
     app: AppHandle,
     jobs: Mutex<Jobs>,
     wake: Condvar,
+    watchers: JobWatchers,
 }
 
 impl TranscriptionJobManager {
@@ -143,6 +187,7 @@ impl TranscriptionJobManager {
             app: app.clone(),
             jobs: Mutex::new(Jobs::default()),
             wake: Condvar::new(),
+            watchers: JobWatchers::default(),
         });
         let runner = Arc::clone(&manager);
         thread::Builder::new()
@@ -160,47 +205,45 @@ impl TranscriptionJobManager {
 
     /// Decodes `path` into a recording, then adds it to History and queues
     /// it. The recording exists first, so no entry is ever without audio.
-    pub fn transcribe_file(&self, path: PathBuf) -> Result<HistoryEntry> {
-        // A malformed file may panic the decoder.
-        let samples = catch_unwind(AssertUnwindSafe(|| decode_audio_file(&path))).unwrap_or_else(
-            |payload| {
-                Err(anyhow!(
-                    "Failed to read the file: {}",
-                    panic_payload_message(payload.as_ref())
-                ))
-            },
-        )?;
-        if samples.is_empty() {
-            return Err(anyhow!("The file has no audio"));
-        }
+    pub fn transcribe_file(&self, path: PathBuf) -> Result<HistoryEntry, AddFileError> {
+        let entry = self.add_file(&path)?;
+        self.queue_file(entry.id);
+        Ok(entry)
+    }
+
+    /// Like `transcribe_file`, and the statuses of the job arrive on the
+    /// receiver, from `Queued` on: the watcher exists before the job is
+    /// queued, so none is missed.
+    pub fn transcribe_file_watched(
+        &self,
+        path: PathBuf,
+    ) -> Result<(HistoryEntry, mpsc::Receiver<TranscriptionJobStatus>), AddFileError> {
+        let entry = self.add_file(&path)?;
+        let statuses = self.watchers.add(entry.id);
+        self.queue_file(entry.id);
+        Ok((entry, statuses))
+    }
+
+    /// The History entry of the file, with its recording; not yet queued.
+    fn add_file(&self, path: &Path) -> Result<HistoryEntry, AddFileError> {
+        let samples = decode_samples(path, decode_audio_file)?;
 
         let hm = self.app.state::<Arc<HistoryManager>>();
         let file_name = format!("handy-file-{}.wav", chrono::Utc::now().timestamp_millis());
         let recording = hm.get_audio_file_path(&file_name);
-        // Written aside and renamed, so a crash never leaves a partial one.
-        let partial = recording.with_extension("wav.partial");
-        if let Err(e) = save_wav_file(&partial, &samples)
-            .and_then(|()| std::fs::rename(&partial, &recording).map_err(Into::into))
-        {
-            remove_recording(&partial);
-            return Err(e);
-        }
+        store_recording(&recording, &samples)?;
         drop(samples);
 
         let source_name = path
             .file_name()
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_else(|| path.display().to_string());
-        let entry = match hm.save_file_entry(file_name, source_name) {
-            Ok(entry) => entry,
-            Err(e) => {
-                remove_recording(&recording);
-                return Err(e);
-            }
-        };
-        info!("Queued file transcription for history entry {}", entry.id);
-        self.queue(entry.id, false);
-        Ok(entry)
+        entry_or_cleanup(&recording, hm.save_file_entry(file_name, source_name))
+    }
+
+    fn queue_file(&self, entry_id: i64) {
+        info!("Queued file transcription for history entry {}", entry_id);
+        self.queue(entry_id, false);
     }
 
     /// Queues the entry to be transcribed again from its recording, ahead
@@ -256,6 +299,7 @@ impl TranscriptionJobManager {
     }
 
     fn emit(&self, entry_id: i64, status: TranscriptionJobStatus) {
+        self.watchers.notify(entry_id, &status);
         if let Err(e) = (TranscriptionJob { entry_id, status }).emit(&self.app) {
             error!("Failed to emit transcription job event: {}", e);
         }
@@ -399,6 +443,46 @@ pub(super) fn execute_job(
     }
 }
 
+/// The samples `decode` reads from `path`. A malformed file may panic the
+/// decoder; that and a file without audio are refused like any decode error.
+fn decode_samples(
+    path: &Path,
+    decode: impl FnOnce(&Path) -> Result<Vec<f32>>,
+) -> Result<Vec<f32>, AddFileError> {
+    let samples = catch_unwind(AssertUnwindSafe(|| decode(path)))
+        .unwrap_or_else(|payload| {
+            Err(anyhow!(
+                "Failed to read the file: {}",
+                panic_payload_message(payload.as_ref())
+            ))
+        })
+        .map_err(|e| AddFileError::NoAudio(e.to_string()))?;
+    if samples.is_empty() {
+        return Err(AddFileError::NoAudio("The file has no audio".into()));
+    }
+    Ok(samples)
+}
+
+/// Writes the samples to `recording`, aside and renamed, so a crash never
+/// leaves a partial one.
+fn store_recording(recording: &Path, samples: &[f32]) -> Result<(), AddFileError> {
+    let partial = recording.with_extension("wav.partial");
+    save_wav_file(&partial, samples)
+        .and_then(|()| std::fs::rename(&partial, recording).map_err(Into::into))
+        .map_err(|e| {
+            remove_recording(&partial);
+            AddFileError::Storage(e.to_string())
+        })
+}
+
+/// The saved entry; when History refused it, the recording goes too.
+fn entry_or_cleanup<T>(recording: &Path, saved: Result<T>) -> Result<T, AddFileError> {
+    saved.map_err(|e| {
+        remove_recording(recording);
+        AddFileError::Storage(e.to_string())
+    })
+}
+
 /// Best-effort cleanup; the caller is already reporting the failure.
 fn remove_recording(path: &Path) {
     if let Err(e) = std::fs::remove_file(path) {
@@ -446,5 +530,226 @@ impl ChunkControl for Control<'_> {
         }
         self.manager
             .emit(self.entry_id, TranscriptionJobStatus::Running { percent });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn text_of(error: &AddFileError) -> &str {
+        match error {
+            AddFileError::NoAudio(text) | AddFileError::Storage(text) => text,
+        }
+    }
+
+    mod decoding {
+        use super::*;
+
+        #[test]
+        fn a_decoder_error_is_no_audio_with_its_message() {
+            let error =
+                decode_samples(Path::new("a.wav"), |_| Err(anyhow!("bad header"))).unwrap_err();
+            assert!(matches!(error, AddFileError::NoAudio(_)), "{error:?}");
+            assert_eq!(text_of(&error), "bad header");
+        }
+
+        #[test]
+        fn a_decoder_panic_is_no_audio_with_its_message() {
+            let error = decode_samples(Path::new("a.wav"), |_| panic!("boom")).unwrap_err();
+            assert!(matches!(error, AddFileError::NoAudio(_)), "{error:?}");
+            assert_eq!(text_of(&error), "Failed to read the file: boom");
+        }
+
+        #[test]
+        fn a_file_without_samples_is_no_audio() {
+            let error = decode_samples(Path::new("a.wav"), |_| Ok(Vec::new())).unwrap_err();
+            assert!(matches!(error, AddFileError::NoAudio(_)), "{error:?}");
+            assert_eq!(text_of(&error), "The file has no audio");
+        }
+
+        #[test]
+        fn samples_pass_through() {
+            let samples = decode_samples(Path::new("a.wav"), |_| Ok(vec![0.25, -0.25])).unwrap();
+            assert_eq!(samples, vec![0.25, -0.25]);
+        }
+    }
+
+    mod storing {
+        use super::*;
+
+        #[test]
+        fn the_recording_is_renamed_into_place() {
+            let dir = tempfile::tempdir().unwrap();
+            let recording = dir.path().join("handy-file-1.wav");
+            store_recording(&recording, &[0.1, 0.2, 0.3]).unwrap();
+            assert!(recording.exists());
+            assert!(!recording.with_extension("wav.partial").exists());
+        }
+
+        #[test]
+        fn a_failed_save_is_storage_and_leaves_nothing() {
+            let dir = tempfile::tempdir().unwrap();
+            let recording = dir.path().join("missing-dir").join("handy-file-1.wav");
+            let error = store_recording(&recording, &[0.1]).unwrap_err();
+            assert!(matches!(error, AddFileError::Storage(_)), "{error:?}");
+            assert!(!recording.exists());
+            assert!(!recording.with_extension("wav.partial").exists());
+        }
+
+        #[test]
+        fn a_failed_rename_is_storage_and_removes_the_partial_file() {
+            let dir = tempfile::tempdir().unwrap();
+            let recording = dir.path().join("handy-file-1.wav");
+            // A directory in the way makes the rename fail after the save succeeded.
+            std::fs::create_dir(&recording).unwrap();
+            let error = store_recording(&recording, &[0.1]).unwrap_err();
+            assert!(matches!(error, AddFileError::Storage(_)), "{error:?}");
+            assert!(!recording.with_extension("wav.partial").exists());
+        }
+
+        #[test]
+        fn a_failed_history_insert_is_storage_and_removes_the_recording() {
+            let dir = tempfile::tempdir().unwrap();
+            let recording = dir.path().join("handy-file-1.wav");
+            std::fs::write(&recording, b"audio").unwrap();
+            let error = entry_or_cleanup(&recording, Err(anyhow!("database is locked")))
+                .map(|_: ()| ())
+                .unwrap_err();
+            assert!(matches!(error, AddFileError::Storage(_)), "{error:?}");
+            assert_eq!(text_of(&error), "database is locked");
+            assert!(!recording.exists());
+        }
+
+        #[test]
+        fn a_saved_entry_keeps_the_recording() {
+            let dir = tempfile::tempdir().unwrap();
+            let recording = dir.path().join("handy-file-1.wav");
+            std::fs::write(&recording, b"audio").unwrap();
+            assert_eq!(entry_or_cleanup(&recording, Ok(7)).unwrap(), 7);
+            assert!(recording.exists());
+        }
+    }
+
+    mod watchers {
+        use super::*;
+        use std::sync::mpsc::TryRecvError;
+
+        /// The production part of this file, without this test module.
+        fn production_source() -> &'static str {
+            include_str!("transcription_jobs.rs")
+                .split("#[cfg(test)]")
+                .next()
+                .expect("split always yields a first part")
+        }
+
+        /// The text of `fn <name>` up to the next function of the same indent.
+        fn body_of<'a>(source: &'a str, name: &str) -> &'a str {
+            let start = source
+                .find(&format!("fn {name}("))
+                .unwrap_or_else(|| panic!("no fn {name}"));
+            let rest = &source[start..];
+            let end = [rest[1..].find("\n    fn "), rest[1..].find("\n    pub fn ")]
+                .into_iter()
+                .flatten()
+                .min()
+                .map_or(rest.len(), |at| at + 1);
+            &rest[..end]
+        }
+
+        #[test]
+        fn watchers_get_statuses_until_the_end() {
+            let watchers = JobWatchers::default();
+            let rx = watchers.add(7);
+            watchers.notify(7, &TranscriptionJobStatus::Running { percent: 0 });
+            watchers.notify(7, &TranscriptionJobStatus::Finished);
+            watchers.notify(7, &TranscriptionJobStatus::Queued);
+            assert_eq!(
+                rx.try_recv().unwrap(),
+                TranscriptionJobStatus::Running { percent: 0 }
+            );
+            assert_eq!(rx.try_recv().unwrap(), TranscriptionJobStatus::Finished);
+            assert_eq!(rx.try_recv(), Err(TryRecvError::Disconnected));
+        }
+
+        #[test]
+        fn a_failure_ends_the_watch_too() {
+            let watchers = JobWatchers::default();
+            let rx = watchers.add(7);
+            let failed = TranscriptionJobStatus::Failed {
+                error: "no speech".into(),
+            };
+            watchers.notify(7, &failed);
+            watchers.notify(7, &TranscriptionJobStatus::Queued);
+            assert_eq!(rx.try_recv().unwrap(), failed);
+            assert_eq!(rx.try_recv(), Err(TryRecvError::Disconnected));
+        }
+
+        #[test]
+        fn watchers_ignore_other_entries() {
+            let watchers = JobWatchers::default();
+            let rx = watchers.add(7);
+            watchers.notify(8, &TranscriptionJobStatus::Finished);
+            assert_eq!(rx.try_recv(), Err(TryRecvError::Empty));
+            // The other entry's end did not drop this watcher.
+            watchers.notify(7, &TranscriptionJobStatus::Finished);
+            assert_eq!(rx.try_recv().unwrap(), TranscriptionJobStatus::Finished);
+        }
+
+        #[test]
+        fn every_watcher_of_an_entry_hears_it() {
+            let watchers = JobWatchers::default();
+            let (first, second) = (watchers.add(7), watchers.add(7));
+            watchers.notify(7, &TranscriptionJobStatus::Finished);
+            assert_eq!(first.try_recv().unwrap(), TranscriptionJobStatus::Finished);
+            assert_eq!(second.try_recv().unwrap(), TranscriptionJobStatus::Finished);
+        }
+
+        #[test]
+        fn a_watcher_whose_receiver_is_gone_is_removed() {
+            let watchers = JobWatchers::default();
+            drop(watchers.add(7));
+            let kept = watchers.add(7);
+            watchers.notify(7, &TranscriptionJobStatus::Queued);
+            assert_eq!(watchers.0.lock().unwrap().len(), 1);
+            assert_eq!(kept.try_recv().unwrap(), TranscriptionJobStatus::Queued);
+        }
+
+        #[test]
+        fn watcher_is_added_before_the_job_is_queued() {
+            let body = body_of(production_source(), "transcribe_file_watched");
+            let add = body.find("watchers.add(").expect("the watcher is added");
+            let queue = body.find("self.queue").expect("the job is queued");
+            assert!(
+                add < queue,
+                "the watcher must exist before the job can emit"
+            );
+        }
+
+        #[test]
+        fn emit_notifies_the_watchers_before_the_event() {
+            let body = body_of(production_source(), "emit");
+            let notify = body.find("self.watchers.notify(").expect("emit notifies");
+            let event = body.find(".emit(&self.app)").expect("emit sends the event");
+            assert!(notify < event);
+        }
+
+        #[test]
+        fn the_plain_add_does_not_watch() {
+            let body = body_of(production_source(), "transcribe_file");
+            assert!(!body.contains("watchers"));
+        }
+    }
+
+    #[test]
+    fn the_messages_are_the_text_inside() {
+        assert_eq!(
+            AddFileError::NoAudio("The file has no audio".into()).to_string(),
+            "The file has no audio"
+        );
+        assert_eq!(
+            AddFileError::Storage("disk full".into()).to_string(),
+            "disk full"
+        );
     }
 }
