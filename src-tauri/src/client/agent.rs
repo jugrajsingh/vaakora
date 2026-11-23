@@ -232,10 +232,15 @@ pub(crate) fn plan_uninstall(home: &Path, agents: &[Agent]) -> Vec<Step> {
         own.insert(PathBuf::from(MARKER));
         for file in skill.files {
             let path = dir.join(file.relative);
-            if is_regular_file(&path) {
+            // Every component between the skill folder and the file is checked, not only the
+            // last: a linked `agents` folder leads to files vaakora never wrote.
+            if let Some(blocked) = blocked_target(&dir, file.relative) {
+                let skip = Step::Skip(blocked);
+                if !steps.contains(&skip) {
+                    steps.push(skip);
+                }
+            } else if is_regular_file(&path) {
                 steps.push(Step::Remove(path));
-            } else if exists(&path) {
-                steps.push(Step::Skip(path));
             }
         }
         let mut subdirs: Vec<PathBuf> = skill
@@ -330,13 +335,18 @@ pub(crate) fn apply(steps: &[Step]) -> std::io::Result<()> {
     Ok(())
 }
 
-/// Why a `Skip` was planned: a skill folder without the marker was never ours; any other
-/// skipped path holds files vaakora did not write.
+/// Why a `Skip` was planned: a link is never followed; a skill folder without the marker was
+/// never ours; any other skipped path holds files vaakora did not write.
 fn skip_reason(path: &Path) -> &'static str {
     let is_skill_dir = SKILLS
         .iter()
         .any(|s| path.ends_with(Path::new(skills_root(s.agent)).join(s.name)));
-    if is_skill_dir && !is_regular_file(&path.join(MARKER)) {
+    if path
+        .symlink_metadata()
+        .is_ok_and(|m| m.file_type().is_symlink())
+    {
+        "a link, left alone"
+    } else if is_skill_dir && !is_regular_file(&path.join(MARKER)) {
         "not installed by vaakora"
     } else {
         "holds files vaakora did not write"
@@ -865,6 +875,87 @@ mod tests {
             .path()
             .join(".claude/skills/vaakora-stop/.vaakora-skill")
             .exists());
+    }
+
+    /// A user folder with a file at the same name vaakora writes, reached through a link.
+    fn linked_agents_folder(h: &Path) -> (PathBuf, PathBuf, PathBuf) {
+        install(h, false, true, false);
+        let agents = h.join(".agents/skills/vaakora-read/agents");
+        std::fs::remove_dir_all(&agents).unwrap();
+        let foreign = h.join("user-managed-config");
+        let foreign_yaml = foreign.join("openai.yaml");
+        put(
+            &foreign_yaml,
+            "user-authored config, never installed by vaakora",
+        );
+        symlink(&foreign, &agents).unwrap();
+        (agents, foreign, foreign_yaml)
+    }
+
+    #[test]
+    fn uninstall_preserves_a_file_behind_a_symlinked_agents_folder() {
+        let h = home();
+        let (agents, foreign, foreign_yaml) = linked_agents_folder(h.path());
+        let ran = uninstall(h.path(), false, true, false);
+        assert_eq!(ran.code, 0, "{}", ran.err);
+        assert_eq!(
+            read(&foreign_yaml),
+            "user-authored config, never installed by vaakora"
+        );
+        assert!(foreign.is_dir());
+        assert!(agents.symlink_metadata().unwrap().file_type().is_symlink());
+        assert_eq!(std::fs::read_link(&agents).unwrap(), foreign);
+        assert!(
+            ran.out
+                .contains(&format!("skip {} (a link, left alone)", agents.display())),
+            "{}",
+            ran.out
+        );
+        // the other Codex skill, with no link, is uninstalled normally
+        assert!(!h.path().join(".agents/skills/vaakora-stop").exists());
+        // the linked skill keeps its folder (the link is in it) but loses its own files
+        assert!(!h
+            .path()
+            .join(".agents/skills/vaakora-read/SKILL.md")
+            .exists());
+        assert!(!h
+            .path()
+            .join(".agents/skills/vaakora-read/.vaakora-skill")
+            .exists());
+    }
+
+    #[test]
+    fn uninstall_dry_run_lists_a_link_as_skip_and_never_as_remove() {
+        let h = home();
+        let (agents, _, _) = linked_agents_folder(h.path());
+        let ran = uninstall(h.path(), false, true, true);
+        assert_eq!(ran.code, 0, "{}", ran.err);
+        let under_link = format!("remove {}", agents.join("openai.yaml").display());
+        assert!(!ran.out.contains(&under_link), "{}", ran.out);
+        assert!(
+            ran.out
+                .contains(&format!("skip {} (a link, left alone)", agents.display())),
+            "{}",
+            ran.out
+        );
+    }
+
+    #[test]
+    fn install_never_overwrites_a_file_behind_a_symlinked_agents_folder() {
+        let h = home();
+        let (agents, _, foreign_yaml) = linked_agents_folder(h.path());
+        let ran = install(h.path(), false, true, false);
+        assert_eq!(ran.code, 1);
+        assert!(
+            ran.err.contains(&agents.display().to_string()),
+            "{}",
+            ran.err
+        );
+        assert_eq!(
+            read(&foreign_yaml),
+            "user-authored config, never installed by vaakora"
+        );
+        assert!(agents.symlink_metadata().unwrap().file_type().is_symlink());
     }
 
     #[test]
