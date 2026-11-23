@@ -8,6 +8,8 @@ mod brand;
 mod catalog;
 mod chinese_script;
 pub mod cli;
+#[cfg(target_os = "linux")]
+pub mod client;
 mod clipboard;
 mod commands;
 mod data_import;

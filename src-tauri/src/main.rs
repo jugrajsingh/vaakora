@@ -35,6 +35,15 @@ fn main() {
         std::process::exit(vaakora_app_lib::engine_supervisor::run_worker());
     }
 
-    let cli_args = CliArgs::parse();
+    let mut cli_args = CliArgs::parse();
+
+    // `vaakora read|pause|...` talks to the running app and exits here, before
+    // the single-instance plugin, GTK or the log plugin start, so it works
+    // without a display and never starts a second app.
+    #[cfg(target_os = "linux")]
+    if let Some(command) = cli_args.command.take() {
+        std::process::exit(vaakora_app_lib::client::run(command));
+    }
+
     vaakora_app_lib::run(cli_args)
 }
