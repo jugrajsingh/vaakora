@@ -369,16 +369,18 @@ describe("ReadHistoryRows", () => {
       SECOND,
     ]);
     const agent = rowMarkup(html, 1);
+    const label = i18n.t("tts.history.fromAgent");
     const pill =
-      /<span class="[^"]*" title="([^"]*)">(Pocket TTS, alba)<\/span>/.exec(
+      /<span class="[^"]*" title="([^"]*)">Pocket TTS, alba(<span class="sr-only">([^<]*)<\/span>)<\/span>/.exec(
         agent,
       );
-    assert.ok(pill, "the model and voice pill");
-    assert.equal(pill[2], "Pocket TTS, alba", "nothing is added to its text");
+    assert.ok(pill, "the pill holds a visually hidden span after its text");
+    assert.equal(pill[1], "Pocket TTS, alba", "the title is not changed");
+    assert.equal(pill[3], `, ${label}`, "the hidden span is the label");
     assert.equal(
-      pill[1],
-      `Pocket TTS, alba, ${i18n.t("tts.history.fromAgent")}`,
-      "its accessible name ends with the translated label",
+      pill[0].replace(/<[^>]*>/g, "").replace(/&#x27;/g, "'"),
+      `Pocket TTS, alba, ${label}`,
+      "the pill's text content ends with the translated label",
     );
     const badges = [
       ...agent.matchAll(
@@ -410,6 +412,7 @@ describe("ReadHistoryRows", () => {
     assert.ok(own.includes(">Pocket TTS, alba</span>"), "an app read");
     assert.ok(!own.includes("from agent"), "no tag on an app read");
     assert.ok(own.includes('title="Pocket TTS, alba"'), "app name unchanged");
+    assert.ok(!own.includes("sr-only"), "no hidden label on an app read");
     assert.ok(
       !own.includes('aria-hidden="true" class="shrink-0'),
       "no hidden badge on an app read",
