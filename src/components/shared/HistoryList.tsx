@@ -16,7 +16,10 @@ export interface HistoryRowProps {
   excerpt: React.ReactNode;
   excerptClass?: string;
   tag: string | null;
-  /** A second small tag beside `tag`, never truncated (for example a read's "from agent"). */
+  /**
+   * A second small tag beside `tag`, never truncated (for example a read's "from agent"). It is
+   * hidden from assistive technology: the pill's title (its accessible name) ends with it.
+   */
   badge?: string | null;
   actions?: React.ReactNode;
   children?: React.ReactNode;
@@ -73,11 +76,14 @@ export function HistoryRow({
           <div className="flex min-w-0 items-center gap-1.5">
             <span
               className="min-w-0 max-w-[8rem] truncate rounded-full border border-line-strong px-2 text-xs text-ink-2"
-              title={tag}
+              title={`${tag}, ${badge}`}
             >
               {tag}
             </span>
-            <span className="shrink-0 whitespace-nowrap rounded-full border border-logo-primary px-2 text-xs text-ink-2">
+            <span
+              aria-hidden="true"
+              className="shrink-0 whitespace-nowrap rounded-full border border-logo-primary px-2 text-xs text-ink-2"
+            >
               {badge}
             </span>
           </div>

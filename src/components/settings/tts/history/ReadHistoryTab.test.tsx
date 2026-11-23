@@ -370,14 +370,27 @@ describe("ReadHistoryRows", () => {
     ]);
     const agent = rowMarkup(html, 1);
     const pill =
-      /<span class="([^"]*)" title="Pocket TTS, alba">([^<]*)<\/span>/;
-    const found = agent.match(pill);
-    assert.ok(found, "the model and voice pill keeps its own text and title");
-    assert.equal(found[2], "Pocket TTS, alba", "nothing is added to the pill");
+      /<span class="[^"]*" title="([^"]*)">(Pocket TTS, alba)<\/span>/.exec(
+        agent,
+      );
+    assert.ok(pill, "the model and voice pill");
+    assert.equal(pill[2], "Pocket TTS, alba", "nothing is added to its text");
+    assert.equal(
+      pill[1],
+      `Pocket TTS, alba, ${i18n.t("tts.history.fromAgent")}`,
+      "its accessible name ends with the translated label",
+    );
     const badges = [
-      ...agent.matchAll(/<span class="([^"]*)">from agent<\/span>/g),
+      ...agent.matchAll(
+        /<span aria-hidden="true" class="([^"]*)">from agent<\/span>/g,
+      ),
     ];
     assert.equal(badges.length, 1, "from agent is one separate element");
+    assert.equal(
+      agent.match(/>from agent</g)?.length,
+      1,
+      "no second visible copy",
+    );
     const classes = badges[0][1].split(/\s+/);
     assert.ok(!classes.includes("truncate"), "never truncated");
     assert.ok(classes.includes("shrink-0"), "never shrunk");
@@ -392,11 +405,15 @@ describe("ReadHistoryRows", () => {
       ),
       `theme tokens only: ${classes.join(" ")}`,
     );
-    // The pattern above allows no attributes, so the tag is not aria-hidden either.
     assert.ok(!/<button[^>]*>[^<]*from agent/.test(agent), "not interactive");
     const own = rowMarkup(html, 2);
     assert.ok(own.includes(">Pocket TTS, alba</span>"), "an app read");
     assert.ok(!own.includes("from agent"), "no tag on an app read");
+    assert.ok(own.includes('title="Pocket TTS, alba"'), "app name unchanged");
+    assert.ok(
+      !own.includes('aria-hidden="true" class="shrink-0'),
+      "no hidden badge on an app read",
+    );
   });
 
   it("open_row_shows_the_reading_view_at_full_width", () => {
