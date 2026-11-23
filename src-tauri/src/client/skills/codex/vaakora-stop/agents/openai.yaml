@@ -1,0 +1,5 @@
+interface:
+  display_name: "Vaakora stop reading"
+  short_description: "Stop Vaakora reading aloud"
+policy:
+  allow_implicit_invocation: false

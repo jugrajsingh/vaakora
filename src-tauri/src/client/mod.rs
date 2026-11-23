@@ -3,6 +3,7 @@
 //! socket and exits with a code a script can act on. It never starts the app and starts no
 //! process of its own.
 
+mod agent;
 mod connection;
 mod input;
 mod output;
@@ -40,9 +41,7 @@ pub fn run(command: Command) -> i32 {
     )
 }
 
-/// [`run`] with its surroundings given. Work that needs no app (the text for `read`, the path for
-/// `transcribe`) is done before the socket path is looked at, so such a problem is reported as
-/// itself even when the socket path cannot be found.
+/// [`run`] with its surroundings given, and the home folder the real environment names.
 pub(crate) fn run_with(
     command: Command,
     socket: Result<PathBuf, SocketPathError>,
@@ -51,8 +50,36 @@ pub(crate) fn run_with(
     out: &mut dyn Write,
     err: &mut dyn Write,
 ) -> i32 {
+    run_with_home(
+        command,
+        dirs::home_dir(),
+        socket,
+        stdin,
+        stdin_is_terminal,
+        out,
+        err,
+    )
+}
+
+/// [`run_with`] with the home folder given (`agent install` and `uninstall` write below it).
+/// `agent` needs no app and is handled first, so it works when the socket path cannot be found.
+/// Other work that needs no app (the text for `read`, the path for `transcribe`) is done before the
+/// socket path is looked at too, so such a problem is reported as itself.
+pub(crate) fn run_with_home(
+    command: Command,
+    home: Option<PathBuf>,
+    socket: Result<PathBuf, SocketPathError>,
+    stdin: &mut dyn Read,
+    stdin_is_terminal: bool,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> i32 {
+    if let Command::Agent { action } = &command {
+        return agent::run_agent(action.clone(), home, out, err);
+    }
     let timeout = call_timeout(&command);
     let (method, params, reply) = match &command {
+        Command::Agent { .. } => unreachable!("handled before the socket"),
         Command::Read { path } => {
             let text = match read_text(path.as_deref(), stdin, stdin_is_terminal) {
                 Ok(text) => text,
@@ -915,5 +942,86 @@ mod tests {
                 );
             }
         }
+    }
+
+    fn run_agent_on(
+        action: crate::cli::AgentAction,
+        home: &Path,
+        socket: Result<PathBuf, SocketPathError>,
+    ) -> Ran {
+        let (mut out, mut err) = (Vec::new(), Vec::new());
+        let mut stdin: &[u8] = b"";
+        let code = run_with_home(
+            Command::Agent { action },
+            Some(home.to_path_buf()),
+            socket,
+            &mut stdin,
+            true,
+            &mut out,
+            &mut err,
+        );
+        Ran {
+            code,
+            out: String::from_utf8(out).unwrap(),
+            err: String::from_utf8(err).unwrap(),
+        }
+    }
+
+    #[test]
+    fn agent_runs_before_the_socket_is_looked_at() {
+        let home = tempfile::tempdir().unwrap();
+        let install = |dry_run| crate::cli::AgentAction::Install {
+            claude: false,
+            codex: false,
+            dry_run,
+        };
+        let ran = run_agent_on(
+            install(true),
+            home.path(),
+            Err(SocketPathError::NoRuntimeDir),
+        );
+        assert_eq!(ran.code, EXIT_OK, "{}", ran.err);
+        assert_eq!(
+            ran.out.lines().filter(|l| l.starts_with("write ")).count(),
+            10
+        );
+        assert!(ran.err.is_empty(), "{}", ran.err);
+        assert!(!home.path().join(".claude").exists());
+
+        let ran = run_agent_on(install(false), home.path(), Err(SocketPathError::TooLong));
+        assert_eq!(ran.code, EXIT_OK, "{}", ran.err);
+        assert!(home
+            .path()
+            .join(".claude/skills/vaakora-read/SKILL.md")
+            .exists());
+        assert!(home
+            .path()
+            .join(".agents/skills/vaakora-stop/agents/openai.yaml")
+            .exists());
+    }
+
+    #[test]
+    fn agent_never_connects_to_the_app() {
+        let app = ok_app();
+        let home = tempfile::tempdir().unwrap();
+        let action = crate::cli::AgentAction::Install {
+            claude: true,
+            codex: false,
+            dry_run: false,
+        };
+        let ran = run_agent_on(action, home.path(), Ok(app.path.clone()));
+        assert_eq!(ran.code, EXIT_OK, "{}", ran.err);
+        assert!(app.fake.calls().is_empty());
+    }
+
+    #[test]
+    fn other_commands_still_need_the_socket_path() {
+        let ran = run_on(
+            Command::Stop,
+            Err(SocketPathError::NoRuntimeDir),
+            b"",
+            false,
+        );
+        assert_eq!(ran.code, EXIT_UNREACHABLE);
     }
 }

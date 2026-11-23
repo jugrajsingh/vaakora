@@ -112,6 +112,40 @@ pub enum Command {
         #[arg(long)]
         json: bool,
     },
+    /// Install or remove the Vaakora read-aloud skills for Claude Code and Codex
+    Agent {
+        #[command(subcommand)]
+        action: AgentAction,
+    },
+}
+
+/// `vaakora agent <action>`: with neither `--claude` nor `--codex`, both agents.
+#[derive(Subcommand, Debug, Clone, PartialEq)]
+pub enum AgentAction {
+    /// Write the vaakora-read and vaakora-stop skills (they run only when you invoke them)
+    Install {
+        /// Claude Code only (~/.claude/skills)
+        #[arg(long)]
+        claude: bool,
+        /// Codex only (~/.agents/skills)
+        #[arg(long)]
+        codex: bool,
+        /// Print what would be written and write nothing
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Remove the skills Vaakora wrote, and nothing else
+    Uninstall {
+        /// Claude Code only (~/.claude/skills)
+        #[arg(long)]
+        claude: bool,
+        /// Codex only (~/.agents/skills)
+        #[arg(long)]
+        codex: bool,
+        /// Print what would be removed and remove nothing
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 #[cfg(test)]
@@ -253,7 +287,8 @@ mod tests {
                 "status",
                 "voices",
                 "dictate",
-                "transcribe"
+                "transcribe",
+                "agent"
             ]
         );
         for sub in cmd.get_subcommands() {
@@ -263,5 +298,51 @@ mod tests {
                 sub.get_name()
             );
         }
+        let agent = cmd.find_subcommand("agent").unwrap();
+        let actions: Vec<&str> = agent.get_subcommands().map(|c| c.get_name()).collect();
+        assert_eq!(actions, ["install", "uninstall"]);
+        for sub in agent.get_subcommands() {
+            assert!(
+                sub.get_about().is_some(),
+                "agent {} has no help text",
+                sub.get_name()
+            );
+        }
+    }
+
+    #[test]
+    fn agent_subcommands_parse() {
+        assert_eq!(
+            command(&["vaakora", "agent", "install", "--dry-run"]),
+            Command::Agent {
+                action: AgentAction::Install {
+                    claude: false,
+                    codex: false,
+                    dry_run: true
+                }
+            }
+        );
+        assert_eq!(
+            command(&["vaakora", "agent", "uninstall", "--codex"]),
+            Command::Agent {
+                action: AgentAction::Uninstall {
+                    claude: false,
+                    codex: true,
+                    dry_run: false
+                }
+            }
+        );
+        assert_eq!(
+            command(&["vaakora", "agent", "install", "--claude", "--codex"]),
+            Command::Agent {
+                action: AgentAction::Install {
+                    claude: true,
+                    codex: true,
+                    dry_run: false
+                }
+            }
+        );
+        assert!(parse(&["vaakora", "agent"]).is_err());
+        assert!(parse(&["vaakora", "agent", "install", "--text", "x"]).is_err());
     }
 }
