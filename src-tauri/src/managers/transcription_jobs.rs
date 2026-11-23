@@ -229,9 +229,11 @@ impl TranscriptionJobManager {
         let samples = decode_samples(path, decode_audio_file)?;
 
         let hm = self.app.state::<Arc<HistoryManager>>();
-        let file_name = format!("handy-file-{}.wav", chrono::Utc::now().timestamp_millis());
-        let recording = hm.get_audio_file_path(&file_name);
-        store_recording(&recording, &samples)?;
+        let (file_name, recording) = import_recording(
+            |name| hm.get_audio_file_path(name),
+            || chrono::Utc::now().timestamp_millis(),
+            &samples,
+        )?;
         drop(samples);
 
         let source_name = path
@@ -463,8 +465,53 @@ fn decode_samples(
     Ok(samples)
 }
 
+/// How many names one import tries before it gives up.
+const RESERVE_ATTEMPTS: u32 = 1000;
+
+/// Reserves a recording no other import holds, by creating its file with
+/// `create_new`: `handy-file-<millis>.wav`, and `handy-file-<millis>-<n>.wav`
+/// when that name is taken. A clock value shared by two imports (they run
+/// on separate threads) never makes them share a file. Returns the file name
+/// and its path.
+fn reserve_recording(
+    path_of: impl Fn(&str) -> PathBuf,
+    millis: i64,
+) -> Result<(String, PathBuf), AddFileError> {
+    for attempt in 0..RESERVE_ATTEMPTS {
+        let name = if attempt == 0 {
+            format!("handy-file-{millis}.wav")
+        } else {
+            format!("handy-file-{millis}-{attempt}.wav")
+        };
+        let path = path_of(&name);
+        match std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&path)
+        {
+            Ok(_) => return Ok((name, path)),
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(e) => return Err(AddFileError::Storage(e.to_string())),
+        }
+    }
+    Err(AddFileError::Storage("No free recording name.".into()))
+}
+
+/// Reserves a recording of its own (the clock is read once) and writes the
+/// samples to it. When the write fails, only this import's files go.
+fn import_recording(
+    path_of: impl Fn(&str) -> PathBuf,
+    now_millis: impl FnOnce() -> i64,
+    samples: &[f32],
+) -> Result<(String, PathBuf), AddFileError> {
+    let (name, recording) = reserve_recording(path_of, now_millis())?;
+    store_recording(&recording, samples).inspect_err(|_| remove_recording(&recording))?;
+    Ok((name, recording))
+}
+
 /// Writes the samples to `recording`, aside and renamed, so a crash never
-/// leaves a partial one.
+/// leaves a partial one. The partial file's name comes from the recording's,
+/// so an import never shares it.
 fn store_recording(recording: &Path, samples: &[f32]) -> Result<(), AddFileError> {
     let partial = recording.with_extension("wav.partial");
     save_wav_file(&partial, samples)
@@ -543,6 +590,28 @@ mod tests {
         }
     }
 
+    /// The production part of this file, without this test module.
+    fn production_source() -> &'static str {
+        include_str!("transcription_jobs.rs")
+            .split("#[cfg(test)]")
+            .next()
+            .expect("split always yields a first part")
+    }
+
+    /// The text of `fn <name>` up to the next function of the same indent.
+    fn body_of<'a>(source: &'a str, name: &str) -> &'a str {
+        let start = source
+            .find(&format!("fn {name}("))
+            .unwrap_or_else(|| panic!("no fn {name}"));
+        let rest = &source[start..];
+        let end = [rest[1..].find("\n    fn "), rest[1..].find("\n    pub fn ")]
+            .into_iter()
+            .flatten()
+            .min()
+            .map_or(rest.len(), |at| at + 1);
+        &rest[..end]
+    }
+
     mod decoding {
         use super::*;
 
@@ -572,6 +641,103 @@ mod tests {
         fn samples_pass_through() {
             let samples = decode_samples(Path::new("a.wav"), |_| Ok(vec![0.25, -0.25])).unwrap();
             assert_eq!(samples, vec![0.25, -0.25]);
+        }
+    }
+
+    mod recordings {
+        use super::*;
+        use crate::audio_toolkit::read_wav_samples;
+
+        fn names_in(dir: &Path) -> Vec<String> {
+            let mut names: Vec<String> = std::fs::read_dir(dir)
+                .unwrap()
+                .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+                .collect();
+            names.sort();
+            names
+        }
+
+        fn assert_samples(path: &Path, expected: &[f32]) {
+            let samples = read_wav_samples(path).unwrap();
+            assert_eq!(samples.len(), expected.len());
+            for (got, want) in samples.iter().zip(expected) {
+                assert!((got - want).abs() < 0.001, "{got} vs {want}");
+            }
+        }
+
+        #[test]
+        fn equal_clock_values_give_distinct_paths_and_keep_both_recordings() {
+            let dir = tempfile::tempdir().unwrap();
+            let path_of = |name: &str| dir.path().join(name);
+            let (first_name, first) = import_recording(path_of, || 1000, &[0.25; 8]).unwrap();
+            let (second_name, second) = import_recording(path_of, || 1000, &[-0.75; 8]).unwrap();
+            // The first attempt keeps the name format History and the picker use.
+            assert_eq!(first_name, "handy-file-1000.wav");
+            assert_eq!(second_name, "handy-file-1000-1.wav");
+            assert_ne!(first, second);
+            assert_samples(&first, &[0.25; 8]);
+            assert_samples(&second, &[-0.75; 8]);
+            assert_eq!(
+                names_in(dir.path()),
+                vec!["handy-file-1000-1.wav", "handy-file-1000.wav"]
+            );
+        }
+
+        #[test]
+        fn a_failed_second_import_leaves_the_first_recording_alone() {
+            let dir = tempfile::tempdir().unwrap();
+            let path_of = |name: &str| dir.path().join(name);
+            let (_, first) = import_recording(path_of, || 1000, &[0.25; 8]).unwrap();
+            // A directory where the second import's partial file goes fails its save.
+            std::fs::create_dir(dir.path().join("handy-file-1000-1.wav.partial")).unwrap();
+            let error = import_recording(path_of, || 1000, &[-0.75; 8]).unwrap_err();
+            assert!(matches!(error, AddFileError::Storage(_)), "{error:?}");
+            assert_samples(&first, &[0.25; 8]);
+            // The second import's reservation is gone; only the blocker is left beside the first.
+            assert_eq!(
+                names_in(dir.path()),
+                vec!["handy-file-1000-1.wav.partial", "handy-file-1000.wav"]
+            );
+        }
+
+        #[test]
+        fn a_taken_name_is_skipped_not_reused() {
+            let dir = tempfile::tempdir().unwrap();
+            std::fs::write(dir.path().join("handy-file-5.wav"), b"mine").unwrap();
+            std::fs::write(dir.path().join("handy-file-5-1.wav"), b"mine").unwrap();
+            let (name, _) = reserve_recording(|name| dir.path().join(name), 5).unwrap();
+            assert_eq!(name, "handy-file-5-2.wav");
+            assert_eq!(
+                std::fs::read(dir.path().join("handy-file-5.wav")).unwrap(),
+                b"mine"
+            );
+        }
+
+        #[test]
+        fn running_out_of_names_is_a_storage_error() {
+            let dir = tempfile::tempdir().unwrap();
+            let taken = dir.path().join("taken.wav");
+            std::fs::write(&taken, b"mine").unwrap();
+            let error = reserve_recording(|_| taken.clone(), 5).unwrap_err();
+            assert!(matches!(error, AddFileError::Storage(_)), "{error:?}");
+            assert_eq!(text_of(&error), "No free recording name.");
+            assert_eq!(std::fs::read(&taken).unwrap(), b"mine");
+        }
+
+        #[test]
+        fn an_unwritable_folder_is_a_storage_error() {
+            let dir = tempfile::tempdir().unwrap();
+            let missing = dir.path().join("missing-dir");
+            let error = reserve_recording(|name| missing.join(name), 5).unwrap_err();
+            assert!(matches!(error, AddFileError::Storage(_)), "{error:?}");
+        }
+
+        #[test]
+        fn add_file_reserves_its_recording_through_import_recording() {
+            let source = production_source();
+            assert_eq!(source.matches("format!(\"handy-file-").count(), 2);
+            assert!(body_of(source, "add_file").contains("import_recording("));
+            assert!(!body_of(source, "add_file").contains("handy-file"));
         }
     }
 
@@ -634,28 +800,6 @@ mod tests {
     mod watchers {
         use super::*;
         use std::sync::mpsc::TryRecvError;
-
-        /// The production part of this file, without this test module.
-        fn production_source() -> &'static str {
-            include_str!("transcription_jobs.rs")
-                .split("#[cfg(test)]")
-                .next()
-                .expect("split always yields a first part")
-        }
-
-        /// The text of `fn <name>` up to the next function of the same indent.
-        fn body_of<'a>(source: &'a str, name: &str) -> &'a str {
-            let start = source
-                .find(&format!("fn {name}("))
-                .unwrap_or_else(|| panic!("no fn {name}"));
-            let rest = &source[start..];
-            let end = [rest[1..].find("\n    fn "), rest[1..].find("\n    pub fn ")]
-                .into_iter()
-                .flatten()
-                .min()
-                .map_or(rest.len(), |at| at + 1);
-            &rest[..end]
-        }
 
         #[test]
         fn watchers_get_statuses_until_the_end() {
