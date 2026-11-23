@@ -369,7 +369,31 @@ describe("ReadHistoryRows", () => {
       SECOND,
     ]);
     const agent = rowMarkup(html, 1);
-    assert.ok(agent.includes(">Pocket TTS, alba, from agent</span>"), "agent");
+    const pill =
+      /<span class="([^"]*)" title="Pocket TTS, alba">([^<]*)<\/span>/;
+    const found = agent.match(pill);
+    assert.ok(found, "the model and voice pill keeps its own text and title");
+    assert.equal(found[2], "Pocket TTS, alba", "nothing is added to the pill");
+    const badges = [
+      ...agent.matchAll(/<span class="([^"]*)">from agent<\/span>/g),
+    ];
+    assert.equal(badges.length, 1, "from agent is one separate element");
+    const classes = badges[0][1].split(/\s+/);
+    assert.ok(!classes.includes("truncate"), "never truncated");
+    assert.ok(classes.includes("shrink-0"), "never shrunk");
+    assert.ok(classes.includes("whitespace-nowrap"));
+    assert.ok(classes.includes("rounded-full") && classes.includes("border"));
+    assert.ok(
+      classes.every(
+        (name) =>
+          !/#|\[|^(bg|text|border)-(white|black|gray|red|blue|green)/.test(
+            name,
+          ),
+      ),
+      `theme tokens only: ${classes.join(" ")}`,
+    );
+    // The pattern above allows no attributes, so the tag is not aria-hidden either.
+    assert.ok(!/<button[^>]*>[^<]*from agent/.test(agent), "not interactive");
     const own = rowMarkup(html, 2);
     assert.ok(own.includes(">Pocket TTS, alba</span>"), "an app read");
     assert.ok(!own.includes("from agent"), "no tag on an app read");

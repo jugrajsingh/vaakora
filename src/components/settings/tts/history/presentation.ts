@@ -6,14 +6,12 @@ import type {
 } from "@/bindings";
 import { modelName } from "../vocabulary/labels";
 
-/** The tag on a read's row: the voice model and its voice, then `fromAgent` for a read an agent asked for. */
+/** The tag on a read's row: the voice model and its voice. A read from an agent also gets its own "from agent" tag beside it. */
 export function entryTag(
   models: readonly TtsModelInfo[],
   entry: ReadHistoryEntry,
-  fromAgent: string,
 ): string {
-  const tag = `${modelName(models, entry.model_id)}, ${entry.voice}`;
-  return entry.origin === "agent" ? `${tag}, ${fromAgent}` : tag;
+  return `${modelName(models, entry.model_id)}, ${entry.voice}`;
 }
 
 /** Keep history choices; a label takes `{ count }` for the limit. */

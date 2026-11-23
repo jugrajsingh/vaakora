@@ -16,6 +16,8 @@ export interface HistoryRowProps {
   excerpt: React.ReactNode;
   excerptClass?: string;
   tag: string | null;
+  /** A second small tag beside `tag`, never truncated (for example a read's "from agent"). */
+  badge?: string | null;
   actions?: React.ReactNode;
   children?: React.ReactNode;
 }
@@ -29,6 +31,7 @@ export function HistoryRow({
   excerpt,
   excerptClass,
   tag,
+  badge,
   actions,
   children,
 }: HistoryRowProps): React.JSX.Element {
@@ -64,15 +67,27 @@ export function HistoryRow({
         >
           {excerpt}
         </div>
-        {tag !== null ? (
+        {tag === null ? (
+          <span />
+        ) : badge ? (
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span
+              className="min-w-0 max-w-[8rem] truncate rounded-full border border-line-strong px-2 text-xs text-ink-2"
+              title={tag}
+            >
+              {tag}
+            </span>
+            <span className="shrink-0 whitespace-nowrap rounded-full border border-logo-primary px-2 text-xs text-ink-2">
+              {badge}
+            </span>
+          </div>
+        ) : (
           <span
             className="max-w-[8rem] truncate rounded-full border border-line-strong px-2 text-xs text-ink-2"
             title={tag}
           >
             {tag}
           </span>
-        ) : (
-          <span />
         )}
         <div className="flex shrink-0 items-center">
           {actions}

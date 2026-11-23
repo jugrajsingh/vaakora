@@ -30,41 +30,20 @@ const ENTRY: ReadHistoryEntry = {
 
 describe("entry presentation", () => {
   it("entry_tag_names_model_and_voice", () => {
-    assert.equal(entryTag(models, ENTRY, "from agent"), "Pocket TTS, alba");
+    assert.equal(entryTag(models, ENTRY), "Pocket TTS, alba");
   });
   it("names the raw model id when the catalog has no such model", () => {
     assert.equal(
-      entryTag(models, { ...ENTRY, model_id: "gone-model" }, "from agent"),
+      entryTag(models, { ...ENTRY, model_id: "gone-model" }),
       "gone-model, alba",
     );
   });
-  it("entryTag names an agent read", () => {
-    const tag = entryTag(models, { ...ENTRY, origin: "agent" }, "from agent");
-    assert.equal(tag, "Pocket TTS, alba, from agent");
-    assert.ok(tag.endsWith(", from agent"));
-  });
-  it("entryTag leaves an app read as it was", () => {
+  it("entryTag leaves the from-agent label to its own tag", () => {
     assert.equal(
-      entryTag(models, { ...ENTRY, origin: "app" }, "from agent"),
-      `${entryTag(models, ENTRY, "from agent")}`,
-    );
-    assert.equal(
-      entryTag(models, { ...ENTRY, origin: "app" }, "from agent"),
+      entryTag(models, { ...ENTRY, origin: "agent" }),
       "Pocket TTS, alba",
     );
-  });
-  it("names the agent in the label it is given", () => {
-    const tag = entryTag(models, { ...ENTRY, origin: "agent" }, "vom Agenten");
-    assert.equal(tag, "Pocket TTS, alba, vom Agenten");
-    assert.ok(!tag.includes("from agent"));
-    assert.equal(
-      entryTag(
-        models,
-        { ...ENTRY, origin: "agent" },
-        t("tts.history.fromAgent"),
-      ),
-      "Pocket TTS, alba, from agent",
-    );
+    assert.equal(t("tts.history.fromAgent"), "from agent");
   });
 });
 
