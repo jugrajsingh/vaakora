@@ -829,6 +829,7 @@ pub fn technical_flags(
     let options = technical.then_some(handy_tts_core::vocabulary::TechnicalOptions {
         full_paths: !short_paths,
         full_links,
+        ..handy_tts_core::vocabulary::TechnicalOptions::default()
     });
     Ok((options, rest))
 }
@@ -1989,6 +1990,7 @@ mod technical_flag_tests {
             Some(TechnicalOptions {
                 full_paths: false,
                 full_links: true,
+                ..TechnicalOptions::default()
             })
         );
     }

@@ -16,6 +16,8 @@ use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::formatted::tables::TableStyle;
+
 mod derive;
 mod document;
 mod entries;
@@ -1491,21 +1493,25 @@ fn replace_versions(token: &str) -> Option<String> {
     Some(spoken)
 }
 
-/// How much of a path or link technical reading speaks.
+/// Reading options every text consumer passes to the cursor: how much of a path or link
+/// technical reading speaks, and how tables are spoken.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TechnicalOptions {
     /// Every path segment is read; off reads the last one (`tests/lib.sh` is "lib dot S H").
     pub full_paths: bool,
     /// A link's host and path are read; off keeps "link to <host>".
     pub full_links: bool,
+    /// How a table is spoken, with technical reading on or off.
+    pub tables: TableStyle,
 }
 
 impl Default for TechnicalOptions {
-    /// Full paths, short links.
+    /// Full paths, short links, each table value read with its column name.
     fn default() -> Self {
         TechnicalOptions {
             full_paths: true,
             full_links: false,
+            tables: TableStyle::NameEach,
         }
     }
 }
@@ -3178,6 +3184,7 @@ mod tests {
                 &TechnicalOptions {
                     full_paths,
                     full_links,
+                    ..TechnicalOptions::default()
                 },
             )
         }
@@ -3189,6 +3196,7 @@ mod tests {
                 TechnicalOptions {
                     full_paths: true,
                     full_links: false,
+                    tables: TableStyle::NameEach,
                 }
             );
         }
@@ -3384,6 +3392,7 @@ mod tests {
                 [false, true].map(|full_links| TechnicalOptions {
                     full_paths,
                     full_links,
+                    ..TechnicalOptions::default()
                 })
             });
             for options in all_options {

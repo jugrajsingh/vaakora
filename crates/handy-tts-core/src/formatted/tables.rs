@@ -9,15 +9,68 @@
 //! order with its borders dropped, so no word is lost. Lines inside a fenced code block are never
 //! candidates.
 
-#![cfg_attr(
-    not(test),
-    expect(dead_code, reason = "wired into TextCursor in Task 2")
-)]
-
 use std::ops::Range;
 
 use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
+
+/// How a table is spoken: each value with its column name, or the names once and then the rows.
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Default,
+    PartialEq,
+    Eq,
+    Hash,
+    serde::Serialize,
+    serde::Deserialize,
+    specta::Type,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum TableStyle {
+    /// "Row 1. Lane: B, the walk. Model: Opus."
+    #[default]
+    NameEach,
+    /// "Columns: Lane, Model. Row 1: B, the walk; Opus."
+    NamesOnce,
+}
+
+/// The sentence that opens a spoken table: "Table, 3 columns, 2 rows." Spoken phrases are fixed
+/// English, whatever the model or interface language.
+pub(crate) fn intro(columns: usize, rows: usize) -> String {
+    let plural =
+        |n: usize, one: &str, many: &str| format!("{n} {}", if n == 1 { one } else { many });
+    format!(
+        "Table, {}, {}.",
+        plural(columns, "column", "columns"),
+        plural(rows, "row", "rows")
+    )
+}
+
+/// The label that starts row `n` (from 1): "Row 1." or, names once, "Row 1:".
+pub(crate) fn row_label(n: usize, style: TableStyle) -> String {
+    match style {
+        TableStyle::NameEach => format!("Row {n}."),
+        TableStyle::NamesOnce => format!("Row {n}:"),
+    }
+}
+
+/// The name of column `n` (from 1) when the table has no header or the header cell is empty.
+pub(crate) fn column_name(n: usize) -> String {
+    format!("Column {n}")
+}
+
+/// The sentence naming every column once: "Columns: Lane, Model, Progress."
+pub(crate) fn columns_sentence(names: &[String]) -> String {
+    format!("Columns: {}.", names.join(", "))
+}
+
+/// What an empty cell is read as when the names are spoken once.
+pub(crate) const BLANK: &str = "blank";
+
+/// The sentence that closes a spoken table.
+pub(crate) const END: &str = "End of table.";
 
 /// A table candidate: `range` runs from the start of its first line to the end of its last line,
 /// line break excluded.

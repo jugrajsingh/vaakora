@@ -5,6 +5,7 @@ use std::ops::Range;
 use std::sync::Arc;
 use thiserror::Error;
 
+use crate::formatted::tables::{self, BlockKind, Cell, Table, TableStyle};
 use crate::vocabulary::{TechnicalOptions, Vocabulary, speak_technical};
 
 /// Request size used by the streaming session to keep synthesis lanes supplied.
@@ -78,6 +79,14 @@ struct Piece {
     skipped: bool,
     /// The written words this piece speaks, in source order.
     words: Vec<Word>,
+    /// The source range a chunk holding this piece covers instead of `range`: the table row (or
+    /// the table's opening or closing lines) the piece is spoken for. Every piece of a row
+    /// carries it, so each chunk of a row highlights and resumes as the whole row, while `range`
+    /// and the word spans stay the word's own.
+    row: Option<Range<usize>>,
+    /// For a boundary marker that ends a table value: the mark its chunk ends with, unless the
+    /// chunk text already ends in punctuation.
+    mark: Option<char>,
 }
 /// One written word inside a piece: its source byte range, the word as written, and the byte
 /// range of the piece's text it is spoken as (empty when skipped).
@@ -96,7 +105,20 @@ impl Piece {
             pause,
             skipped: false,
             words: Vec::new(),
+            row: None,
+            mark: None,
         }
+    }
+    /// A fixed phrase or column label spoken for the table row `row`: no written word.
+    fn label(text: String, row: Range<usize>) -> Piece {
+        Piece {
+            row: Some(row.clone()),
+            ..Piece::marker(text, row, 0)
+        }
+    }
+    /// The source range a chunk holding this piece covers.
+    fn span(&self) -> &Range<usize> {
+        self.row.as_ref().unwrap_or(&self.range)
     }
     /// A piece whose whole text is the reading of one written word.
     fn word(text: String, range: Range<usize>, written: String, skipped: bool) -> Piece {
@@ -112,6 +134,8 @@ impl Piece {
             pause: 0,
             skipped,
             words,
+            row: None,
+            mark: None,
         }
     }
     /// Appends skipped words at the end of the text, with empty spoken ranges.
@@ -131,6 +155,102 @@ struct Fragment<'a> {
     inline: bool,
     html: bool,
     html_exhausted: bool,
+}
+/// What the cursor reads: a Markdown event of the prose around tables, a table block, or one
+/// spoken part of the table being read.
+enum Item<'a> {
+    Event(Event<'a>, Range<usize>),
+    /// A table block, turned into the items below when the cursor reaches it.
+    Table(Range<usize>, Table<'a>),
+    /// The source range every piece carries up to the next `Row` (`None`: prose again).
+    Row(Option<Range<usize>>),
+    /// One word of a fixed phrase or column label, spoken with no word span.
+    Label(String),
+    /// Ends a spoken value or sentence: a boundary with this pause, and the mark its chunk ends
+    /// with (`None`: the synthetic period of any boundary of 250 or more).
+    End(u32, Option<char>),
+}
+/// A stretch of the source: prose between tables, or a table block.
+enum Part<'a> {
+    Prose(Range<usize>),
+    Table(Range<usize>, Table<'a>),
+}
+/// The cursor's input: the Markdown events of the prose between table blocks, each part parsed
+/// on its own slice of `source` (so every range stays a range of `source`), with each table block
+/// in its place. Text without a table is one part, parsed as it always was. Fallback blocks stay
+/// in the prose.
+fn source_items(source: &str) -> impl Iterator<Item = Item<'_>> {
+    let mut parts = Vec::new();
+    let mut prose = 0;
+    for block in tables::find_blocks(source) {
+        if let BlockKind::Table(table) = block.kind {
+            parts.push(Part::Prose(prose..block.range.start));
+            prose = block.range.end;
+            parts.push(Part::Table(block.range, table));
+        }
+    }
+    parts.push(Part::Prose(prose..source.len()));
+    parts
+        .into_iter()
+        .flat_map(move |part| -> Box<dyn Iterator<Item = Item<'_>> + '_> {
+            match part {
+                Part::Prose(prose) => {
+                    let offset = prose.start;
+                    Box::new(
+                        Parser::new_ext(
+                            &source[prose],
+                            Options::ENABLE_TABLES
+                                | Options::ENABLE_FOOTNOTES
+                                | Options::ENABLE_STRIKETHROUGH,
+                        )
+                        .into_offset_iter()
+                        .map(move |(event, range)| {
+                            Item::Event(event, range.start + offset..range.end + offset)
+                        }),
+                    )
+                }
+                Part::Table(block, table) => Box::new(std::iter::once(Item::Table(block, table))),
+            }
+        })
+}
+/// A cell's words as Markdown events: a box or ASCII cell's line slices as text with a soft break
+/// between them, a Markdown cell's own inline events.
+fn cell_items<'a>(source: &'a str, cell: Cell<'a>) -> Vec<Item<'a>> {
+    match cell {
+        Cell::Lines(lines) => {
+            let mut items = Vec::new();
+            for range in lines {
+                if !items.is_empty() {
+                    items.push(Item::Event(Event::SoftBreak, range.start..range.start));
+                }
+                items.push(Item::Event(
+                    Event::Text(source[range.clone()].into()),
+                    range,
+                ));
+            }
+            items
+        }
+        Cell::Inline(events) => events
+            .into_iter()
+            .map(|(event, range)| Item::Event(event, range))
+            .collect(),
+    }
+}
+/// A spoken phrase as one label per word, so a long phrase chunks between words like prose.
+fn label<'a>(phrase: &str) -> Vec<Item<'a>> {
+    phrase
+        .split_whitespace()
+        .map(|word| Item::Label(word.to_string()))
+        .collect()
+}
+/// A cell with no text to speak.
+fn is_empty_cell(cell: &Cell<'_>) -> bool {
+    match cell {
+        Cell::Lines(lines) => lines.is_empty(),
+        Cell::Inline(events) => !events.iter().any(|(event, _)| {
+            matches!(event, Event::Text(text) | Event::Code(text) if !text.trim().is_empty())
+        }),
+    }
 }
 /// Ranks punctuation marks: `?` and `!` above `.`, then `;`, `:` and `,`.
 fn mark_strength(mark: char) -> u8 {
@@ -175,7 +295,11 @@ fn join_skipped_ending(word: &mut Piece, ending: &Piece) {
 /// An incremental Markdown preparation and chunking cursor.
 pub struct TextCursor<'a> {
     source: &'a str,
-    events: Box<dyn Iterator<Item = (Event<'a>, Range<usize>)> + 'a>,
+    events: Box<dyn Iterator<Item = Item<'a>> + 'a>,
+    /// The spoken items of the table being read, before the next item of `events`.
+    table: VecDeque<Item<'a>>,
+    /// The source range of the table row being read (see `Piece::row`).
+    row: Option<Range<usize>>,
     pending: VecDeque<Piece>,
     fragment: Option<Fragment<'a>>,
     word: String,
@@ -197,6 +321,8 @@ pub struct TextCursor<'a> {
     orphans: Vec<Word>,
     span_byte: usize,
     span_utf16: u32,
+    /// The last range `source_range` converted and its offsets.
+    last_range: Option<(Range<usize>, (u32, u32))>,
     #[cfg(test)]
     work_units: usize,
     #[cfg(test)]
@@ -226,11 +352,26 @@ impl<'a> TextCursor<'a> {
     }
     /// Creates a cursor that reads or skips fenced code blocks.
     pub fn new(source: &'a str, read_code: bool) -> Result<Self, TextError> {
-        let events = Parser::new_ext(
+        let emoji = Regex::new(
+            r"[0-9#*]\x{FE0F}?\x{20E3}|[\p{Extended_Pictographic}\p{Regional_Indicator}\x{1F3FB}-\x{1F3FF}\x{FE0E}\x{FE0F}\x{200D}\x{20E3}]",
+        )?;
+        let version = Regex::new(r"\bv([0-9]+\.[0-9]+\.[0-9]+)")?;
+        Ok(Self::with_events(
             source,
-            Options::ENABLE_TABLES | Options::ENABLE_FOOTNOTES | Options::ENABLE_STRIKETHROUGH,
-        )
-        .into_offset_iter();
+            read_code,
+            source_items(source),
+            emoji,
+            version,
+        ))
+    }
+    /// A cursor over `events` (ranges into `source`) with the compiled normalizer patterns.
+    fn with_events(
+        source: &'a str,
+        read_code: bool,
+        events: impl Iterator<Item = Item<'a>> + 'a,
+        emoji: Regex,
+        version: Regex,
+    ) -> Self {
         #[cfg(test)]
         let event_reads = std::rc::Rc::new(std::cell::Cell::new(0));
         #[cfg(test)]
@@ -238,10 +379,12 @@ impl<'a> TextCursor<'a> {
             let reads = event_reads.clone();
             move |_| reads.set(reads.get() + 1)
         });
-        Ok(Self {
+        Self {
             source,
             events: Box::new(events),
             pending: VecDeque::new(),
+            table: VecDeque::new(),
+            row: None,
             fragment: None,
             word: String::new(),
             word_range: None,
@@ -253,23 +396,22 @@ impl<'a> TextCursor<'a> {
             chunk_limit: 300,
             byte_cursor: 0,
             utf16_cursor: 0,
-            emoji: Regex::new(
-                r"[0-9#*]\x{FE0F}?\x{20E3}|[\p{Extended_Pictographic}\p{Regional_Indicator}\x{1F3FB}-\x{1F3FF}\x{FE0E}\x{FE0F}\x{200D}\x{20E3}]",
-            )?,
-            version: Regex::new(r"\bv([0-9]+\.[0-9]+\.[0-9]+)")?,
+            emoji,
+            version,
             vocabulary: None,
             technical: TechnicalOptions::default(),
             resume_byte: 0,
             orphans: Vec::new(),
             span_byte: 0,
             span_utf16: 0,
+            last_range: None,
             #[cfg(test)]
             work_units: 0,
             #[cfg(test)]
             html_scan_bytes: 0,
             #[cfg(test)]
             event_reads,
-        })
+        }
     }
     /// Resumes preparation at `source_start`, a UTF-16 source offset such as a chunk's
     /// `source_start`, numbering the first chunk `index`: words ending at or before the offset
@@ -371,7 +513,13 @@ impl<'a> TextCursor<'a> {
             html_exhausted: false,
         });
     }
+    /// The word being built as a piece, carrying the table row being read (see `Piece::row`).
     fn finish_word(&mut self) -> Option<Piece> {
+        let mut piece = self.finished_word()?;
+        piece.row.clone_from(&self.row);
+        Some(piece)
+    }
+    fn finished_word(&mut self) -> Option<Piece> {
         let raw = std::mem::take(&mut self.word);
         let range = self.word_range.take()?;
         let code = std::mem::take(&mut self.word_code);
@@ -407,7 +555,10 @@ impl<'a> TextCursor<'a> {
         }
     }
     fn boundary(&mut self, range: Range<usize>, pause: u32) -> Option<Piece> {
-        let marker = Piece::marker(String::new(), range, pause);
+        self.close_with(Piece::marker(String::new(), range, pause))
+    }
+    /// Returns the word being built, if any, with `marker` queued after it; else `marker`.
+    fn close_with(&mut self, marker: Piece) -> Option<Piece> {
         if let Some(word) = self.finish_word() {
             self.pending.push_back(marker);
             Some(word)
@@ -451,6 +602,94 @@ impl<'a> TextCursor<'a> {
                 .get(source_end..)
                 .and_then(|text| text.chars().next())
                 .is_some_and(word_character)
+    }
+    /// A header cell read through the word pipeline as plain text, never parsed as Markdown
+    /// (a `#` stays a word), with its trailing punctuation dropped.
+    fn plain_text(&self, cell: &Cell<'a>) -> String {
+        let mut cursor = TextCursor::with_events(
+            self.source,
+            false,
+            cell_items(self.source, cell.clone()).into_iter(),
+            self.emoji.clone(),
+            self.version.clone(),
+        );
+        cursor.vocabulary.clone_from(&self.vocabulary);
+        cursor.technical = self.technical;
+        let words: Vec<String> = std::iter::from_fn(|| cursor.spoken_piece())
+            .filter(|piece| !piece.text.is_empty())
+            .map(|piece| piece.text)
+            .collect();
+        words
+            .join(" ")
+            .trim_end_matches(SENTENCE_PUNCTUATION)
+            .to_string()
+    }
+    /// Queues the spoken items of a table block in the cursor's `TableStyle`: the opening
+    /// sentence, the column names once (names once, with a header), every row, and the closing
+    /// sentence. The opening carries the lines up to the header's end (no header: the first
+    /// line), each row its own lines and the closing sentence the last row to the block's end.
+    fn speak_table(&mut self, block: Range<usize>, table: Table<'a>) {
+        let style = self.technical.tables;
+        let names: Vec<String> = (0..table.columns)
+            .map(|k| {
+                table
+                    .header
+                    .as_ref()
+                    .map(|header| self.plain_text(&header.cells[k]))
+                    .filter(|name| !name.is_empty())
+                    .unwrap_or_else(|| tables::column_name(k + 1))
+            })
+            .collect();
+        let opening_end = match &table.header {
+            Some(header) => header.range.end,
+            None => {
+                let lines = &self.source[block.clone()];
+                lines.find('\n').map_or(block.end, |end| {
+                    block.start + lines[..end].trim_end_matches('\r').len()
+                })
+            }
+        };
+        let closing_start = table
+            .rows
+            .last()
+            .or(table.header.as_ref())
+            .map_or(block.start, |row| row.range.start);
+        let mut items = vec![Item::Row(Some(block.start..opening_end))];
+        items.extend(label(&tables::intro(table.columns, table.rows.len())));
+        items.push(Item::End(250, None));
+        if style == TableStyle::NamesOnce && table.header.is_some() {
+            items.extend(label(&tables::columns_sentence(&names)));
+            items.push(Item::End(250, None));
+        }
+        for (n, row) in table.rows.into_iter().enumerate() {
+            items.push(Item::Row(Some(row.range)));
+            items.extend(label(&tables::row_label(n + 1, style)));
+            let last = row.cells.len().saturating_sub(1);
+            for (k, cell) in row.cells.into_iter().enumerate() {
+                let empty = is_empty_cell(&cell);
+                match style {
+                    TableStyle::NameEach if empty => continue,
+                    TableStyle::NameEach => {
+                        items.extend(label(&format!("{}:", names[k])));
+                        items.extend(cell_items(self.source, cell));
+                        items.push(Item::End(100, Some('.')));
+                    }
+                    TableStyle::NamesOnce => {
+                        if empty {
+                            items.extend(label(tables::BLANK));
+                        } else {
+                            items.extend(cell_items(self.source, cell));
+                        }
+                        items.push(Item::End(100, Some(if k == last { '.' } else { ';' })));
+                    }
+                }
+            }
+            items.push(Item::End(250, None));
+        }
+        items.push(Item::Row(Some(closing_start..block.end)));
+        items.extend(label(tables::END));
+        items.extend([Item::End(450, None), Item::Row(None)]);
+        self.table.extend(items);
     }
     fn piece(&mut self) -> Option<Piece> {
         loop {
@@ -542,8 +781,39 @@ impl<'a> TextCursor<'a> {
                 self.fragment = Some(f);
                 continue;
             }
-            let Some((event, range)) = self.events.next() else {
-                return self.finish_word();
+            let item = match self.table.pop_front() {
+                Some(item) => item,
+                None => match self.events.next() {
+                    Some(item) => item,
+                    None => return self.finish_word(),
+                },
+            };
+            let (event, range) = match item {
+                Item::Event(event, range) => (event, range),
+                Item::Table(block, table) => {
+                    self.speak_table(block, table);
+                    if let Some(word) = self.finish_word() {
+                        return Some(word);
+                    }
+                    continue;
+                }
+                Item::Row(row) => {
+                    self.row = row;
+                    continue;
+                }
+                Item::Label(text) => {
+                    let label = Piece::label(text, self.row.clone().unwrap_or_default());
+                    return self.close_with(label);
+                }
+                Item::End(pause, mark) => {
+                    let row = self.row.clone().unwrap_or_default();
+                    let marker = Piece {
+                        row: Some(row.clone()),
+                        mark,
+                        ..Piece::marker(String::new(), row, pause)
+                    };
+                    return self.close_with(marker);
+                }
             };
             if self.skip_depth > 0 {
                 match event {
@@ -704,7 +974,15 @@ impl<'a> TextCursor<'a> {
             .min_by_key(|end| end.abs_diff(proportional))
             .unwrap_or(proportional)
     }
+    /// The UTF-16 offsets of a chunk's byte range, counted on from the last chunk: a range
+    /// starting before the last one ended starts where it ended, except that the same range again
+    /// (the chunks of one table row) gets the same offsets.
     fn source_range(&mut self, range: Range<usize>) -> Result<(u32, u32), TextError> {
+        if let Some((last, offsets)) = &self.last_range
+            && *last == range
+        {
+            return Ok(*offsets);
+        }
         let start = range.start.max(self.byte_cursor);
         self.utf16_cursor = self
             .utf16_cursor
@@ -723,7 +1001,9 @@ impl<'a> TextCursor<'a> {
             )
             .ok_or(TextError::Range)?;
         self.byte_cursor = end;
-        Ok((start_char, self.utf16_cursor))
+        let offsets = (start_char, self.utf16_cursor);
+        self.last_range = Some((range, offsets));
+        Ok(offsets)
     }
     /// The UTF-16 offset of source byte `byte`, counted on from the last offset asked for.
     fn utf16_offset(&mut self, byte: usize) -> Result<u32, TextError> {
@@ -771,9 +1051,10 @@ impl<'a> TextCursor<'a> {
         let mut size = 0;
         let mut pause = 0;
         let mut synthetic_period = false;
+        let mut mark = None;
         let mut boundary = None;
         while let Some(mut p) = self.spoken_piece() {
-            if self.resume_byte > 0 && p.range.end <= self.resume_byte {
+            if self.resume_byte > 0 && p.span().end <= self.resume_byte {
                 continue;
             }
             if p.text.is_empty() {
@@ -781,6 +1062,7 @@ impl<'a> TextCursor<'a> {
                     continue;
                 }
                 (pause, synthetic_period) = self.structural_pause(p.pause);
+                mark = p.mark;
                 break;
             }
             if words.is_empty() && p.text.chars().count() > limit {
@@ -818,6 +1100,8 @@ impl<'a> TextCursor<'a> {
                     pause: p.pause,
                     skipped: false,
                     words: rest,
+                    row: p.row.clone(),
+                    mark: None,
                 };
                 p.text.truncate(cut);
                 p.range.end = remainder.range.start;
@@ -858,7 +1142,7 @@ impl<'a> TextCursor<'a> {
         if words.is_empty() {
             return Ok(None);
         }
-        let range = words[0].range.start..words.last().ok_or(TextError::Range)?.range.end;
+        let range = words[0].span().start..words.last().ok_or(TextError::Range)?.span().end;
         let mut spans = Vec::new();
         let mut written = Vec::new();
         let mut offset = 0_u32;
@@ -907,6 +1191,16 @@ impl<'a> TextCursor<'a> {
             .map(|w| w.text)
             .collect::<Vec<_>>()
             .join(" ");
+        let ends_in_mark = |text: &str| {
+            text.trim_end_matches([')', ']', '}', '\'', '"'])
+                .ends_with(['.', '!', '?', ':', ',', ';'])
+        };
+        // A table value's mark is spoken punctuation: it adds its pause like a written one.
+        if let Some(mark) = mark
+            && !ends_in_mark(&text)
+        {
+            text.push(mark);
+        }
         let ending = text.trim_end_matches([')', ']', '}', '\'', '"']);
         let punctuation_pause = if ending.ends_with(['.', '!', '?']) {
             280
@@ -916,11 +1210,7 @@ impl<'a> TextCursor<'a> {
             0
         };
         pause = pause.max(punctuation_pause);
-        if synthetic_period
-            && !text
-                .trim_end_matches([')', ']', '}', '\'', '"'])
-                .ends_with(['.', '!', '?', ':', ',', ';'])
-        {
+        if synthetic_period && !ends_in_mark(&text) {
             text.push('.');
         }
         let (source_start, source_end) = self.source_range(range)?;
@@ -1139,11 +1429,28 @@ mod fixes {
         let table = chunks("| Name | Value |\n| --- | --- |\n| A | 42 |\n");
         assert_eq!(
             table.iter().map(|c| c.pause_ms).collect::<Vec<_>>(),
-            vec![100, 250, 100, 250]
+            vec![280, 280, 280, 450]
         );
         assert_eq!(
             table.iter().map(|c| c.text.as_str()).collect::<Vec<_>>(),
+            vec![
+                "Table, 2 columns, 1 row.",
+                "Row 1. Name: A.",
+                "Value: 42.",
+                "End of table."
+            ]
+        );
+    }
+    #[test]
+    fn block_quoted_table_keeps_cell_and_row_pauses() {
+        let table = chunks("> | Name | Value |\n> | --- | --- |\n> | A | 42 |\n");
+        assert_eq!(
+            table.iter().map(|c| c.text.as_str()).collect::<Vec<_>>(),
             vec!["Name", "Value.", "A", "42."]
+        );
+        assert_eq!(
+            table.iter().map(|c| c.pause_ms).collect::<Vec<_>>(),
+            vec![100, 250, 100, 250]
         );
     }
     #[test]
@@ -1152,22 +1459,20 @@ mod fixes {
         let out = chunks(source);
         assert_eq!(
             out.iter().map(|c| c.text.as_str()).collect::<Vec<_>>(),
-            vec!["Name", "A"]
+            vec![
+                "Table, 2 columns, 1 row.",
+                "Row 1. Name: A.",
+                "End of table."
+            ]
         );
-        for (chunk, expected) in out.iter().zip(["Name", "A"]) {
-            let start = source.find(expected).unwrap();
-            assert_eq!(
-                chunk.source_start,
-                source[..start].encode_utf16().count() as u32
-            );
-            assert_eq!(
-                chunk.source_end,
-                source[..start + expected.len()].encode_utf16().count() as u32
-            );
-        }
+        let row = source.find("| A | |").unwrap();
+        assert_eq!(
+            (out[1].source_start, out[1].source_end),
+            (row as u32, source.len() as u32)
+        );
         assert_eq!(
             out.iter().map(|c| c.pause_ms).collect::<Vec<_>>(),
-            vec![250, 250]
+            vec![280, 280, 450]
         );
     }
     #[test]
@@ -1269,7 +1574,7 @@ mod fixes {
         }
         assert_eq!(spoken("two<span> </span>words"), "two words.");
         let table = chunks("| Words |\n| --- |\n| first<br>second |\n");
-        assert_eq!(table[1].text, "first second.");
+        assert_eq!(table[1].text, "Row 1. Words: first second.");
     }
     #[test]
     fn later_limit_and_sentence_boundaries() {
@@ -1443,6 +1748,7 @@ mod technical {
         TechnicalOptions {
             full_paths: false,
             full_links: false,
+            ..TechnicalOptions::default()
         }
     }
 
@@ -1477,6 +1783,7 @@ mod technical {
                     let options = TechnicalOptions {
                         full_paths,
                         full_links,
+                        ..TechnicalOptions::default()
                     };
                     assert_eq!(chunks_with(&source, None, options), expected, "{name}");
                 }
@@ -1678,6 +1985,7 @@ mod technical {
         let full_links = TechnicalOptions {
             full_paths: true,
             full_links: true,
+            ..TechnicalOptions::default()
         };
         assert_eq!(
             joined(&technical_chunks(source, full_links)),
@@ -2135,5 +2443,567 @@ mod alignment {
                 ("now".to_string(), "now".to_string()),
             ]
         );
+    }
+}
+#[cfg(test)]
+mod table_reading {
+    use super::*;
+    use crate::formatted::tables::{BlockKind, TableStyle, find_blocks};
+    use std::path::{Path, PathBuf};
+
+    /// A chunk as pinned in `prose-goldens.json`: each word span as
+    /// `[source_start, source_end, spoken_start, spoken_end]`.
+    #[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+    struct Recorded {
+        index: usize,
+        text: String,
+        source_start: u32,
+        source_end: u32,
+        pause_ms: u32,
+        words: Vec<[u32; 4]>,
+    }
+    /// One fixture read one way: `vocabulary` is the builtin vocabulary (technical reading on).
+    #[derive(Debug, serde::Serialize, serde::Deserialize)]
+    struct ProseCase {
+        fixture: String,
+        vocabulary: bool,
+        read_code: bool,
+        chunks: Vec<Recorded>,
+    }
+
+    fn fixtures() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures")
+    }
+    /// The fixtures pinned in `prose-goldens.json`, as paths under `tests/fixtures`.
+    fn prose_fixtures() -> Vec<String> {
+        let cases: std::collections::BTreeMap<String, Vec<String>> =
+            serde_json::from_str(include_str!("../tests/fixtures/text/goldens.json")).unwrap();
+        let mut names: Vec<String> = cases.keys().map(|name| format!("text/{name}")).collect();
+        names.extend(
+            [
+                "speech/calibration-prose.txt",
+                "speech/owner-2x.txt",
+                "text/tables/lanes.txt",
+                "text/tables/multiline.txt",
+            ]
+            .map(String::from),
+        );
+        names
+    }
+    fn recorded(chunks: Vec<AlignedChunk>) -> Vec<Recorded> {
+        chunks
+            .into_iter()
+            .map(|aligned| Recorded {
+                index: aligned.chunk.index,
+                text: aligned.chunk.text,
+                source_start: aligned.chunk.source_start,
+                source_end: aligned.chunk.source_end,
+                pause_ms: aligned.chunk.pause_ms,
+                words: aligned
+                    .words
+                    .iter()
+                    .map(|w| [w.source_start, w.source_end, w.spoken_start, w.spoken_end])
+                    .collect(),
+            })
+            .collect()
+    }
+    /// Every fixture read with and without the builtin vocabulary, code blocks skipped and read.
+    fn prose_cases() -> Vec<ProseCase> {
+        let mut cases = Vec::new();
+        for fixture in prose_fixtures() {
+            let source = std::fs::read_to_string(fixtures().join(&fixture)).unwrap();
+            for vocabulary in [false, true] {
+                for read_code in [false, true] {
+                    let chosen = vocabulary.then(|| Arc::new(Vocabulary::builtin()));
+                    let chunks =
+                        prepare_reading(&source, read_code, chosen, TechnicalOptions::default())
+                            .unwrap();
+                    cases.push(ProseCase {
+                        fixture: fixture.clone(),
+                        vocabulary,
+                        read_code,
+                        chunks: recorded(chunks),
+                    });
+                }
+            }
+        }
+        cases
+    }
+
+    /// Regenerates `prose-goldens.json` (one case per line). Run it only when prose reading
+    /// changes on purpose; `non_table_text_is_unchanged` leaves table chunks out of the check.
+    #[test]
+    #[ignore = "regenerates tests/fixtures/text/prose-goldens.json"]
+    fn record_prose_goldens() {
+        let lines: Vec<String> = prose_cases()
+            .iter()
+            .map(|case| serde_json::to_string(case).unwrap())
+            .collect();
+        std::fs::write(
+            fixtures().join("text/prose-goldens.json"),
+            format!("[\n{}\n]\n", lines.join(",\n")),
+        )
+        .unwrap();
+    }
+
+    const MULTILINE: &str = include_str!("../tests/fixtures/text/tables/multiline.txt");
+    const LANES: &str = include_str!("../tests/fixtures/text/tables/lanes.txt");
+    const MULTILINE_A: &str = "Table, 3 columns, 2 rows. Row 1. Lane: B, the walk. Progress: Task B1 committed, working on B2. Owner: Opus. Row 2. Lane: E. Progress: 9 files changed. Owner: gpt-6.1-sol. End of table. Table, 3 columns, 2 rows. Row 1. Lane: B, the walk. Model: Opus. Progress: Task B1 committed (b574c34). Row 2. Lane: E. Model: gpt-6.1-sol. Progress: 9 files changed, unstaged. End of table.";
+    /// The spec's expected reading of the multi-line box table, verbatim.
+    const SPEC_A: &str = "Table, 3 columns, 2 rows. Row 1. Lane: B, the walk. Progress: Task B1 committed, working on B2. Owner: Opus. Row 2. Lane: E. Progress: 9 files changed. Owner: gpt-6.1-sol. End of table.";
+
+    fn builtin() -> Option<Arc<Vocabulary>> {
+        Some(Arc::new(Vocabulary::builtin()))
+    }
+    fn style(tables: TableStyle) -> TechnicalOptions {
+        TechnicalOptions {
+            tables,
+            ..TechnicalOptions::default()
+        }
+    }
+    fn read(
+        source: &str,
+        vocabulary: Option<Arc<Vocabulary>>,
+        tables: TableStyle,
+    ) -> Vec<AlignedChunk> {
+        prepare_reading(source, false, vocabulary, style(tables)).unwrap()
+    }
+    fn joined(chunks: &[AlignedChunk]) -> String {
+        chunks
+            .iter()
+            .map(|aligned| aligned.chunk.text.as_str())
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+    fn utf16(source: &str, byte: usize) -> u32 {
+        source[..byte].encode_utf16().count() as u32
+    }
+    fn utf16_slice(text: &str, start: u32, end: u32) -> String {
+        let units: Vec<u16> = text.encode_utf16().collect();
+        String::from_utf16(&units[start as usize..end as usize]).expect("span on a char boundary")
+    }
+    /// The byte range of the line of `source` that starts with `prefix`, line break excluded.
+    fn line(source: &str, prefix: &str) -> Range<usize> {
+        let start = if source.starts_with(prefix) {
+            0
+        } else {
+            source.find(&format!("\n{prefix}")).expect("line present") + 1
+        };
+        let end = source[start..]
+            .find('\n')
+            .map_or(source.len(), |at| start + at);
+        start..end
+    }
+    /// The UTF-16 ranges of the `Table` blocks of `source`.
+    fn table_ranges(source: &str) -> Vec<(u32, u32)> {
+        find_blocks(source)
+            .into_iter()
+            .filter(|block| matches!(block.kind, BlockKind::Table(_)))
+            .map(|block| {
+                (
+                    utf16(source, block.range.start),
+                    utf16(source, block.range.end),
+                )
+            })
+            .collect()
+    }
+    /// The multi-line fixture's box table: (block, header line end, row 1, row 2), in bytes.
+    fn multiline_box() -> (Range<usize>, usize, Range<usize>, Range<usize>) {
+        let bottom = line(MULTILINE, "└");
+        let header = line(MULTILINE, "│ Lane");
+        let row_1 = line(MULTILINE, "│ B, the").start..line(MULTILINE, "│ walk").end;
+        let row_2 = line(MULTILINE, "│ E ");
+        (0..bottom.end, header.end, row_1, row_2)
+    }
+
+    /// Resumes at every UTF-16 offset of a table block and checks the reading starts again at
+    /// the intro before the header ends, at the row holding the offset (or the next row on a
+    /// rule line), and at "End of table." after the last row, with nothing lost or repeated.
+    fn assert_resume_restarts_rows(
+        source: &str,
+        vocabulary: Option<Arc<Vocabulary>>,
+        tables: TableStyle,
+        block: Range<usize>,
+        header_end: usize,
+        rows: &[Range<usize>],
+    ) {
+        let options = style(tables);
+        let full: Vec<String> = prepare_reading(source, false, vocabulary.clone(), options)
+            .unwrap()
+            .into_iter()
+            .map(|aligned| aligned.chunk.text)
+            .collect();
+        let intro = full
+            .iter()
+            .position(|text| text.starts_with("Table, "))
+            .expect("intro chunk");
+        let after_intro = |prefix: &str| {
+            intro
+                + full[intro..]
+                    .iter()
+                    .position(|text| text.starts_with(prefix))
+                    .unwrap_or_else(|| panic!("no chunk starts with {prefix:?} in {full:?}"))
+        };
+        let mark = if tables == TableStyle::NamesOnce {
+            ':'
+        } else {
+            '.'
+        };
+        for (byte, _) in source[block.clone()].char_indices() {
+            let byte = block.start + byte;
+            let p = utf16(source, byte);
+            let expected = if byte < header_end {
+                intro
+            } else if let Some(row) = rows.iter().position(|row| byte < row.end) {
+                after_intro(&format!("Row {}{mark}", row + 1))
+            } else {
+                after_intro("End of table.")
+            };
+            let mut cursor =
+                TextCursor::streaming_with(source, false, vocabulary.clone(), options).unwrap();
+            cursor.resume_at(p, 0);
+            let resumed: Vec<String> = std::iter::from_fn(|| cursor.next_chunk().unwrap())
+                .map(|chunk| chunk.text)
+                .collect();
+            assert_eq!(
+                resumed.join(" "),
+                full[expected..].join(" "),
+                "resume at UTF-16 offset {p} (byte {byte})"
+            );
+        }
+    }
+
+    #[test]
+    fn non_table_text_is_unchanged() {
+        let recorded: Vec<ProseCase> =
+            serde_json::from_str(include_str!("../tests/fixtures/text/prose-goldens.json"))
+                .unwrap();
+        let current = prose_cases();
+        assert_eq!(recorded.len(), 44);
+        assert_eq!(recorded.len(), current.len());
+        for (old, new) in recorded.iter().zip(&current) {
+            let case = format!(
+                "{} vocabulary={} read_code={}",
+                new.fixture, new.vocabulary, new.read_code
+            );
+            assert_eq!(
+                (&old.fixture, old.vocabulary, old.read_code),
+                (&new.fixture, new.vocabulary, new.read_code)
+            );
+            let source = std::fs::read_to_string(fixtures().join(&new.fixture)).unwrap();
+            let tables = table_ranges(&source);
+            let prose = |chunks: &[Recorded]| {
+                chunks
+                    .iter()
+                    .filter(|chunk| {
+                        !tables.iter().any(|&(start, end)| {
+                            chunk.source_start < end && start < chunk.source_end
+                        })
+                    })
+                    .map(|chunk| {
+                        (
+                            chunk.text.clone(),
+                            chunk.source_start,
+                            chunk.source_end,
+                            chunk.pause_ms,
+                            chunk.words.clone(),
+                        )
+                    })
+                    .collect::<Vec<_>>()
+            };
+            let (old_prose, new_prose) = (prose(&old.chunks), prose(&new.chunks));
+            if tables.is_empty() {
+                assert_eq!(old_prose.len(), old.chunks.len(), "{case}");
+            }
+            assert_eq!(new_prose, old_prose, "{case}");
+        }
+    }
+
+    #[test]
+    fn multiline_box_table_reads_style_a() {
+        assert!(MULTILINE_A.starts_with(SPEC_A));
+        for vocabulary in [None, builtin()] {
+            let chunks = read(MULTILINE, vocabulary, TableStyle::NameEach);
+            assert_eq!(joined(&chunks), MULTILINE_A);
+            assert_eq!(
+                chunks[..8]
+                    .iter()
+                    .map(|aligned| aligned.chunk.text.as_str())
+                    .collect::<Vec<_>>(),
+                [
+                    "Table, 3 columns, 2 rows.",
+                    "Row 1. Lane: B, the walk.",
+                    "Progress: Task B1 committed, working on B2.",
+                    "Owner: Opus.",
+                    "Row 2. Lane: E.",
+                    "Progress: 9 files changed.",
+                    "Owner: gpt-6.1-sol.",
+                    "End of table.",
+                ]
+            );
+            assert_eq!(
+                chunks[..8]
+                    .iter()
+                    .map(|aligned| aligned.chunk.pause_ms)
+                    .collect::<Vec<_>>(),
+                [280, 280, 280, 280, 280, 280, 280, 450]
+            );
+        }
+    }
+
+    #[test]
+    fn multiline_reads_style_b() {
+        for vocabulary in [None, builtin()] {
+            assert_eq!(
+                joined(&read(MULTILINE, vocabulary, TableStyle::NamesOnce)),
+                "Table, 3 columns, 2 rows. Columns: Lane, Progress, Owner. Row 1: B, the walk; Task B1 committed, working on B2. Opus. Row 2: E; 9 files changed; gpt-6.1-sol. End of table. Table, 3 columns, 2 rows. Columns: Lane, Model, Progress. Row 1: B, the walk; Opus; Task B1 committed (b574c34). Row 2: E; gpt-6.1-sol; 9 files changed, unstaged. End of table."
+            );
+        }
+    }
+
+    #[test]
+    fn lanes_table_reads_every_cell_once_in_order() {
+        let chunks = read(LANES, None, TableStyle::NameEach);
+        assert_eq!(
+            joined(&chunks),
+            "Lanes. Table, 3 columns, 3 rows. Row 1. Lane: B, the walk (critical path). Model: Opus. Progress: Task B1 committed (b574c34): the per-pass host ledger at the network layer. Working on B2. Row 2. Lane: A, access and admission. Model: Opus. Progress: Starting point verified, 10 files changed, first commit not yet made. Row 3. Lane: E, settle and checker. Model: gpt-6.1-sol. Progress: 9 files changed and left unstaged (its sandbox can't commit). It notes its migration needs the second reviewer, as planned. End of table."
+        );
+        for aligned in &chunks {
+            assert!(
+                !aligned
+                    .chunk
+                    .text
+                    .chars()
+                    .any(|c| ('\u{2500}'..='\u{257F}').contains(&c)),
+                "{:?}",
+                aligned.chunk.text
+            );
+        }
+    }
+
+    #[test]
+    fn table_chunks_cover_whole_rows() {
+        let (block, header_end, row_1, row_2) = multiline_box();
+        let chunks = read(MULTILINE, None, TableStyle::NameEach);
+        let range = |aligned: &AlignedChunk| (aligned.chunk.source_start, aligned.chunk.source_end);
+        let utf =
+            |bytes: &Range<usize>| (utf16(MULTILINE, bytes.start), utf16(MULTILINE, bytes.end));
+        let texts: Vec<&str> = chunks.iter().map(|a| a.chunk.text.as_str()).collect();
+        let first = texts.iter().position(|t| t.starts_with("Row 1.")).unwrap();
+        let last = texts.iter().position(|t| *t == "Owner: Opus.").unwrap();
+        assert_eq!(last - first, 2);
+        for aligned in &chunks[first..=last] {
+            assert_eq!(range(aligned), utf(&row_1), "{:?}", aligned.chunk.text);
+        }
+        for aligned in &chunks[last + 1..last + 4] {
+            assert_eq!(range(aligned), utf(&row_2), "{:?}", aligned.chunk.text);
+        }
+        assert_eq!(range(&chunks[0]), utf(&(block.start..header_end)));
+        assert_eq!(chunks[last + 4].chunk.text, "End of table.");
+        assert_eq!(range(&chunks[last + 4]), utf(&(row_2.end..block.end)));
+        for pair in chunks.windows(2) {
+            assert!(pair[0].chunk.source_start <= pair[1].chunk.source_start);
+        }
+        let blocks = table_ranges(MULTILINE);
+        assert_eq!(blocks.len(), 2);
+        let mut in_table = None;
+        for aligned in &chunks {
+            if aligned.chunk.text.starts_with("Table, ") {
+                in_table = Some(blocks[usize::from(in_table.is_some())]);
+            }
+            let Some((start, end)) = in_table else {
+                continue;
+            };
+            let (chunk_start, chunk_end) = range(aligned);
+            assert!(
+                start <= chunk_start && chunk_end <= end,
+                "{:?} outside its table",
+                aligned.chunk.text
+            );
+        }
+    }
+
+    #[test]
+    fn labels_have_no_spans_and_cell_words_have_exact_ones() {
+        let chunks = read(MULTILINE, None, TableStyle::NameEach);
+        let box_chunks = &chunks[..8];
+        let spans: Vec<&WordSpan> = box_chunks.iter().flat_map(|a| &a.words).collect();
+        assert_eq!(spans.len(), 15);
+        let written: Vec<String> = spans
+            .iter()
+            .map(|span| utf16_slice(MULTILINE, span.source_start, span.source_end))
+            .collect();
+        assert_eq!(
+            written.join(" "),
+            "B, the walk Task B1 committed, working on B2. Opus E 9 files changed gpt-6.1-sol"
+        );
+        for word in &written {
+            for label in ["Lane", "Progress", "Owner", "Row", "Table"] {
+                assert!(!word.contains(label), "{word:?} covers {label:?}");
+            }
+        }
+        for aligned in box_chunks {
+            for pair in aligned.words.windows(2) {
+                assert!(pair[0].source_start < pair[1].source_start);
+            }
+            for span in &aligned.words {
+                assert_eq!(
+                    utf16_slice(&aligned.chunk.text, span.spoken_start, span.spoken_end),
+                    utf16_slice(MULTILINE, span.source_start, span.source_end)
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn resume_inside_a_row_restarts_that_row() {
+        let (block, header_end, row_1, row_2) = multiline_box();
+        for tables in [TableStyle::NameEach, TableStyle::NamesOnce] {
+            assert_resume_restarts_rows(
+                MULTILINE,
+                None,
+                tables,
+                block.clone(),
+                header_end,
+                &[row_1.clone(), row_2.clone()],
+            );
+        }
+    }
+
+    #[test]
+    fn long_cell_word_keeps_the_row_range() {
+        let path = "/home/user/projects/app/src/modules/library/crates/handy-tts-core/src/deeply/nested/module_folder/text.rs:118";
+        let cjk = "表".repeat(150);
+        let source = format!("| File | Note |\n|---|---|\n| {path} | x |\n| {cjk} | y |\n");
+        let header = line(&source, "| File");
+        let rows = [line(&source, "| /home"), line(&source, "| 表")];
+        let block = 0..rows[1].end;
+        for vocabulary in [None, builtin()] {
+            let chunks = read(&source, vocabulary.clone(), TableStyle::NameEach);
+            let mut row = None;
+            let mut per_row = [0, 0];
+            for aligned in &chunks {
+                let text = aligned.chunk.text.as_str();
+                if let Some(n) = ["Row 1.", "Row 2."]
+                    .iter()
+                    .position(|r| text.starts_with(r))
+                {
+                    row = Some(n);
+                } else if text == "End of table." {
+                    row = None;
+                }
+                let Some(n) = row else { continue };
+                per_row[n] += 1;
+                assert_eq!(
+                    (aligned.chunk.source_start, aligned.chunk.source_end),
+                    (utf16(&source, rows[n].start), utf16(&source, rows[n].end)),
+                    "{text:?}"
+                );
+            }
+            assert!(per_row[1] >= 3, "the CJK cell is split: {per_row:?}");
+            if vocabulary.is_some() {
+                assert!(per_row[0] >= 3, "the spoken path is split: {per_row:?}");
+            }
+            assert_resume_restarts_rows(
+                &source,
+                vocabulary,
+                TableStyle::NameEach,
+                block.clone(),
+                header.end,
+                &rows,
+            );
+        }
+    }
+
+    #[test]
+    fn headerless_and_empty_cells() {
+        let headerless = "┌───┬───┐\n│ a │ b │\n│ c │ d │\n└───┴───┘";
+        let empty = "| Name | Note |\n|---|---|\n| A | |\n| | x |";
+        for (source, tables, expected) in [
+            (
+                headerless,
+                TableStyle::NameEach,
+                "Table, 2 columns, 2 rows. Row 1. Column 1: a. Column 2: b. Row 2. Column 1: c. Column 2: d. End of table.",
+            ),
+            (
+                headerless,
+                TableStyle::NamesOnce,
+                "Table, 2 columns, 2 rows. Row 1: a; b. Row 2: c; d. End of table.",
+            ),
+            (
+                empty,
+                TableStyle::NameEach,
+                "Table, 2 columns, 2 rows. Row 1. Name: A. Row 2. Note: x. End of table.",
+            ),
+            (
+                empty,
+                TableStyle::NamesOnce,
+                "Table, 2 columns, 2 rows. Columns: Name, Note. Row 1: A; blank. Row 2: blank; x. End of table.",
+            ),
+        ] {
+            assert_eq!(joined(&read(source, None, tables)), expected, "{source:?}");
+        }
+    }
+
+    #[test]
+    fn header_names_are_read_as_plain_text() {
+        let source = "┌───┬──────┐\n│ # │ Lane │\n├───┼──────┤\n│ 1 │ B    │\n└───┴──────┘";
+        assert_eq!(
+            joined(&read(source, None, TableStyle::NameEach)),
+            "Table, 2 columns, 1 row. Row 1. #: 1. Lane: B. End of table."
+        );
+        assert_eq!(
+            joined(&read(source, None, TableStyle::NamesOnce)),
+            "Table, 2 columns, 1 row. Columns: #, Lane. Row 1: 1; B. End of table."
+        );
+    }
+
+    #[test]
+    fn table_style_serializes_snake_case_and_defaults_to_name_each() {
+        assert_eq!(TableStyle::default(), TableStyle::NameEach);
+        assert_eq!(TechnicalOptions::default().tables, TableStyle::NameEach);
+        assert_eq!(
+            serde_json::to_string(&[TableStyle::NameEach, TableStyle::NamesOnce]).unwrap(),
+            r#"["name_each","names_once"]"#
+        );
+        assert_eq!(
+            crate::formatted::tables::intro(3, 2),
+            "Table, 3 columns, 2 rows."
+        );
+        assert_eq!(
+            crate::formatted::tables::intro(1, 1),
+            "Table, 1 column, 1 row."
+        );
+    }
+
+    #[test]
+    fn long_phrases_chunk_between_words() {
+        let names = [
+            "alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india",
+            "juliett", "kilo", "lima", "mike", "november",
+        ];
+        let values: Vec<String> = (1..=names.len()).map(|n| n.to_string()).collect();
+        let source = format!(
+            "| {} |\n|{}\n| {} |",
+            names.join(" | "),
+            "---|".repeat(names.len()),
+            values.join(" | ")
+        );
+        let columns = format!("Columns: {}.", names.join(", "));
+        assert!(columns.chars().count() > STREAMING_CHUNK_CHARS);
+        let expected = format!(
+            "Table, 14 columns, 1 row. {columns} Row 1: {}. End of table.",
+            values.join("; ")
+        );
+        let chunks = read(&source, None, TableStyle::NamesOnce);
+        assert_eq!(joined(&chunks), expected);
+        let words: Vec<&str> = expected.split(' ').collect();
+        for aligned in &chunks {
+            let text = &aligned.chunk.text;
+            assert!(text.chars().count() <= STREAMING_CHUNK_CHARS, "{text:?}");
+            for word in text.split(' ') {
+                assert!(words.contains(&word), "{word:?} is cut out of a word");
+            }
+        }
     }
 }

@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::formatted::tables::TableStyle;
 use crate::vocabulary::TechnicalOptions;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, specta::Type)]
@@ -31,6 +32,7 @@ impl Selection {
         TechnicalOptions {
             full_paths: self.full_paths,
             full_links: self.full_links,
+            tables: TableStyle::default(),
         }
     }
 }

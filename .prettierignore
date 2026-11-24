@@ -18,6 +18,7 @@ src-tauri/src/catalog/catalog.json
 crates/handy-tts/tests/fixtures/phonon/tokenizer.json
 crates/handy-tts/tests/fixtures/phonon/golden.json
 crates/handy-tts/tests/fixtures/indic-tiny/*.json
+crates/handy-tts-core/tests/fixtures/text/prose-goldens.json
 
 # Misc
 .DS_Store
