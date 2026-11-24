@@ -5,6 +5,7 @@ import { listen, emit } from "@tauri-apps/api/event";
 import {
   commands,
   type ReadHistoryEntry,
+  type AppSettings,
   type Selection,
   type TtsModelInfo,
 } from "@/bindings";
@@ -45,6 +46,26 @@ export async function loadModels(deps: {
   }
 }
 
+/** The selection the stored settings describe; absent keys read as the defaults. */
+export function persistedSelection(
+  settings: AppSettings,
+  models: TtsModelInfo[] | undefined,
+): Selection {
+  const id = settings.tts_model_id ?? "pocket-en";
+  const model = models?.find((row) => row.id === id);
+  return {
+    model_id: id,
+    voice: settings.tts_voice?.[id] ?? model?.default_voice ?? "alba",
+    speed: settings.tts_speed ?? 1,
+    pitch: settings.tts_pitch_semitones ?? 0,
+    output_device: settings.tts_output_device ?? null,
+    read_code: settings.tts_read_code_blocks ?? false,
+    technical: settings.tts_technical_reading ?? true,
+    full_paths: settings.tts_full_paths ?? true,
+    full_links: settings.tts_full_links ?? false,
+    tables: settings.tts_table_style ?? "name_each",
+  };
+}
 export function SettingsPage({
   tab,
   changeRetention,
@@ -122,22 +143,10 @@ export function SettingsPage({
   useEffect(() => {
     if (tab === "settings") void retentionActions.load();
   }, [tab, retentionActions]);
-  const persisted = useMemo<Selection | null>(() => {
-    if (!settings) return null;
-    const id = settings.tts_model_id ?? "pocket-en";
-    const model = models?.find((row) => row.id === id);
-    return {
-      model_id: id,
-      voice: settings.tts_voice?.[id] ?? model?.default_voice ?? "alba",
-      speed: settings.tts_speed ?? 1,
-      pitch: settings.tts_pitch_semitones ?? 0,
-      output_device: settings.tts_output_device ?? null,
-      read_code: settings.tts_read_code_blocks ?? false,
-      technical: settings.tts_technical_reading ?? true,
-      full_paths: settings.tts_full_paths ?? true,
-      full_links: settings.tts_full_links ?? false,
-    };
-  }, [settings, models]);
+  const persisted = useMemo<Selection | null>(
+    () => (settings ? persistedSelection(settings, models ?? undefined) : null),
+    [settings, models],
+  );
   useEffect(() => {
     if (persisted) choose.sync(persisted);
   }, [choose, persisted]);

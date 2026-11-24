@@ -1668,6 +1668,7 @@ mod tests {
             technical: false,
             full_paths: true,
             full_links: false,
+            tables: crate::formatted::tables::TableStyle::NameEach,
         }
     }
     fn session(source: &str, rtf: f64) -> Session<'_, FakeWorker, FakeOutput> {

@@ -1178,6 +1178,7 @@ pub(super) mod tests {
             technical: false,
             full_paths: true,
             full_links: false,
+            tables: handy_tts_core::formatted::tables::TableStyle::NameEach,
         }
     }
     fn manager() -> Arc<TtsManager> {
@@ -1758,6 +1759,7 @@ pub(super) mod tests {
                 technical: false,
                 read_code: true,
                 full_links: true,
+                tables: handy_tts_core::formatted::tables::TableStyle::NamesOnce,
                 speed: 1.3,
                 ..selection()
             };
@@ -1778,6 +1780,10 @@ pub(super) mod tests {
             assert!(!settings.tts_technical_reading);
             assert!(settings.tts_read_code_blocks);
             assert!(settings.tts_full_links);
+            assert_eq!(
+                settings.tts_table_style,
+                handy_tts_core::formatted::tables::TableStyle::NamesOnce
+            );
             assert_eq!(settings.tts_speed, 1.3);
             assert_eq!(settings.tts_model_id, "supertonic-3");
             assert_eq!(super::super::super::service::selection(&settings), chosen);

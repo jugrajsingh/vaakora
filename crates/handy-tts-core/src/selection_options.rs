@@ -22,6 +22,9 @@ pub struct Selection {
     /// With technical reading, a link's host and path are read; off keeps "link to <host>".
     #[serde(default)]
     pub full_links: bool,
+    /// How tables are spoken. Older payloads lack it and read each value with its column name.
+    #[serde(default)]
+    pub tables: TableStyle,
 }
 fn full_paths_default() -> bool {
     TechnicalOptions::default().full_paths
@@ -32,7 +35,7 @@ impl Selection {
         TechnicalOptions {
             full_paths: self.full_paths,
             full_links: self.full_links,
-            tables: TableStyle::default(),
+            tables: self.tables,
         }
     }
 }
@@ -76,5 +79,21 @@ mod tests {
             assert_eq!(maximum_speed(id), Ok(2.0));
         }
         assert_eq!(maximum_speed("ghost"), Err(SelectionError::Model));
+    }
+    #[test]
+    fn older_selection_payloads_read_name_each() {
+        let older = r#"{"model_id":"pocket-en","voice":"alba","speed":1.0,"pitch":0.0,
+            "output_device":null,"read_code":false}"#;
+        let selection: Selection = serde_json::from_str(older).unwrap();
+        assert_eq!(selection.tables, TableStyle::NameEach);
+        assert_eq!(selection.technical_options().tables, TableStyle::NameEach);
+        let once = older.replace(
+            "\"read_code\":false",
+            "\"read_code\":false,\"tables\":\"names_once\"",
+        );
+        let selection: Selection = serde_json::from_str(&once).unwrap();
+        assert_eq!(selection.tables, TableStyle::NamesOnce);
+        assert_eq!(selection.technical_options().tables, selection.tables);
+        assert_eq!(selection.technical_options().tables, TableStyle::NamesOnce);
     }
 }

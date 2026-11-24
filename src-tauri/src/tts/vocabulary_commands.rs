@@ -419,6 +419,7 @@ mod tests {
             technical: false,
             full_paths: true,
             full_links: false,
+            tables: handy_tts_core::formatted::tables::TableStyle::NameEach,
         }
     }
 

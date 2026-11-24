@@ -6,7 +6,7 @@ import { I18nextProvider } from "react-i18next";
 import en from "../../../i18n/locales/en/translation.json";
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
-import type { TtsModelInfo } from "../../../bindings";
+import type { AppSettings, TtsModelInfo } from "../../../bindings";
 const {
   mock,
   test,
@@ -34,7 +34,9 @@ mock.module("@/components/ui/Switch", () => ({
     return RealSwitch(props);
   },
 }));
-const { SettingsControls, loadModels } = await import("./SettingsPage");
+const { SettingsControls, loadModels, persistedSelection } = await import(
+  "./SettingsPage"
+);
 const i18n = i18next.createInstance();
 await i18n.init({ lng: "en", resources: { en: { translation: en } } });
 const supertonic = {
@@ -425,4 +427,25 @@ test("page_root_fills_the_column_without_its_own_tabs", () => {
   assert.ok(/<section className="[^"]*\bmax-w-3xl\b/.test(history));
   assert.ok(!history.includes("max-w-5xl"));
   console.log("page root fills the column without its own tabs");
+});
+
+test("persisted_selection_keeps_the_table_style", () => {
+  const stored = (extra: object) =>
+    ({
+      tts_model_id: "pocket-en",
+      tts_speed: 1.5,
+      ...extra,
+    }) as unknown as AppSettings;
+  assert.equal(
+    persistedSelection(stored({ tts_table_style: "names_once" }), []).tables,
+    "names_once",
+  );
+  assert.equal(
+    persistedSelection(stored({ tts_table_style: "name_each" }), []).tables,
+    "name_each",
+  );
+  assert.equal(persistedSelection(stored({}), []).tables, "name_each");
+  const withModel = persistedSelection(stored({}), [pocket]);
+  assert.equal(withModel.voice, "alba");
+  assert.equal(withModel.speed, 1.5);
 });

@@ -1533,7 +1533,11 @@ tts_full_paths?: boolean;
 /**
  * With technical reading, read the whole web address; off says only the site.
  */
-tts_full_links?: boolean; tts_run_on?: Partial<{ [key in string]: RunOn }>; 
+tts_full_links?: boolean; 
+/**
+ * How read aloud speaks tables.
+ */
+tts_table_style?: TableStyle; tts_run_on?: Partial<{ [key in string]: RunOn }>; 
 /**
  * How many reads read-aloud history keeps (0 to 1000); 0 keeps none.
  */
@@ -2177,7 +2181,11 @@ full_paths?: boolean;
 /**
  * With technical reading, a link's host and path are read; off keeps "link to <host>".
  */
-full_links?: boolean }
+full_links?: boolean; 
+/**
+ * How tables are spoken. Older payloads lack it and read each value with its column name.
+ */
+tables?: TableStyle }
 /**
  * Playback progress and errors suitable for frontend events.
  */
@@ -2235,6 +2243,18 @@ export type StreamTextEvent = { committed: string; tentative: string }
  * Semantic kind of "working" phase, used to localize the spinner label.
  */
 export type StreamWorkKind = "transcribing" | "polishing"
+/**
+ * How a table is spoken: each value with its column name, or the names once and then the rows.
+ */
+export type TableStyle = 
+/**
+ * "Row 1. Lane: B, the walk. Model: Opus."
+ */
+"name_each" | 
+/**
+ * "Columns: Lane, Model. Row 1: B, the walk; Opus."
+ */
+"names_once"
 /**
  * How a `terms` entry is matched against one path segment or word.
  */

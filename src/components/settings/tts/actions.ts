@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next";
+import type { TableStyle } from "@/bindings";
 
 /** Every shipped TTS model synthesizes English only, so previews are spoken in English. */
 export const PREVIEW_LANGUAGE = "en";
@@ -19,6 +20,7 @@ export interface TtsSelection {
   technical?: boolean;
   full_paths?: boolean;
   full_links?: boolean;
+  tables?: TableStyle;
 }
 export interface SelectionDependencies {
   select: (selection: TtsSelection) => Promise<void>;

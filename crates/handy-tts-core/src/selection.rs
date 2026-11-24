@@ -8,14 +8,16 @@ pub struct SelectionChange {
     pub missing_download: bool,
 }
 /// True when the two selections prepare the source into different spoken text, so the cursor
-/// must be rebuilt: code blocks, technical reading, or full paths and links changed, or the
-/// model changed with technical reading on (the vocabulary can differ per model).
+/// must be rebuilt: code blocks, technical reading, full paths and links or the table style
+/// changed, or the model changed with technical reading on (the vocabulary can differ per
+/// model).
 pub fn text_changed(current: &Selection, next: &Selection) -> bool {
     current.read_code != next.read_code
         || current.technical != next.technical
         || (next.technical && current.model_id != next.model_id)
         || current.full_paths != next.full_paths
         || current.full_links != next.full_links
+        || current.tables != next.tables
 }
 /// Identifies controls changes that retain the current sentence and worker.
 pub fn speed_pitch_only(current: &Selection, next: &Selection) -> bool {
@@ -85,6 +87,7 @@ mod tests {
             technical: false,
             full_paths: true,
             full_links: false,
+            tables: crate::formatted::tables::TableStyle::NameEach,
         }
     }
     #[test]
@@ -103,6 +106,25 @@ mod tests {
         assert!(!text_changed(&current(false), &other(false)));
         assert!(!text_changed(&current(true), &current(true)));
         assert!(!speed_pitch_only(&current(true), &other(true)));
+    }
+    #[test]
+    fn a_table_style_change_changes_the_text() {
+        use crate::formatted::tables::TableStyle;
+        let s = selection();
+        let once = Selection {
+            tables: TableStyle::NamesOnce,
+            ..s.clone()
+        };
+        assert!(text_changed(&s, &once));
+        assert!(text_changed(&once, &s));
+        assert!(!text_changed(&s, &s.clone()));
+        let faster = Selection {
+            speed: 1.5,
+            tables: TableStyle::NamesOnce,
+            ..s.clone()
+        };
+        assert!(!speed_pitch_only(&s, &faster));
+        assert!(!speed_pitch_only(&s, &once));
     }
     #[test]
     fn settings_and_tray_transactions_replay_current_sentence_and_preserve_missing_position() {
@@ -187,6 +209,7 @@ mod tests {
             technical: false,
             full_paths: true,
             full_links: false,
+            tables: crate::formatted::tables::TableStyle::NameEach,
         };
         assert_eq!(clamp_selection(selection.clone()).unwrap().speed, 2.0);
         selection.model_id = "pocket-en".into();

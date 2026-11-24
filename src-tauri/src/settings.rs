@@ -494,6 +494,9 @@ pub struct AppSettings {
     /// With technical reading, read the whole web address; off says only the site.
     #[serde(default)]
     pub tts_full_links: bool,
+    /// How read aloud speaks tables.
+    #[serde(default)]
+    pub tts_table_style: handy_tts_core::formatted::tables::TableStyle,
     #[serde(default)]
     pub tts_run_on: std::collections::BTreeMap<String, handy_tts_core::device::RunOn>,
     /// How many reads read-aloud history keeps (0 to 1000); 0 keeps none.
@@ -1189,6 +1192,7 @@ pub fn get_default_settings() -> AppSettings {
         tts_technical_reading: default_tts_technical_reading(),
         tts_full_paths: default_tts_full_paths(),
         tts_full_links: false,
+        tts_table_style: handy_tts_core::formatted::tables::TableStyle::NameEach,
         tts_run_on: std::collections::BTreeMap::new(),
         tts_history_limit: default_tts_history_limit(),
         tts_history_retention: ReadHistoryRetention::default(),
@@ -2793,6 +2797,7 @@ mod tts_defaults_tests {
             "tts_technical_reading",
             "tts_full_paths",
             "tts_full_links",
+            "tts_table_style",
             "tts_run_on",
             "tts_history_limit",
             "tts_history_retention",
@@ -2808,6 +2813,10 @@ mod tts_defaults_tests {
         assert!(settings.tts_technical_reading);
         assert!(settings.tts_full_paths);
         assert!(!settings.tts_full_links);
+        assert_eq!(
+            settings.tts_table_style,
+            handy_tts_core::formatted::tables::TableStyle::NameEach
+        );
         assert!(settings.tts_run_on.is_empty());
         assert_eq!(settings.tts_history_limit, 5);
         assert_eq!(
@@ -2819,6 +2828,31 @@ mod tts_defaults_tests {
             settings.bindings["read_aloud"].current_binding,
             "super+alt+r"
         );
+    }
+
+    #[test]
+    fn table_style_round_trips_and_an_unknown_value_keeps_the_rest() {
+        use handy_tts_core::formatted::tables::TableStyle;
+        let stored = |style: &str| {
+            let mut value = serde_json::to_value(get_default_settings()).unwrap();
+            let map = value.as_object_mut().unwrap();
+            map.insert("tts_table_style".into(), serde_json::json!(style));
+            map.insert("tts_full_links".into(), serde_json::json!(true));
+            map.insert("tts_speed".into(), serde_json::json!(1.5));
+            value
+        };
+        let once = load_settings_with(Some(stored("names_once")), |_| {});
+        assert_eq!(once.tts_table_style, TableStyle::NamesOnce);
+        assert_eq!(
+            serde_json::to_value(&once).unwrap()["tts_table_style"],
+            "names_once"
+        );
+        let each = load_settings_with(Some(stored("name_each")), |_| {});
+        assert_eq!(each.tts_table_style, TableStyle::NameEach);
+        let unknown = load_settings_with(Some(stored("values_only")), |_| {});
+        assert_eq!(unknown.tts_table_style, TableStyle::NameEach);
+        assert!(unknown.tts_full_links);
+        assert_eq!(unknown.tts_speed, 1.5);
     }
 
     const READ_HISTORY_TIME_CHOICES: [(ReadHistoryRetention, &str, &str); 3] = [

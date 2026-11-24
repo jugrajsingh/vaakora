@@ -524,6 +524,7 @@ pub fn continuity(
         technical: options.technical.is_some(),
         full_paths: options.technical.unwrap_or_default().full_paths,
         full_links: options.technical.unwrap_or_default().full_links,
+        tables: options.technical.unwrap_or_default().tables,
     };
     let capture = CaptureOutput::new(0, Some(options.wav))?;
     let mut session = handy_tts_core::session::Session::with_vocabulary(
@@ -1820,6 +1821,7 @@ mod continuity_tests {
             technical: false,
             full_paths: true,
             full_links: false,
+            tables: handy_tts_core::formatted::tables::TableStyle::NameEach,
         };
         let mut session = Session::new(
             source,

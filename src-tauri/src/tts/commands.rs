@@ -279,6 +279,7 @@ pub(super) fn select_with_store(
                 settings.tts_technical_reading = chosen.technical;
                 settings.tts_full_paths = chosen.full_paths;
                 settings.tts_full_links = chosen.full_links;
+                settings.tts_table_style = chosen.tables;
                 write(settings).map_err(|_| handy_tts_core::selection::SelectionError::Persist)
             }),
         )

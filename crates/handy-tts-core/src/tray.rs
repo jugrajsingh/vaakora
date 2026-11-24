@@ -94,6 +94,7 @@ mod tests {
             technical: false,
             full_paths: true,
             full_links: false,
+            tables: crate::formatted::tables::TableStyle::NameEach,
         };
         let downloaded = vec![("pocket-en".into(), "Pocket TTS (English)".into())];
         assert!(

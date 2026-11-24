@@ -79,6 +79,7 @@ pub(crate) fn selection(settings: &crate::settings::AppSettings) -> Selection {
         technical: settings.tts_technical_reading,
         full_paths: settings.tts_full_paths,
         full_links: settings.tts_full_links,
+        tables: settings.tts_table_style,
     }
 }
 pub(crate) fn reading_cancel_with(effect: &Effect, set_owner: impl FnOnce(bool)) {
@@ -1246,6 +1247,14 @@ mod tests {
         assert!(!chosen.technical);
         assert!(!chosen.full_paths);
         assert!(chosen.full_links);
+    }
+    #[test]
+    fn selection_carries_the_table_style() {
+        use handy_tts_core::formatted::tables::TableStyle;
+        let mut settings = crate::settings::get_default_settings();
+        assert_eq!(selection(&settings).tables, TableStyle::NameEach);
+        settings.tts_table_style = TableStyle::NamesOnce;
+        assert_eq!(selection(&settings).tables, TableStyle::NamesOnce);
     }
     #[test]
     fn wbfix3_capture_reservation_releases_on_unwind() {
