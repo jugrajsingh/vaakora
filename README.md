@@ -7,6 +7,7 @@
 - **Dictation:** press a shortcut, speak, and your words appear in any text field.
 - **Local cleanup:** a small language model can tidy the transcript.
 - **Read aloud:** another shortcut reads the text you copied back to you.
+- **Command line and agents:** a `vaakora` command controls the running app, and optional skills let Claude Code and Codex read aloud when you ask.
 - **Private by default:** audio and text stay on the machine.
 - **Linux desktop app:** built and tested on Fedora 44 (KDE Plasma, Wayland).
 
@@ -61,6 +62,45 @@ Eight downloadable voice models are offered. GPU and NPU mean an Intel GPU or NP
 
 The full list of changes is in [CHANGELOG.md](CHANGELOG.md). Its new interface strings are translated into the other 26 languages by machine and have not been reviewed by native speakers.
 
+## Command line and agents
+
+The `vaakora` command also drives the running app from a terminal, a script or a coding agent. It needs the app to be running: it never starts it, and exits with 3 when there is nothing to talk to.
+
+- `vaakora read [file|-]` reads a file aloud, or text piped in on standard input (`-` or no file). The text is never taken from an argument, because other programs on the machine could see it.
+- `vaakora pause`, `vaakora resume` and `vaakora stop` control the reader.
+- `vaakora status` and `vaakora voices` report what the app is doing and which voices are downloaded. Add `--json` for JSON.
+- `vaakora dictate [--post-process|--cancel]` toggles a dictation, with or without post-processing, or cancels it.
+- `vaakora transcribe <file> [--json]` prints the transcript of an audio file. The file is added to History, as Transcribe a file does there.
+
+Reads that come from the command line or an agent are saved in Read aloud history with a small "from agent" tag. A read you start with the shortcut is not tagged.
+
+Exit codes, for scripts:
+
+| Code | Meaning                                                                                                |
+| ---- | ------------------------------------------------------------------------------------------------------ |
+| 0    | Done.                                                                                                  |
+| 1    | Any other error, such as an unreadable file or a refused request.                                      |
+| 2    | Usage error, such as an unknown option or a line that is too long.                                     |
+| 3    | The app is not running, so there is no socket to talk to.                                              |
+| 4    | A dictation is in progress. The dictation goes on and nothing is read.                                 |
+| 5    | A model is missing: the speech model, or the voice model the reader needs, is not downloaded or ready. |
+
+Right after the app starts, `vaakora read` can return exit 5 (`tts-unavailable`) for a moment, while read aloud is still loading. Run it again.
+
+### Agent skills
+
+`vaakora agent install [--claude] [--codex] [--dry-run]` writes two skills, `vaakora-read` and `vaakora-stop`, for Claude Code (`~/.claude/skills`) and Codex (`~/.agents/skills`). Without a flag it installs for both, and `--dry-run` lists what it would write and writes nothing.
+
+- **Explicit only:** the skills never run on their own. In Claude Code you invoke `/vaakora-read <path>` or `/vaakora-stop`, and in Codex `$vaakora-read`. Installing is a command you run; nothing installs a skill for you.
+- **Your files are safe:** the command refuses to touch a skill folder it did not write, and `vaakora agent uninstall` removes only the files it wrote.
+- **A temporary file:** to read text from the conversation, the skill writes it to a file in `$XDG_RUNTIME_DIR`, never in a repository, and deletes it after `vaakora read` finishes. Claude Code may ask once before it allows that deletion.
+
+### Privacy
+
+- The app listens on `$XDG_RUNTIME_DIR/vaakora.sock` (or `$VAAKORA_SOCKET`). The socket is readable and writable only by you, in a folder only you can open, and the app answers only processes that run as your user.
+- Text reaches the app through a file or standard input, never as an argument, and the socket's own logging never holds it.
+- The socket is local to the machine. Nothing is sent over a network.
+
 ## Platform support
 
 - Built and tested on Fedora 44 (KDE Plasma, Wayland) on an Intel Core Ultra 7 258V.
@@ -108,7 +148,7 @@ Vaakora began as a fork of [Handy](https://github.com/cjpais/Handy) by CJ Pais, 
 
 - The transcription engines and models are upstream's.
 - Vaakora pins the speech-to-text engine, transcribe.cpp, to a revision past upstream's v0.4.2 that adds phrase boosting.
-- Vaakora's other additions are the local post-processing, read aloud and the dictation changes above.
+- Vaakora's other additions are the local post-processing, read aloud, the command line and the dictation changes above.
 - [UPSTREAM.md](UPSTREAM.md) records the upstream base and what was decided for each upstream commit since.
 - The "Relationship to upstream" section of [CHANGELOG.md](CHANGELOG.md) lists every setting, event, command, dependency and upstream file that Vaakora touches.
 - The models the app can download have their own licences, which the app shows on each model's card.

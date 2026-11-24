@@ -23,6 +23,7 @@ Taken as rewritten changes, with the behaviour of the pull request and our own c
 | #2374        | fix: frame the structured post-processing dictation in <transcript> tags                     | Rahul          | rewritten | fc27b763   |
 | #2440        | fix: keep the transcript in post-processing when a prompt has no ${output} placeholder       | Ahmed Saeed    | rewritten | fc27b763   |
 | #2452        | Keep Wayland paste text out of clipboard history                                             | alanshurafa    | rewritten | 8acebd98   |
+| #1906        | add ipc server                                                                               | CJ Pais        | rewritten | a4cddf6b   |
 
 ## Fork commits taken in part
 

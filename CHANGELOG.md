@@ -4,6 +4,8 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-24
+
 ### Added
 
 - A local control socket: while Vaakora runs it listens on `$XDG_RUNTIME_DIR/vaakora.sock` (or `$VAAKORA_SOCKET`), readable and writable only by you, and answers only processes running as your user. It speaks JSON-RPC 2.0, one message per line, in the shape of upstream pull request #1906, with protocol version 1. The socket's folder must belong to you and be closed to other users, as `$XDG_RUNTIME_DIR` is, or the socket is not opened; a file, or the socket of a Vaakora that is still running, is never removed from the socket path.
@@ -12,6 +14,11 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 - `transcribe.file` transcribes an audio file with the running app the way Transcribe a file in History does: the file is added to History and transcribed in the background, after any dictation, and the call answers with the text when the job ends.
 - Command line: `vaakora read [file|-]` reads a file or piped text aloud (never text given as an argument, which other programs could see), `vaakora pause`, `resume` and `stop` control the reader, `vaakora status` and `vaakora voices` report (add `--json` for JSON), `vaakora dictate [--post-process|--cancel]` toggles or cancels a dictation, and `vaakora transcribe <file> [--json]` prints a file's transcript. They talk to the running app and exit 3 when it is not running (they never start it), 4 when a dictation is in progress, 5 when a model is missing, 2 on a usage error and 1 on any other error.
 - `vaakora agent install [--claude] [--codex] [--dry-run]` writes two skills, vaakora-read and vaakora-stop, for Claude Code (`~/.claude/skills`, with `disable-model-invocation: true`) and Codex (`~/.agents/skills`, with `allow_implicit_invocation: false`), so an agent reads aloud only when you invoke `/vaakora-read` or `$vaakora-read`. It never overwrites a skill folder it did not write, and `vaakora agent uninstall` removes only its own: the files it wrote and its marker, then the folders only when nothing else is in them, printing `skip` for any it keeps. Installing again over a folder it wrote replaces the files it wrote there and nothing else. A skill that has to read text from the conversation writes it to a file in `$XDG_RUNTIME_DIR` (never in a repository) and deletes the file once `vaakora read` exits 0, so the text is never on a command line.
+
+### Known issues
+
+- Right after the app starts, `vaakora read` can answer exit 5 (`tts-unavailable`) for a moment, while read aloud is still loading. Run it again.
+- In Claude Code, the `vaakora-read` skill deletes its temporary text file after reading, and Claude Code may ask once before it allows that deletion.
 
 ## [0.1.1] - 2026-11-23
 
