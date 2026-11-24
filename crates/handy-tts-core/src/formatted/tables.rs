@@ -3,8 +3,8 @@
 //! One forward pass reads and classifies every line once. A run of box-drawing lines, or of
 //! ASCII `+---+` rules and `|` walls, that holds a rule line and a content line is parsed into a
 //! grid by display column. A Markdown (GFM) header line followed by a delimiter row with the
-//! same cell count hands the slice up to the next blank line (or fence) to pulldown-cmark once,
-//! and every top-level table of that parse is taken. A candidate that cannot be read as a grid
+//! same cell count hands the slice up to the next blank line, fence, box-drawing line or ASCII
+//! rule to pulldown-cmark once, and every top-level table of that parse is taken. A candidate that cannot be read as a grid
 //! with confidence is a `Fallback` block, read in source order with its borders dropped, so no
 //! word is lost. Lines inside a fenced code block are never candidates.
 
@@ -137,6 +137,18 @@ struct Line {
     pipe_cells: Option<usize>,
     /// Cells when the line is a GFM delimiter row.
     delimiter_cells: Option<usize>,
+}
+
+impl Line {
+    /// A GFM slice stops before a blank line, a fence opener, and any box-drawing line or ASCII
+    /// `+---+` rule: pulldown would read such a line after a table as one more row, and the line
+    /// scan must reach it to find a grid table there.
+    fn ends_markdown_slice(&self) -> bool {
+        matches!(
+            self.kind,
+            Kind::Blank | Kind::BoxRule | Kind::BoxContent | Kind::AsciiRule
+        ) || self.fence.is_some_and(|mark| mark.opens)
+    }
 }
 
 fn is_box(ch: char) -> bool {
@@ -449,10 +461,14 @@ fn scan<'a>(source: &'a str, work: &mut usize) -> Vec<Block<'a>> {
             i += 1;
             continue;
         }
+        let delimiter = lines.get(i + 1).and_then(|next| next.delimiter_cells);
+        // A GFM header line followed by its delimiter row starts a Markdown table, not an ASCII
+        // run (both are `|` lines; the Markdown slice stops before any `+---+` rule after it).
+        let gfm_head = line.pipe_cells.is_some() && line.pipe_cells == delimiter;
         if let Some(grid) = line
             .kind
             .grid()
-            .filter(|&grid| grid == Grid::Box || i >= ascii_checked)
+            .filter(|&grid| grid == Grid::Box || (i >= ascii_checked && !gfm_head))
         {
             let end = i + lines[i..]
                 .iter()
@@ -472,15 +488,12 @@ fn scan<'a>(source: &'a str, work: &mut usize) -> Vec<Block<'a>> {
             }
             ascii_checked = end;
         }
-        let delimiter = lines.get(i + 1).and_then(|next| next.delimiter_cells);
-        if line.pipe_cells.is_some() && line.pipe_cells == delimiter {
+        if gfm_head {
             let end = i
                 + 2
                 + lines[i + 2..]
                     .iter()
-                    .take_while(|line| {
-                        line.kind != Kind::Blank && !line.fence.is_some_and(|mark| mark.opens)
-                    })
+                    .take_while(|line| !line.ends_markdown_slice())
                     .count();
             gfm_blocks(source, &lines[i..end], &mut blocks, work);
             i = end;
@@ -704,8 +717,8 @@ struct GfmTable<'a> {
     lossy: bool,
 }
 
-/// Parses the slice `lines` (a GFM candidate up to the next blank line or fence) once and pushes
-/// every top-level table in it.
+/// Parses the slice `lines` (a GFM candidate up to the line that ends it, see
+/// `Line::ends_markdown_slice`) once and pushes every top-level table in it.
 fn gfm_blocks<'a>(source: &'a str, lines: &[Line], blocks: &mut Vec<Block<'a>>, work: &mut usize) {
     let offset = lines[0].start;
     let slice = &source[offset..lines[lines.len() - 1].end];
@@ -1206,6 +1219,39 @@ mod tests {
     }
 
     #[test]
+    fn grid_tables_after_a_markdown_like_slice_are_found() {
+        let ascii = "+---+---+\n| h | i |\n+===+===+\n| a | b |\n+---+---+";
+        for (prefix, grid) in [
+            ("# a | b\n|-|-|\n", BOX),
+            ("# a | b\n|-|-|\n", ascii),
+            ("# Next\n", BOX),
+        ] {
+            let source = format!("{prefix}{grid}");
+            let blocks = find_blocks(&source);
+            assert_eq!(blocks.len(), 1, "{source}\n{blocks:?}");
+            assert_eq!(blocks[0].range, prefix.len()..source.len());
+            let grid = table(&blocks[0]);
+            assert_eq!(header(&source, grid), ["h", "i"], "{source}");
+            assert_eq!(rows(&source, grid), [["a", "b"]], "{source}");
+        }
+    }
+
+    #[test]
+    fn a_markdown_table_and_a_grid_in_one_slice_are_two_blocks() {
+        let ascii = "+---+---+\n| h | i |\n+===+===+\n| a | b |\n+---+---+";
+        for (middle, grid) in [("", BOX), ("", ascii), ("# Next\n", BOX)] {
+            let source = format!("{GFM}\n{middle}{grid}");
+            let blocks = find_blocks(&source);
+            assert_eq!(blocks.len(), 2, "{source}\n{blocks:?}");
+            assert_eq!(blocks[0].range, 0..GFM.len());
+            assert_eq!(blocks[1].range, source.len() - grid.len()..source.len());
+            for block in &blocks {
+                assert_eq!(rows(&source, table(block)), [["a", "b"]], "{source}");
+            }
+        }
+    }
+
+    #[test]
     fn tables_inside_block_quotes_are_not_blocks() {
         let quoted = "> | c | d |\n> |---|---|\n> | 3 | 4 |";
         assert_eq!(find_blocks(quoted), []);
@@ -1225,6 +1271,7 @@ mod tests {
             "┌──┐\n│ a │\n".repeat(10_000),
             "# a | b\n|-|-|\n".repeat(20_000),
             "| a |\n|-|\n# h\n".repeat(10_000),
+            format!("# a | b\n|-|-|\n{BOX}\n").repeat(2_000),
         ];
         for source in &hostile {
             let (_, work) = find_blocks_counted(source);
@@ -1238,5 +1285,8 @@ mod tests {
         // One pulldown parse of the slice yields every table in it.
         let (blocks, _) = find_blocks_counted(&hostile[6]);
         assert_eq!(blocks.len(), 10_000);
+        // Every box after a Markdown-like slice is still found.
+        let (blocks, _) = find_blocks_counted(&hostile[7]);
+        assert_eq!(blocks.len(), 2_000);
     }
 }
