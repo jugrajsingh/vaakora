@@ -1576,6 +1576,11 @@
     "technicalReading": "Pembacaan teknis",
     "fullPaths": "Bacakan path lengkap",
     "fullLinks": "Bacakan tautan lengkap",
+    "tables": "Tabel",
+    "tableStyle": {
+      "nameEach": "Sebut nama setiap nilai",
+      "namesOnce": "Nama sekali, lalu baris"
+    },
     "pocketAttribution": "Suara Pocket TTS dilisensikan di bawah CC-BY-4.0. Ikuti atribusi dan ketentuan persetujuan setiap suara pada kartu model.",
     "supertonicRestrictions": "Supertonic 3 menggunakan OpenRAIL-M. Tinjau batasan penggunaannya pada kartu model.",
     "kokoroAttribution": "Bobot model Kokoro menggunakan lisensi Apache-2.0.",
@@ -1613,6 +1618,7 @@
       "technicalReading": "Mengucapkan path, nama file, flag, dan nama kode secara lengkap, menggunakan file kosakata Anda.",
       "fullPaths": "Membacakan setiap folder dalam path. Jika nonaktif, hanya nama file yang dibacakan.",
       "fullLinks": "Membacakan seluruh alamat web. Jika nonaktif, hanya nama situs yang disebut.",
+      "tables": "Sebut nama setiap nilai: setiap nilai dibacakan beserta nama kolomnya. Nama sekali, lalu baris: nama kolom dibacakan sekali, lalu nilai setiap baris.",
       "technicalOff": "Tidak digunakan saat pembacaan teknis mati."
     },
     "history": {

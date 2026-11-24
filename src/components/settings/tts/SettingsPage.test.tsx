@@ -5,7 +5,7 @@ import i18next from "i18next";
 import { I18nextProvider } from "react-i18next";
 import en from "../../../i18n/locales/en/translation.json";
 import { createRequire } from "node:module";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import type { AppSettings, TtsModelInfo } from "../../../bindings";
 const {
   mock,
@@ -34,9 +34,13 @@ mock.module("@/components/ui/Switch", () => ({
     return RealSwitch(props);
   },
 }));
-const { SettingsControls, loadModels, persistedSelection } = await import(
-  "./SettingsPage"
-);
+const {
+  SettingsControls,
+  loadModels,
+  persistedSelection,
+  tableStyleChange,
+  tableStyleOptions,
+} = await import("./SettingsPage");
 const i18n = i18next.createInstance();
 await i18n.init({ lng: "en", resources: { en: { translation: en } } });
 const supertonic = {
@@ -126,6 +130,7 @@ test("settings use grouped themed controls", () => {
     "Pitch",
     "Read-aloud output device",
     "Read code blocks",
+    "Tables",
     "Technical reading",
     "Read full paths",
     "Read full links",
@@ -277,6 +282,7 @@ test("groups_are_model_playback_text_handling_history", () => {
   ]);
   assert.deepEqual(rowTitles(group("Text handling")), [
     "Read code blocks",
+    "Tables",
     "Technical reading",
     "Read full paths",
     "Read full links",
@@ -448,4 +454,109 @@ test("persisted_selection_keeps_the_table_style", () => {
   const withModel = persistedSelection(stored({}), [pocket]);
   assert.equal(withModel.voice, "alba");
   assert.equal(withModel.speed, 1.5);
+});
+
+function renderTables(extra: Record<string, unknown>) {
+  return renderToStaticMarkup(
+    <I18nextProvider i18n={i18n}>
+      <SettingsControls
+        selected={{ ...baseSelection, ...extra }}
+        models={[]}
+        outputDevices={[]}
+        error={null}
+        modelsFailed={false}
+        change={() => {}}
+        preview={() => {}}
+        openModels={() => {}}
+        retention={retention}
+      />
+    </I18nextProvider>,
+  );
+}
+// The Tables row: from its title to the next row's title.
+const tablesRow = (html: string) => {
+  const start = html.indexOf(">Tables</h3>");
+  assert.ok(start >= 0, "the Tables row is shown");
+  return html.slice(start, html.indexOf(">Technical reading</h3>"));
+};
+
+test("tables_row_shows_the_chosen_style", () => {
+  const fresh = tablesRow(renderTables({}));
+  assert.ok(fresh.includes("Name each value"), "the default is shown");
+  assert.ok(!fresh.includes("Names once, then rows"));
+  const once = tablesRow(renderTables({ tables: "names_once" }));
+  assert.ok(once.includes("Names once, then rows"));
+  assert.ok(!once.includes("Name each value"));
+  const each = tablesRow(renderTables({ tables: "name_each" }));
+  assert.ok(each.includes("Name each value"));
+  // The help text is a hover tooltip, so it is asserted through the key.
+  assert.ok(en.tts.help.tables.length > 0);
+});
+
+test("tables_trigger_has_the_focus_ring", () => {
+  // The row holds the help button and the dropdown trigger (the one that
+  // reports aria-expanded); both carry the ring.
+  const buttons = [...tablesRow(renderTables({})).matchAll(/<button[^>]*>/g)];
+  const tags = buttons.map((match) => match[0]);
+  assert.equal(tags.length, 2, "help button and dropdown trigger");
+  assert.ok(
+    tags.some((tag) => tag.includes("aria-expanded")),
+    "the row holds a dropdown trigger",
+  );
+  for (const tag of tags) {
+    for (const name of [
+      "focus:outline-none",
+      "focus-visible:ring-2",
+      "focus-visible:ring-logo-primary",
+    ]) {
+      assert.ok(tag.split(/[\s"]+/).includes(name), `${name} in ${tag}`);
+    }
+  }
+});
+
+test("table_style_change_sends_only_known_values", () => {
+  assert.deepEqual(tableStyleChange("names_once"), { tables: "names_once" });
+  assert.deepEqual(tableStyleChange("name_each"), { tables: "name_each" });
+  assert.deepEqual(tableStyleChange("values_only"), {});
+  assert.deepEqual(tableStyleChange(""), {});
+  assert.deepEqual(
+    tableStyleOptions(i18n.t.bind(i18n)).map((option) => [
+      option.value,
+      option.label,
+    ]),
+    [
+      ["name_each", "Name each value"],
+      ["names_once", "Names once, then rows"],
+    ],
+  );
+});
+
+test("tables_keys_in_every_locale", () => {
+  const root = new URL("../../../i18n/locales/", import.meta.url);
+  const languages = readdirSync(root);
+  assert.equal(languages.length, 27);
+  const read = (node: unknown, path: string) =>
+    path.split(".").reduce<unknown>((at, key) => (at as never)?.[key], node);
+  const keys = [
+    "tts.tables",
+    "tts.help.tables",
+    "tts.tableStyle.nameEach",
+    "tts.tableStyle.namesOnce",
+  ];
+  // The terms settingsInventory.test.tsx forbids in English strings.
+  const forbidden =
+    /post-?processing|post-processed|text-to-speech|speech-to-text|\bTTS\b|MiB|GiB|stored reads?|retry icon/i;
+  for (const language of languages) {
+    const locale = JSON.parse(
+      readFileSync(new URL(`${language}/translation.json`, root), "utf8"),
+    );
+    for (const key of keys) {
+      const text = read(locale, key);
+      assert.equal(typeof text, "string", `${language} ${key}`);
+      assert.notEqual((text as string).trim(), "", `${language} ${key}`);
+      if (language === "en") {
+        assert.ok(!forbidden.test(text as string), `${key}: ${text}`);
+      }
+    }
+  }
 });

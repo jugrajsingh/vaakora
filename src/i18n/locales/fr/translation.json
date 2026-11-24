@@ -1576,6 +1576,11 @@
     "technicalReading": "Lecture technique",
     "fullPaths": "Lire les chemins complets",
     "fullLinks": "Lire les liens complets",
+    "tables": "Tableaux",
+    "tableStyle": {
+      "nameEach": "Nommer chaque valeur",
+      "namesOnce": "Noms une fois, puis lignes"
+    },
     "pocketAttribution": "Les voix Pocket TTS sont sous licence CC-BY-4.0. Respectez les conditions d'attribution et de consentement de chaque voix indiquées sur la fiche du modèle.",
     "supertonicRestrictions": "Supertonic 3 utilise OpenRAIL-M. Consultez ses restrictions d'utilisation sur la fiche du modèle.",
     "kokoroAttribution": "Les poids du modèle Kokoro sont sous licence Apache-2.0.",
@@ -1613,6 +1618,7 @@
       "technicalReading": "Prononce en entier les chemins, noms de fichiers, options et noms de code, avec votre fichier de vocabulaire.",
       "fullPaths": "Lit chaque dossier d'un chemin. Désactivé, seul le nom du fichier est lu.",
       "fullLinks": "Lit l'adresse web complète. Désactivé, seul le nom du site est dit.",
+      "tables": "Nommer chaque valeur : chaque valeur est lue avec le nom de sa colonne. Noms une fois, puis lignes : les noms des colonnes sont lus une fois, puis les valeurs de chaque ligne.",
       "technicalOff": "Inutilisé lorsque la lecture technique est désactivée."
     },
     "history": {

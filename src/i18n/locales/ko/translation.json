@@ -1576,6 +1576,11 @@
     "technicalReading": "기술 용어 읽기",
     "fullPaths": "전체 경로 읽기",
     "fullLinks": "전체 링크 읽기",
+    "tables": "표",
+    "tableStyle": {
+      "nameEach": "값마다 이름 읽기",
+      "namesOnce": "이름은 한 번, 그다음 행"
+    },
     "pocketAttribution": "Pocket TTS 음성은 CC-BY-4.0 라이선스로 제공됩니다. 모델 카드에 안내된 각 음성의 출처 표시 및 동의 조건을 따르세요.",
     "supertonicRestrictions": "Supertonic 3은 OpenRAIL-M을 사용합니다. 모델 카드에서 사용 제한을 확인하세요.",
     "kokoroAttribution": "Kokoro 모델 가중치는 Apache-2.0 라이선스를 사용합니다.",
@@ -1613,6 +1618,7 @@
       "technicalReading": "어휘 파일을 사용해 경로, 파일 이름, 플래그, 코드 이름을 생략 없이 읽습니다.",
       "fullPaths": "경로의 모든 폴더를 읽습니다. 끄면 파일 이름만 읽습니다.",
       "fullLinks": "웹 주소 전체를 읽습니다. 끄면 사이트 이름만 말합니다.",
+      "tables": "값마다 이름 읽기: 각 값을 열 이름과 함께 읽습니다. 이름은 한 번, 그다음 행: 열 이름을 한 번 읽고 이어서 각 행의 값을 읽습니다.",
       "technicalOff": "기술 용어 읽기가 꺼져 있으면 사용되지 않습니다."
     },
     "history": {

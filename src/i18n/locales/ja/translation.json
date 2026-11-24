@@ -1576,6 +1576,11 @@
     "technicalReading": "技術的な読み上げ",
     "fullPaths": "パスを全体で読み上げ",
     "fullLinks": "リンクを全体で読み上げ",
+    "tables": "表",
+    "tableStyle": {
+      "nameEach": "値ごとに列名を読む",
+      "namesOnce": "列名は一度だけ、続けて各行"
+    },
     "pocketAttribution": "Pocket TTS の音声は CC-BY-4.0 でライセンスされています。モデルカードに記載された各音声のクレジット表記と同意条件に従ってください。",
     "supertonicRestrictions": "Supertonic 3 は OpenRAIL-M を使用しています。モデルカードで使用制限を確認してください。",
     "kokoroAttribution": "Kokoro のモデルウェイトは Apache-2.0 ライセンスです。",
@@ -1613,6 +1618,7 @@
       "technicalReading": "パス、ファイル名、フラグ、コード名を、語彙ファイルを使って省略せずに読み上げます。",
       "fullPaths": "パス内のすべてのフォルダを読み上げます。オフの場合はファイル名だけを読み上げます。",
       "fullLinks": "Webアドレス全体を読み上げます。オフの場合はサイト名だけを読み上げます。",
+      "tables": "値ごとに列名を読む: 各値を列名と一緒に読み上げます。列名は一度だけ、続けて各行: 列名を一度だけ読み上げ、そのあと各行の値を読み上げます。",
       "technicalOff": "技術的な読み上げがオフのときは使われません。"
     },
     "history": {

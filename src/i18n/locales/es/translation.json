@@ -1576,6 +1576,11 @@
     "technicalReading": "Lectura técnica",
     "fullPaths": "Leer rutas completas",
     "fullLinks": "Leer enlaces completos",
+    "tables": "Tablas",
+    "tableStyle": {
+      "nameEach": "Nombrar cada valor",
+      "namesOnce": "Nombres una vez, luego filas"
+    },
     "pocketAttribution": "Las voces de Pocket TTS tienen licencia CC-BY-4.0. Sigue los términos de atribución y consentimiento de cada voz en la ficha del modelo.",
     "supertonicRestrictions": "Supertonic 3 usa OpenRAIL-M. Revisa sus restricciones de uso en la ficha del modelo.",
     "kokoroAttribution": "Los pesos del modelo Kokoro usan la licencia Apache-2.0.",
@@ -1613,6 +1618,7 @@
       "technicalReading": "Pronuncia rutas, nombres de archivo, opciones y nombres de código completos, usando tu archivo de vocabulario.",
       "fullPaths": "Lee cada carpeta de una ruta. Desactivado, lee solo el nombre del archivo.",
       "fullLinks": "Lee la dirección web completa. Desactivado, dice solo el nombre del sitio.",
+      "tables": "Nombrar cada valor: cada valor se lee con el nombre de su columna. Nombres una vez, luego filas: los nombres de las columnas se leen una vez y después los valores de cada fila.",
       "technicalOff": "No se usa cuando la lectura técnica está desactivada."
     },
     "history": {

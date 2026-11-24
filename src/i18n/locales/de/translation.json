@@ -1576,6 +1576,11 @@
     "technicalReading": "Technisches Vorlesen",
     "fullPaths": "Vollständige Pfade vorlesen",
     "fullLinks": "Vollständige Links vorlesen",
+    "tables": "Tabellen",
+    "tableStyle": {
+      "nameEach": "Jeden Wert benennen",
+      "namesOnce": "Namen einmal, dann Zeilen"
+    },
     "pocketAttribution": "Pocket TTS-Stimmen stehen unter der Lizenz CC-BY-4.0. Beachte die Namensnennungs- und Einwilligungsbedingungen jeder Stimme auf der Modellkarte.",
     "supertonicRestrictions": "Supertonic 3 verwendet OpenRAIL-M. Lies die Nutzungsbeschränkungen auf der Modellkarte.",
     "kokoroAttribution": "Die Modellgewichte von Kokoro stehen unter der Apache-2.0-Lizenz.",
@@ -1613,6 +1618,7 @@
       "technicalReading": "Spricht Pfade, Dateinamen, Optionen und Code-Namen vollständig aus und nutzt dafür deine Vokabeldatei.",
       "fullPaths": "Liest jeden Ordner eines Pfads vor. Ausgeschaltet wird nur der Dateiname gelesen.",
       "fullLinks": "Liest die ganze Webadresse vor. Ausgeschaltet wird nur der Name der Website genannt.",
+      "tables": "Jeden Wert benennen: Jeder Wert wird mit dem Namen seiner Spalte vorgelesen. Namen einmal, dann Zeilen: Die Spaltennamen werden einmal vorgelesen, danach die Werte jeder Zeile.",
       "technicalOff": "Wird nicht verwendet, wenn technisches Vorlesen aus ist."
     },
     "history": {

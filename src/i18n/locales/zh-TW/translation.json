@@ -1576,6 +1576,11 @@
     "technicalReading": "技術朗讀",
     "fullPaths": "朗讀完整路徑",
     "fullLinks": "朗讀完整連結",
+    "tables": "表格",
+    "tableStyle": {
+      "nameEach": "每個值都讀出欄名",
+      "namesOnce": "欄名只讀一次，再讀各列"
+    },
     "pocketAttribution": "Pocket TTS 語音採用 CC-BY-4.0 授權。請遵守模型卡上各語音的署名與授權條款。",
     "supertonicRestrictions": "Supertonic 3 採用 OpenRAIL-M。請查閱模型卡上的使用限制。",
     "kokoroAttribution": "Kokoro 模型權重採用 Apache-2.0 授權。",
@@ -1613,6 +1618,7 @@
       "technicalReading": "透過你的詞彙檔，完整朗讀路徑、檔案名稱、命令列旗標和程式碼名稱。",
       "fullPaths": "朗讀路徑中的每個資料夾。關閉後只朗讀檔案名稱。",
       "fullLinks": "朗讀完整的網址。關閉後只說網站名稱。",
+      "tables": "每個值都讀出欄名：每個值都連同所屬欄位的名稱一起朗讀。欄名只讀一次，再讀各列：先朗讀一次欄名，再朗讀每一列的值。",
       "technicalOff": "技術朗讀關閉時不使用。"
     },
     "history": {

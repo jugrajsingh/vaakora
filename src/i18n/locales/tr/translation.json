@@ -1576,6 +1576,11 @@
     "technicalReading": "Teknik okuma",
     "fullPaths": "Tam yolları oku",
     "fullLinks": "Tam bağlantıları oku",
+    "tables": "Tablolar",
+    "tableStyle": {
+      "nameEach": "Her değerin adını söyle",
+      "namesOnce": "Adlar bir kez, sonra satırlar"
+    },
     "pocketAttribution": "Pocket TTS sesleri CC-BY-4.0 ile lisanslanmıştır. Model kartındaki her sesin atıf ve onay koşullarına uyun.",
     "supertonicRestrictions": "Supertonic 3 OpenRAIL-M kullanır. Model kartındaki kullanım kısıtlamalarını inceleyin.",
     "kokoroAttribution": "Kokoro model ağırlıkları Apache-2.0 lisansını kullanır.",
@@ -1613,6 +1618,7 @@
       "technicalReading": "Yolları, dosya adlarını, bayrakları ve kod adlarını sözlük dosyanızı kullanarak eksiksiz seslendirir.",
       "fullPaths": "Bir yoldaki her klasörü okur. Kapalıyken yalnızca dosya adını okur.",
       "fullLinks": "Web adresinin tamamını okur. Kapalıyken yalnızca site adını söyler.",
+      "tables": "Her değerin adını söyle: her değer sütununun adıyla birlikte okunur. Adlar bir kez, sonra satırlar: sütun adları bir kez okunur, ardından her satırın değerleri okunur.",
       "technicalOff": "Teknik okuma kapalıyken kullanılmaz."
     },
     "history": {

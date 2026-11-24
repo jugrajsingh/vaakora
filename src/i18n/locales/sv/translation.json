@@ -1576,6 +1576,11 @@
     "technicalReading": "Teknisk uppläsning",
     "fullPaths": "Läs hela sökvägar",
     "fullLinks": "Läs hela länkar",
+    "tables": "Tabeller",
+    "tableStyle": {
+      "nameEach": "Namnge varje värde",
+      "namesOnce": "Namn en gång, sedan rader"
+    },
     "pocketAttribution": "Pocket TTS-röster är licensierade under CC-BY-4.0. Följ varje rösts villkor för attribution och samtycke på modellkortet.",
     "supertonicRestrictions": "Supertonic 3 använder OpenRAIL-M. Läs igenom användningsbegränsningarna på modellkortet.",
     "kokoroAttribution": "Kokoro-modellens vikter använder licensen Apache-2.0.",
@@ -1613,6 +1618,7 @@
       "technicalReading": "Läser upp sökvägar, filnamn, flaggor och kodnamn i sin helhet med hjälp av din ordlistefil.",
       "fullPaths": "Läser varje mapp i en sökväg. Avstängt läses bara filnamnet.",
       "fullLinks": "Läser hela webbadressen. Avstängt sägs bara webbplatsens namn.",
+      "tables": "Namnge varje värde: varje värde läses upp med sitt kolumnnamn. Namn en gång, sedan rader: kolumnnamnen läses upp en gång, sedan varje rads värden.",
       "technicalOff": "Används inte när teknisk uppläsning är av."
     },
     "history": {

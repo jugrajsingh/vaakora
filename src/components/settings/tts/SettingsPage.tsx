@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { listen, emit } from "@tauri-apps/api/event";
 import {
   commands,
@@ -22,7 +23,7 @@ import { ReadHistoryTab } from "./history/ReadHistoryTab";
 import { VocabularyTab } from "./vocabulary/VocabularyTab";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { Dropdown } from "@/components/ui/Dropdown";
+import { Dropdown, type DropdownOption } from "@/components/ui/Dropdown";
 import { SettingContainer } from "@/components/ui/SettingContainer";
 import {
   JobModelGroup,
@@ -193,6 +194,21 @@ export function SettingsPage({
   );
 }
 
+/** The two ways a table is read, as dropdown rows. */
+export function tableStyleOptions(t: TFunction): DropdownOption[] {
+  return [
+    { value: "name_each", label: t("tts.tableStyle.nameEach") },
+    { value: "names_once", label: t("tts.tableStyle.namesOnce") },
+  ];
+}
+
+/** The selection patch for a chosen table style; an unknown value changes nothing. */
+export function tableStyleChange(value: string): Partial<Selection> {
+  return value === "name_each" || value === "names_once"
+    ? { tables: value }
+    : {};
+}
+
 export function SettingsControls({
   selected,
   models,
@@ -330,6 +346,17 @@ export function SettingsControls({
           checked={selected.read_code}
           onChange={(read_code) => change({ read_code })}
         />
+        <SettingContainer
+          title={t("tts.tables")}
+          description={t("tts.help.tables")}
+          grouped
+        >
+          <Dropdown
+            options={tableStyleOptions(t)}
+            selectedValue={selected.tables ?? "name_each"}
+            onSelect={(value) => change(tableStyleChange(value))}
+          />
+        </SettingContainer>
         <ToggleSwitch
           label={t("tts.technicalReading")}
           description={t("tts.help.technicalReading")}

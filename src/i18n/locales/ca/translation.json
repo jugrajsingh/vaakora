@@ -1576,6 +1576,11 @@
     "technicalReading": "Lectura tècnica",
     "fullPaths": "Llegeix els camins complets",
     "fullLinks": "Llegeix els enllaços complets",
+    "tables": "Taules",
+    "tableStyle": {
+      "nameEach": "Nom a cada valor",
+      "namesOnce": "Noms una vegada, després files"
+    },
     "pocketAttribution": "Les veus de Pocket TTS tenen llicència CC-BY-4.0. Seguiu les condicions d'atribució i consentiment de cada veu a la fitxa del model.",
     "supertonicRestrictions": "Supertonic 3 utilitza OpenRAIL-M. Reviseu-ne les restriccions d'ús a la fitxa del model.",
     "kokoroAttribution": "Els pesos del model Kokoro utilitzen la llicència Apache-2.0.",
@@ -1613,6 +1618,7 @@
       "technicalReading": "Pronuncia camins, noms de fitxer, opcions i noms de codi sencers, amb el vostre fitxer de vocabulari.",
       "fullPaths": "Llegeix totes les carpetes d'un camí. Desactivat, només llegeix el nom del fitxer.",
       "fullLinks": "Llegeix l'adreça web sencera. Desactivat, només diu el nom del lloc.",
+      "tables": "Nom a cada valor: cada valor es llegeix amb el nom de la seva columna. Noms una vegada, després files: els noms de les columnes es llegeixen una vegada i després els valors de cada fila.",
       "technicalOff": "No s'utilitza quan la lectura tècnica està desactivada."
     },
     "history": {

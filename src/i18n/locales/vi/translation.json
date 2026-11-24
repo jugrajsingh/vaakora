@@ -1576,6 +1576,11 @@
     "technicalReading": "Đọc kỹ thuật",
     "fullPaths": "Đọc đầy đủ đường dẫn",
     "fullLinks": "Đọc đầy đủ liên kết",
+    "tables": "Bảng",
+    "tableStyle": {
+      "nameEach": "Nêu tên từng giá trị",
+      "namesOnce": "Nêu tên một lần, rồi đến các hàng"
+    },
     "pocketAttribution": "Giọng Pocket TTS được cấp phép theo CC-BY-4.0. Hãy tuân thủ ghi công và điều khoản đồng ý của từng giọng trên thẻ mô hình.",
     "supertonicRestrictions": "Supertonic 3 dùng OpenRAIL-M. Hãy xem các hạn chế sử dụng trên thẻ mô hình.",
     "kokoroAttribution": "Trọng số mô hình Kokoro dùng giấy phép Apache-2.0.",
@@ -1613,6 +1618,7 @@
       "technicalReading": "Đọc đầy đủ đường dẫn, tên tệp, cờ lệnh và tên trong mã, dùng tệp từ vựng của bạn.",
       "fullPaths": "Đọc từng thư mục trong đường dẫn. Khi tắt, chỉ đọc tên tệp.",
       "fullLinks": "Đọc toàn bộ địa chỉ web. Khi tắt, chỉ nói tên trang web.",
+      "tables": "Nêu tên từng giá trị: mỗi giá trị được đọc kèm tên cột của nó. Nêu tên một lần, rồi đến các hàng: tên các cột được đọc một lần, sau đó là giá trị của từng hàng.",
       "technicalOff": "Không dùng khi đọc kỹ thuật đang tắt."
     },
     "history": {

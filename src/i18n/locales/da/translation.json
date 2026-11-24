@@ -1576,6 +1576,11 @@
     "technicalReading": "Teknisk oplæsning",
     "fullPaths": "Læs hele stier",
     "fullLinks": "Læs hele links",
+    "tables": "Tabeller",
+    "tableStyle": {
+      "nameEach": "Navn på hver værdi",
+      "namesOnce": "Navne én gang, derefter rækker"
+    },
     "pocketAttribution": "Pocket TTS-stemmer er licenseret under CC-BY-4.0. Følg hver stemmes vilkår for kreditering og samtykke på modelkortet.",
     "supertonicRestrictions": "Supertonic 3 bruger OpenRAIL-M. Gennemgå dens brugsbegrænsninger på modelkortet.",
     "kokoroAttribution": "Kokoro-modellens vægte bruger Apache-2.0-licensen.",
@@ -1613,6 +1618,7 @@
       "technicalReading": "Udtaler stier, filnavne, flag og kodenavne i fuld længde ved hjælp af din ordbogsfil.",
       "fullPaths": "Læser hver mappe i en sti. Slået fra læses kun filnavnet.",
       "fullLinks": "Læser hele webadressen. Slået fra siges kun webstedets navn.",
+      "tables": "Navn på hver værdi: hver værdi læses op med sit kolonnenavn. Navne én gang, derefter rækker: kolonnenavnene læses op én gang, derefter hver rækkes værdier.",
       "technicalOff": "Bruges ikke, når teknisk oplæsning er slået fra."
     },
     "history": {

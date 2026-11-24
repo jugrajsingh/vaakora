@@ -42,7 +42,7 @@ A shortcut reads the text you last copied, in a popup that follows along.
 - **Follow-along popup:** highlights the sentence being read.
 - **Streaming and controls:** reading is streamed and has speed and pitch controls.
 - **Markdown:** marks are not spoken, and code blocks are skipped unless you ask for them; a code block that holds only a table is read as a table.
-- **Tables:** box-drawing, ASCII and Markdown tables are read row by row, each value with its column name, and their borders are not spoken. Box-drawing characters are never spoken anywhere, and a table that cannot be read with confidence is read in its original order without its borders.
+- **Tables:** box-drawing, ASCII and Markdown tables are read row by row, each value with its column name (a setting reads the column names once instead), and their borders are not spoken. Box-drawing characters are never spoken anywhere, and a table that cannot be read with confidence is read in its original order without its borders.
 - **Technical reading:** paths, file names, flags, versions and code names are spoken the way an engineer would say them.
 - **Vocabulary:** extend the spoken forms in `tts-vocabulary.json` in the app data directory. It also accepts entries for one voice model only.
 - **No overlap:** dictation and reading never overlap.

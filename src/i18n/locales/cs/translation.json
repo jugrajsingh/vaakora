@@ -1576,6 +1576,11 @@
     "technicalReading": "Technické čtení",
     "fullPaths": "Číst celé cesty",
     "fullLinks": "Číst celé odkazy",
+    "tables": "Tabulky",
+    "tableStyle": {
+      "nameEach": "Název u každé hodnoty",
+      "namesOnce": "Názvy jednou, pak řádky"
+    },
     "pocketAttribution": "Hlasy Pocket TTS jsou licencovány pod CC-BY-4.0. Dodržujte podmínky uvedení autorství a souhlasu u každého hlasu na stránce modelu.",
     "supertonicRestrictions": "Supertonic 3 používá licenci OpenRAIL-M. Seznamte se s omezeními použití na stránce modelu.",
     "kokoroAttribution": "Váhy modelu Kokoro používají licenci Apache-2.0.",
@@ -1613,6 +1618,7 @@
       "technicalReading": "Vyslovuje cesty, názvy souborů, přepínače a názvy v kódu celé podle vašeho slovníkového souboru.",
       "fullPaths": "Přečte každou složku v cestě. Když je vypnuto, přečte jen název souboru.",
       "fullLinks": "Přečte celou webovou adresu. Když je vypnuto, řekne jen název webu.",
+      "tables": "Název u každé hodnoty: každá hodnota se čte s názvem svého sloupce. Názvy jednou, pak řádky: názvy sloupců se přečtou jednou a pak hodnoty každého řádku.",
       "technicalOff": "Nepoužije se, když je technické čtení vypnuté."
     },
     "history": {
