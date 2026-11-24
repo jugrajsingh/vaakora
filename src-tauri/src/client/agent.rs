@@ -14,7 +14,9 @@
 //! file is touched, so a conflict stops the command with nothing written. A reinstall over a
 //! marked folder overwrites the files vaakora wrote there (and only those); an uninstall removes
 //! those files and the marker, then the `agents` and skill folders only when nothing else is in
-//! them, and reports every leftover as `skip`.
+//! them, and reports every leftover as `skip`. Nothing is done through a link: a skills folder or
+//! skill folder that is a link, or a link inside a skill folder, is refused by an install and
+//! skipped by an uninstall, and the folder it leads to is left as it is.
 
 use std::borrow::Cow;
 use std::collections::HashSet;
@@ -142,6 +144,25 @@ fn is_real_dir(path: &Path) -> bool {
     path.symlink_metadata().is_ok_and(|m| m.is_dir())
 }
 
+/// The first of the agent's skills folder and the skill folder that exists but is not a real
+/// folder (a link, even a dangling one, or a file). Both are checked with `symlink_metadata`, so
+/// a link is reported rather than followed: a skill folder that was moved elsewhere and linked
+/// back, or a skills folder that is itself a link, is left entirely alone. The folders above the
+/// skills folder (the home folder, `.claude`, `.agents`) are the user's own and are followed.
+fn blocked_skill_dir(home: &Path, agent: Agent, name: &str) -> Option<PathBuf> {
+    let root = home.join(skills_root(agent));
+    let dir = root.join(name);
+    for path in [root, dir] {
+        match path.symlink_metadata() {
+            // Nothing here, so nothing deeper exists.
+            Err(_) => return None,
+            Ok(meta) if !meta.is_dir() => return Some(path),
+            Ok(_) => {}
+        }
+    }
+    None
+}
+
 /// The first thing on the way to `dir/relative` that vaakora would have to write through but did
 /// not write: a link, or a file where a folder goes, or a folder or link where the file goes.
 fn blocked_target(dir: &Path, relative: &str) -> Option<PathBuf> {
@@ -170,6 +191,9 @@ pub(crate) fn plan_install(home: &Path, agents: &[Agent]) -> Result<Vec<Step>, P
     let mut steps = Vec::new();
     for skill in selected_skills(agents) {
         let dir = skill_dir(home, skill.agent, skill.name);
+        if let Some(blocked) = blocked_skill_dir(home, skill.agent, skill.name) {
+            return Err(blocked);
+        }
         if exists(&dir) {
             if !is_regular_file(&dir.join(MARKER)) {
                 return Err(dir);
@@ -217,6 +241,13 @@ pub(crate) fn plan_uninstall(home: &Path, agents: &[Agent]) -> Vec<Step> {
     let mut steps = Vec::new();
     for skill in selected_skills(agents) {
         let dir = skill_dir(home, skill.agent, skill.name);
+        if let Some(blocked) = blocked_skill_dir(home, skill.agent, skill.name) {
+            let skip = Step::Skip(blocked);
+            if !steps.contains(&skip) {
+                steps.push(skip);
+            }
+            continue;
+        }
         if !exists(&dir) {
             continue;
         }
@@ -956,6 +987,179 @@ mod tests {
             "user-authored config, never installed by vaakora"
         );
         assert!(agents.symlink_metadata().unwrap().file_type().is_symlink());
+    }
+
+    /// Both Codex skills installed, then `vaakora-read` moved to `relocated` and linked back.
+    fn relocated_skill(h: &Path) -> (PathBuf, PathBuf) {
+        install(h, false, true, false);
+        let link = h.join(".agents/skills/vaakora-read");
+        let relocated = h.join("relocated/vaakora-read");
+        std::fs::create_dir_all(relocated.parent().unwrap()).unwrap();
+        std::fs::rename(&link, &relocated).unwrap();
+        symlink(&relocated, &link).unwrap();
+        put(&relocated.join("SKILL.md"), "edited by the user");
+        (link, relocated)
+    }
+
+    /// Every file below `dir` with its text, sorted.
+    fn tree(dir: &Path) -> Vec<(PathBuf, String)> {
+        let mut files = Vec::new();
+        for entry in std::fs::read_dir(dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                files.extend(tree(&path));
+            } else {
+                let text = read(&path);
+                files.push((path, text));
+            }
+        }
+        files.sort();
+        files
+    }
+
+    #[test]
+    fn uninstall_preserves_a_relocated_skill_behind_a_symlink() {
+        let h = home();
+        let (link, relocated) = relocated_skill(h.path());
+        let before = tree(&relocated);
+        assert_eq!(before.len(), 3, "SKILL.md, openai.yaml and the marker");
+        let ran = uninstall(h.path(), false, true, false);
+        assert_eq!(ran.code, 0, "{}", ran.err);
+        assert_eq!(
+            tree(&relocated),
+            before,
+            "the relocated folder is untouched"
+        );
+        assert!(link.symlink_metadata().unwrap().file_type().is_symlink());
+        assert_eq!(std::fs::read_link(&link).unwrap(), relocated);
+        assert!(
+            ran.out
+                .contains(&format!("skip {} (a link, left alone)", link.display())),
+            "{}",
+            ran.out
+        );
+        assert!(
+            !ran.out
+                .contains(&format!("remove {}", link.join("SKILL.md").display())),
+            "{}",
+            ran.out
+        );
+        // the sibling skill is still uninstalled
+        assert!(!h.path().join(".agents/skills/vaakora-stop").exists());
+    }
+
+    #[test]
+    fn uninstall_dry_run_skips_a_symlinked_skill_folder_and_lists_the_sibling() {
+        let h = home();
+        let (link, relocated) = relocated_skill(h.path());
+        let before = tree(&relocated);
+        let ran = uninstall(h.path(), false, true, true);
+        assert_eq!(ran.code, 0, "{}", ran.err);
+        assert_eq!(ran.lines("skip").len(), 1, "{}", ran.out);
+        assert_eq!(
+            ran.lines("remove").len(),
+            5,
+            "the sibling's 5 steps: {}",
+            ran.out
+        );
+        assert!(ran
+            .out
+            .contains(&format!("skip {} (a link, left alone)", link.display())));
+        assert_eq!(tree(&relocated), before);
+        assert!(h
+            .path()
+            .join(".agents/skills/vaakora-stop/SKILL.md")
+            .exists());
+    }
+
+    #[test]
+    fn install_refuses_a_symlinked_skill_folder_and_writes_nothing() {
+        let h = home();
+        let (link, relocated) = relocated_skill(h.path());
+        let before = tree(&relocated);
+        let stop_before = tree(&h.path().join(".agents/skills/vaakora-stop"));
+        let ran = install(h.path(), false, false, false);
+        assert_eq!(ran.code, 1);
+        assert_eq!(
+            ran.err,
+            format!(
+                "vaakora: {} exists and was not installed by vaakora; nothing was written\n",
+                link.display()
+            )
+        );
+        assert!(ran.out.is_empty(), "{}", ran.out);
+        assert_eq!(tree(&relocated), before);
+        assert_eq!(
+            tree(&h.path().join(".agents/skills/vaakora-stop")),
+            stop_before
+        );
+        assert!(
+            !h.path().join(".claude").exists(),
+            "nothing written anywhere"
+        );
+        assert!(link.symlink_metadata().unwrap().file_type().is_symlink());
+    }
+
+    #[test]
+    fn install_refuses_a_dangling_symlink_at_a_skill_folder() {
+        let h = home();
+        let dir = h.path().join(".claude/skills/vaakora-read");
+        std::fs::create_dir_all(dir.parent().unwrap()).unwrap();
+        symlink(h.path().join("not-there"), &dir).unwrap();
+        let ran = install(h.path(), true, false, false);
+        assert_eq!(ran.code, 1);
+        assert!(!h.path().join("not-there").exists());
+        assert!(!h.path().join(".claude/skills/vaakora-stop").exists());
+    }
+
+    #[test]
+    fn a_symlinked_skills_folder_is_refused_by_install_and_skipped_by_uninstall() {
+        let h = home();
+        // install both, then move the Codex skills folder away and link it back
+        install(h.path(), false, false, false);
+        let link = h.path().join(".agents/skills");
+        let relocated = h.path().join("dotfiles/agent-skills");
+        std::fs::create_dir_all(relocated.parent().unwrap()).unwrap();
+        std::fs::rename(&link, &relocated).unwrap();
+        symlink(&relocated, &link).unwrap();
+        let before = tree(&relocated);
+
+        let ran = install(h.path(), false, true, false);
+        assert_eq!(ran.code, 1);
+        assert!(ran.err.contains(&link.display().to_string()), "{}", ran.err);
+        assert_eq!(tree(&relocated), before);
+
+        let ran = uninstall(h.path(), false, false, false);
+        assert_eq!(ran.code, 0, "{}", ran.err);
+        assert_eq!(
+            tree(&relocated),
+            before,
+            "nothing behind the linked folder is touched"
+        );
+        assert!(ran
+            .out
+            .contains(&format!("skip {} (a link, left alone)", link.display())));
+        assert_eq!(
+            ran.lines("skip").len(),
+            1,
+            "one skip for both Codex skills: {}",
+            ran.out
+        );
+        // the Claude skills, not behind a link, are uninstalled
+        assert!(!h.path().join(".claude/skills/vaakora-read").exists());
+        assert!(!h.path().join(".claude/skills/vaakora-stop").exists());
+    }
+
+    #[test]
+    fn a_symlinked_skills_folder_with_no_skill_in_it_is_not_written_through() {
+        let h = home();
+        let elsewhere = h.path().join("elsewhere");
+        std::fs::create_dir_all(&elsewhere).unwrap();
+        std::fs::create_dir_all(h.path().join(".agents")).unwrap();
+        symlink(&elsewhere, h.path().join(".agents/skills")).unwrap();
+        let ran = install(h.path(), false, true, false);
+        assert_eq!(ran.code, 1);
+        assert_eq!(std::fs::read_dir(&elsewhere).unwrap().count(), 0);
     }
 
     #[test]
