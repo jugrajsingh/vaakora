@@ -76,14 +76,14 @@ Reads that come from the command line or an agent are saved in Read aloud histor
 
 Exit codes, for scripts:
 
-| Code | Meaning                                                                                                |
-| ---- | ------------------------------------------------------------------------------------------------------ |
-| 0    | Done.                                                                                                  |
-| 1    | Any other error, such as an unreadable file or a refused request.                                      |
-| 2    | Usage error, such as an unknown option or a line that is too long.                                     |
-| 3    | The app is not running, so there is no socket to talk to.                                              |
-| 4    | A dictation is in progress. The dictation goes on and nothing is read.                                 |
-| 5    | A model is missing: the speech model, or the voice model the reader needs, is not downloaded or ready. |
+| Code | Meaning                                                                                                                                                                          |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | Done. `pause`, `resume` and `stop` also exit 0 when there was nothing to change, and say so on stderr.                                                                           |
+| 1    | The app answered with an error, such as a `transcribe` file it cannot find or decode, or the output could not be written.                                                        |
+| 2    | Usage error, found before the app is asked: an unknown option, no file and no piped text, a path that is not a file, or text that is blank, not UTF-8, over 1 MiB or unreadable. |
+| 3    | The app cannot be reached: it is not running, there is no runtime directory or the socket path is too long, or it did not answer in time.                                        |
+| 4    | A dictation is in progress. The dictation goes on and nothing is read.                                                                                                           |
+| 5    | A model is missing: the speech model, or the voice model the reader needs, is not downloaded or ready.                                                                           |
 
 Right after the app starts, `vaakora read` can return exit 5 (`tts-unavailable`) for a moment, while read aloud is still loading. Run it again.
 
