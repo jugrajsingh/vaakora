@@ -67,6 +67,7 @@ pub fn create(app: &tauri::AppHandle, position: OverlayPosition) -> Result<(), S
     .decorations(false)
     .resizable(false)
     .transparent(true)
+    .shadow(false)
     .always_on_top(true)
     .focused(false);
     let window = configure_builder(builder, &p)

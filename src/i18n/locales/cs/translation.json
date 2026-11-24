@@ -1656,6 +1656,7 @@
         "reset": "Obnovit výchozí",
         "cancel": "Zrušit"
       },
+      "listenPlays": "Přehraje: {{sample}}",
       "match": {
         "whole": "Celé slovo",
         "anywhere": "Kdekoli ve slově",

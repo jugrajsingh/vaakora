@@ -13,6 +13,13 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 - Command line: `vaakora read [file|-]` reads a file or piped text aloud (never text given as an argument, which other programs could see), `vaakora pause`, `resume` and `stop` control the reader, `vaakora status` and `vaakora voices` report (add `--json` for JSON), `vaakora dictate [--post-process|--cancel]` toggles or cancels a dictation, and `vaakora transcribe <file> [--json]` prints a file's transcript. They talk to the running app and exit 3 when it is not running (they never start it), 4 when a dictation is in progress, 5 when a model is missing, 2 on a usage error and 1 on any other error.
 - `vaakora agent install [--claude] [--codex] [--dry-run]` writes two skills, vaakora-read and vaakora-stop, for Claude Code (`~/.claude/skills`, with `disable-model-invocation: true`) and Codex (`~/.agents/skills`, with `allow_implicit_invocation: false`), so an agent reads aloud only when you invoke `/vaakora-read` or `$vaakora-read`. It never overwrites a skill folder it did not write, and `vaakora agent uninstall` removes only its own: the files it wrote and its marker, then the folders only when nothing else is in them, printing `skip` for any it keeps. Installing again over a folder it wrote replaces the files it wrote there and nothing else. A skill that has to read text from the conversation writes it to a file in `$XDG_RUNTIME_DIR` (never in a repository) and deletes the file once `vaakora read` exits 0, so the text is never on a command line.
 
+## [0.1.1] - 2026-11-23
+
+### Fixed
+
+- The Read aloud popup has rounded corners. Its page background no longer paints a square behind the rounded card, so the corners show the desktop. The popup keeps the app theme; its edge uses the stronger line colour so it shows on a dark or a light desktop, the card radius is the 12 px card radius, the text is 14 px on 20 px with 12 px time and state labels, the close button is a 28 px round button like the dictation pill's cancel, a highlighted sentence that wraps keeps rounded ends, and the progress fill is rounded. On Windows the popup no longer draws the native window shadow.
+- In the Vocabulary tab, Listen on a symbol plays natural words, `file_name` for `_`, `file.name` for `.`, `file/name` for `/` and `file~name` for `~`, in place of "alpha_beta" read as "alpha underscore beta". A currency sign added as a symbol plays an amount (`₹100`). Hovering or focusing Listen shows the text it plays ("Plays: file_name"). Listen in the entry dialog still plays the words you typed.
+
 ## [0.1.0] - 2026-11-23
 
 First Vaakora release. It starts from Handy v0.10.1 plus the changes below; see UPSTREAM.md.

@@ -1656,6 +1656,7 @@
         "reset": "Redefinir para o padrão",
         "cancel": "Cancelar"
       },
+      "listenPlays": "Reproduz: {{sample}}",
       "match": {
         "whole": "Palavra inteira",
         "anywhere": "Em qualquer parte de uma palavra",

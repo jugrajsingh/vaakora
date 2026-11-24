@@ -1656,6 +1656,7 @@
         "reset": "Nulstil til standard",
         "cancel": "Annuller"
       },
+      "listenPlays": "Afspiller: {{sample}}",
       "match": {
         "whole": "Helt ord",
         "anywhere": "Hvor som helst i et ord",

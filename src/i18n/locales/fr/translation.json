@@ -1656,6 +1656,7 @@
         "reset": "Rétablir par défaut",
         "cancel": "Annuler"
       },
+      "listenPlays": "Lit : {{sample}}",
       "match": {
         "whole": "Mot entier",
         "anywhere": "N'importe où dans un mot",

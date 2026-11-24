@@ -1656,6 +1656,7 @@
         "reset": "Restableix el valor per defecte",
         "cancel": "Cancel·la"
       },
+      "listenPlays": "Reprodueix: {{sample}}",
       "match": {
         "whole": "Paraula sencera",
         "anywhere": "A qualsevol lloc d'una paraula",

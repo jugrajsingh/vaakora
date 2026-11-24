@@ -1656,6 +1656,7 @@
         "reset": "Auf Standard zurücksetzen",
         "cancel": "Abbrechen"
       },
+      "listenPlays": "Spielt: {{sample}}",
       "match": {
         "whole": "Ganzes Wort",
         "anywhere": "Überall in einem Wort",
