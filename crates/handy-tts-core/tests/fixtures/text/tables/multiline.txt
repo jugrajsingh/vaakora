@@ -1,0 +1,13 @@
+┌──────────┬────────────────────┬──────────────┐
+│ Lane     │ Progress           │ Owner        │
+├──────────┼────────────────────┼──────────────┤
+│ B, the   │ Task B1 committed, │ Opus         │
+│ walk     │ working on B2.     │              │
+├──────────┼────────────────────┼──────────────┤
+│ E        │ 9 files changed    │ gpt-6.1-sol  │
+└──────────┴────────────────────┴──────────────┘
+
+| Lane | Model | Progress |
+|------|-------|----------|
+| B, the walk | Opus | Task B1 committed (b574c34). |
+| E | gpt-6.1-sol | 9 files changed, unstaged |

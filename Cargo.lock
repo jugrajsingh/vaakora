@@ -2837,6 +2837,7 @@ dependencies = [
  "signalsmith-stretch",
  "specta",
  "thiserror 2.0.18",
+ "unicode-width",
 ]
 
 [[package]]

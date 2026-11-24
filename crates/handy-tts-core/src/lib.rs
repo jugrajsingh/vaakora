@@ -6,6 +6,7 @@ pub mod download;
 pub mod dsp;
 pub mod edges;
 pub mod feed;
+pub mod formatted;
 pub mod handoff;
 pub mod lifecycle;
 pub mod managed;
