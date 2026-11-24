@@ -170,24 +170,26 @@ enum Item<'a> {
     /// with (`None`: the synthetic period of any boundary of 250 or more).
     End(u32, Option<char>),
 }
-/// A stretch of the source: prose between tables, or a table block.
+/// A stretch of the source: prose between table blocks, a table, or a fallback block with the
+/// text it reads (see `BlockKind::Fallback`).
 enum Part<'a> {
     Prose(Range<usize>),
     Table(Range<usize>, Table<'a>),
+    Fallback(Range<usize>, Vec<Range<usize>>),
 }
 /// The cursor's input: the Markdown events of the prose between table blocks, each part parsed
-/// on its own slice of `source` (so every range stays a range of `source`), with each table block
-/// in its place. Text without a table is one part, parsed as it always was. Fallback blocks stay
-/// in the prose.
+/// on its own slice of `source` (so every range stays a range of `source`), with each table or
+/// fallback block in its place. Text without a table block is one part, parsed as it always was.
 fn source_items(source: &str) -> impl Iterator<Item = Item<'_>> {
     let mut parts = Vec::new();
     let mut prose = 0;
     for block in tables::find_blocks(source) {
-        if let BlockKind::Table(table) = block.kind {
-            parts.push(Part::Prose(prose..block.range.start));
-            prose = block.range.end;
-            parts.push(Part::Table(block.range, table));
-        }
+        parts.push(Part::Prose(prose..block.range.start));
+        prose = block.range.end;
+        parts.push(match block.kind {
+            BlockKind::Table(table) => Part::Table(block.range, table),
+            BlockKind::Fallback(read) => Part::Fallback(block.range, read),
+        });
     }
     parts.push(Part::Prose(prose..source.len()));
     parts
@@ -210,8 +212,26 @@ fn source_items(source: &str) -> impl Iterator<Item = Item<'_>> {
                     )
                 }
                 Part::Table(block, table) => Box::new(std::iter::once(Item::Table(block, table))),
+                Part::Fallback(block, read) => Box::new(fallback_items(source, block, read)),
             }
         })
+}
+/// A fallback block read as one paragraph in source order: its parts as the lines of a box cell
+/// (a soft break between them), each word with its own range, then the paragraph's boundary.
+fn fallback_items<'a>(
+    source: &'a str,
+    block: Range<usize>,
+    read: Vec<Range<usize>>,
+) -> impl Iterator<Item = Item<'a>> {
+    std::iter::once(Item::Event(
+        Event::Start(Tag::Paragraph),
+        block.start..block.start,
+    ))
+    .chain(cell_items(source, Cell::Lines(read)))
+    .chain(std::iter::once(Item::Event(
+        Event::End(TagEnd::Paragraph),
+        block.end..block.end,
+    )))
 }
 /// A cell's words as Markdown events: a box or ASCII cell's line slices as text with a soft break
 /// between them, a Markdown cell's own inline events.
@@ -754,7 +774,9 @@ impl<'a> TextCursor<'a> {
                         self.work_units += raw.chars().count() - 1;
                     }
                 }
-                if atom.chars().all(char::is_whitespace) {
+                // A box-drawing character ends the word and is dropped like a space: border and
+                // tree characters carry no words and are never spoken.
+                if atom.chars().all(|c| c.is_whitespace() || tables::is_box(c)) {
                     self.fragment = Some(f);
                     if let Some(p) = self.finish_word() {
                         return Some(p);
@@ -1293,7 +1315,7 @@ fn split_words(
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn prepared(source: &str, code: bool) -> String {
+    pub(super) fn prepared(source: &str, code: bool) -> String {
         let mut cursor = TextCursor::new(source, code).unwrap();
         let mut all = Vec::new();
         while let Some(chunk) = cursor.next_chunk().unwrap() {
@@ -3071,5 +3093,242 @@ mod table_reading {
                 }
             }
         }
+    }
+
+    fn is_box_drawing(c: char) -> bool {
+        ('\u{2500}'..='\u{257F}').contains(&c)
+    }
+    /// The multi-line fixture's box table, without the Markdown table after it.
+    fn multiline_box_only() -> &'static str {
+        &MULTILINE[..MULTILINE.find("\n\n").unwrap()]
+    }
+
+    #[test]
+    fn table_only_fence_reads_as_table_even_with_code_off() {
+        let boxed = multiline_box_only();
+        let expected = "Intro. Table, 3 columns, 2 rows. Row 1. Lane: B, the walk. Progress: Task B1 committed, working on B2. Owner: Opus. Row 2. Lane: E. Progress: 9 files changed. Owner: gpt-6.1-sol. End of table. After.";
+        for fence in [
+            format!("```\n{boxed}\n```"),
+            format!("```text\n{boxed}\n```"),
+            format!("```\n\n{boxed}\n\n```"),
+        ] {
+            let source = format!("Intro.\n\n{fence}\n\nAfter.");
+            let fence_start = source.find("```").unwrap();
+            let fence_end = source.rfind("```").unwrap() + 3;
+            for read_code in [false, true] {
+                for vocabulary in [None, builtin()] {
+                    let chunks = prepare_reading(
+                        &source,
+                        read_code,
+                        vocabulary,
+                        TechnicalOptions::default(),
+                    )
+                    .unwrap();
+                    let case = format!("read_code={read_code} {source:?}");
+                    assert_eq!(joined(&chunks), expected, "{case}");
+                    let intro = chunks
+                        .iter()
+                        .find(|a| a.chunk.text.starts_with("Table, "))
+                        .unwrap();
+                    assert_eq!(
+                        intro.chunk.source_start,
+                        utf16(&source, fence_start),
+                        "{case}"
+                    );
+                    let end = chunks
+                        .iter()
+                        .find(|a| a.chunk.text == "End of table.")
+                        .unwrap();
+                    assert_eq!(end.chunk.source_end, utf16(&source, fence_end), "{case}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn mixed_fence_keeps_code_behaviour() {
+        let source = "```\n$ tree\n├── src\n│   └── main.rs\n└── README.md\n```";
+        for vocabulary in [None, builtin()] {
+            let chunks = prepare_reading(
+                source,
+                false,
+                vocabulary.clone(),
+                TechnicalOptions::default(),
+            )
+            .unwrap();
+            assert_eq!(joined(&chunks), "code block skipped.");
+            let chunks =
+                prepare_reading(source, true, vocabulary, TechnicalOptions::default()).unwrap();
+            for aligned in &chunks {
+                assert!(
+                    !aligned.chunk.text.chars().any(is_box_drawing),
+                    "{:?}",
+                    aligned.chunk.text
+                );
+            }
+        }
+        let spaced: String = source
+            .chars()
+            .map(|c| if is_box_drawing(c) { ' ' } else { c })
+            .collect();
+        let read = super::tests::prepared(source, true);
+        assert!(!read.chars().any(is_box_drawing), "{read:?}");
+        assert_eq!(read, super::tests::prepared(&spaced, true));
+    }
+
+    #[test]
+    fn stray_box_characters_are_never_spoken() {
+        for vocabulary in [None, builtin()] {
+            for (source, expected) in [
+                ("Status ──── done\n\n├── src", "Status done. src."),
+                ("a│b", "a b."),
+            ] {
+                let chunks = prepare_reading(
+                    source,
+                    false,
+                    vocabulary.clone(),
+                    TechnicalOptions::default(),
+                )
+                .unwrap();
+                assert_eq!(joined(&chunks), expected, "{source:?}");
+            }
+        }
+        // Inline code, inline HTML and an HTML block drop them too.
+        for (source, expected) in [
+            ("Run `ls │ wc` and <b>x─y</b>.", "Run ls wc and x y."),
+            ("<div>\na─b\n</div>", "a b."),
+        ] {
+            assert_eq!(
+                super::tests::prepared(source, false),
+                expected,
+                "{source:?}"
+            );
+        }
+    }
+
+    /// Spec Goal 4: border characters typed inside Markdown cells, header names included, are
+    /// not spoken either.
+    #[test]
+    fn box_characters_in_markdown_cells_are_never_spoken() {
+        let source = "| Lane ─ id | Note |\n|---|---|\n| a │ b | c ┼ d |";
+        for vocabulary in [None, builtin()] {
+            for (tables, expected) in [
+                (
+                    TableStyle::NameEach,
+                    "Table, 2 columns, 1 row. Row 1. Lane id: a b. Note: c d. End of table.",
+                ),
+                (
+                    TableStyle::NamesOnce,
+                    "Table, 2 columns, 1 row. Columns: Lane id, Note. Row 1: a b; c d. End of table.",
+                ),
+            ] {
+                let chunks = read(source, vocabulary.clone(), tables);
+                assert_eq!(joined(&chunks), expected, "{tables:?}");
+                for aligned in &chunks {
+                    assert!(!aligned.chunk.text.chars().any(is_box_drawing));
+                }
+            }
+        }
+    }
+
+    fn alphanumeric_tokens(text: &str) -> Vec<&str> {
+        text.split(|c: char| !c.is_alphanumeric())
+            .filter(|token| !token.is_empty())
+            .collect()
+    }
+
+    /// A block that is not read as a table is read in source order with its borders dropped:
+    /// every alphanumeric token of the block, in order, and no border character. Every case is
+    /// checked before the test fails, so the failure lists each case that lost or spoke something.
+    #[test]
+    fn fallback_never_drops_words() {
+        let cases = [
+            (
+                "box with a wall missing",
+                "┌───┬───┐\n│ h │ i │\n├───┼───┤\n│ a   b │\n└───┴───┘",
+            ),
+            (
+                "box junction off by one",
+                "┌───┬───┐\n│ h │ i │\n├────┼──┤\n│ a │ b │\n└───┴───┘",
+            ),
+            (
+                "ascii wall missing",
+                "+---+---+\n| a | b |\n| c d |\n+---+---+",
+            ),
+            (
+                "ascii mismatched junctions",
+                "+---+---+\n| h | i |\n+--+----+\n| a | b |\n+---+---+",
+            ),
+            (
+                "box spanning title",
+                "┌───────┐\n│ Title │\n├───┬───┤\n│ a │ b │\n└───┴───┘",
+            ),
+            (
+                "markdown row wider than the header",
+                "| a | b |\n|---|---|\n| 1 | 2 | 3 |",
+            ),
+            (
+                "one-column notice",
+                "╭────────────────────────╮\n│ Update available       │\n│ Restart to install it. │\n╰────────────────────────╯",
+            ),
+        ];
+        let mut failures = Vec::new();
+        for (name, block) in cases {
+            let blocks = find_blocks(block);
+            assert!(
+                matches!(blocks.as_slice(), [only] if matches!(only.kind, BlockKind::Fallback { .. }) && only.range == (0..block.len())),
+                "{name} is not one fallback block: {blocks:?}"
+            );
+            let wrapped = format!("Before.\n\n{block}\n\nAfter.");
+            for vocabulary in [None, builtin()] {
+                for tables in [TableStyle::NameEach, TableStyle::NamesOnce] {
+                    let text = joined(&read(block, vocabulary.clone(), tables));
+                    let lost = alphanumeric_tokens(&text) != alphanumeric_tokens(block);
+                    let border = text.contains('|')
+                        || text.contains('+')
+                        || text.contains("---")
+                        || text.chars().any(is_box_drawing);
+                    let around = joined(&read(&wrapped, vocabulary.clone(), tables));
+                    let around_ok = around == format!("Before. {text} After.");
+                    if lost || border || !around_ok {
+                        failures.push(format!(
+                            "{name} (vocabulary={}, {tables:?}): {text:?} around: {around:?}",
+                            vocabulary.is_some()
+                        ));
+                    }
+                }
+            }
+        }
+        assert!(failures.is_empty(), "{failures:#?}");
+        assert_eq!(
+            joined(&read(cases[4].1, None, TableStyle::NameEach)),
+            "Title a b."
+        );
+    }
+
+    /// A fallback block's words keep their own source ranges, in source order.
+    #[test]
+    fn fallback_words_keep_their_own_ranges() {
+        let source = "Before.\n\n+---+---+\n| a | b |\n| c d |\n+---+---+\n\nAfter.";
+        let chunks = read(source, None, TableStyle::NameEach);
+        let spans: Vec<String> = chunks
+            .iter()
+            .flat_map(|aligned| &aligned.words)
+            .map(|span| utf16_slice(source, span.source_start, span.source_end))
+            .collect();
+        assert_eq!(spans, ["Before.", "a", "b", "c", "d", "After."]);
+        let all: Vec<&WordSpan> = chunks.iter().flat_map(|aligned| &aligned.words).collect();
+        for pair in all.windows(2) {
+            assert!(pair[0].source_end <= pair[1].source_start, "{pair:?}");
+        }
+        let fallback = &chunks[1].chunk;
+        assert_eq!(fallback.text, "a b c d.");
+        assert_eq!(fallback.pause_ms, 450);
+        let a = source.find("a |").unwrap();
+        let d = source.find("d |").unwrap() + 1;
+        assert_eq!(
+            (fallback.source_start, fallback.source_end),
+            (utf16(source, a), utf16(source, d))
+        );
     }
 }

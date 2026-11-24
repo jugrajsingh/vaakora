@@ -6,8 +6,9 @@
 //! same cell count hands the slice up to the next blank line, fence, or box-drawing or ASCII
 //! rule line to pulldown-cmark once, and every top-level table of that parse is taken. A
 //! candidate that cannot be read as a grid with confidence is a `Fallback` block, read in source
-//! order with its borders dropped, so no word is lost. Lines inside a fenced code block are never
-//! candidates.
+//! order with its borders dropped, so no word is lost. A fenced code block whose content, blank
+//! lines at either end aside, is one table is that table, fence lines included; lines inside any
+//! other fence are never candidates.
 
 use std::ops::Range;
 
@@ -83,8 +84,11 @@ pub(crate) struct Block<'a> {
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum BlockKind<'a> {
     Table(Table<'a>),
-    /// Not a grid read with confidence: read in source order, borders dropped.
-    Fallback,
+    /// Not a grid read with confidence: read in source order, borders dropped. Holds the text
+    /// between walls on every line that is not a rule, trimmed, blank parts omitted, in source
+    /// order. Walls are the box walls of a box block, `|` of an ASCII block and unescaped `|` of a
+    /// Markdown block (whose delimiter row is its rule).
+    Fallback(Vec<Range<usize>>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -204,7 +208,8 @@ impl Line {
     }
 }
 
-fn is_box(ch: char) -> bool {
+/// A box-drawing character (U+2500..=U+257F): it carries no words and is never spoken.
+pub(crate) fn is_box(ch: char) -> bool {
     ('\u{2500}'..='\u{257F}').contains(&ch)
 }
 
@@ -495,23 +500,34 @@ fn read_lines(source: &str, work: &mut usize) -> Vec<Line> {
 fn scan<'a>(source: &'a str, work: &mut usize) -> Vec<Block<'a>> {
     let lines = read_lines(source, work);
     let mut blocks = Vec::new();
-    let mut fence: Option<FenceMark> = None;
+    scan_lines(source, &lines, &mut blocks, work);
+    blocks
+}
+
+/// Pushes the blocks of `lines`. A fence is skipped whole (an unclosed one runs to the end),
+/// unless it holds one table and nothing else (see `fenced_table`).
+fn scan_lines<'a>(source: &'a str, lines: &[Line], blocks: &mut Vec<Block<'a>>, work: &mut usize) {
     // Lines before this index belong to a run of ASCII lines already found not to be a table;
     // they are still read as possible GFM lines, one by one.
     let mut ascii_checked = 0;
     let mut i = 0;
     while i < lines.len() {
         let line = &lines[i];
-        if let Some(open) = fence {
-            if line.fence.is_some_and(|mark| mark.closes(open)) {
-                fence = None;
+        if let Some(open) = line.fence.filter(|mark| mark.opens) {
+            let Some(close) = lines[i + 1..]
+                .iter()
+                .position(|line| line.fence.is_some_and(|mark| mark.closes(open)))
+                .map(|k| i + 1 + k)
+            else {
+                return;
+            };
+            if let Some(table) = fenced_table(source, &lines[i + 1..close], work) {
+                blocks.push(Block {
+                    range: line.start..lines[close].end,
+                    kind: BlockKind::Table(table),
+                });
             }
-            i += 1;
-            continue;
-        }
-        if let Some(mark) = line.fence.filter(|mark| mark.opens) {
-            fence = Some(mark);
-            i += 1;
+            i = close + 1;
             continue;
         }
         let delimiter = lines.get(i + 1).and_then(|next| next.delimiter_cells);
@@ -548,20 +564,89 @@ fn scan<'a>(source: &'a str, work: &mut usize) -> Vec<Block<'a>> {
                     .iter()
                     .take_while(|line| !line.ends_markdown_slice())
                     .count();
-            gfm_blocks(source, &lines[i..end], &mut blocks, work);
+            gfm_blocks(source, &lines[i..end], blocks, work);
             i = end;
             continue;
         }
         i += 1;
     }
-    blocks
+}
+
+/// The table a fence holds when its content, blank lines at either end dropped, is exactly one
+/// table block covering every one of those lines. A fence line inside a fence is code text, so
+/// content holding one is not a table.
+fn fenced_table<'a>(source: &'a str, content: &[Line], work: &mut usize) -> Option<Table<'a>> {
+    let first = content.iter().position(|line| line.kind != Kind::Blank)?;
+    let last = content.iter().rposition(|line| line.kind != Kind::Blank)?;
+    let content = &content[first..=last];
+    if content.iter().any(|line| line.fence.is_some()) {
+        return None;
+    }
+    let lines = content[0].start..content[content.len() - 1].end;
+    let mut inner = Vec::new();
+    scan_lines(source, content, &mut inner, work);
+    match inner.pop() {
+        Some(Block {
+            range,
+            kind: BlockKind::Table(table),
+        }) if inner.is_empty() && range == lines => Some(table),
+        _ => None,
+    }
 }
 
 fn grid_block<'a>(source: &'a str, run: &[Line], grid: Grid, work: &mut usize) -> Block<'a> {
     Block {
         range: run[0].start..run[run.len() - 1].end,
-        kind: grid_table(source, run, grid, work).map_or(BlockKind::Fallback, BlockKind::Table),
+        kind: match grid_table(source, run, grid, work) {
+            Some(table) => BlockKind::Table(table),
+            None => BlockKind::Fallback(fallback_parts(
+                source,
+                run.iter().filter(|line| !line.kind.is_rule()),
+                Walls::Grid(grid),
+                work,
+            )),
+        },
     }
+}
+
+/// What divides a fallback line into parts.
+#[derive(Debug, Clone, Copy)]
+enum Walls {
+    /// The walls of a box or ASCII grid.
+    Grid(Grid),
+    /// Unescaped `|` of a Markdown table.
+    Pipes,
+}
+
+/// The text between walls on each of `lines`, trimmed, blank parts omitted, in source order.
+fn fallback_parts<'l>(
+    source: &str,
+    lines: impl Iterator<Item = &'l Line>,
+    walls: Walls,
+    work: &mut usize,
+) -> Vec<Range<usize>> {
+    let mut parts = Vec::new();
+    for line in lines {
+        *work += line.end - line.start;
+        let mut part: Option<Range<usize>> = None;
+        let mut escaped = false;
+        for (at, ch) in source[line.start..line.end].char_indices() {
+            let at = line.start + at;
+            let wall = match walls {
+                Walls::Grid(grid) => is_wall(ch, grid),
+                Walls::Pipes => ch == '|' && !escaped,
+            };
+            escaped = ch == '\\' && !escaped;
+            if wall {
+                parts.extend(part.take());
+            } else if !ch.is_whitespace() {
+                let end = at + ch.len_utf8();
+                part = Some(part.map_or(at..end, |part| part.start..end));
+            }
+        }
+        parts.extend(part);
+    }
+    parts
 }
 
 /// A content line's cells: the trimmed source range of each column, `None` when blank.
@@ -840,11 +925,17 @@ fn gfm_blocks<'a>(source: &'a str, lines: &[Line], blocks: &mut Vec<Block<'a>>, 
                     &mut line,
                     range.end.saturating_sub(1).max(range.start),
                 );
-                let range = first.start..last.end;
+                let range = lines[first].start..lines[last].end;
                 blocks.push(Block {
                     range,
                     kind: if done.lossy {
-                        BlockKind::Fallback
+                        // The line after the header is the delimiter row, the table's one rule.
+                        let read = lines[first..=last]
+                            .iter()
+                            .enumerate()
+                            .filter(|&(k, _)| k != 1)
+                            .map(|(_, line)| line);
+                        BlockKind::Fallback(fallback_parts(source, read, Walls::Pipes, work))
                     } else {
                         BlockKind::Table(Table {
                             columns: done.columns,
@@ -868,12 +959,13 @@ fn trim_line_break(source: &str, range: Range<usize>) -> Range<usize> {
     range.start..range.start + text.len()
 }
 
-/// The line holding `offset`; `k` only moves forward, so a pass over one slice stays linear.
-fn line_at<'l>(lines: &'l [Line], k: &mut usize, offset: usize) -> &'l Line {
+/// The index of the line holding `offset`; `k` only moves forward, so a pass over one slice stays
+/// linear.
+fn line_at(lines: &[Line], k: &mut usize, offset: usize) -> usize {
     while *k + 1 < lines.len() && lines[*k].next <= offset {
         *k += 1;
     }
-    &lines[*k]
+    *k
 }
 
 #[cfg(test)]
@@ -917,7 +1009,9 @@ mod tests {
     fn table<'b, 'a>(block: &'b Block<'a>) -> &'b Table<'a> {
         match &block.kind {
             BlockKind::Table(table) => table,
-            BlockKind::Fallback => panic!("expected a table, got a fallback at {:?}", block.range),
+            BlockKind::Fallback(_) => {
+                panic!("expected a table, got a fallback at {:?}", block.range)
+            }
         }
     }
 
@@ -939,6 +1033,19 @@ mod tests {
         source[from..]
             .find(['\r', '\n'])
             .map_or(source.len(), |at| from + at)
+    }
+
+    /// The ranges of `texts` in `source`, each found after the one before it.
+    fn parts<const N: usize>(source: &str, texts: [&str; N]) -> Vec<Range<usize>> {
+        let mut from = 0;
+        texts
+            .iter()
+            .map(|text| {
+                let start = from + source[from..].find(text).expect("part present");
+                from = start + text.len();
+                start..from
+            })
+            .collect()
     }
 
     /// Alphanumeric words, sorted: the words of a block's source and of its cells must match.
@@ -1132,8 +1239,23 @@ mod tests {
         let long = "| a | b |\n|---|---|\n| 1 | 2 | 3 |";
         let blocks = find_blocks(long);
         assert_eq!(blocks.len(), 1, "{blocks:?}");
-        assert_eq!(blocks[0].kind, BlockKind::Fallback);
+        // Read as a fallback: the delimiter row is the rule, unescaped pipes are walls.
+        assert_eq!(
+            blocks[0].kind,
+            BlockKind::Fallback(parts(long, ["a", "b", "1", "2", "3"]))
+        );
         assert_eq!(blocks[0].range, 0..long.len());
+        let escaped = "| a | b |\n|---|---|\n| x \\| y | 2 | 3 |\nlazy row";
+        assert_eq!(
+            find_blocks(escaped),
+            [Block {
+                range: 0..escaped.len(),
+                kind: BlockKind::Fallback(parts(
+                    escaped,
+                    ["a", "b", "x \\| y", "2", "3", "lazy row"]
+                )),
+            }]
+        );
     }
 
     #[test]
@@ -1180,7 +1302,7 @@ mod tests {
         ] {
             let blocks = find_blocks(notice);
             assert_eq!(blocks.len(), 1, "{blocks:?}");
-            assert_eq!(blocks[0].kind, BlockKind::Fallback, "{notice}");
+            assert!(matches!(blocks[0].kind, BlockKind::Fallback(_)), "{notice}");
             assert_eq!(blocks[0].range, 0..notice.len());
         }
         let headed = "┌───┐\n│ h │\n├───┤\n│ a │\n│ b │\n└───┘";
@@ -1192,17 +1314,37 @@ mod tests {
 
     #[test]
     fn malformed_box_table_falls_back() {
-        for source in [
-            "┌───┬───┐\n│ h │ i │\n├───┼───┤\n│ a   b │\n└───┴───┘",
-            "┌───┬───┐\n│ h │ i │\n├────┼──┤\n│ a │ b │\n└───┴───┘",
+        for (source, texts) in [
+            (
+                "┌───┬───┐\n│ h │ i │\n├───┼───┤\n│ a   b │\n└───┴───┘",
+                ["h", "i", "a   b"].as_slice(),
+            ),
+            (
+                "┌───┬───┐\n│ h │ i │\n├────┼──┤\n│ a │ b │\n└───┴───┘",
+                ["h", "i", "a", "b"].as_slice(),
+            ),
         ] {
             let text = format!("Before.\n\n{source}\n\nAfter.");
             let blocks = find_blocks(&text);
             assert_eq!(blocks.len(), 1, "{blocks:?}");
-            assert_eq!(blocks[0].kind, BlockKind::Fallback, "{source}");
             let start = text.find(source).unwrap();
             assert_eq!(blocks[0].range, start..start + source.len());
+            // Rule lines skipped, the text between walls of every other line kept in order.
+            let BlockKind::Fallback(read) = &blocks[0].kind else {
+                panic!("{source}: {blocks:?}");
+            };
+            let read: Vec<&str> = read.iter().map(|part| &text[part.clone()]).collect();
+            assert_eq!(read, texts, "{source}");
         }
+        // An ASCII block: rules skipped, `|` walls dropped.
+        let ascii = "+---+---+\n| a | b |\n| c d |\n+---+---+";
+        assert_eq!(
+            find_blocks(ascii),
+            [Block {
+                range: 0..ascii.len(),
+                kind: BlockKind::Fallback(parts(ascii, ["a", "b", "c d"])),
+            }]
+        );
     }
 
     #[test]
@@ -1241,22 +1383,75 @@ mod tests {
         }
     }
 
+    /// A fence that holds anything besides one table stays code: nothing inside it is a block.
     #[test]
     fn fenced_tables_are_not_candidates() {
         let boxed = &MULTILINE[..MULTILINE.find("\n\n").unwrap()];
         for fenced in [
-            format!("```\n{boxed}\n```\n"),
-            format!("~~~\n{boxed}\n~~~"),
-            format!("Before.\n\n```text\n{boxed}\n```\n\nAfter."),
-            format!("```\n{GFM}\n```"),
+            format!("```\n{boxed}\nSee above.\n```\n"),
+            format!("~~~\nSee below.\n{boxed}\n~~~"),
+            format!("Before.\n\n```text\n{boxed}\n\n{GFM}\n```\n\nAfter."),
+            format!("```\n$ cat t.md\n{GFM}\n```"),
             format!("  ````\n{boxed}\n```\n{GFM}"),
         ] {
             assert_eq!(find_blocks(&fenced), [], "{fenced}");
         }
-        let after = format!("```\n{boxed}\n```\n\n{BOX}");
+        let after = format!("```\n{boxed}\nSee above.\n```\n\n{BOX}");
         let blocks = find_blocks(&after);
         assert_eq!(blocks.len(), 1, "{blocks:?}");
         assert_eq!(blocks[0].range.start, after.len() - BOX.len());
+    }
+
+    #[test]
+    fn table_only_fence_is_a_block() {
+        let boxed = &MULTILINE[..MULTILINE.find("\n\n").unwrap()];
+        for (fenced, open, close) in [
+            (format!("```\n{boxed}\n```"), "```", "```"),
+            (
+                format!("Before.\n\n```text\n\n{boxed}\n\n```\n\nAfter."),
+                "```text",
+                "```",
+            ),
+            (format!("~~~\n{boxed}\n~~~\n"), "~~~", "~~~"),
+        ] {
+            let blocks = find_blocks(&fenced);
+            assert_eq!(blocks.len(), 1, "{fenced}\n{blocks:?}");
+            let grid = table(&blocks[0]);
+            assert_eq!(header(&fenced, grid), ["Lane", "Progress", "Owner"]);
+            assert_eq!(
+                rows(&fenced, grid),
+                [
+                    ["B, the walk", "Task B1 committed, working on B2.", "Opus"],
+                    ["E", "9 files changed", "gpt-6.1-sol"],
+                ]
+            );
+            // From the opening fence to the end of the closing fence line.
+            let start = fenced.find(open).unwrap();
+            let end = fenced.rfind(close).unwrap() + close.len();
+            assert_eq!(blocks[0].range, start..end, "{fenced}");
+            // Every word between the fence lines (an info string is never read, as in code).
+            let cells: Vec<String> = grid
+                .header
+                .iter()
+                .chain(&grid.rows)
+                .flat_map(|row| texts(&fenced, row))
+                .collect();
+            assert_eq!(words(cells.iter().map(String::as_str)), words([boxed]));
+        }
+        let gfm = format!("```\n{GFM}\n```");
+        let blocks = find_blocks(&gfm);
+        assert_eq!(blocks.len(), 1, "{blocks:?}");
+        assert_eq!(blocks[0].range, 0..gfm.len());
+        assert_eq!(rows(&gfm, table(&blocks[0])), [["a", "b"]]);
+        // The table and one line of prose: code, not a table. Fence lines inside a fence are its
+        // code text, so a fenced table inside another fence is code too.
+        for mixed in [
+            format!("```\n{boxed}\nSee above.\n```"),
+            format!("```\nSee below.\n{boxed}\n```"),
+            format!("~~~\n```\n{boxed}\n```\n~~~"),
+        ] {
+            assert_eq!(find_blocks(&mixed), [], "{mixed}");
+        }
     }
 
     #[test]
@@ -1334,6 +1529,10 @@ mod tests {
             "# a | b\n|-|-|\n".repeat(20_000),
             "| a |\n|-|\n# h\n".repeat(10_000),
             format!("# a | b\n|-|-|\n{BOX}\n").repeat(2_000),
+            format!("```\n{BOX}\n```\n").repeat(2_000),
+            format!("```\n{}", "│ a │ b │\n".repeat(20_000)),
+            format!("┌─┬─┐\n{}│ x │\n", "│ a │ b │\n".repeat(20_000)),
+            "| a |\n|-|\n| 1 | 2 |\n\n".repeat(10_000),
         ];
         for source in &hostile {
             let (_, work) = find_blocks_counted(source);
@@ -1349,6 +1548,9 @@ mod tests {
         assert_eq!(blocks.len(), 10_000);
         // Every box after a Markdown-like slice is still found.
         let (blocks, _) = find_blocks_counted(&hostile[7]);
+        assert_eq!(blocks.len(), 2_000);
+        // Every fence that holds only a table is one table block.
+        let (blocks, _) = find_blocks_counted(&hostile[8]);
         assert_eq!(blocks.len(), 2_000);
     }
 }

@@ -6,7 +6,11 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 
 ### Added
 
-- Tables in the read text are read cell by cell, left to right and top to bottom: box-drawing tables (light, heavy, double and rounded lines), ASCII tables with `+---+` rules and Markdown tables. A cell that wraps onto several lines is read as one value. Each value is read with its column name ("Lane: B, the walk."), after "Table, 3 columns, 2 rows." and each "Row 1.", and the table ends with "End of table." Border characters are not spoken. While a row is read the reader highlights the whole row, and resuming inside a table starts again at the beginning of that row. Reads sent with `vaakora read` are read the same way.
+- Tables in the read text are read cell by cell, left to right and top to bottom: box-drawing tables (light, heavy, double and rounded lines), ASCII tables with `+---+` rules and Markdown tables. A cell that wraps onto several lines is read as one value. Each value is read with its column name ("Lane: B, the walk."), after "Table, 3 columns, 2 rows." and each "Row 1.", and the table ends with "End of table." Border characters are not spoken. While a row is read the reader highlights the whole row, and resuming inside a table starts again at the beginning of that row. Reads sent with `vaakora read` are read the same way. Box-drawing characters are never spoken anywhere, including in code read aloud (tree output reads as its file names). A table that cannot be read with confidence is read in its original order without its borders.
+
+### Changed
+
+- A fenced code block that holds only a table is read as a table, also when Read code blocks is off; any other code block is still replaced by "code block skipped".
 
 ## [0.2.0] - 2026-11-24
 
