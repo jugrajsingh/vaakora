@@ -41,6 +41,7 @@ const {
   tableStyleChange,
   tableStyleOptions,
 } = await import("./SettingsPage");
+const { Dropdown } = await import("@/components/ui/Dropdown");
 const i18n = i18next.createInstance();
 await i18n.init({ lng: "en", resources: { en: { translation: en } } });
 const supertonic = {
@@ -512,6 +513,58 @@ test("tables_trigger_has_the_focus_ring", () => {
       assert.ok(tag.split(/[\s"]+/).includes(name), `${name} in ${tag}`);
     }
   }
+});
+
+// Every element of the given type in an unrendered element tree.
+function elementsOfType(node: unknown, type: unknown): React.ReactElement[] {
+  if (Array.isArray(node)) return node.flatMap((n) => elementsOfType(n, type));
+  if (!React.isValidElement(node)) return [];
+  const own = node.type === type ? [node] : [];
+  const props = node.props as { children?: unknown };
+  return [...own, ...elementsOfType(props.children, type)];
+}
+
+test("choosing_a_table_style_sends_the_selection_update", () => {
+  const changes: Record<string, unknown>[] = [];
+  let tree: unknown;
+  // SettingsControls is called inside Probe's render so its hooks have a
+  // fiber; the returned tree holds the real Dropdown element and its onSelect.
+  const Probe = () => {
+    tree = SettingsControls({
+      selected: baseSelection,
+      models: [],
+      outputDevices: [],
+      error: null,
+      modelsFailed: false,
+      change: (patch) => changes.push(patch),
+      preview: () => {},
+      openModels: () => {},
+      retention,
+    });
+    return null;
+  };
+  renderToStaticMarkup(
+    <I18nextProvider i18n={i18n}>
+      <Probe />
+    </I18nextProvider>,
+  );
+  const tables = elementsOfType(tree, Dropdown).filter(
+    (element) =>
+      (element.props as { options?: { value: string }[] }).options?.[0]
+        ?.value === "name_each",
+  );
+  assert.equal(tables.length, 1, "one Tables dropdown");
+  const { onSelect } = tables[0].props as {
+    onSelect: (value: string) => void;
+  };
+  onSelect("names_once");
+  onSelect("name_each");
+  onSelect("values_only");
+  assert.deepEqual(changes, [
+    { tables: "names_once" },
+    { tables: "name_each" },
+    {},
+  ]);
 });
 
 test("table_style_change_sends_only_known_values", () => {
