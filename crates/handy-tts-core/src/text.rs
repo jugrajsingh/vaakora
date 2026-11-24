@@ -902,6 +902,12 @@ impl<'a> TextCursor<'a> {
     /// The next piece with skipped endings settled: a spoken word takes the marks of the skipped
     /// tokens right after it (see `join_skipped_ending`), up to the next spoken word or boundary
     /// marker, and a skipped ending with nothing spoken before it in its run is dropped.
+    ///
+    /// A table cell's skipped words stay with that cell: a label never takes the skipped words
+    /// after it, and a cell that spoke no word keeps them at its end: in a "blank" piece when the
+    /// names are read once, else on the cell's closing marker, so they end the chunk holding the
+    /// cell's label. Wrapped cells are read column by column, so the next cell can start earlier
+    /// in the source; carried over to it, these spans would break the chunk's source order.
     fn spoken_piece(&mut self) -> Option<Piece> {
         loop {
             let mut piece = self.piece()?;
@@ -910,10 +916,21 @@ impl<'a> TextCursor<'a> {
                 continue;
             }
             if piece.text.is_empty() {
+                if piece.mark.is_some() && !self.orphans.is_empty() {
+                    let skipped = std::mem::take(&mut self.orphans);
+                    if self.technical.tables == TableStyle::NamesOnce {
+                        let mut blank = Piece::label(tables::BLANK.into(), piece.span().clone());
+                        blank.words = skipped;
+                        self.pending.push_front(piece);
+                        return Some(blank);
+                    }
+                    piece.words = skipped;
+                }
                 return Some(piece);
             }
+            let label = piece.row.is_some() && piece.words.is_empty();
             piece.words.splice(0..0, std::mem::take(&mut self.orphans));
-            if self.vocabulary.is_none() {
+            if self.vocabulary.is_none() || label {
                 return Some(piece);
             }
             while let Some(next) = self.piece() {
@@ -1052,6 +1069,8 @@ impl<'a> TextCursor<'a> {
         let mut pause = 0;
         let mut synthetic_period = false;
         let mut mark = None;
+        // Skipped words that end the chunk: those of a table cell that spoke none.
+        let mut ending = Vec::new();
         let mut boundary = None;
         while let Some(mut p) = self.spoken_piece() {
             if self.resume_byte > 0 && p.span().end <= self.resume_byte {
@@ -1059,8 +1078,10 @@ impl<'a> TextCursor<'a> {
             }
             if p.text.is_empty() {
                 if words.is_empty() {
+                    self.orphans.append(&mut p.words);
                     continue;
                 }
+                ending = std::mem::take(&mut p.words);
                 (pause, synthetic_period) = self.structural_pause(p.pause);
                 mark = p.mark;
                 break;
@@ -1174,7 +1195,7 @@ impl<'a> TextCursor<'a> {
         }
         // Skipped words still waiting here have no spoken word after them: the source has ended.
         let end = offset.saturating_sub(1);
-        for word in std::mem::take(&mut self.orphans) {
+        for word in ending.into_iter().chain(std::mem::take(&mut self.orphans)) {
             if self.resume_byte > 0 && word.source.end <= self.resume_byte {
                 continue;
             }
@@ -3003,6 +3024,51 @@ mod table_reading {
             assert!(text.chars().count() <= STREAMING_CHUNK_CHARS, "{text:?}");
             for word in text.split(' ') {
                 assert!(words.contains(&word), "{word:?} is cut out of a word");
+            }
+        }
+    }
+
+    /// A cell whose only word the vocabulary skips keeps its span in its own chunk, so every
+    /// chunk's spans stay in source order even when wrapped cells are read column by column.
+    #[test]
+    fn skipped_cell_keeps_spans_in_source_order() {
+        let wrapped = "┌───────┬───────┬───────┐\n│ H1    │ H2    │ H3    │\n├───────┼───────┼───────┤\n│ a     │       │ c     │\n│ z     │ SKIP  │ d     │\n├───────┼───────┼───────┤\n│ b     │ x     │ e     │\n└───────┴───────┴───────┘";
+        let first = "| H1 | H2 |\n|---|---|\n| SKIP | b |";
+        let file = Vocabulary::parse(r#"{"version":1,"terms":{"SKIP":{"skip":true}}}"#).unwrap();
+        let skipping = Some(Arc::new(Vocabulary::merged(&file)));
+        for (source, names_once) in [
+            (
+                wrapped,
+                "Table, 3 columns, 2 rows. Columns: H1, H2, H3. Row 1: a z; blank; c d. Row 2: b; x; e. End of table.",
+            ),
+            (
+                first,
+                "Table, 2 columns, 1 row. Columns: H1, H2. Row 1: blank; b. End of table.",
+            ),
+        ] {
+            let skip = source.find("SKIP").unwrap();
+            let skip = (utf16(source, skip), utf16(source, skip + "SKIP".len()));
+            for tables in [TableStyle::NameEach, TableStyle::NamesOnce] {
+                let chunks = read(source, skipping.clone(), tables);
+                for aligned in &chunks {
+                    assert!(
+                        aligned
+                            .words
+                            .windows(2)
+                            .all(|pair| pair[0].source_end <= pair[1].source_start),
+                        "spans not in source order: {aligned:?}"
+                    );
+                }
+                let skipped: Vec<&WordSpan> = chunks
+                    .iter()
+                    .flat_map(|aligned| &aligned.words)
+                    .filter(|span| (span.source_start, span.source_end) == skip)
+                    .collect();
+                assert_eq!(skipped.len(), 1, "{tables:?} {source:?}");
+                assert_eq!(skipped[0].spoken_start, skipped[0].spoken_end);
+                if tables == TableStyle::NamesOnce {
+                    assert_eq!(joined(&chunks), names_once);
+                }
             }
         }
     }
