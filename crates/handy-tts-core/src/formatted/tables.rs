@@ -3,10 +3,11 @@
 //! One forward pass reads and classifies every line once. A run of box-drawing lines, or of
 //! ASCII `+---+` rules and `|` walls, that holds a rule line and a content line is parsed into a
 //! grid by display column. A Markdown (GFM) header line followed by a delimiter row with the
-//! same cell count hands the slice up to the next blank line, fence, box-drawing line or ASCII
-//! rule to pulldown-cmark once, and every top-level table of that parse is taken. A candidate that cannot be read as a grid
-//! with confidence is a `Fallback` block, read in source order with its borders dropped, so no
-//! word is lost. Lines inside a fenced code block are never candidates.
+//! same cell count hands the slice up to the next blank line, fence, or box-drawing or ASCII
+//! rule line to pulldown-cmark once, and every top-level table of that parse is taken. A
+//! candidate that cannot be read as a grid with confidence is a `Fallback` block, read in source
+//! order with its borders dropped, so no word is lost. Lines inside a fenced code block are never
+//! candidates.
 
 #![cfg_attr(
     not(test),
@@ -140,14 +141,13 @@ struct Line {
 }
 
 impl Line {
-    /// A GFM slice stops before a blank line, a fence opener, and any box-drawing line or ASCII
-    /// `+---+` rule: pulldown would read such a line after a table as one more row, and the line
-    /// scan must reach it to find a grid table there.
+    /// A GFM slice stops before a blank line, a fence opener, and a box-drawing or ASCII `+---+`
+    /// rule line: pulldown would read such a line after a table as one more row, and the line
+    /// scan must reach it to find a grid table there. A grid with no top rule that starts inside
+    /// the slice keeps its words but loses its header (accepted).
     fn ends_markdown_slice(&self) -> bool {
-        matches!(
-            self.kind,
-            Kind::Blank | Kind::BoxRule | Kind::BoxContent | Kind::AsciiRule
-        ) || self.fence.is_some_and(|mark| mark.opens)
+        matches!(self.kind, Kind::Blank | Kind::BoxRule | Kind::AsciiRule)
+            || self.fence.is_some_and(|mark| mark.opens)
     }
 }
 
@@ -1234,6 +1234,15 @@ mod tests {
             assert_eq!(header(&source, grid), ["h", "i"], "{source}");
             assert_eq!(rows(&source, grid), [["a", "b"]], "{source}");
         }
+    }
+
+    #[test]
+    fn gfm_body_with_box_walls_keeps_rows() {
+        let source = "h | i\n--- | ---\n│ a | b │\nc | d";
+        let blocks = find_blocks(source);
+        assert_eq!(blocks.len(), 1, "{blocks:?}");
+        assert_eq!(blocks[0].range, 0..source.len());
+        assert_eq!(table(&blocks[0]).rows.len(), 2, "{blocks:?}");
     }
 
     #[test]
