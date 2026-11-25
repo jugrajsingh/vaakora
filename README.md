@@ -1,4 +1,25 @@
-# Vaakora
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/mark-dark.svg" />
+    <img src="docs/assets/brand/mark.svg" height="64" alt="" />
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/wordmark-dark.svg" />
+    <img src="docs/assets/brand/wordmark-light.svg" height="48" alt="Vaakora" />
+  </picture>
+</h1>
+
+<p align="center"><strong>Speak to type. Listen to read. All on your own computer.</strong></p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-376b43" alt="Licence: MIT" /></a>
+  <a href="#platform-support"><img src="https://img.shields.io/badge/platform-Linux-376b43" alt="Platform: Linux" /></a>
+  <a href="#at-a-glance"><img src="https://img.shields.io/badge/runs-locally-376b43" alt="Runs locally" /></a>
+</p>
+
+<p align="center">
+  <img src="docs/assets/clips/dictate.webp" width="720" alt="Dictating into a note: the recording pill shows the voice, then the sentence appears" />
+</p>
 
 **Local dictation, transcript cleanup and read aloud for Linux. Everything runs on your own computer.**
 
@@ -11,11 +32,18 @@
 - **Private by default:** audio and text stay on the machine.
 - **Linux desktop app:** built and tested on Fedora 44 (KDE Plasma, Wayland).
 
+The [docs](docs/index.html) have a page per feature.
+
 ## What it does
 
 ### Dictation
 
 Press a configurable shortcut, speak, and the transcript is pasted into the app you are using.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screens/dictation-dark.webp" />
+  <img src="docs/assets/screens/dictation-light.webp" width="720" alt="The Dictation Settings tab in Vaakora. It lists the speech model, the preferred languages, the microphone, and the paste method, clipboard handling and auto submit options." />
+</picture>
 
 - **Shortcut:** hold it to record and release to stop, or tap it to toggle recording on and off.
 - **Silence:** filtered with Silero voice activity detection.
@@ -28,26 +56,42 @@ Press a configurable shortcut, speak, and the transcript is pasted into the app 
 
 A "Local (in-app)" post-processing provider cleans up a transcript with a small language model that runs on the CPU.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screens/cleanup-local-dark.webp" />
+  <img src="docs/assets/screens/cleanup-local-light.webp" width="720" alt="The Cleanup tab with the Local (in-app) provider. The model is S1-mini by Superwhisper, with Styling set to Semi-formal, Structure to Prose and Context to General, and a status of Not loaded." />
+</picture>
+
 - Runs through a bundled `llama-server`. Nothing has to be installed or started separately.
 - Transcripts never leave the machine.
 - Five downloadable models are offered, each pinned to a fixed revision, size and SHA-256.
 - History keeps which model produced each cleaned-up entry and compares it with the raw text.
-- A **Raw Shortcut** sits next to the **Post-processing Shortcut**.
+- The **Dictate with cleanup** shortcut sits next to the **Dictate** shortcut, which records without cleanup.
 
 ### Read aloud
 
 A shortcut reads the text you last copied, in a popup that follows along.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screens/read-aloud-dark.webp" />
+  <img src="docs/assets/screens/read-aloud-light.webp" width="560" alt="The Read aloud popup showing the heading Garden notes and a paragraph about a raised bed. The sentence being read is highlighted, and the controls show play, Read clipboard, a progress bar and the state Paused." />
+</picture>
+
 - **Shortcut:** Super+Alt+R by default.
 - **Follow-along popup:** highlights the sentence being read.
 - **Streaming and controls:** reading is streamed and has speed and pitch controls.
-- **Markdown:** marks are not spoken, and code blocks are skipped unless you ask for them; a code block that holds only a table is read as a table.
-- **Tables:** box-drawing, ASCII and Markdown tables are read row by row, each value with its column name (a setting reads the column names once instead), and their borders are not spoken. Box-drawing characters are never spoken anywhere, and a table that cannot be read with confidence is read in its original order without its borders. The reader shows box-drawing and ASCII tables in a monospaced font so their walls line up.
+- **Markdown:** marks are not spoken.
+  - Code blocks are skipped unless you ask for them.
+  - A code block that holds only a table is read as a table.
+- **Tables:** box-drawing, ASCII and Markdown tables are read row by row, each value with its column name (a setting reads the column names once instead), and their borders are not spoken.
+  - Box-drawing characters are never spoken anywhere.
+  - A table that cannot be read with confidence is read in its original order without its borders.
+  - The reader shows box-drawing and ASCII tables in a monospaced font so their walls line up.
 - **Technical reading:** paths, file names, flags, versions and code names are spoken the way an engineer would say them.
 - **Vocabulary:** extend the spoken forms in `tts-vocabulary.json` in the app data directory. It also accepts entries for one voice model only.
 - **No overlap:** dictation and reading never overlap.
 
-Eight downloadable voice models are offered. GPU and NPU mean an Intel GPU or NPU through OpenVINO.
+- **Voice models:** eight downloadable voice models are offered, in the six rows below. The Indic Tiny TTS row covers three of them: Indian English, Hindi and Punjabi.
+- **Devices:** GPU and NPU mean an Intel GPU or NPU through OpenVINO.
 
 | Voice model                                     | Runs on                              |
 | ----------------------------------------------- | ------------------------------------ |
@@ -60,6 +104,57 @@ Eight downloadable voice models are offered. GPU and NPU mean an Intel GPU or NP
 
 - The app picks the best device that works on the machine.
 - Pocket TTS keeps part of its work on the CPU (ONNX Runtime). On the GPU only its text conditioner runs there, and its main flow model, flow sampler and audio decoder stay on the CPU. On the NPU its main flow model stays on the CPU.
+
+#### Tables
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screens/tables-reader-dark.webp" />
+  <img src="docs/assets/screens/tables-reader-light.webp" width="560" alt="The Read aloud popup showing a box-drawing table with the columns Bed, Crop and Water and the rows North, Lettuce, Twice a week and South, Basil, Every other day, in a monospaced font with the header row highlighted." />
+</picture>
+
+- Tables in the text you copy are read row by row, each value with its column name, and their borders are not spoken.
+- Choose Name each value or Names once, then rows with the **Tables** setting in Read aloud, Settings. The [Tables page](docs/tables.html) has an example of each.
+
+### Vocabulary
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screens/vocabulary-dark.webp" />
+  <img src="docs/assets/screens/vocabulary-light.webp" width="720" alt="The Vocabulary tab with three entries of your own. kubectl is spoken as cube control and nginx as engine x, both for all models. SQL is spoken as sequel for the Phonon 31M English model only. Search, Correct a reading and Add entry buttons are at the top." />
+</picture>
+
+- Change how a word is spoken in Read aloud: correct a reading or add an entry, for all voice models or for one.
+- Entries are kept in `tts-vocabulary.json` in the app data directory. See the [Vocabulary page](docs/vocabulary.html).
+
+### History
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screens/history-dictation-dark.webp" />
+  <img src="docs/assets/screens/history-dictation-light.webp" width="720" alt="The Dictation History tab with three entries from November 25: Add oat milk, lemons and a loaf of rye bread to the shopping list, The library closes at six on Saturdays, and Remind me to water the tomato seedlings before Friday. Each row has Copy, Star and expand buttons. Transcribe file and Clear history are at the top." />
+</picture>
+
+- Dictation history keeps your recordings. A cleaned-up entry says which model produced it and can be compared with the raw text. Clear history removes all unstarred entries and their recordings, and asks first.
+- Read aloud history is text only: the app never keeps audio for a read.
+- Both histories are kept on this computer. See the [History page](docs/history.html).
+
+### Models
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screens/models-dark.webp" />
+  <img src="docs/assets/screens/models-light.webp" width="720" alt="The Models page, Dictation tab. Parakeet Unified English 0.6B is installed and selected, at 731 MB. Other models for your languages are listed below with their size and a speed rating." />
+</picture>
+
+- Models has three tabs: Dictation, Read aloud and Cleanup. Download a model, choose it, and see its size and licence.
+- Models are downloaded on demand and run on your own computer. See the [Models page](docs/models.html).
+
+### Settings
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screens/settings-dark.webp" />
+  <img src="docs/assets/screens/settings-light.webp" width="720" alt="The Settings page, General tab. The Shortcuts group lists Dictate as Ctrl + Alt + Space, Dictate with cleanup as Ctrl + Alt + Shift + Space, Activation, and Read aloud as Super + Alt + R. Each has Reset and Clear buttons. The Sound group below has an Audio feedback switch." />
+</picture>
+
+- General holds the shortcuts (**Dictate**, **Dictate with cleanup**, Activation and Read aloud) and the sound options.
+- A shortcut already assigned to another action is refused with a message naming that action. See the [Settings page](docs/settings.html).
 
 The full list of changes is in [CHANGELOG.md](CHANGELOG.md). Its new interface strings are translated into the other 26 languages by machine and have not been reviewed by native speakers.
 
@@ -101,6 +196,12 @@ Right after the app starts, `vaakora read` can return exit 5 (`tts-unavailable`)
 - The app listens on `$XDG_RUNTIME_DIR/vaakora.sock` (or `$VAAKORA_SOCKET`). The socket is readable and writable only by you, in a folder only you can open, and the app answers only processes that run as your user.
 - Text reaches the app through a file or standard input, never as an argument, and the socket's own logging never holds it.
 - The socket is local to the machine. Nothing is sent over a network.
+
+## Moving from Handy
+
+- On its first start, when Vaakora has no data folder yet and Handy's settings file exists, Vaakora copies your settings, both histories, recordings, the vocabulary file, models and web storage. Start at login is turned off in the copy, so only one app starts at login.
+- The Handy folder is only read and is never changed. Quit Handy before dictating, because both apps use the same shortcut.
+- See the [Moving from Handy page](docs/moving-from-handy.html).
 
 ## Platform support
 

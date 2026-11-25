@@ -4,6 +4,10 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 
 ## [Unreleased]
 
+### Added
+
+- Documentation: a docs/ site with a page per feature, and README screenshots, badges and an overlay clip.
+
 ## [0.3.1] - 2026-11-25
 
 ### Fixed
