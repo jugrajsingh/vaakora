@@ -14,7 +14,7 @@ thiserror.workspace = true
 signalsmith-stretch.workspace = true
 regex.workspace = true
 pulldown-cmark = "=0.13.0"
-reqwest = { version = "0.12", features = ["blocking"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "charset", "http2", "system-proxy", "blocking"] }
 sha2 = "0.10"
 unicode-width = "0.2"
 specta.workspace = true

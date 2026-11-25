@@ -62,7 +62,7 @@ symphonia-adapter-libopus = "0.2.9"
 # Resamples a decoded file to 16 kHz; the version handy-recorder already uses.
 rubato = "5"
 handy-recorder = "0.1.1"
-reqwest = { version = "0.12", features = ["json", "stream", "gzip", "brotli", "deflate", "blocking"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "charset", "http2", "system-proxy", "json", "stream", "gzip", "brotli", "deflate", "blocking"] }
 futures-util = "0.3"
 rustfft = "6.4.0"
 strsim = "0.11.0"
@@ -92,8 +92,9 @@ specta = "=2.0.0-rc.22"
 specta-typescript = "0.0.9"
 tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
 tauri-plugin-dialog = "2.6"
-hf-hub = { git = "https://github.com/cjpais/hf-hub", branch = "cancellable-downloads", features = [
+hf-hub = { git = "https://github.com/cjpais/hf-hub", branch = "cancellable-downloads", default-features = false, features = [
   "tokio",
+  "rustls-tls",
 ] }
 thiserror = "2"
 
