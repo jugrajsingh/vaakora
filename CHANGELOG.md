@@ -4,6 +4,8 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-25
+
 ### Fixed
 
 - The Read aloud popup shows a box-drawing or ASCII table in a monospaced font, so its walls line up with their columns. The table keeps its spaces and scrolls sideways when it is wider than the popup, and the highlighted row stays inside it. Markdown tables and all other text keep their font. The backend now sends the table blocks of the read text with the reader's state (`grid_blocks`, UTF-16 ranges), and read-aloud history entries carry them too, found again from the stored text on every load; nothing new is stored.
