@@ -34,7 +34,7 @@ DIST="$HERE/dist"
 LOGS="$WORK/logs"
 IMAGE=vaakora-build:fedora45
 # One cargo target volume shared with dev.sh (same image). Changing IMAGE to another Fedora release means removing this volume first:
-# output linked against one release's system libraries (OpenSSL 3 on 44, OpenSSL 4 on 45) must not be reused on another.
+# output linked against one release's system libraries must not be reused on another.
 TARGET_VOL=vaakora-target
 
 if [[ -n "$(git -C "$REPO" status --porcelain)" ]]; then

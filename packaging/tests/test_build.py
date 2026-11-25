@@ -84,8 +84,25 @@ class BuildTests(unittest.TestCase):
         self.dependencies.write_text("\n".join(DEPS) + "\n")
         self.package = self.scratch / "Vaakora.rpm"
         self.package.touch()
+        self.payload = self.scratch / "payload"
+        (self.payload / "usr/lib/Vaakora/tts").mkdir(parents=True)
+        (self.payload / "usr/lib/Vaakora/tts/vaakora-tts").write_bytes(b"\x7fELF libc.so.6")
+        (self.payload / "usr/lib/Vaakora/notes.txt").write_text("libssl.so.4\n")
         self.environment.update(
-            {"RPM_FILES": str(self.files), "RPM_DEPS": str(self.dependencies)}
+            {
+                "RPM_FILES": str(self.files),
+                "RPM_DEPS": str(self.dependencies),
+                "PAYLOAD": str(self.payload),
+                "TMPDIR": str(self.scratch),
+            }
+        )
+        self.script(
+            "rpm2cpio",
+            'cd "$PAYLOAD"\nfind . | cpio -o -H newc --quiet\n',
+        )
+        self.script(
+            "readelf",
+            'if [ "${READELF_RC:-0}" != 0 ]; then exit "$READELF_RC"; fi\necho " 0x0000000000000001 (NEEDED)             Shared library: [$(sed "s/.* //" "$2")]"\n',
         )
         self.script(
             "rpm",
@@ -270,6 +287,27 @@ class BuildTests(unittest.TestCase):
             complete_files + "/usr/lib/Vaakora/tts/libze_intel_npu.so.1\n"
         )
         self.assertEqual(self.verify().returncode, 1)
+
+    def test_elf_linking_openssl_is_refused(self) -> None:
+        binary = self.payload / "usr/lib/Vaakora/tts/vaakora-tts"
+        self.assertEqual(self.verify().returncode, 0)
+        for needed in ("libssl.so.4", "libcrypto.so.3"):
+            with self.subTest(needed=needed):
+                binary.write_bytes(b"\x7fELF " + needed.encode())
+                result = self.verify()
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn(
+                    "refusing: /usr/lib/Vaakora/tts/vaakora-tts links libssl or libcrypto",
+                    result.stderr,
+                )
+        binary.write_bytes(b"\x7fELF libssl3-unrelated.so")
+        self.assertEqual(self.verify().returncode, 0)
+
+    def test_text_file_naming_libssl_is_not_an_elf(self) -> None:
+        self.assertEqual(self.verify().returncode, 0)
+
+    def test_unreadable_elf_fails_closed(self) -> None:
+        self.assertEqual(self.verify(READELF_RC="23").returncode, 23)
 
     def test_package_without_ratings_is_refused(self) -> None:
         self.files.write_text(

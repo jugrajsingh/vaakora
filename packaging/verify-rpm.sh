@@ -32,4 +32,19 @@ for dependency in intel-compute-runtime intel-level-zero oneapi-level-zero wl-cl
     exit 1
   fi
 done
-echo 'RPM TTS files, runtime plugins and weak dependencies verified'
+payload=$(mktemp -d)
+trap 'rm -rf "$payload"' EXIT
+(cd "$payload" && rpm2cpio "$package" | cpio -id --quiet)
+chmod -R u+rX "$payload"
+# readelf reads each ELF without running the loader, so this covers every binary and bundled library in the package.
+while IFS= read -r -d '' file; do
+  if [[ "$(LC_ALL=C head -c 4 "$file" | od -An -tx1 | tr -d ' \n')" != 7f454c46 ]]; then
+    continue
+  fi
+  dynamic=$(readelf -d "$file")
+  if grep -Eq 'NEEDED.*\[lib(ssl|crypto)\.so' <<<"$dynamic"; then
+    echo "refusing: ${file#"$payload"} links libssl or libcrypto" >&2
+    exit 1
+  fi
+done < <(find "$payload" -type f -print0)
+echo 'RPM TTS files, runtime plugins, weak dependencies and the rustls-only TLS stack verified'
