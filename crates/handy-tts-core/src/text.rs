@@ -169,52 +169,149 @@ enum Item<'a> {
     /// Ends a spoken value or sentence: a boundary with this pause, and the mark its chunk ends
     /// with (`None`: the synthetic period of any boundary of 250 or more).
     End(u32, Option<char>),
+    /// A table or fallback block starts at this byte inside an open paragraph, list item or
+    /// heading (prose on the line before it, no blank line between): the prose before it ends
+    /// there with that block's boundary pause.
+    BlockStart(usize, u32),
 }
-/// A stretch of the source: prose between table blocks, a table, or a fallback block with the
-/// text it reads (see `BlockKind::Fallback`).
-enum Part<'a> {
-    Prose(Range<usize>),
-    Table(Range<usize>, Table<'a>),
-    Fallback(Range<usize>, Vec<Range<usize>>),
+/// The Markdown events of the whole source, with source byte ranges.
+fn document_events(source: &str) -> impl Iterator<Item = (Event<'_>, Range<usize>)> {
+    Parser::new_ext(
+        source,
+        Options::ENABLE_TABLES | Options::ENABLE_FOOTNOTES | Options::ENABLE_STRIKETHROUGH,
+    )
+    .into_offset_iter()
 }
-/// The cursor's input: the Markdown events of the prose between table blocks, each part parsed
-/// on its own slice of `source` (so every range stays a range of `source`), with each table or
-/// fallback block in its place. Text without a table block is one part, parsed as it always was.
-fn source_items(source: &str) -> impl Iterator<Item = Item<'_>> {
-    let mut parts = Vec::new();
-    let mut prose = 0;
-    for block in tables::find_blocks(source) {
-        parts.push(Part::Prose(prose..block.range.start));
-        prose = block.range.end;
-        parts.push(match block.kind {
-            BlockKind::Table(table) => Part::Table(block.range, table),
-            BlockKind::Fallback(read) => Part::Fallback(block.range, read),
-        });
+/// The end of the line break after byte `end` (or `end` when no line break follows).
+fn after_line_break(source: &str, end: usize) -> usize {
+    let rest = &source[end..];
+    end + if rest.starts_with("\r\n") {
+        2
+    } else {
+        usize::from(rest.starts_with('\n'))
     }
-    parts.push(Part::Prose(prose..source.len()));
-    parts
-        .into_iter()
-        .flat_map(move |part| -> Box<dyn Iterator<Item = Item<'_>> + '_> {
-            match part {
-                Part::Prose(prose) => {
-                    let offset = prose.start;
-                    Box::new(
-                        Parser::new_ext(
-                            &source[prose],
-                            Options::ENABLE_TABLES
-                                | Options::ENABLE_FOOTNOTES
-                                | Options::ENABLE_STRIKETHROUGH,
-                        )
-                        .into_offset_iter()
-                        .map(move |(event, range)| {
-                            Item::Event(event, range.start + offset..range.end + offset)
-                        }),
-                    )
+}
+/// The cursor's input: `document`, the events of one Markdown parse of the whole source (so
+/// reference links and footnotes keep their definitions wherever they sit), with each table or
+/// fallback block put in place of the events inside it. Events that only overlap a block (a
+/// paragraph or list around it) are kept, after the block. Text without a table block reads
+/// exactly as the parse does; every event is read once.
+fn source_items<'a>(
+    source: &'a str,
+    document: impl Iterator<Item = (Event<'a>, Range<usize>)> + 'a,
+) -> impl Iterator<Item = Item<'a>> {
+    let mut blocks = tables::find_blocks(source).into_iter().peekable();
+    let mut document = document.peekable();
+    let mut queue: VecDeque<Item<'a>> = VecDeque::new();
+    // The boundary pause of each open Markdown block, innermost last (0: none).
+    let mut open: Vec<u32> = Vec::new();
+    let mut track = move |item: Item<'a>| {
+        if let Item::Event(event, _) = &item {
+            match event {
+                Event::Start(Tag::Paragraph | Tag::HtmlBlock) => open.push(450),
+                Event::Start(Tag::Heading { .. }) => open.push(600),
+                Event::Start(Tag::Item) => open.push(300),
+                Event::Start(_) => open.push(0),
+                Event::End(_) => {
+                    open.pop();
                 }
-                Part::Table(block, table) => Box::new(std::iter::once(Item::Table(block, table))),
-                Part::Fallback(block, read) => Box::new(fallback_items(source, block, read)),
+                _ => {}
             }
-        })
+        }
+        let glued = open.iter().rev().copied().find(|&pause| pause > 0);
+        (item, glued)
+    };
+    let mut glued = None;
+    std::iter::from_fn(move || {
+        loop {
+            if let Some(item) = queue.pop_front() {
+                let (item, now) = track(item);
+                glued = now;
+                return Some(item);
+            }
+            let at_block = match (blocks.peek(), document.peek()) {
+                (Some(block), Some((_, range))) => range.start >= block.range.start,
+                (Some(_), None) => true,
+                (None, _) => false,
+            };
+            if !at_block {
+                let (event, range) = document.next()?;
+                let (item, now) = track(Item::Event(event, range));
+                glued = now;
+                return Some(item);
+            }
+            let block = blocks.next()?;
+            let limit = after_line_break(source, block.range.end);
+            let mut inside = Vec::new();
+            let mut around = Vec::new();
+            while let Some((event, range)) = document.next_if(|(_, range)| range.start < limit) {
+                if range.start >= block.range.start && range.end <= limit {
+                    inside.push((event, range));
+                } else {
+                    around.push(Item::Event(event, range));
+                }
+            }
+            if let Some(pause) = glued {
+                queue.push_back(Item::BlockStart(block.range.start, pause));
+            }
+            match block.kind {
+                BlockKind::Table(table) => {
+                    queue.push_back(Item::Table(block.range, with_document_cells(table, inside)))
+                }
+                BlockKind::Fallback(read) => {
+                    queue.extend(fallback_items(source, block.range, read));
+                }
+            }
+            queue.extend(around);
+        }
+    })
+}
+/// The inline events of one Markdown cell, with source byte ranges.
+type CellEvents<'a> = Vec<(Event<'a>, Range<usize>)>;
+/// A Markdown table with each cell's events taken from the whole-source parse (`inside`, the
+/// events inside the block), so a reference or footnote in a cell reads as anywhere else. A
+/// table whose parse holds other rows (a box or ASCII table, or one read differently in its
+/// context) keeps its own cells.
+fn with_document_cells<'a>(
+    mut table: Table<'a>,
+    inside: Vec<(Event<'a>, Range<usize>)>,
+) -> Table<'a> {
+    let mut rows: Vec<Vec<CellEvents<'a>>> = Vec::new();
+    let mut cell: Option<CellEvents<'a>> = None;
+    for (event, range) in inside {
+        match event {
+            Event::Start(Tag::TableHead | Tag::TableRow) => rows.push(Vec::new()),
+            Event::Start(Tag::TableCell) => cell = Some(Vec::new()),
+            Event::End(TagEnd::TableCell) => {
+                if let (Some(row), Some(done)) = (rows.last_mut(), cell.take()) {
+                    row.push(done);
+                }
+            }
+            Event::Start(Tag::Table(_))
+            | Event::End(TagEnd::Table | TagEnd::TableHead | TagEnd::TableRow) => {}
+            event => {
+                if let Some(cell) = cell.as_mut() {
+                    cell.push((event, range));
+                }
+            }
+        }
+    }
+    let ours = usize::from(table.header.is_some()) + table.rows.len();
+    let inline = table
+        .header
+        .iter()
+        .chain(&table.rows)
+        .all(|row| row.cells.iter().all(|cell| matches!(cell, Cell::Inline(_))));
+    if rows.len() != ours || !inline || rows.iter().any(|row| row.len() > table.columns) {
+        return table;
+    }
+    for (row, cells) in table.header.iter_mut().chain(&mut table.rows).zip(rows) {
+        let mut cells = cells.into_iter();
+        for slot in &mut row.cells {
+            *slot = Cell::Inline(cells.next().unwrap_or_default());
+        }
+    }
+    table
 }
 /// A fallback block read as one paragraph in source order: its parts as the lines of a box cell
 /// (a soft break between them), each word with its own range, then the paragraph's boundary.
@@ -379,7 +476,7 @@ impl<'a> TextCursor<'a> {
         Ok(Self::with_events(
             source,
             read_code,
-            source_items(source),
+            source_items(source, document_events(source)),
             emoji,
             version,
         ))
@@ -812,11 +909,11 @@ impl<'a> TextCursor<'a> {
             };
             let (event, range) = match item {
                 Item::Event(event, range) => (event, range),
+                Item::BlockStart(at, pause) => {
+                    return self.boundary(at..at, pause);
+                }
                 Item::Table(block, table) => {
                     self.speak_table(block, table);
-                    if let Some(word) = self.finish_word() {
-                        return Some(word);
-                    }
                     continue;
                 }
                 Item::Row(row) => {
@@ -3376,5 +3473,99 @@ mod table_reading {
             (fallback.source_start, fallback.source_end),
             (utf16(source, a), utf16(source, d))
         );
+    }
+
+    /// Reference links and footnotes keep their definitions across a table, on either side of
+    /// it, and a reference inside a Markdown cell resolves against the whole text, as it did
+    /// before tables were read.
+    #[test]
+    fn references_keep_their_definitions_across_a_table() {
+        let table = "| A | B |\n|---|---|\n| x | y |";
+        let defined = "[ref]: https://example.com/path\n\n[^1]: omit footnote";
+        let reads = "Table, 2 columns, 1 row. Row 1. A: x. B: y. End of table.";
+        for (source, expected) in [
+            (
+                format!("See [guide][ref] and note[^1].\n\n{table}\n\n{defined}"),
+                format!("See guide and note. {reads}"),
+            ),
+            (
+                format!("{defined}\n\n{table}\n\nSee [guide][ref] and note[^1]."),
+                format!("{reads} See guide and note."),
+            ),
+            (
+                "[ref]: https://example.com/path\n\n| A | B |\n|---|---|\n| [guide][ref] | y[^1] |\n\n[^1]: omit footnote"
+                    .to_string(),
+                "Table, 2 columns, 1 row. Row 1. A: guide. B: y. End of table.".to_string(),
+            ),
+        ] {
+            for vocabulary in [None, builtin()] {
+                for tables in [TableStyle::NameEach, TableStyle::NamesOnce] {
+                    let text = joined(&read(&source, vocabulary.clone(), tables));
+                    if tables == TableStyle::NameEach {
+                        assert_eq!(text, expected, "{source:?}");
+                    } else {
+                        assert!(!text.contains('['), "{source:?}: {text:?}");
+                    }
+                }
+            }
+        }
+    }
+
+    /// A reference with no definition anywhere still reads literally, in prose and in a cell.
+    #[test]
+    fn unresolved_references_still_read_literally() {
+        let prose = "See [guide][nowhere] and note[^9].";
+        let source = format!("{prose}\n\n| A | B |\n|---|---|\n| [x][nowhere] | y |");
+        let text = joined(&read(&source, None, TableStyle::NameEach));
+        let alone = joined(&read(prose, None, TableStyle::NameEach));
+        assert!(alone.contains("[guide][nowhere]"), "{alone:?}");
+        assert_eq!(
+            text,
+            format!("{alone} Table, 2 columns, 1 row. Row 1. A: [x][nowhere]. B: y. End of table.")
+        );
+    }
+
+    /// Prose on the line right before or after a table ends and starts as its own paragraph.
+    #[test]
+    fn prose_glued_to_a_table_reads_as_its_own_paragraph() {
+        let source =
+            "Intro line\n┌───┬───┐\n│ a │ b │\n├───┼───┤\n│ c │ d │\n└───┴───┘\nAfter line";
+        let chunks = read(source, None, TableStyle::NameEach);
+        assert_eq!(
+            joined(&chunks),
+            "Intro line. Table, 2 columns, 1 row. Row 1. a: c. b: d. End of table. After line."
+        );
+        assert_eq!(chunks[0].chunk.pause_ms, 450);
+        assert_eq!(
+            (chunks[0].chunk.source_start, chunks[0].chunk.source_end),
+            (0, 10)
+        );
+    }
+
+    /// Many tables and many definitions: the whole source is parsed once (every Markdown event
+    /// is read once, no definition is copied per table) and every reference resolves.
+    #[test]
+    fn document_is_parsed_once_with_many_tables_and_definitions() {
+        let source: String = (0..400)
+            .map(|k| {
+                format!("[r{k}]: https://e.com/{k}\n\nSee [g{k}][r{k}].\n\n| A |\n|---|\n| [x{k}][r{k}] |\n\n")
+            })
+            .collect();
+        let reads = std::rc::Rc::new(std::cell::Cell::new(0_usize));
+        let counted = document_events(&source).inspect({
+            let reads = reads.clone();
+            move |_| reads.set(reads.get() + 1)
+        });
+        let items = source_items(&source, counted).count();
+        assert_eq!(reads.get(), document_events(&source).count());
+        assert!(
+            items <= reads.get(),
+            "{items} items for {} events",
+            reads.get()
+        );
+        let text = joined(&read(&source, None, TableStyle::NameEach));
+        assert!(!text.contains('['), "{text:?}");
+        assert_eq!(text.matches("End of table.").count(), 400);
+        assert!(text.contains("See g399. Table, 1 column, 1 row. Row 1. A: x399. End of table."));
     }
 }
