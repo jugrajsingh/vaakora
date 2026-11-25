@@ -774,7 +774,8 @@ impl<'a> TextCursor<'a> {
         let mut items = vec![Item::Row(Some(block.start..opening_end))];
         items.extend(label(&tables::intro(table.columns, table.rows.len())));
         items.push(Item::End(250, None));
-        if style == TableStyle::NamesOnce && table.header.is_some() {
+        // Names once, or a header with no rows (each name would otherwise go unread).
+        if table.header.is_some() && (style == TableStyle::NamesOnce || table.rows.is_empty()) {
             items.extend(label(&tables::columns_sentence(&names)));
             items.push(Item::End(250, None));
         }
@@ -3567,5 +3568,20 @@ mod table_reading {
         assert!(!text.contains('['), "{text:?}");
         assert_eq!(text.matches("End of table.").count(), 400);
         assert!(text.contains("See g399. Table, 1 column, 1 row. Row 1. A: x399. End of table."));
+    }
+
+    /// A Markdown table with a header and no rows reads its column names once, in either style.
+    #[test]
+    fn header_only_table_reads_its_names() {
+        let source = "Before.\n\n| Name | Value |\n|---|---|\n\nAfter.";
+        for vocabulary in [None, builtin()] {
+            for tables in [TableStyle::NameEach, TableStyle::NamesOnce] {
+                assert_eq!(
+                    joined(&read(source, vocabulary.clone(), tables)),
+                    "Before. Table, 2 columns, 0 rows. Columns: Name, Value. End of table. After.",
+                    "{tables:?}"
+                );
+            }
+        }
     }
 }
