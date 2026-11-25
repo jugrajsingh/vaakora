@@ -386,6 +386,22 @@ describe("ReadHistoryRows", () => {
     );
   });
 
+  it("a read that starts with a colon-aligned ASCII table previews its header", () => {
+    const ascii =
+      "+:---+:---+\n| A  | B  |\n+----+----+\n| x  | y  |\n+----+----+";
+    const table: ReadHistoryEntry = {
+      ...FIRST,
+      id: 4,
+      source: ascii,
+      grid_blocks: [{ start: 0, end: ascii.length }],
+    };
+    const row = rowMarkup(renderRows(NO_READ_VIEW, [table, FIRST]), 4);
+    const excerpt = row.match(
+      /<div class="line-clamp-2[^>]*>(.*?)<\/div>/s,
+    )?.[1];
+    assert.equal(excerpt, "A B");
+  });
+
   it("an agent read shows the from-agent tag", () => {
     const html = renderRows(NO_READ_VIEW, [
       { ...FIRST, origin: "agent" },

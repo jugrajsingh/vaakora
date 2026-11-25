@@ -39,8 +39,12 @@ export function retentionOptions(t: TFunction, limit: number) {
 
 const collapse = (text: string) => text.replace(/\s+/g, " ").trim();
 
-/** A line of box-drawing characters, `|`, `+`, `-` and `=` only: a table's border, never its text. */
-const BORDER = /^[\s\u2500-\u257F|+\-=]*$/;
+/**
+ * A line of rule glyphs only (box-drawing characters, `+`, `-`, `=` and the `:` of an alignment
+ * mark, as the backend's table detector reads a rule) or bare walls (`|`): a table's border,
+ * never its text.
+ */
+const BORDER = /^[\s\u2500-\u257F|+\-=:]*$/;
 const FENCE = /^\s*(```|~~~)/;
 const WALLS = /[\u2500-\u257F|]/g;
 

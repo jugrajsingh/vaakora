@@ -97,6 +97,28 @@ describe("readExcerpt", () => {
     const fenced = `\`\`\`text\n${BOX}\n\`\`\``;
     assert.equal(readExcerpt(withBlock(fenced, fenced)), "Lane Owner");
   });
+  it("skips an ASCII rule with alignment colons", () => {
+    for (const rule of ["+:---+:---+", "+---:+---:+", "+:--:+:--:+"]) {
+      const table = [
+        rule,
+        "| A  | B  |",
+        "+----+----+",
+        "| x  | y  |",
+        rule,
+      ].join("\n");
+      assert.equal(readExcerpt(withBlock(table, table)), "A B", rule);
+    }
+  });
+  it("skips an ASCII header rule drawn with =", () => {
+    const table = ["+===+===+", "| A | B |", "+===+===+", "| x | y |"].join(
+      "\n",
+    );
+    assert.equal(readExcerpt(withBlock(table, table)), "A B");
+  });
+  it("shows a line that only contains a colon in its text", () => {
+    const table = ["+----+----+", "| Note: A | B |", "+----+----+"].join("\n");
+    assert.equal(readExcerpt(withBlock(table, table)), "Note: A B");
+  });
   it("a plain read keeps today's collapsed text", () => {
     assert.equal(
       readExcerpt({ source: "Open\n  README.md   now", grid_blocks: [] }),
