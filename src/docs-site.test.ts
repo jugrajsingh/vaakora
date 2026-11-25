@@ -208,6 +208,16 @@ function flags(tree: Tree, rule: string, needle: string): void {
   );
 }
 
+/** Assert that the one and only problem is `FAIL <rule>: ` and mentions `needle` (no other branch or rule helps). */
+function flagsOnly(tree: Tree, rule: string, needle: string): void {
+  const problems = all(tree);
+  assert.equal(problems.length, 1, JSON.stringify(problems));
+  assert.ok(
+    problems[0].startsWith(`FAIL ${rule}: `) && problems[0].includes(needle),
+    `want FAIL ${rule} mentioning "${needle}", got ${problems[0]}`,
+  );
+}
+
 const passes = (tree: Tree) => assert.deepEqual(all(tree), []);
 
 /** `#rrggbb` with its last digit changed. */
@@ -270,10 +280,31 @@ describe("docs checker", () => {
     });
 
     it("refs_flags_a_link_leaving_docs", () => {
-      flags(
+      flagsOnly(
         addToPage(clean(), `<a href="../README.md">Readme</a>`),
         "refs",
-        "docs/index.html",
+        "leaves docs/",
+      );
+    });
+
+    it("refs_flags_a_link_leaving_the_repository", () => {
+      flagsOnly(
+        append(clean(), "README.md", "\nSee [x](../outside.md).\n"),
+        "refs",
+        "leaves the repository",
+      );
+    });
+
+    it("refs_flags_a_link_with_an_unsupported_scheme", () => {
+      flagsOnly(
+        addToPage(clean(), `<a href="javascript:void(0)">Run</a>`),
+        "refs",
+        "uses a scheme the docs do not allow",
+      );
+      flagsOnly(
+        addToPage(clean(), `<a href="ftp://example.com/x">Files</a>`),
+        "refs",
+        "uses a scheme the docs do not allow",
       );
     });
 
@@ -542,6 +573,17 @@ describe("docs checker", () => {
       flags(css(clean(), "a { color: #ff0000; }"), "colours", "#ff0000");
       flags(css(clean(), "a { color: #f00; }"), "colours", "#f00");
       flags(css(clean(), "a { color: #ff000080; }"), "colours", "#ff000080");
+      const light = BRAND.theme.light.text;
+      flags(
+        edit(
+          clean(),
+          "docs/assets/site.css",
+          `--color-text: ${light};`,
+          `--color-text: ${nudge(light)};`,
+        ),
+        "colours",
+        `colour ${nudge(light)} is not a brand.json colour`,
+      );
     });
 
     it("colours_flags_a_named_colour", () => {
@@ -610,27 +652,30 @@ describe("docs checker", () => {
     });
 
     it("colours_flags_a_token_that_differs_from_brand", () => {
-      const light = BRAND.theme.light.text;
-      flags(
+      // A different colour that brand.json does have, so only the token/theme
+      // equality check can object (the palette check accepts it).
+      const { light, dark } = BRAND.theme;
+      assert.notEqual(light.surface, light.text);
+      assert.notEqual(dark.surface, dark.text);
+      flagsOnly(
         edit(
           clean(),
           "docs/assets/site.css",
-          `--color-text: ${light};`,
-          `--color-text: ${nudge(light)};`,
+          `--color-text: ${light.text};`,
+          `--color-text: ${light.surface};`,
         ),
         "colours",
-        "--color-text",
+        `brand.theme.light.text is ${light.text}`,
       );
-      const dark = BRAND.theme.dark.text;
-      flags(
+      flagsOnly(
         edit(
           clean(),
           "docs/assets/site.css",
-          `--color-text: ${dark};`,
-          `--color-text: ${nudge(dark)};`,
+          `--color-text: ${dark.text};`,
+          `--color-text: ${dark.surface};`,
         ),
         "colours",
-        "--color-text",
+        `brand.theme.dark.text is ${dark.text}`,
       );
     });
 
@@ -743,13 +788,17 @@ describe("docs checker", () => {
         `fill="${BRAND.theme.light.text}"`,
         `fill="${nudge(BRAND.theme.light.text)}"`,
       );
-      flags(tree, "brand", "docs/assets/brand/wordmark-light.svg");
+      flags(
+        tree,
+        "brand",
+        "wordmark-light.svg: differs from the brand sources",
+      );
     });
 
     it("brand_flags_a_missing_brand_file", () => {
       const tree = clean();
       tree.delete("docs/assets/brand/mark-dark.svg");
-      flags(tree, "brand", "docs/assets/brand/mark-dark.svg");
+      flags(tree, "brand", "mark-dark.svg: missing");
     });
 
     it("brand_is_not_checked_before_docs_exist", () => {
@@ -812,7 +861,7 @@ describe("docs checker", () => {
       flags(
         addToPage(clean(), `<img src="assets/screens/dictation-dark.webp">`),
         "text",
-        "alt",
+        "has no alt attribute",
       );
       flags(
         append(
@@ -821,7 +870,7 @@ describe("docs checker", () => {
           `\n<img src="docs/assets/screens/dictation-dark.webp">\n`,
         ),
         "text",
-        "alt",
+        "has no alt attribute",
       );
     });
 
@@ -832,12 +881,12 @@ describe("docs checker", () => {
           `<img src="assets/screens/dictation-dark.webp" alt="">`,
         ),
         "text",
-        "alt",
+        "has an empty alt",
       );
       flags(
         addToPage(clean(), `<img src="assets/brand/wordmark-dark.svg" alt="">`),
         "text",
-        "alt",
+        "has an empty alt",
       );
       flags(
         append(
@@ -846,7 +895,7 @@ describe("docs checker", () => {
           "\n![](docs/assets/screens/dictation-dark.webp)\n",
         ),
         "text",
-        "alt",
+        "has an empty alt",
       );
       passes(
         addToPage(
@@ -867,7 +916,11 @@ describe("docs checker", () => {
           ),
         ),
       );
-      flags(tree, "text", "docs/other.html");
+      flags(
+        tree,
+        "text",
+        "docs/other.html: <nav> differs from the <nav> of docs/index.html",
+      );
     });
 
     it("text_ignores_current_page_and_whitespace_in_the_nav", () => {
@@ -887,7 +940,7 @@ describe("docs checker", () => {
     it("text_flags_a_page_without_a_nav", () => {
       const tree = clean();
       tree.set("docs/other.html", bytes(page("<p>Other</p>", "")));
-      flags(tree, "text", "docs/other.html");
+      flagsOnly(tree, "text", "docs/other.html: has no <nav>");
     });
   });
 
@@ -934,9 +987,24 @@ describe("docs checker", () => {
     });
 
     it("metadata_flags_a_file_that_is_not_webp", () => {
-      flags(withShot(bytes("not an image at all")), "metadata", "WebP");
-      const truncated = webpChunks([["VP8L", 40]]).slice(0, 30);
-      flags(withShot(truncated), "metadata", "WebP");
+      flagsOnly(
+        withShot(bytes("not an image at all")),
+        "metadata",
+        "is not a valid WebP: it does not start with RIFF and WEBP",
+      );
+      const valid = webpChunks([["VP8L", 40]]);
+      flagsOnly(
+        withShot(valid.slice(0, 30)),
+        "metadata",
+        "is not a valid WebP: it is shorter than its RIFF size",
+      );
+      const longChunk = valid.slice();
+      new DataView(longChunk.buffer).setUint32(16, 1000, true);
+      flagsOnly(
+        withShot(longChunk),
+        "metadata",
+        "is not a valid WebP: it has a chunk past the end of the file",
+      );
     });
   });
 
