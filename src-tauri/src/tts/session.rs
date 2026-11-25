@@ -3,6 +3,7 @@ use super::{
     TtsError, TtsManager,
 };
 use handy_tts_core::{
+    formatted::tables::{grid_blocks, GridBlock},
     scheduler::{PlaybackState, Ticket},
     selection::{text_changed, Selection},
     session::{Completion, Session, SessionSnapshot, Worker},
@@ -231,6 +232,8 @@ pub struct SessionView {
     pub client_revision: Option<u64>,
     pub document_id: u64,
     pub text: String,
+    /// The box-drawn and ASCII table blocks of `text`, which the reader shows monospaced.
+    pub grid_blocks: Vec<GridBlock>,
     pub visible: bool,
     pub snapshot: SessionSnapshot,
 }
@@ -239,6 +242,8 @@ pub struct SessionEvent {
     pub client_revision: Option<u64>,
     pub document_id: u64,
     pub text: Option<String>,
+    /// The table blocks of the document's text, also when `text` is left out.
+    pub grid_blocks: Vec<GridBlock>,
     pub visible: bool,
     pub snapshot: SessionSnapshot,
 }
@@ -248,6 +253,7 @@ impl SessionView {
             client_revision: self.client_revision,
             document_id: self.document_id,
             text,
+            grid_blocks: self.grid_blocks.clone(),
             visible: self.visible,
             snapshot: self.snapshot.clone(),
         }
@@ -489,6 +495,7 @@ impl ReadAloudSession {
             client_revision: None,
             document_id: 0,
             text: String::new(),
+            grid_blocks: Vec::new(),
             visible: false,
             snapshot: empty,
         }));
@@ -509,6 +516,7 @@ impl ReadAloudSession {
             let mut epoch = 0;
             let mut last_emit = Instant::now() - Duration::from_secs(1);
             'document: loop {
+                let tables = grid_blocks(&source);
                 let read_vocabulary = vocabulary();
                 let mut session = match Session::with_vocabulary(
                     &source,
@@ -522,6 +530,7 @@ impl ReadAloudSession {
                     Err(error) => {
                         let mut current = cached.lock().unwrap_or_else(|p| p.into_inner());
                         current.text = source.clone();
+                        current.grid_blocks = tables.clone();
                         current.client_revision = client_revision;
                         current.document_id = document_id;
                         current.visible = visible;
@@ -656,6 +665,7 @@ impl ReadAloudSession {
                     let mut current = cached.lock().unwrap_or_else(|p| p.into_inner());
                     if current.text != source {
                         current.text = source.clone();
+                        current.grid_blocks = tables.clone();
                     }
                     current.visible = visible;
                     current.client_revision = client_revision;
@@ -2286,6 +2296,52 @@ pub(super) mod tests {
         assert_eq!(external.client_revision, None);
         assert_eq!(external.document_id, first.document_id + 1);
         assert_eq!(reading.snapshot().client_revision, None);
+        assert!(reading.shutdown());
+    }
+    #[test]
+    fn events_and_view_carry_the_grid_blocks_of_the_text() {
+        let (tx, rx) = mpsc::channel();
+        let reading = ReadAloudSession::spawn_with(
+            manager(),
+            Engine,
+            Audio::default,
+            selection(),
+            None,
+            Arc::new(move |event| {
+                tx.send(event).unwrap();
+            }),
+        );
+        let boxed = "Intro.\n\n┌───┬───┐\n│ h │ i │\n├───┼───┤\n│ a │ b │\n└───┴───┘\n\nEnd.";
+        let expected = handy_tts_core::formatted::tables::grid_blocks(boxed);
+        assert_eq!(expected.len(), 1, "the fixture holds one box table");
+        let replace = |text: &str| {
+            reading
+                .send(SessionCommand::Replace {
+                    text: text.into(),
+                    autoplay: false,
+                    client_revision: None,
+                    origin: ReadOrigin::App,
+                })
+                .unwrap();
+        };
+        let event_with = |rx: &mpsc::Receiver<SessionEvent>, text: &str| {
+            for _ in 0..20 {
+                let event = rx.recv_timeout(Duration::from_secs(3)).unwrap();
+                if event.text.as_deref() == Some(text) {
+                    return event;
+                }
+            }
+            panic!("the text event was not emitted");
+        };
+        replace(boxed);
+        assert_eq!(event_with(&rx, boxed).grid_blocks, expected);
+        let later = rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        assert!(later.text.is_none(), "a snapshot event carries no text");
+        assert_eq!(later.grid_blocks, expected, "but still its table blocks");
+        assert_eq!(reading.snapshot().grid_blocks, expected);
+        replace("Just prose.");
+        assert_eq!(event_with(&rx, "Just prose.").grid_blocks, []);
+        assert_eq!(reading.snapshot().grid_blocks, []);
         assert!(reading.shutdown());
     }
     #[test]

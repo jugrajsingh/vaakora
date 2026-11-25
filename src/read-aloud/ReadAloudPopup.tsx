@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -14,14 +15,14 @@ import {
   TriangleAlert,
   X,
 } from "lucide-react";
-import type { SessionSnapshot } from "@/bindings";
+import type { GridBlock, SessionSnapshot } from "@/bindings";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { createFollower, followTarget } from "@/lib/utils/followScroll";
 import { routePopupKey } from "./actions";
 import {
-  highlightedText,
+  previewSegments,
   progressPresentation,
   popupMode,
   reasonLine,
@@ -42,6 +43,8 @@ const markInView = (preview: HTMLElement, mark: HTMLElement) => {
 
 export interface PopupProps {
   text: string;
+  /** The box and ASCII table blocks of `text`, shown monospaced. */
+  gridBlocks: readonly GridBlock[];
   snapshot: SessionSnapshot;
   heading: { model: string; voice: string } | null;
   editing: boolean;
@@ -54,6 +57,7 @@ export interface PopupProps {
 }
 export function ReadAloudPopup({
   text,
+  gridBlocks,
   snapshot,
   heading,
   editing,
@@ -77,11 +81,13 @@ export function ReadAloudPopup({
     },
     [follower],
   );
-  const parts = highlightedText(
+  const segments = previewSegments(
     text,
+    gridBlocks,
     snapshot.source_start,
     snapshot.source_end,
   );
+  const markAt = segments.findIndex((segment) => segment.mark);
   const progress = progressPresentation(snapshot);
   const time = timeLabel(snapshot, t);
   const word = stateWord(snapshot.state);
@@ -214,14 +220,33 @@ export function ReadAloudPopup({
               })
             }
           >
-            <span className="text-ink-2">{parts.before}</span>
-            <mark
-              ref={mark}
-              className="rounded box-decoration-clone bg-logo-primary/25 text-text"
-            >
-              {parts.current}
-            </mark>
-            {parts.after}
+            {segments.map((segment, index) => {
+              const shown = (
+                <>
+                  <span className="text-ink-2">{segment.before}</span>
+                  {segment.mark && (
+                    <mark
+                      ref={index === markAt ? mark : undefined}
+                      className="rounded box-decoration-clone bg-logo-primary/25 text-text"
+                    >
+                      {segment.current}
+                    </mark>
+                  )}
+                  {segment.after}
+                </>
+              );
+              return segment.mono ? (
+                <span
+                  key={index}
+                  data-table-block
+                  className="inline-block max-w-full overflow-x-auto align-top whitespace-pre font-mono text-[13px]"
+                >
+                  {shown}
+                </span>
+              ) : (
+                <Fragment key={index}>{shown}</Fragment>
+              );
+            })}
           </div>
         ) : (
           <div

@@ -1,5 +1,10 @@
 import type { TFunction } from "i18next";
-import type { AppSettings, SessionSnapshot, TtsModelInfo } from "@/bindings";
+import type {
+  AppSettings,
+  GridBlock,
+  SessionSnapshot,
+  TtsModelInfo,
+} from "@/bindings";
 export function highlightedText(text: string, start: number, end: number) {
   const from = Math.max(0, Math.min(text.length, start));
   const to = Math.max(from, Math.min(text.length, end));
@@ -8,6 +13,49 @@ export function highlightedText(text: string, start: number, end: number) {
     current: text.slice(from, to),
     after: text.slice(to),
   };
+}
+/** One run of the reader's text: prose, or a box or ASCII table block shown monospaced. */
+export interface PreviewSegment {
+  mono: boolean;
+  before: string;
+  current: string;
+  after: string;
+  /** Whether the segment draws a `<mark>`: it holds part of the current sentence, or it is where an empty mark sits. */
+  mark: boolean;
+}
+
+/**
+ * The text cut at its table blocks (UTF-16 ranges from the backend, which found them), each
+ * piece split around the current sentence. Every character stays in order, so the cuts never
+ * change what is selected or pasted. A block that is empty, reversed, overlapping an earlier one
+ * or past the text is ignored; a block running past the end is cut at the end.
+ */
+export function previewSegments(
+  text: string,
+  blocks: readonly GridBlock[],
+  start: number,
+  end: number,
+): PreviewSegment[] {
+  const cuts: { from: number; to: number; mono: boolean }[] = [];
+  let at = 0;
+  for (const block of blocks) {
+    const to = Math.min(text.length, block.end);
+    if (block.start < at || to <= block.start) continue;
+    if (block.start > at) cuts.push({ from: at, to: block.start, mono: false });
+    cuts.push({ from: block.start, to, mono: true });
+    at = to;
+  }
+  if (at < text.length || cuts.length === 0)
+    cuts.push({ from: at, to: text.length, mono: false });
+  const parts = cuts.map(({ from, to, mono }) => ({
+    mono,
+    ...highlightedText(text.slice(from, to), start - from, end - from),
+  }));
+  const held = parts.findIndex((part) => part.current !== "");
+  return parts.map((part, index) => ({
+    ...part,
+    mark: part.current !== "" || index === Math.max(0, held),
+  }));
 }
 export function progressPresentation(snapshot: SessionSnapshot) {
   return {

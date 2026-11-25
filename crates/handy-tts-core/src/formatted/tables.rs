@@ -78,6 +78,9 @@ pub(crate) const END: &str = "End of table.";
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Block<'a> {
     pub range: Range<usize>,
+    /// A box-drawn or ASCII grid (a fence around one included), whatever it is read as; a
+    /// Markdown table is not.
+    pub grid: bool,
     pub kind: BlockKind<'a>,
 }
 
@@ -118,6 +121,34 @@ pub(crate) enum Cell<'a> {
 /// The table blocks of `source`, in source order.
 pub(crate) fn find_blocks(source: &str) -> Vec<Block<'_>> {
     scan(source, &mut 0)
+}
+
+/// The UTF-16 range of a box-drawn or ASCII table block in the text, as the reader and History
+/// show it: a monospaced block, so the walls line up.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
+pub struct GridBlock {
+    pub start: u32,
+    pub end: u32,
+}
+
+/// The box-drawn and ASCII table blocks of `source` (a Markdown table is not one), in source
+/// order, as UTF-16 ranges like a chunk's. A block that is read as a fallback is still a grid.
+pub fn grid_blocks(source: &str) -> Vec<GridBlock> {
+    let mut units = 0u32;
+    let mut at = 0;
+    let mut utf16 = |byte: usize| {
+        units += u32::try_from(source[at..byte].encode_utf16().count()).unwrap_or(u32::MAX);
+        at = byte;
+        units
+    };
+    find_blocks(source)
+        .into_iter()
+        .filter(|block| block.grid)
+        .map(|block| GridBlock {
+            start: utf16(block.range.start),
+            end: utf16(block.range.end),
+        })
+        .collect()
 }
 
 /// `find_blocks` and the number of bytes it examined, pulldown-cmark's input included.
@@ -521,9 +552,10 @@ fn scan_lines<'a>(source: &'a str, lines: &[Line], blocks: &mut Vec<Block<'a>>, 
             else {
                 return;
             };
-            if let Some(table) = fenced_table(source, &lines[i + 1..close], work) {
+            if let Some((table, grid)) = fenced_table(source, &lines[i + 1..close], work) {
                 blocks.push(Block {
                     range: line.start..lines[close].end,
+                    grid,
                     kind: BlockKind::Table(table),
                 });
             }
@@ -572,10 +604,14 @@ fn scan_lines<'a>(source: &'a str, lines: &[Line], blocks: &mut Vec<Block<'a>>, 
     }
 }
 
-/// The table a fence holds when its content, blank lines at either end dropped, is exactly one
-/// table block covering every one of those lines. A fence line inside a fence is code text, so
-/// content holding one is not a table.
-fn fenced_table<'a>(source: &'a str, content: &[Line], work: &mut usize) -> Option<Table<'a>> {
+/// The table a fence holds, and whether it is a grid, when its content, blank lines at either end
+/// dropped, is exactly one table block covering every one of those lines. A fence line inside a
+/// fence is code text, so content holding one is not a table.
+fn fenced_table<'a>(
+    source: &'a str,
+    content: &[Line],
+    work: &mut usize,
+) -> Option<(Table<'a>, bool)> {
     let first = content.iter().position(|line| line.kind != Kind::Blank)?;
     let last = content.iter().rposition(|line| line.kind != Kind::Blank)?;
     let content = &content[first..=last];
@@ -588,8 +624,9 @@ fn fenced_table<'a>(source: &'a str, content: &[Line], work: &mut usize) -> Opti
     match inner.pop() {
         Some(Block {
             range,
+            grid,
             kind: BlockKind::Table(table),
-        }) if inner.is_empty() && range == lines => Some(table),
+        }) if inner.is_empty() && range == lines => Some((table, grid)),
         _ => None,
     }
 }
@@ -597,6 +634,7 @@ fn fenced_table<'a>(source: &'a str, content: &[Line], work: &mut usize) -> Opti
 fn grid_block<'a>(source: &'a str, run: &[Line], grid: Grid, work: &mut usize) -> Block<'a> {
     Block {
         range: run[0].start..run[run.len() - 1].end,
+        grid: true,
         kind: match grid_table(source, run, grid, work) {
             Some(table) => BlockKind::Table(table),
             None => BlockKind::Fallback(fallback_parts(
@@ -928,6 +966,7 @@ fn gfm_blocks<'a>(source: &'a str, lines: &[Line], blocks: &mut Vec<Block<'a>>, 
                 let range = lines[first].start..lines[last].end;
                 blocks.push(Block {
                     range,
+                    grid: false,
                     kind: if done.lossy {
                         // The line after the header is the delimiter row, the table's one rule.
                         let read = lines[first..=last]
@@ -1250,6 +1289,7 @@ mod tests {
             find_blocks(escaped),
             [Block {
                 range: 0..escaped.len(),
+                grid: false,
                 kind: BlockKind::Fallback(parts(
                     escaped,
                     ["a", "b", "x \\| y", "2", "3", "lazy row"]
@@ -1342,6 +1382,7 @@ mod tests {
             find_blocks(ascii),
             [Block {
                 range: 0..ascii.len(),
+                grid: true,
                 kind: BlockKind::Fallback(parts(ascii, ["a", "b", "c d"])),
             }]
         );
@@ -1552,5 +1593,62 @@ mod tests {
         // Every fence that holds only a table is one table block.
         let (blocks, _) = find_blocks_counted(&hostile[8]);
         assert_eq!(blocks.len(), 2_000);
+    }
+
+    /// The text of each grid block of `source`, read back through its UTF-16 range.
+    fn grid_texts(source: &str) -> Vec<String> {
+        let units: Vec<u16> = source.encode_utf16().collect();
+        grid_blocks(source)
+            .iter()
+            .map(|block| {
+                String::from_utf16(&units[block.start as usize..block.end as usize]).unwrap()
+            })
+            .collect()
+    }
+
+    #[test]
+    fn grid_blocks_are_box_and_ascii_tables_in_utf16() {
+        let ascii = "+---+---+\n| a | b |\n+---+---+";
+        // The emoji is two UTF-16 units and four bytes: a byte range read as UTF-16 would miss.
+        let source = format!("Hi \u{1F600}\n\n{BOX}\n\n{GFM}\n\n{ascii}\n\nEnd.");
+        assert_eq!(grid_texts(&source), [BOX, ascii]);
+        let first = grid_blocks(&source)[0];
+        assert_eq!(
+            first.start as usize,
+            "Hi \u{1F600}\n\n".encode_utf16().count()
+        );
+    }
+
+    #[test]
+    fn grid_blocks_include_a_box_read_as_a_fallback() {
+        // The cells do not line up, so the block is read in source order: still a box.
+        let ascii = "+---+---+\n| a | b |\n| c d |\n+---+---+";
+        assert!(matches!(find_blocks(ascii)[0].kind, BlockKind::Fallback(_)));
+        assert_eq!(grid_texts(&format!("x\n\n{ascii}\n")), [ascii]);
+    }
+
+    #[test]
+    fn grid_blocks_leave_markdown_and_prose_out() {
+        assert_eq!(grid_blocks(GFM), []);
+        let lossy = "| a | b |\n|---|---|\n| 1 | 2 | 3 |";
+        assert!(matches!(find_blocks(lossy)[0].kind, BlockKind::Fallback(_)));
+        assert_eq!(grid_blocks(lossy), []);
+        assert_eq!(grid_blocks("Just prose.\n\nMore | prose."), []);
+        assert_eq!(grid_blocks(""), []);
+    }
+
+    #[test]
+    fn a_fence_around_a_box_is_a_grid_block_and_around_markdown_is_not() {
+        let boxed = format!("Before.\n\n```text\n{BOX}\n```\n\nAfter.");
+        assert_eq!(grid_texts(&boxed), [format!("```text\n{BOX}\n```")]);
+        assert_eq!(grid_blocks(&format!("```\n{GFM}\n```")), []);
+    }
+
+    #[test]
+    fn grid_blocks_are_in_order_and_do_not_overlap() {
+        let source = format!("{BOX}\n\n{BOX}\n\n{GFM}\n\n{BOX}");
+        let blocks = grid_blocks(&source);
+        assert_eq!(blocks.len(), 3);
+        assert!(blocks.windows(2).all(|pair| pair[0].end <= pair[1].start));
     }
 }

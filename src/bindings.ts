@@ -1771,6 +1771,11 @@ replaces_builtin: boolean;
  */
 sample: string; problems: Problem[] }
 export type GpuDeviceOption = { id: string; name: string; total_vram_mb: number }
+/**
+ * The UTF-16 range of a box-drawn or ASCII table block in the text, as the reader and History
+ * show it: a monospaced block, so the walls line up.
+ */
+export type GridBlock = { start: number; end: number }
 export type HistoryClearSummary = { entries: number; recordings: number }
 /**
  * Layout used to compare raw and cleaned history transcripts.
@@ -2075,7 +2080,11 @@ export type Reach =
 /**
  * A stored read.
  */
-export type ReadHistoryEntry = { id: number; timestamp: number; model_id: string; voice: string; speed: number; technical: boolean; source: string; origin: ReadOrigin; chunks: AlignedChunk[] }
+export type ReadHistoryEntry = { id: number; timestamp: number; model_id: string; voice: string; speed: number; technical: boolean; source: string; origin: ReadOrigin; chunks: AlignedChunk[]; 
+/**
+ * The box-drawn and ASCII table blocks of `source`, found on every load (not stored).
+ */
+grid_blocks: GridBlock[] }
 /**
  * How long read-aloud history keeps reads. Unlike `RecordingRetentionPeriod::Never`, which
  * never deletes, `KeepNothing` stores no read at all; the count limit applies to every choice.
@@ -2190,7 +2199,11 @@ tables?: TableStyle }
  * Playback progress and errors suitable for frontend events.
  */
 export type SessionSnapshot = { epoch: number; state: PlaybackState; source_start: number; source_end: number; elapsed_seconds: number; remaining_seconds: number; progress: number; error: string | null; output_fallback: boolean; queued_audio_seconds: number; buffering_pauses: number; head_start_seconds: number | null }
-export type SessionView = { client_revision: number | null; document_id: number; text: string; visible: boolean; snapshot: SessionSnapshot }
+export type SessionView = { client_revision: number | null; document_id: number; text: string; 
+/**
+ * The box-drawn and ASCII table blocks of `text`, which the reader shows monospaced.
+ */
+grid_blocks: GridBlock[]; visible: boolean; snapshot: SessionSnapshot }
 /**
  * How the transcribe shortcut's key events drive a recording.
  */

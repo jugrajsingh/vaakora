@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import i18next from "i18next";
 import { I18nextProvider } from "react-i18next";
 import en from "../i18n/locales/en/translation.json";
-import type { SessionSnapshot } from "../bindings";
+import type { GridBlock, SessionSnapshot } from "../bindings";
 import {
   highlightedText,
   progressPresentation,
@@ -67,6 +67,7 @@ const render = (
     <I18nextProvider i18n={i18n}>
       <ReadAloudPopup
         text="A sentence"
+        gridBlocks={[]}
         heading={heading}
         editing={editing}
         enterEdit={() => {}}
@@ -110,6 +111,7 @@ console.log("popup presentation: UTF-16/highlight/Buffering assertions passed");
     <I18nextProvider i18n={i18next}>
       <ReadAloudPopup
         text={multiline}
+        gridBlocks={[]}
         heading={{ model: "Supertonic 3", voice: "alba" }}
         editing={false}
         enterEdit={() => {}}
@@ -961,6 +963,7 @@ let view = {
   ...snapshot,
   state: "waiting" as SessionSnapshot["state"],
   text: "old text",
+  grid_blocks: [] as GridBlock[],
 };
 let explicitEdit = true;
 let editorMounted = true;

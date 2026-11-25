@@ -3,7 +3,12 @@
 
 use crate::settings::{AppSettings, ReadHistoryRetention};
 use anyhow::{Context, Result};
-use handy_tts_core::{selection::Selection, text::AlignedChunk, vocabulary::Vocabulary};
+use handy_tts_core::{
+    formatted::tables::{grid_blocks, GridBlock},
+    selection::Selection,
+    text::AlignedChunk,
+    vocabulary::Vocabulary,
+};
 use rusqlite::{params, Connection};
 use rusqlite_migration::{Migrations, M};
 use std::{
@@ -90,6 +95,8 @@ pub struct ReadHistoryEntry {
     pub source: String,
     pub origin: ReadOrigin,
     pub chunks: Vec<AlignedChunk>,
+    /// The box-drawn and ASCII table blocks of `source`, found on every load (not stored).
+    pub grid_blocks: Vec<GridBlock>,
 }
 
 /// The owner's keep rules: at most `limit` reads, and with a time choice none older than it.
@@ -240,6 +247,7 @@ impl ReadHistory {
                     source: row.get(6)?,
                     origin: ReadOrigin::from_stored(&row.get::<_, String>(8)?),
                     chunks: Vec::new(),
+                    grid_blocks: Vec::new(),
                 },
                 row.get::<_, String>(7)?,
             ))
@@ -248,7 +256,12 @@ impl ReadHistory {
             let (entry, chunks) = row?;
             let chunks = serde_json::from_str(&chunks)
                 .with_context(|| format!("reading the alignment of history entry {}", entry.id))?;
-            Ok(ReadHistoryEntry { chunks, ..entry })
+            let grid_blocks = grid_blocks(&entry.source);
+            Ok(ReadHistoryEntry {
+                chunks,
+                grid_blocks,
+                ..entry
+            })
         })
         .collect()
     }
@@ -702,6 +715,45 @@ mod tests {
             "B, the walk Task B1 committed, working on B2. Opus E 9 files changed gpt-6.1-sol \
              B, the walk Opus Task B1 committed (b574c34). E gpt-6.1-sol 9 files changed, unstaged"
         );
+    }
+
+    /// The table blocks are found again from the stored source on every load, so reads stored
+    /// before the reader knew them show them too.
+    #[test]
+    fn entries_carry_the_grid_blocks_of_their_source() {
+        let dir = scratch("grid-blocks");
+        let history = ReadHistory::open(&dir).unwrap();
+        let boxed = "Intro \u{1F600}\n\n┌───┬───┐\n│ h │ i │\n├───┼───┤\n│ a │ b │\n└───┴───┘\n";
+        for source in [boxed, "| h | i |\n|---|---|\n| a | b |", "Plain prose."] {
+            history
+                .record(
+                    &read(source, NOW),
+                    0,
+                    || keep(5, ReadHistoryRetention::KeepLimit),
+                    NOW,
+                )
+                .unwrap();
+        }
+        let entries = history.entries().unwrap();
+        let blocks = |source: &str| {
+            entries
+                .iter()
+                .find(|entry| entry.source == source)
+                .unwrap()
+                .grid_blocks
+                .clone()
+        };
+        let start = "Intro \u{1F600}\n\n".encode_utf16().count() as u32;
+        let table = "┌───┬───┐\n│ h │ i │\n├───┼───┤\n│ a │ b │\n└───┴───┘";
+        assert_eq!(
+            blocks(boxed),
+            [GridBlock {
+                start,
+                end: start + table.encode_utf16().count() as u32
+            }]
+        );
+        assert_eq!(blocks("| h | i |\n|---|---|\n| a | b |"), []);
+        assert_eq!(blocks("Plain prose."), []);
     }
 
     #[test]

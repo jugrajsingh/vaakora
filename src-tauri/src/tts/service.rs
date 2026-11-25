@@ -1872,6 +1872,7 @@ mod tests {
                 client_revision: None,
                 document_id: 1,
                 text: None,
+                grid_blocks: Vec::new(),
                 visible: true,
                 snapshot: session_snapshot(state, 0.0, None),
             });

@@ -286,6 +286,7 @@ const FIRST: ReadHistoryEntry = {
   technical: true,
   source: "Open\n  README.md   now",
   origin: "app",
+  grid_blocks: [],
   chunks: [
     {
       chunk: {
@@ -361,6 +362,28 @@ describe("ReadHistoryRows", () => {
       "whitespace in the excerpt is collapsed",
     );
     assert.ok(!html.includes("Copy text</button>"), "no labelled Copy text");
+  });
+
+  it("a read that starts with a box table previews its first row, never a border", () => {
+    const box =
+      "┌──────┬───────┐\n│ Lane │ Owner │\n├──────┼───────┤\n│ B    │ Opus  │\n└──────┴───────┘";
+    const table: ReadHistoryEntry = {
+      ...FIRST,
+      id: 3,
+      source: box,
+      grid_blocks: [{ start: 0, end: box.length }],
+    };
+    const html = renderRows(NO_READ_VIEW, [table, FIRST]);
+    const row = rowMarkup(html, 3);
+    const excerpt = row.match(
+      /<div class="line-clamp-2[^>]*>(.*?)<\/div>/s,
+    )?.[1];
+    assert.equal(excerpt, "Lane Owner");
+    assert.ok(!/[┌─│]/.test(excerpt ?? ""), "no border or wall in the preview");
+    assert.ok(
+      rowMarkup(html, 1).includes("Open README.md now"),
+      "a plain read's preview is unchanged",
+    );
   });
 
   it("an agent read shows the from-agent tag", () => {

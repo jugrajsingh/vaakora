@@ -160,6 +160,7 @@ function reads(now: number): ReadHistoryEntry[] {
     source: "s",
     origin: "app",
     chunks: [],
+    grid_blocks: [],
   }));
 }
 

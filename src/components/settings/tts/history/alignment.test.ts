@@ -21,6 +21,7 @@ const entryOf = (source: string, chunks: AlignedChunk[]): ReadHistoryEntry => ({
   source,
   origin: "app",
   chunks,
+  grid_blocks: [],
 });
 
 const chunkOf = (

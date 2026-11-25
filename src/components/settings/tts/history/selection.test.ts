@@ -46,6 +46,7 @@ const ENTRY: ReadHistoryEntry = {
   source: "Open README.md now",
   origin: "app",
   chunks: [chunk],
+  grid_blocks: [],
 };
 
 describe("drag lifecycle", () => {

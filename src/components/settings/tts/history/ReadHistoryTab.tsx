@@ -32,7 +32,7 @@ import {
   type HistoryDependencies,
 } from "./actions";
 import { tokensOf } from "./alignment";
-import { entryTag } from "./presentation";
+import { entryTag, readExcerpt } from "./presentation";
 import { ReadingView } from "./ReadingView";
 import {
   activeRange,
@@ -94,7 +94,7 @@ export function ReadHistoryRows({
             short: shortDateTime(entry.timestamp, i18n.language),
             long: formatDateTime(String(entry.timestamp), i18n.language),
           }}
-          excerpt={entry.source.replace(/\s+/g, " ").trim()}
+          excerpt={readExcerpt(entry)}
           tag={entryTag(models, entry)}
           badge={entry.origin === "agent" ? t("tts.history.fromAgent") : null}
           actions={

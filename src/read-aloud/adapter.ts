@@ -1,7 +1,10 @@
-import type { SessionSnapshot, SessionView } from "@/bindings";
+import type { GridBlock, SessionSnapshot, SessionView } from "@/bindings";
 import { createPopupActions, type PopupDependencies } from "./actions";
 
-export type PopupView = SessionSnapshot & { text: string };
+export type PopupView = SessionSnapshot & {
+  text: string;
+  grid_blocks: GridBlock[];
+};
 
 export type PopupEvent = Omit<SessionView, "text"> & { text: string | null };
 
@@ -35,6 +38,7 @@ export function createPopupAdapter(
       apply({
         ...getSnapshot(),
         text,
+        grid_blocks: [],
         state: "waiting",
         source_start: 0,
         source_end: 0,
@@ -60,7 +64,12 @@ export function createPopupAdapter(
         pendingRevision = null;
         acknowledged = 0;
         if (payload.client_revision === null && payload.text !== null) {
-          actions.reopen({ ...payload.snapshot, text: payload.text });
+          const view: PopupView = {
+            ...payload.snapshot,
+            text: payload.text,
+            grid_blocks: payload.grid_blocks,
+          };
+          actions.reopen(view);
           return;
         }
       }
@@ -70,9 +79,13 @@ export function createPopupAdapter(
         acknowledged = Math.max(acknowledged, appliedRevision);
       }
       const dirty = pendingRevision !== null && pendingRevision > acknowledged;
-      const next = dirty
+      const next: PopupView = dirty
         ? { ...getSnapshot(), epoch: payload.snapshot.epoch }
-        : { ...payload.snapshot, text: payload.text ?? getSnapshot().text };
+        : {
+            ...payload.snapshot,
+            text: payload.text ?? getSnapshot().text,
+            grid_blocks: payload.grid_blocks,
+          };
       actions.event(next);
     },
   };

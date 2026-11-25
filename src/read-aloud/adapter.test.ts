@@ -17,6 +17,7 @@ async function flush() {
 }
 const initial: PopupView = {
   text: "original",
+  grid_blocks: [],
   epoch: 1,
   state: "waiting",
   source_start: 0,
@@ -76,12 +77,14 @@ async function draftAcknowledgements() {
     snapshot: initial,
     client_revision: null,
     document_id: 1,
+    grid_blocks: [],
   });
   await f.adapter.edit("A");
   const ab = f.adapter.edit("AB");
   f.adapter.event({
     client_revision: 1,
     document_id: 1,
+    grid_blocks: [],
     text: "A",
     visible: true,
     snapshot: { ...initial, epoch: 5 },
@@ -106,6 +109,7 @@ async function draftAcknowledgements() {
   f.adapter.event({
     client_revision: 3,
     document_id: 1,
+    grid_blocks: [],
     text: "ABC",
     visible: true,
     snapshot: { ...initial, epoch: 8 },
@@ -114,6 +118,7 @@ async function draftAcknowledgements() {
   f.adapter.event({
     client_revision: 1,
     document_id: 1,
+    grid_blocks: [],
     text: "A",
     visible: true,
     snapshot: { ...initial, epoch: 5 },
@@ -122,6 +127,7 @@ async function draftAcknowledgements() {
   f.adapter.event({
     client_revision: null,
     document_id: 2,
+    grid_blocks: [],
     text: "new document",
     visible: true,
     snapshot: { ...initial, epoch: 9 },
@@ -135,6 +141,7 @@ async function draftAcknowledgements() {
   f.adapter.event({
     client_revision: null,
     document_id: 2,
+    grid_blocks: [],
     text: "new document",
     visible: true,
     snapshot: { ...initial, epoch: 10 },
@@ -147,6 +154,7 @@ async function draftAcknowledgements() {
   f.adapter.event({
     client_revision: null,
     document_id: 2,
+    grid_blocks: [],
     text: null,
     visible: false,
     snapshot: { ...initial, epoch: 11 },
@@ -154,6 +162,7 @@ async function draftAcknowledgements() {
   f.adapter.event({
     client_revision: null,
     document_id: 3,
+    grid_blocks: [],
     text: "new document",
     visible: true,
     snapshot: { ...initial, epoch: 12 },
@@ -272,6 +281,7 @@ async function repeatedTextAcknowledgements() {
       snapshot: { ...initial, epoch },
       client_revision,
       document_id: 1,
+      grid_blocks: [],
     });
   event("original", 1, null);
   await f.adapter.edit("A");
@@ -324,6 +334,7 @@ async function repeatedTextAcknowledgements() {
     snapshot: { ...initial, epoch: 8 },
     client_revision: null,
     document_id: 2,
+    grid_blocks: [],
   });
   assert.equal(
     f.view().text,
@@ -365,6 +376,7 @@ async function readClipboardReplacesTheDocument() {
     snapshot: finished,
     client_revision: null,
     document_id: 1,
+    grid_blocks: [],
   });
   await f.adapter.edit("edited by the owner");
   await f.adapter.readClipboard();
@@ -379,6 +391,7 @@ async function readClipboardReplacesTheDocument() {
     snapshot: { ...initial, epoch: 2, state: "starting" },
     client_revision: null,
     document_id: 2,
+    grid_blocks: [],
   });
   const next = f.view();
   assert.equal(next.text, "from the clipboard");
@@ -455,9 +468,46 @@ if (!process.argv[2] || process.argv[2] === "clipboard")
     client_revision: null,
     visible: true,
     document_id: 1,
+    grid_blocks: [],
   });
   routePopupKey(key("Escape"), adapter);
   await Promise.resolve();
   assert.deepEqual(calls, ["pause", "close", "close"], "keys work on reopen");
   console.log("popup window key routing assertions passed");
+}
+{
+  // grid_blocks_follow_the_text: the table blocks arrive with their document and never outlive an edit
+  const blocks = [{ start: 3, end: 9 }];
+  const f = fixture();
+  f.adapter.event({
+    text: "Hi\n\n┌─┐\n└─┘",
+    visible: true,
+    snapshot: { ...initial, epoch: 2 },
+    client_revision: null,
+    document_id: 1,
+    grid_blocks: blocks,
+  });
+  assert.deepEqual(f.view().grid_blocks, blocks, "a new document brings them");
+  f.adapter.event({
+    text: null,
+    visible: true,
+    snapshot: { ...initial, epoch: 3 },
+    client_revision: null,
+    document_id: 1,
+    grid_blocks: blocks,
+  });
+  assert.deepEqual(f.view().grid_blocks, blocks, "a snapshot event keeps them");
+  const edit = f.adapter.edit("Hi there");
+  assert.deepEqual(f.view().grid_blocks, [], "an edit drops the stale ranges");
+  await edit;
+  f.adapter.event({
+    text: "Hi there",
+    visible: true,
+    snapshot: { ...initial, epoch: 4 },
+    client_revision: 1,
+    document_id: 1,
+    grid_blocks: [],
+  });
+  assert.deepEqual(f.view().grid_blocks, [], "the acknowledgement sets them");
+  console.log("popup adapter grid block assertions passed");
 }

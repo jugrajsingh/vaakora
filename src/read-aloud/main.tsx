@@ -3,7 +3,12 @@ import ReactDOM from "react-dom/client";
 import { listen, emit } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useTranslation } from "react-i18next";
-import { commands, type SessionSnapshot, type Result } from "@/bindings";
+import {
+  commands,
+  type GridBlock,
+  type SessionSnapshot,
+  type Result,
+} from "@/bindings";
 import { createPopupAdapter, type PopupEvent } from "./adapter";
 import { routePopupKey } from "./actions";
 import {
@@ -37,13 +42,18 @@ function unwrap<T>(result: Result<T, string>): T {
 function PopupApp() {
   const { t } = useTranslation();
   const [text, setText] = useState("");
+  const [gridBlocks, setGridBlocks] = useState<GridBlock[]>([]);
   const [editing, setEditing] = useState(false);
   const [heading, setHeading] =
     useState<ReturnType<typeof readerHeading>>(null);
   const documentId = useRef<number | null>(null);
   const [snapshot, setSnapshot] = useState(initial);
-  const current = useRef({ ...initial, text: "" });
-  current.current = { ...snapshot, text };
+  const current = useRef({
+    ...initial,
+    text: "",
+    grid_blocks: [] as GridBlock[],
+  });
+  current.current = { ...snapshot, text, grid_blocks: gridBlocks };
   const actions = useMemo(
     () =>
       createPopupAdapter(
@@ -51,6 +61,7 @@ function PopupApp() {
         (next) => {
           current.current = { ...current.current, ...next };
           setText(next.text);
+          setGridBlocks(next.grid_blocks);
           setSnapshot((old) => ({ ...old, ...next }));
         },
         {
@@ -138,6 +149,7 @@ function PopupApp() {
   return (
     <ReadAloudPopup
       text={text}
+      gridBlocks={gridBlocks}
       heading={heading}
       editing={editing}
       enterEdit={(value) =>
