@@ -182,6 +182,22 @@ fn document_events(source: &str) -> impl Iterator<Item = (Event<'_>, Range<usize
     )
     .into_offset_iter()
 }
+/// An event that carries text (any but the start or end of an element).
+fn is_content(event: &Event<'_>) -> bool {
+    !matches!(event, Event::Start(_) | Event::End(_))
+}
+#[cfg(test)]
+thread_local! {
+    /// Open-stack entries `source_items` has looked at, for the linear-work test.
+    static STACK_INSPECTIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+/// Counts one open-stack entry looked at (a test bounds the work per event).
+#[cfg(test)]
+fn inspected<T>(_: &T) {
+    STACK_INSPECTIONS.with(|count| count.set(count.get() + 1));
+}
+#[cfg(not(test))]
+fn inspected<T>(_: &T) {}
 /// The end of the line break after byte `end` (or `end` when no line break follows).
 fn after_line_break(source: &str, end: usize) -> usize {
     let rest = &source[end..];
@@ -203,22 +219,29 @@ fn source_items<'a>(
     let mut blocks = tables::find_blocks(source).into_iter().peekable();
     let mut document = document.peekable();
     let mut queue: VecDeque<Item<'a>> = VecDeque::new();
-    // The boundary pause of each open Markdown block, innermost last (0: none).
+    // For each open Markdown element, innermost last: the boundary pause of the innermost open
+    // paragraph, HTML block, heading or list item at or around it (0: none). Each entry carries
+    // the one around it, so only the top is read: linear work however deep the nesting.
     let mut open: Vec<u32> = Vec::new();
     let mut track = move |item: Item<'a>| {
         if let Item::Event(event, _) = &item {
+            let inherited = open.last().copied().inspect(inspected).unwrap_or(0);
             match event {
                 Event::Start(Tag::Paragraph | Tag::HtmlBlock) => open.push(450),
                 Event::Start(Tag::Heading { .. }) => open.push(600),
                 Event::Start(Tag::Item) => open.push(300),
-                Event::Start(_) => open.push(0),
+                Event::Start(_) => open.push(inherited),
                 Event::End(_) => {
                     open.pop();
                 }
                 _ => {}
             }
         }
-        let glued = open.iter().rev().copied().find(|&pause| pause > 0);
+        let glued = open
+            .last()
+            .copied()
+            .inspect(inspected)
+            .filter(|&pause| pause > 0);
         (item, glued)
     };
     let mut glued = None;
@@ -236,15 +259,43 @@ fn source_items<'a>(
             };
             if !at_block {
                 let (event, range) = document.next()?;
+                if is_content(&event) {
+                    // This event already reads the text of any block it reaches into.
+                    while blocks
+                        .next_if(|block| block.range.start < range.end)
+                        .is_some()
+                    {}
+                }
                 let (item, now) = track(Item::Event(event, range));
                 glued = now;
                 return Some(item);
             }
             let block = blocks.next()?;
             let limit = after_line_break(source, block.range.end);
+            let mut taken = Vec::new();
+            while let Some(event) = document.next_if(|(_, range)| range.start < limit) {
+                taken.push(event);
+            }
+            let reach = taken
+                .iter()
+                .filter(|(event, _)| is_content(event))
+                .map(|(_, range)| range.end)
+                .max()
+                .unwrap_or(0);
+            if reach > limit {
+                while blocks.next_if(|block| block.range.start < reach).is_some() {}
+                // A content event runs from inside the block past it: read the parse as it is,
+                // so no text is read twice.
+                queue.extend(
+                    taken
+                        .into_iter()
+                        .map(|(event, range)| Item::Event(event, range)),
+                );
+                continue;
+            }
             let mut inside = Vec::new();
             let mut around = Vec::new();
-            while let Some((event, range)) = document.next_if(|(_, range)| range.start < limit) {
+            for (event, range) in taken {
                 if range.start >= block.range.start && range.end <= limit {
                     inside.push((event, range));
                 } else {
@@ -3583,5 +3634,62 @@ mod table_reading {
                 );
             }
         }
+    }
+
+    const GRID: &str = "┌───────┬───────┐\n│ Name  │ Value │\n├───────┼───────┤\n│ Alpha │ Beta  │\n└───────┴───────┘";
+
+    /// Inline code that runs from before a table to after it holds the table's text: the
+    /// text reads as the Markdown parse has it, once, with no table read on top.
+    #[test]
+    fn spanning_code_reads_table_values_once() {
+        let source = format!("Intro `\n{GRID}\n` After");
+        let text = super::tests::prepared(&source, false);
+        assert_eq!(text, "Intro Name Value Alpha Beta After.");
+        assert_eq!(text.matches("Alpha").count(), 1, "{text}");
+    }
+
+    /// Inline code that starts inside a table and ends after it: the table's text reads once.
+    #[test]
+    fn code_starting_in_a_table_reads_values_once() {
+        let source = "┌───┬───┐\n│ A` │ B │\n├───┼───┤\n│ xq │ y │\n└───┴───┘\nAfter ` end";
+        let text = super::tests::prepared(source, false);
+        assert_eq!(text, "A B xq y After end.");
+        assert_eq!(text.matches("xq").count(), 1, "{text}");
+    }
+
+    /// Inline code spanning two tables reads both as text, once each, and a later table with
+    /// nothing around it still reads as a table.
+    #[test]
+    fn code_spanning_two_tables_reads_each_once() {
+        let source = format!("Intro `\n{GRID}\nmid\n{GRID}\n` After\n\n{GRID}");
+        let text = super::tests::prepared(&source, false);
+        assert_eq!(
+            text,
+            "Intro Name Value Alpha Beta mid Name Value Alpha Beta After. Table, 2 columns, 1 row. Row 1. Name: Alpha. Value: Beta. End of table."
+        );
+        assert_eq!(text.matches("Alpha").count(), 3, "{text}");
+    }
+
+    /// Deeply nested block quotes: the open-element stack is read at its top only, so the
+    /// entries looked at stay within two per Markdown event (no timing involved).
+    #[test]
+    fn deep_nesting_tracks_in_linear_work() {
+        let source = format!("{}hello", ">".repeat(3000));
+        let events = std::rc::Rc::new(std::cell::Cell::new(0_usize));
+        let counted = document_events(&source).inspect({
+            let events = events.clone();
+            move |_| events.set(events.get() + 1)
+        });
+        STACK_INSPECTIONS.with(|count| count.set(0));
+        let items = source_items(&source, counted).count();
+        let inspections = STACK_INSPECTIONS.with(std::cell::Cell::get);
+        assert!(events.get() > 6000, "{} events", events.get());
+        assert!(items <= events.get());
+        assert!(
+            inspections <= 2 * events.get(),
+            "{inspections} stack entries looked at for {} events",
+            events.get()
+        );
+        assert_eq!(super::tests::prepared(&source, false), "hello.");
     }
 }
