@@ -641,3 +641,57 @@ async fn verified_artifact_with_a_wrong_hash_is_deleted() {
     assert!(!partial.exists(), "a mismatched download must be deleted");
     server.await.unwrap();
 }
+
+/// HEAD `url` with `client`; any HTTP status passes, a transport error (a
+/// certificate or handshake failure included) panics with its source chain.
+async fn live_tls_head(what: &str, client: &reqwest::Client, url: &str) {
+    let response = client
+        .head(url)
+        .send()
+        .await
+        .unwrap_or_else(|e| panic!("{url}: {e:?}"));
+    println!("LIVE_TLS {what} {url} {}", response.status());
+}
+
+#[tokio::test]
+#[ignore = "live HTTPS HEAD to the model mirror; run in the build container"]
+async fn live_tls_catalog_model_head() {
+    let url = crate::catalog::CATALOG
+        .iter()
+        .find_map(|model| {
+            crate::catalog::mirror_fallbacks(&model.id)
+                .into_iter()
+                .next()
+        })
+        .expect("a catalog model with a mirror fallback")
+        .url;
+    live_tls_head("model", &http_client().unwrap(), &url).await;
+}
+
+#[tokio::test]
+#[ignore = "live HTTPS HEAD to Hugging Face; run in the build container"]
+async fn live_tls_hf_hub_head() {
+    let (repo_id, revision, filename) = crate::catalog::CATALOG
+        .iter()
+        .find_map(|model| match (&model.source, model.default_file()) {
+            (
+                crate::managers::model::ModelSource::HuggingFace { repo_id, revision },
+                Some(file),
+            ) => Some((repo_id.clone(), revision.clone(), file.filename.clone())),
+            _ => None,
+        })
+        .expect("a Hugging Face catalog model with a default file");
+    let api = hf_hub::api::tokio::ApiBuilder::from_env()
+        .with_token(None)
+        .with_progress(false)
+        .build()
+        .unwrap();
+    let url = api
+        .repo(hf_hub::Repo::with_revision(
+            repo_id,
+            hf_hub::RepoType::Model,
+            revision,
+        ))
+        .url(&filename);
+    live_tls_head("hf-hub", api.client(), &url).await;
+}

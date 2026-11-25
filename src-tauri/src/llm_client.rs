@@ -1035,4 +1035,21 @@ mod tests {
         .await;
         assert!(result.unwrap_err().contains("truncated"));
     }
+
+    #[tokio::test]
+    #[ignore = "live HTTPS HEAD to api.openai.com; run in the build container"]
+    async fn live_tls_cleanup_endpoint_head() {
+        let settings = crate::settings::get_default_settings();
+        let provider = settings
+            .post_process_provider("openai")
+            .expect("the default settings list the openai provider");
+        let url = format!("{}/models", provider.base_url.trim_end_matches('/'));
+        let response = shared_client()
+            .unwrap()
+            .head(&url)
+            .send()
+            .await
+            .unwrap_or_else(|e| panic!("{url}: {e:?}"));
+        println!("LIVE_TLS cleanup {url} {}", response.status());
+    }
 }

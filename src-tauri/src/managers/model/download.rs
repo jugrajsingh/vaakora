@@ -20,6 +20,13 @@ use tauri::Emitter;
 /// Bound on connection setup for direct HTTP downloads (mirror + URL models).
 const HTTP_CONNECT_TIMEOUT: Duration = Duration::from_secs(15);
 
+/// The client direct model downloads use.
+fn http_client() -> reqwest::Result<reqwest::Client> {
+    reqwest::Client::builder()
+        .connect_timeout(HTTP_CONNECT_TIMEOUT)
+        .build()
+}
+
 /// No headers, body bytes, or hf-hub progress for this long means the transfer
 /// is wedged, not slow: direct downloads error out (keeping the partial for
 /// resume) and HF attempts are cancelled by a watchdog — either way the retry
@@ -273,9 +280,7 @@ impl ModelManager {
             info!("Starting fresh download of {} from {}", model_id, url);
         }
 
-        let client = reqwest::Client::builder()
-            .connect_timeout(HTTP_CONNECT_TIMEOUT)
-            .build()?;
+        let client = http_client()?;
         let mut request = client.get(url);
         if resume_from > 0 {
             request = request.header("Range", format!("bytes={}-", resume_from));

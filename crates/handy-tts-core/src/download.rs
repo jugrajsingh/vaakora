@@ -1710,4 +1710,27 @@ mod tests {
         assert!(started.elapsed() < Duration::from_secs(4));
         server.finish();
     }
+
+    #[test]
+    #[ignore = "live HTTPS HEAD to huggingface.co; run in the build container"]
+    fn live_tls_tts_voice_head() {
+        let file = crate::catalog::entries()
+            .unwrap()
+            .iter()
+            .flat_map(|entry| entry.files.iter())
+            .find(|file| !file.gated && file.path.contains("voice"))
+            .expect("an ungated voice file in the catalog");
+        let base = "https://huggingface.co";
+        let transport = HttpTransport::new(base).unwrap();
+        let url = format!(
+            "{base}/{}/resolve/{}/{}",
+            file.repo, file.revision, file.path
+        );
+        let response = transport
+            .client
+            .head(&url)
+            .send()
+            .unwrap_or_else(|e| panic!("{url}: {e:?}"));
+        println!("LIVE_TLS tts {url} {}", response.status());
+    }
 }
