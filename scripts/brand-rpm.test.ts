@@ -3,6 +3,7 @@ import {
   chmodSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -11,6 +12,7 @@ import { join } from "node:path";
 import {
   binaryScanProblems,
   desktopProblems,
+  extractMember,
   headerProblems,
   licenceProblems,
   overlapProblems,
@@ -202,5 +204,86 @@ describe("rpm binary scan runs strings and fails closed", () => {
     );
     expect(bad).toHaveLength(1);
     expect(bad[0]).toContain("set by Handy: x");
+  });
+});
+
+// Extraction pipes `rpm2cpio` into `cpio`. These tests put stand-ins for both
+// first on PATH (the shell's own tools stay reachable after them).
+function payloadTools(
+  name: string,
+  rpm2cpio: string,
+  cpio: string,
+): NodeJS.ProcessEnv {
+  const dir = join(work, name);
+  mkdirSync(dir);
+  for (const [tool, body] of [
+    ["rpm2cpio", rpm2cpio],
+    ["cpio", cpio],
+  ]) {
+    writeFileSync(join(dir, tool), `#!/bin/sh\n${body}\n`);
+    chmodSync(join(dir, tool), 0o755);
+  }
+  return { PATH: `${dir}:${process.env.PATH ?? ""}` };
+}
+
+// A payload far larger than a pipe buffer, of which cpio reads only the start:
+// cpio stops at the archive trailer, before rpm2cpio has written the rest.
+const LONG_PAYLOAD = "head -c 4000000 /dev/zero";
+const EARLY_TRAILER = "head -c 512 > /dev/null; printf 'Name=Vaakora'";
+
+describe("rpm member extraction", () => {
+  it("extracts a member when cpio stops reading before the payload ends", () => {
+    const to = join(work, "early.out");
+    const why = extractMember(
+      "/pkg.rpm",
+      "./usr/share/applications/Vaakora.desktop",
+      to,
+      work,
+      payloadTools("early", LONG_PAYLOAD, EARLY_TRAILER),
+    );
+    expect(why).toBeNull();
+    expect(readFileSync(to, "utf8")).toBe("Name=Vaakora");
+  });
+
+  it("keeps cpio's failure as the result", () => {
+    const why = extractMember(
+      "/pkg.rpm",
+      "./usr/bin/vaakora",
+      join(work, "cpio-fails.out"),
+      work,
+      payloadTools(
+        "cpio-fails",
+        LONG_PAYLOAD,
+        "head -c 512 > /dev/null; echo 'cpio broke' >&2; exit 2",
+      ),
+    );
+    expect(why).toContain("rpm2cpio | cpio failed");
+    expect(why).toContain("cpio broke");
+  });
+
+  it("keeps rpm2cpio's failure as the result", () => {
+    const why = extractMember(
+      "/pkg.rpm",
+      "./usr/bin/vaakora",
+      join(work, "rpm2cpio-fails.out"),
+      work,
+      payloadTools(
+        "rpm2cpio-fails",
+        "echo 'bad package' >&2; exit 1",
+        "cat > /dev/null; printf 'x'",
+      ),
+    );
+    expect(why).toContain("bad package");
+  });
+
+  it("reports a member that is not in the package", () => {
+    const why = extractMember(
+      "/pkg.rpm",
+      "./usr/bin/vaakora",
+      join(work, "absent.out"),
+      work,
+      payloadTools("absent", LONG_PAYLOAD, "head -c 512 > /dev/null"),
+    );
+    expect(why).toBe("member is not in the package");
   });
 });

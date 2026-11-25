@@ -123,11 +123,22 @@ function run(
   script: string,
   ...args: string[]
 ): { ok: boolean; out: Buffer; err: string } {
+  return runIn(process.env, cwd, script, ...args);
+}
+
+/** `run` with its own environment (`env` lets a test control PATH). */
+function runIn(
+  env: NodeJS.ProcessEnv,
+  cwd: string,
+  script: string,
+  ...args: string[]
+): { ok: boolean; out: Buffer; err: string } {
   const r = spawnSync(
     "bash",
     ["-c", `set -o pipefail; ${script}`, "_", ...args],
     {
       cwd,
+      env,
       maxBuffer: 1 << 30,
     },
   );
@@ -136,6 +147,33 @@ function run(
     out: r.stdout ?? Buffer.alloc(0),
     err: `${r.error ? `${r.error.message} ` : ""}${String(r.stderr ?? "")}`,
   };
+}
+
+/**
+ * Writes `member` of the RPM's payload to `to`: null when written, else why
+ * not. cpio exits 0 when the member is absent, so a missing member is an
+ * empty file. cpio stops reading at the archive trailer, so the rest of the
+ * payload is drained after it: rpm2cpio never dies of SIGPIPE, and the result
+ * is cpio's own exit status (and rpm2cpio's, under pipefail). `env` lets a
+ * test control PATH.
+ */
+export function extractMember(
+  rpm: string,
+  member: string,
+  to: string,
+  cwd: string,
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
+  const r = runIn(
+    env,
+    cwd,
+    `rpm2cpio "$1" | { cpio -i --to-stdout "$2"; rc=$?; cat > /dev/null; exit "$rc"; } > "$3"`,
+    rpm,
+    member,
+    to,
+  );
+  if (!r.ok) return `rpm2cpio | cpio failed: ${r.err.trim()}`;
+  return statSync(to).size > 0 ? null : "member is not in the package";
 }
 
 /**
@@ -243,19 +281,8 @@ export function rpmProblems(
       problems.push(`rpm -qlp failed: ${list.err.trim()}`);
     problems.push(...pathProblems(paths, brand));
 
-    // cpio exits 0 when the member is absent, so a missing member is an empty file.
-    // Returns null when the member was written, else why not.
-    const extract = (member: string, to: string): string | null => {
-      const r = run(
-        scratch,
-        `rpm2cpio "$1" | cpio -i --to-stdout "$2" > "$3"`,
-        rpm,
-        member,
-        to,
-      );
-      if (!r.ok) return `rpm2cpio | cpio failed: ${r.err.trim()}`;
-      return statSync(to).size > 0 ? null : "member is not in the package";
-    };
+    const extract = (member: string, to: string): string | null =>
+      extractMember(rpm, member, to, scratch);
 
     const desktop = join(scratch, "app.desktop");
     const desktopWhy = extract(
