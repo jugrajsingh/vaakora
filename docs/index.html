@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vaakora</title>
+    <meta
+      name="description"
+      content="Speak to type. Listen to read. All on your own computer."
+    />
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <header class="site">
+      <div class="wrap">
+        <a class="brand" href="index.html">
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/mark-dark.svg"
+            />
+            <img
+              class="mark"
+              src="assets/brand/mark.svg"
+              alt=""
+              width="40"
+              height="40"
+            />
+          </picture>
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/wordmark-dark.svg"
+            />
+            <img
+              class="wordmark"
+              src="assets/brand/wordmark-light.svg"
+              alt="Vaakora"
+              width="88"
+              height="28"
+            />
+          </picture>
+        </a>
+        <nav class="site" aria-label="Documentation">
+          <!-- prettier-ignore -->
+          <ul>
+            <li><a href="index.html" aria-current="page">Overview</a></li>
+            <li><a href="dictation.html">Dictation</a></li>
+            <li><a href="cleanup.html">Cleanup</a></li>
+            <li><a href="read-aloud.html">Read aloud</a></li>
+            <li><a href="tables.html">Tables</a></li>
+            <li><a href="vocabulary.html">Vocabulary</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="models.html">Models</a></li>
+            <li><a href="settings.html">Settings</a></li>
+            <li><a href="cli.html">Command line</a></li>
+            <li><a href="moving-from-handy.html">Moving from Handy</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <h1>Vaakora</h1>
+      <p class="tagline">
+        Speak to type. Listen to read. All on your own computer.
+      </p>
+      <p>
+        Vaakora is local dictation, transcript cleanup and read aloud for Linux.
+        Audio and text stay on the machine. It is a Linux desktop app, built and
+        tested on Fedora 44 (KDE Plasma, Wayland).
+      </p>
+      <div class="hero">
+        <picture>
+          <img
+            src="assets/clips/dictate.webp"
+            alt="An animation of the recording pill. It appears at the bottom of a notes window, shows level bars while you speak, shows Transcribing, and then the sentence Remind me to water the tomato seedlings before Friday. appears in the note."
+            width="720"
+            height="400"
+          />
+        </picture>
+      </div>
+      <h2>Features</h2>
+      <ul class="cards">
+        <li>
+          <a href="dictation.html"
+            ><strong>Dictation</strong
+            ><span
+              >Press a shortcut, speak, and your words appear in any text
+              field.</span
+            ></a
+          >
+        </li>
+        <li>
+          <a href="cleanup.html"
+            ><strong>Cleanup</strong
+            ><span
+              >A small language model can tidy the transcript, on your computer
+              or with a cloud provider.</span
+            ></a
+          >
+        </li>
+        <li>
+          <a href="read-aloud.html"
+            ><strong>Read aloud</strong
+            ><span
+              >Another shortcut reads the text you copied back to you.</span
+            ></a
+          >
+        </li>
+        <li>
+          <a href="tables.html"
+            ><strong>Tables</strong
+            ><span>Tables are read row by row, with the column names.</span></a
+          >
+        </li>
+        <li>
+          <a href="vocabulary.html"
+            ><strong>Vocabulary</strong
+            ><span
+              >Change how words are spoken, for every voice or for one.</span
+            ></a
+          >
+        </li>
+        <li>
+          <a href="history.html"
+            ><strong>History</strong
+            ><span>Past dictations and past reads, text only.</span></a
+          >
+        </li>
+        <li>
+          <a href="models.html"
+            ><strong>Models</strong
+            ><span
+              >Download and choose the models for dictation, read aloud and
+              cleanup.</span
+            ></a
+          >
+        </li>
+        <li>
+          <a href="settings.html"
+            ><strong>Settings</strong
+            ><span>Shortcuts, sound and the rest.</span></a
+          >
+        </li>
+        <li>
+          <a href="cli.html"
+            ><strong>Command line</strong
+            ><span
+              >A vaakora command drives the running app, and optional agent
+              skills read aloud on request.</span
+            ></a
+          >
+        </li>
+        <li>
+          <a href="moving-from-handy.html"
+            ><strong>Moving from Handy</strong
+            ><span
+              >The first start copies your Handy settings and data.</span
+            ></a
+          >
+        </li>
+      </ul>
+      <h2>Built on Handy</h2>
+      <p>
+        Vaakora began as a fork of
+        <a href="https://github.com/cjpais/Handy">Handy</a> by CJ Pais, used
+        under the MIT licence. Handy's name, logo and brand assets are not part
+        of Vaakora. Vaakora is not affiliated with or endorsed by Handy or its
+        author.
+      </p>
+    </main>
+    <footer class="site">
+      <div class="wrap">
+        <p>
+          Built on <a href="https://github.com/cjpais/Handy">Handy</a> by CJ
+          Pais. MIT licence.
+        </p>
+        <p>
+          <a href="https://github.com/jugrajsingh/vaakora">Vaakora on GitHub</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

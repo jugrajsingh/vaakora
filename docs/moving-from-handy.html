@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Moving from Handy - Vaakora</title>
+    <meta name="description" content="Moving from Handy to Vaakora" />
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <header class="site">
+      <div class="wrap">
+        <a class="brand" href="index.html">
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/mark-dark.svg"
+            />
+            <img
+              class="mark"
+              src="assets/brand/mark.svg"
+              alt=""
+              width="40"
+              height="40"
+            />
+          </picture>
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/wordmark-dark.svg"
+            />
+            <img
+              class="wordmark"
+              src="assets/brand/wordmark-light.svg"
+              alt="Vaakora"
+              width="88"
+              height="28"
+            />
+          </picture>
+        </a>
+        <nav class="site" aria-label="Documentation">
+          <!-- prettier-ignore -->
+          <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="dictation.html">Dictation</a></li>
+            <li><a href="cleanup.html">Cleanup</a></li>
+            <li><a href="read-aloud.html">Read aloud</a></li>
+            <li><a href="tables.html">Tables</a></li>
+            <li><a href="vocabulary.html">Vocabulary</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="models.html">Models</a></li>
+            <li><a href="settings.html">Settings</a></li>
+            <li><a href="cli.html">Command line</a></li>
+            <li><a href="moving-from-handy.html" aria-current="page">Moving from Handy</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <h1>Moving from Handy</h1>
+      <p>
+        Vaakora began as a fork of Handy, and it can copy your Handy data the
+        first time it starts. It copies once and only reads the Handy folder.
+        Quit the other app before dictating, because both use the same shortcut.
+      </p>
+      <h2>What is copied</h2>
+      <ul>
+        <li>
+          It happens on the first start, when Vaakora has no data folder yet and
+          Handy's settings file exists.
+        </li>
+        <li>
+          Copied: your settings (API keys and every value as they were, except
+          start at login, which the copy turns off so only one app starts at
+          login), both histories, recordings, the vocabulary file, models and
+          web storage.
+        </li>
+        <li>Left behind: logs, caches and the OpenVINO compile cache.</li>
+        <li>The Handy folder is only read and is never changed.</li>
+        <li>The new folder is private to you.</li>
+        <li>
+          Files share disk blocks where the filesystem allows, so the copy may
+          use less new space.
+        </li>
+      </ul>
+      <h2>What you see</h2>
+      <p>
+        The first start shows the window with a card, and one desktop
+        notification. The card reads:
+      </p>
+      <blockquote>
+        <p><strong>Your settings and data were copied</strong></p>
+        <p>
+          Copied {{size}} from {{from}}: settings, history, recordings,
+          vocabulary and models. That folder was not changed.
+        </p>
+        <p>
+          Files are shared on disk where the filesystem allows, so the copy may
+          use less new space.
+        </p>
+        <p>
+          If the app that used this folder still starts when you log in, turn
+          that off there, so only one app answers your shortcuts.
+        </p>
+        <p>Buttons: Start at login, OK</p>
+      </blockquote>
+      <p>
+        {{size}} is the size copied and {{from}} is the Handy folder. OK hides
+        the card for good. The notification says:
+      </p>
+      <blockquote>
+        <p>
+          Imported your settings from {path}. Quit the other app before
+          dictating; both use the same shortcut.
+        </p>
+      </blockquote>
+      <h2>If the copy fails</h2>
+      <p>
+        A failure leaves only a small report file in the new folder. The card is
+        titled "Your settings and data could not be copied". It names the error
+        and says:
+      </p>
+      <blockquote>
+        <p>
+          Copying from {{from}} failed: {{error}}. That folder was not changed.
+          To try again, quit Vaakora, delete {{to}} and start Vaakora again.
+        </p>
+      </blockquote>
+    </main>
+    <footer class="site">
+      <div class="wrap">
+        <p>
+          Built on <a href="https://github.com/cjpais/Handy">Handy</a> by CJ
+          Pais. MIT licence.
+        </p>
+        <p>
+          <a href="https://github.com/jugrajsingh/vaakora">Vaakora on GitHub</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

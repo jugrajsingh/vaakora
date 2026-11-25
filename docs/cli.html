@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Command line - Vaakora</title>
+    <meta name="description" content="The vaakora command and agent skills" />
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <header class="site">
+      <div class="wrap">
+        <a class="brand" href="index.html">
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/mark-dark.svg"
+            />
+            <img
+              class="mark"
+              src="assets/brand/mark.svg"
+              alt=""
+              width="40"
+              height="40"
+            />
+          </picture>
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/wordmark-dark.svg"
+            />
+            <img
+              class="wordmark"
+              src="assets/brand/wordmark-light.svg"
+              alt="Vaakora"
+              width="88"
+              height="28"
+            />
+          </picture>
+        </a>
+        <nav class="site" aria-label="Documentation">
+          <!-- prettier-ignore -->
+          <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="dictation.html">Dictation</a></li>
+            <li><a href="cleanup.html">Cleanup</a></li>
+            <li><a href="read-aloud.html">Read aloud</a></li>
+            <li><a href="tables.html">Tables</a></li>
+            <li><a href="vocabulary.html">Vocabulary</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="models.html">Models</a></li>
+            <li><a href="settings.html">Settings</a></li>
+            <li><a href="cli.html" aria-current="page">Command line</a></li>
+            <li><a href="moving-from-handy.html">Moving from Handy</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <h1>Command line</h1>
+      <p>
+        The <code>vaakora</code> command also drives the running app from a
+        terminal, a script or a coding agent. It needs the app to be running: it
+        never starts it, and exits with 3 when there is nothing to talk to.
+      </p>
+      <h2>Commands</h2>
+      <ul>
+        <li>
+          <code>vaakora read [file|-]</code> reads a file aloud, or text piped
+          in on standard input (<code>-</code> or no file). The text is never
+          taken from an argument, because other programs on the machine could
+          see it.
+        </li>
+        <li>
+          <code>vaakora pause</code>, <code>vaakora resume</code> and
+          <code>vaakora stop</code> control the reader.
+        </li>
+        <li>
+          <code>vaakora status</code> and <code>vaakora voices</code> report
+          what the app is doing and which voices are downloaded. Add
+          <code>--json</code> for JSON.
+        </li>
+        <li>
+          <code>vaakora dictate [--post-process|--cancel]</code> toggles a
+          dictation, with or without post-processing, or cancels it.
+        </li>
+        <li>
+          <code>vaakora transcribe &lt;file&gt; [--json]</code> prints the
+          transcript of an audio file. The file is added to History, as
+          Transcribe a file does there.
+        </li>
+      </ul>
+      <h3>status</h3>
+      <pre class="wrapped">
+$ vaakora status
+Vaakora 0.3.1 (protocol 1)
+Dictation: idle
+Read aloud: idle
+Voice: phonon-31m-en, Pippa (installed)
+Speech to text: handy-computer/parakeet-unified-en-0.6b-gguf/parakeet-unified-en-0.6b-Q8_0.gguf (installed)</pre
+      >
+      <h3>voices</h3>
+      <pre class="wrapped">
+$ vaakora voices
+* phonon-31m-en: Alfie, Bryony, Delia, Easton, Edwin, Elodie-Rose, Everly, Freya, Hadley, Harper, Hugh, Imogen, Juniper, Lottie, Maeve, Micah, Miles, Pippa (selected), Preston, Russell, Spencer, Teddy, Toby, Trevor, Zoey, default</pre
+      >
+      <h3>read</h3>
+      <pre class="wrapped">
+$ vaakora read notes.md
+$ echo $?
+0</pre
+      >
+      <p>
+        Reads that come from the command line or an agent are saved in Read
+        aloud history with a small "from agent" tag. A read you start with the
+        shortcut is not tagged.
+      </p>
+      <h2>Exit codes</h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>0</td>
+              <td>
+                Done. <code>pause</code>, <code>resume</code> and
+                <code>stop</code> also exit 0 when there was nothing to change,
+                and say so on stderr.
+              </td>
+            </tr>
+            <tr>
+              <td>1</td>
+              <td>
+                The app answered with an error, such as a
+                <code>transcribe</code> file it cannot find or decode, or the
+                output could not be written.
+              </td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>
+                Usage error, found before the app is asked: an unknown option,
+                no file and no piped text, a path that is not a file, or text
+                that is blank, not UTF-8, over 1 MiB or unreadable.
+              </td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>
+                The app cannot be reached: it is not running, there is no
+                runtime directory or the socket path is too long, or it did not
+                answer in time.
+              </td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>
+                A dictation is in progress. The dictation goes on and nothing is
+                read.
+              </td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>
+                A model is missing: the speech model, or the voice model the
+                reader needs, is not downloaded or ready.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Right after the app starts, <code>vaakora read</code> can return exit 5
+        (<code>tts-unavailable</code>) for a moment, while read aloud is still
+        loading. Run it again.
+      </p>
+      <h2>Agent skills</h2>
+      <p>
+        <code>vaakora agent install [--claude] [--codex] [--dry-run]</code>
+        writes two skills, <code>vaakora-read</code> and
+        <code>vaakora-stop</code>, for Claude Code
+        (<code>~/.claude/skills</code>) and Codex
+        (<code>~/.agents/skills</code>). Without a flag it installs for both,
+        and <code>--dry-run</code> lists what it would write and writes nothing.
+      </p>
+      <pre class="wrapped">
+$ vaakora agent install --dry-run
+write ~/.claude/skills/vaakora-read/.vaakora-skill
+write ~/.claude/skills/vaakora-read/SKILL.md
+write ~/.claude/skills/vaakora-stop/.vaakora-skill
+write ~/.claude/skills/vaakora-stop/SKILL.md
+write ~/.agents/skills/vaakora-read/.vaakora-skill
+write ~/.agents/skills/vaakora-read/SKILL.md
+write ~/.agents/skills/vaakora-read/agents/openai.yaml
+write ~/.agents/skills/vaakora-stop/.vaakora-skill
+write ~/.agents/skills/vaakora-stop/SKILL.md
+write ~/.agents/skills/vaakora-stop/agents/openai.yaml</pre
+      >
+      <ul>
+        <li>
+          <strong>Explicit only:</strong> the skills never run on their own. In
+          Claude Code you invoke <code>/vaakora-read &lt;path&gt;</code> or
+          <code>/vaakora-stop</code>, and in Codex <code>$vaakora-read</code>.
+          Installing is a command you run; nothing installs a skill for you.
+        </li>
+        <li>
+          <strong>Your files are safe:</strong> the command refuses to touch a
+          skill folder it did not write, and
+          <code>vaakora agent uninstall</code> removes only the files it wrote.
+        </li>
+        <li>
+          <strong>A temporary file:</strong> to read text from the conversation,
+          the skill writes it to a file in <code>$XDG_RUNTIME_DIR</code>, never
+          in a repository, and deletes it after
+          <code>vaakora read</code> finishes. Claude Code may ask once before it
+          allows that deletion.
+        </li>
+      </ul>
+      <h2>Privacy</h2>
+      <ul>
+        <li>
+          The app listens on <code>$XDG_RUNTIME_DIR/vaakora.sock</code> (or
+          <code>$VAAKORA_SOCKET</code>). The socket is readable and writable
+          only by you, in a folder only you can open, and the app answers only
+          processes that run as your user.
+        </li>
+        <li>
+          Text reaches the app through a file or standard input, never as an
+          argument, and the socket's own logging never holds it.
+        </li>
+        <li>
+          The socket is local to the machine. Nothing is sent over a network.
+        </li>
+      </ul>
+    </main>
+    <footer class="site">
+      <div class="wrap">
+        <p>
+          Built on <a href="https://github.com/cjpais/Handy">Handy</a> by CJ
+          Pais. MIT licence.
+        </p>
+        <p>
+          <a href="https://github.com/jugrajsingh/vaakora">Vaakora on GitHub</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vocabulary - Vaakora</title>
+    <meta name="description" content="The reading vocabulary in Vaakora" />
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <header class="site">
+      <div class="wrap">
+        <a class="brand" href="index.html">
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/mark-dark.svg"
+            />
+            <img
+              class="mark"
+              src="assets/brand/mark.svg"
+              alt=""
+              width="40"
+              height="40"
+            />
+          </picture>
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/wordmark-dark.svg"
+            />
+            <img
+              class="wordmark"
+              src="assets/brand/wordmark-light.svg"
+              alt="Vaakora"
+              width="88"
+              height="28"
+            />
+          </picture>
+        </a>
+        <nav class="site" aria-label="Documentation">
+          <!-- prettier-ignore -->
+          <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="dictation.html">Dictation</a></li>
+            <li><a href="cleanup.html">Cleanup</a></li>
+            <li><a href="read-aloud.html">Read aloud</a></li>
+            <li><a href="tables.html">Tables</a></li>
+            <li><a href="vocabulary.html" aria-current="page">Vocabulary</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="models.html">Models</a></li>
+            <li><a href="settings.html">Settings</a></li>
+            <li><a href="cli.html">Command line</a></li>
+            <li><a href="moving-from-handy.html">Moving from Handy</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <h1>Vocabulary</h1>
+      <p>
+        Vocabulary changes how a word is spoken in Read aloud. It lists every
+        reading, built-in and yours. You can fix how a text is read, add an
+        entry, or limit an entry to one voice model.
+      </p>
+      <figure>
+        <picture>
+          <source
+            media="(prefers-color-scheme: dark)"
+            srcset="assets/screens/vocabulary-dark.webp"
+          />
+          <img
+            src="assets/screens/vocabulary-light.webp"
+            alt="The Vocabulary tab with three entries of your own. kubectl is spoken as cube control and nginx as engine x, both for all models. SQL is spoken as sequel for the Phonon 31M English model only. Search, Correct a reading and Add entry buttons are at the top."
+            width="720"
+            height="600"
+          />
+        </picture>
+      </figure>
+      <ul>
+        <li>
+          <strong>Spoken forms:</strong> each row shows what is written, an
+          arrow and what is said, with Listen and Edit.
+        </li>
+        <li>
+          <strong>Per-voice entries:</strong> an entry can apply to all models
+          or to one voice model only. In the picture, "SQL" is spoken as
+          "sequel" for Phonon 31M (English) only.
+        </li>
+        <li>
+          <strong>Correct a reading:</strong> type or paste the written text,
+          press Next, and Vaakora shows how it is spoken. Edit the words it
+          should say and press Listen to hear them.
+        </li>
+        <li>
+          <strong>The file:</strong> entries are kept in
+          <code>tts-vocabulary.json</code> in the app data directory.
+        </li>
+      </ul>
+    </main>
+    <footer class="site">
+      <div class="wrap">
+        <p>
+          Built on <a href="https://github.com/cjpais/Handy">Handy</a> by CJ
+          Pais. MIT licence.
+        </p>
+        <p>
+          <a href="https://github.com/jugrajsingh/vaakora">Vaakora on GitHub</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

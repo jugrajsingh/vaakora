@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Read aloud - Vaakora</title>
+    <meta name="description" content="Read aloud in Vaakora" />
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <header class="site">
+      <div class="wrap">
+        <a class="brand" href="index.html">
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/mark-dark.svg"
+            />
+            <img
+              class="mark"
+              src="assets/brand/mark.svg"
+              alt=""
+              width="40"
+              height="40"
+            />
+          </picture>
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/wordmark-dark.svg"
+            />
+            <img
+              class="wordmark"
+              src="assets/brand/wordmark-light.svg"
+              alt="Vaakora"
+              width="88"
+              height="28"
+            />
+          </picture>
+        </a>
+        <nav class="site" aria-label="Documentation">
+          <!-- prettier-ignore -->
+          <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="dictation.html">Dictation</a></li>
+            <li><a href="cleanup.html">Cleanup</a></li>
+            <li><a href="read-aloud.html" aria-current="page">Read aloud</a></li>
+            <li><a href="tables.html">Tables</a></li>
+            <li><a href="vocabulary.html">Vocabulary</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="models.html">Models</a></li>
+            <li><a href="settings.html">Settings</a></li>
+            <li><a href="cli.html">Command line</a></li>
+            <li><a href="moving-from-handy.html">Moving from Handy</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <h1>Read aloud</h1>
+      <p>
+        A shortcut reads the text you last copied, in a popup that follows
+        along. Reading runs on your own computer with a voice model you
+        download.
+      </p>
+      <figure>
+        <picture>
+          <source
+            media="(prefers-color-scheme: dark)"
+            srcset="assets/screens/read-aloud-dark.webp"
+          />
+          <img
+            src="assets/screens/read-aloud-light.webp"
+            alt="The Read aloud popup showing the heading Garden notes and a paragraph about a raised bed. The sentence being read is highlighted, and the controls show play, Read clipboard, a progress bar and the state Paused."
+            width="560"
+            height="200"
+          />
+        </picture>
+      </figure>
+      <ul>
+        <li><strong>Shortcut:</strong> Super+Alt+R by default.</li>
+        <li>
+          <strong>Follow-along popup:</strong> highlights the sentence being
+          read.
+        </li>
+        <li>
+          <strong>Streaming and controls:</strong> reading is streamed and has
+          speed and pitch controls.
+        </li>
+        <li>
+          <strong>Markdown:</strong> marks are not spoken, and code blocks are
+          skipped unless you ask for them; a code block that holds only a table
+          is read as a table.
+        </li>
+        <li>
+          <strong>Tables:</strong> read row by row, each value with its column
+          name. See <a href="tables.html">Tables</a>.
+        </li>
+        <li>
+          <strong>Technical reading:</strong> paths, file names, flags, versions
+          and code names are spoken the way an engineer would say them.
+        </li>
+        <li>
+          <strong>Vocabulary:</strong> extend the spoken forms. See
+          <a href="vocabulary.html">Vocabulary</a>.
+        </li>
+        <li>
+          <strong>No overlap:</strong> dictation and reading never overlap.
+        </li>
+      </ul>
+      <h2>Voice models</h2>
+      <p>
+        Eight downloadable voice models are offered. The table has six rows
+        because the Indic Tiny TTS row covers three of them: Indian English,
+        Hindi and Punjabi. GPU and NPU mean an Intel GPU or NPU through
+        OpenVINO.
+      </p>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Voice model</th>
+              <th>Runs on</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Pocket TTS</td>
+              <td>CPU, GPU and NPU in part (see below)</td>
+            </tr>
+            <tr>
+              <td>Supertonic 3</td>
+              <td>CPU, GPU, NPU</td>
+            </tr>
+            <tr>
+              <td>Kokoro-82M</td>
+              <td>CPU, GPU, NPU</td>
+            </tr>
+            <tr>
+              <td>Paradee-8M</td>
+              <td>CPU</td>
+            </tr>
+            <tr>
+              <td>Phonon 31M (English)</td>
+              <td>CPU</td>
+            </tr>
+            <tr>
+              <td>Indic Tiny TTS (Indian English, Hindi, Punjabi)</td>
+              <td>CPU, GPU</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li>The app picks the best device that works on the machine.</li>
+        <li>
+          Pocket TTS keeps part of its work on the CPU (ONNX Runtime). On the
+          GPU only its text conditioner runs there, and its main flow model,
+          flow sampler and audio decoder stay on the CPU. On the NPU its main
+          flow model stays on the CPU.
+        </li>
+        <li>
+          The device ratings shown in Models were measured on one machine. Other
+          hardware may rank devices differently.
+        </li>
+      </ul>
+    </main>
+    <footer class="site">
+      <div class="wrap">
+        <p>
+          Built on <a href="https://github.com/cjpais/Handy">Handy</a> by CJ
+          Pais. MIT licence.
+        </p>
+        <p>
+          <a href="https://github.com/jugrajsingh/vaakora">Vaakora on GitHub</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

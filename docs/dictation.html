@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dictation - Vaakora</title>
+    <meta name="description" content="Dictation in Vaakora" />
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <header class="site">
+      <div class="wrap">
+        <a class="brand" href="index.html">
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/mark-dark.svg"
+            />
+            <img
+              class="mark"
+              src="assets/brand/mark.svg"
+              alt=""
+              width="40"
+              height="40"
+            />
+          </picture>
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/wordmark-dark.svg"
+            />
+            <img
+              class="wordmark"
+              src="assets/brand/wordmark-light.svg"
+              alt="Vaakora"
+              width="88"
+              height="28"
+            />
+          </picture>
+        </a>
+        <nav class="site" aria-label="Documentation">
+          <!-- prettier-ignore -->
+          <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="dictation.html" aria-current="page">Dictation</a></li>
+            <li><a href="cleanup.html">Cleanup</a></li>
+            <li><a href="read-aloud.html">Read aloud</a></li>
+            <li><a href="tables.html">Tables</a></li>
+            <li><a href="vocabulary.html">Vocabulary</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="models.html">Models</a></li>
+            <li><a href="settings.html">Settings</a></li>
+            <li><a href="cli.html">Command line</a></li>
+            <li><a href="moving-from-handy.html">Moving from Handy</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <h1>Dictation</h1>
+      <p>
+        Press a configurable shortcut, speak, and the transcript is pasted into
+        the app you are using. Transcription runs on your own computer.
+      </p>
+      <figure>
+        <picture>
+          <img
+            src="assets/clips/dictate.webp"
+            alt="An animation of the recording pill. It appears at the bottom of a notes window, shows level bars while you speak, shows Transcribing, and then the sentence Remind me to water the tomato seedlings before Friday. appears in the note."
+            width="720"
+            height="400"
+          />
+        </picture>
+        <figcaption>
+          The recording pill, then the text appears. This is an animation, not a
+          screen recording.
+        </figcaption>
+      </figure>
+      <figure>
+        <picture>
+          <source
+            media="(prefers-color-scheme: dark)"
+            srcset="assets/screens/dictation-dark.webp"
+          />
+          <img
+            src="assets/screens/dictation-light.webp"
+            alt="The Dictation Settings tab in Vaakora. It lists the speech model, the preferred languages, the microphone, and the paste method, clipboard handling and auto submit options."
+            width="720"
+            height="600"
+          />
+        </picture>
+      </figure>
+      <ul>
+        <li>
+          <strong>Shortcut:</strong> hold it to record and release to stop, or
+          tap it to toggle recording on and off.
+        </li>
+        <li>
+          <strong>Silence:</strong> filtered with Silero voice activity
+          detection.
+        </li>
+        <li>
+          <strong>Models:</strong> transcription runs locally with Whisper
+          models (with GPU acceleration when available) or Parakeet V3.
+        </li>
+        <li>
+          <strong>Custom words:</strong> offline Parakeet models with a TDT or
+          RNN-T decoder take your custom words as they recognise speech. Live
+          (streaming) models never get them and keep correcting them afterwards.
+        </li>
+        <li>
+          <strong>Shortcut changes:</strong> applied atomically, and a usable
+          dictation shortcut is always kept.
+        </li>
+        <li>
+          <strong>Paste helpers:</strong> the programs that paste dictated text
+          run under a deadline, so a hung helper cannot hold up dictation.
+        </li>
+        <li>
+          <strong>No overlap:</strong> dictation and reading never overlap.
+        </li>
+      </ul>
+      <p>
+        See <a href="models.html">Models</a> for the speech models and
+        <a href="cleanup.html">Cleanup</a> to tidy a transcript.
+      </p>
+    </main>
+    <footer class="site">
+      <div class="wrap">
+        <p>
+          Built on <a href="https://github.com/cjpais/Handy">Handy</a> by CJ
+          Pais. MIT licence.
+        </p>
+        <p>
+          <a href="https://github.com/jugrajsingh/vaakora">Vaakora on GitHub</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

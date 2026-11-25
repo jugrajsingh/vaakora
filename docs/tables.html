@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tables - Vaakora</title>
+    <meta name="description" content="Reading tables aloud in Vaakora" />
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <header class="site">
+      <div class="wrap">
+        <a class="brand" href="index.html">
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/mark-dark.svg"
+            />
+            <img
+              class="mark"
+              src="assets/brand/mark.svg"
+              alt=""
+              width="40"
+              height="40"
+            />
+          </picture>
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/wordmark-dark.svg"
+            />
+            <img
+              class="wordmark"
+              src="assets/brand/wordmark-light.svg"
+              alt="Vaakora"
+              width="88"
+              height="28"
+            />
+          </picture>
+        </a>
+        <nav class="site" aria-label="Documentation">
+          <!-- prettier-ignore -->
+          <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="dictation.html">Dictation</a></li>
+            <li><a href="cleanup.html">Cleanup</a></li>
+            <li><a href="read-aloud.html">Read aloud</a></li>
+            <li><a href="tables.html" aria-current="page">Tables</a></li>
+            <li><a href="vocabulary.html">Vocabulary</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="models.html">Models</a></li>
+            <li><a href="settings.html">Settings</a></li>
+            <li><a href="cli.html">Command line</a></li>
+            <li><a href="moving-from-handy.html">Moving from Handy</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <h1>Tables</h1>
+      <p>
+        Vaakora reads tables in the text you copy: box-drawing tables, ASCII
+        tables and Markdown tables. They are read row by row, each value with
+        its column name, and their borders are not spoken. Box-drawing
+        characters are never spoken anywhere.
+      </p>
+      <p>
+        This is the table used on this page. It is copied text, and the reader
+        shows it in a monospaced font so its walls line up.
+      </p>
+      <pre class="grid">
+┌───────┬─────────┬─────────────────┐
+│ Bed   │ Crop    │ Water           │
+├───────┼─────────┼─────────────────┤
+│ North │ Lettuce │ Twice a week    │
+│ South │ Basil   │ Every other day │
+└───────┴─────────┴─────────────────┘</pre
+      >
+      <figure>
+        <picture>
+          <source
+            media="(prefers-color-scheme: dark)"
+            srcset="assets/screens/tables-reader-dark.webp"
+          />
+          <img
+            src="assets/screens/tables-reader-light.webp"
+            alt="The Read aloud popup showing a box-drawing table with the columns Bed, Crop and Water and the rows North, Lettuce, Twice a week and South, Basil, Every other day, in a monospaced font with the header row highlighted."
+            width="560"
+            height="200"
+          />
+        </picture>
+      </figure>
+      <h2>Style A: Name each value</h2>
+      <p>
+        Every value is read with its column name. This is what is spoken for the
+        table above:
+      </p>
+      <pre class="wrapped">
+Table, 3 columns, 2 rows. Row 1. Bed: North. Crop: Lettuce. Water: Twice a week. Row 2. Bed: South. Crop: Basil. Water: Every other day. End of table.</pre
+      >
+      <h2>Style B: Names once, then rows</h2>
+      <p>
+        The column names are read once, then each row's values. This is what is
+        spoken for the same table:
+      </p>
+      <pre class="wrapped">
+Table, 3 columns, 2 rows. Columns: Bed, Crop, Water. Row 1: North; Lettuce; Twice a week. Row 2: South; Basil; Every other day. End of table.</pre
+      >
+      <figure>
+        <picture>
+          <source
+            media="(prefers-color-scheme: dark)"
+            srcset="assets/screens/tables-setting-dark.webp"
+          />
+          <img
+            src="assets/screens/tables-setting-light.webp"
+            alt="The Read aloud Settings tab, Text handling group. The Tables setting is set to Name each value. Below it are the Technical reading, Read full paths and Read full links switches and the History options."
+            width="720"
+            height="600"
+          />
+        </picture>
+      </figure>
+      <ul>
+        <li>
+          Choose the style with the <strong>Tables</strong> setting in Read
+          aloud, Settings.
+        </li>
+        <li>
+          A table that cannot be read with confidence is read in its original
+          order without its borders.
+        </li>
+        <li>
+          A code block that holds only a table is read as a table, also when
+          Read code blocks is off.
+        </li>
+      </ul>
+    </main>
+    <footer class="site">
+      <div class="wrap">
+        <p>
+          Built on <a href="https://github.com/cjpais/Handy">Handy</a> by CJ
+          Pais. MIT licence.
+        </p>
+        <p>
+          <a href="https://github.com/jugrajsingh/vaakora">Vaakora on GitHub</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

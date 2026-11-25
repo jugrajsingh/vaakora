@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cleanup - Vaakora</title>
+    <meta name="description" content="Transcript cleanup in Vaakora" />
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <header class="site">
+      <div class="wrap">
+        <a class="brand" href="index.html">
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/mark-dark.svg"
+            />
+            <img
+              class="mark"
+              src="assets/brand/mark.svg"
+              alt=""
+              width="40"
+              height="40"
+            />
+          </picture>
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/wordmark-dark.svg"
+            />
+            <img
+              class="wordmark"
+              src="assets/brand/wordmark-light.svg"
+              alt="Vaakora"
+              width="88"
+              height="28"
+            />
+          </picture>
+        </a>
+        <nav class="site" aria-label="Documentation">
+          <!-- prettier-ignore -->
+          <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="dictation.html">Dictation</a></li>
+            <li><a href="cleanup.html" aria-current="page">Cleanup</a></li>
+            <li><a href="read-aloud.html">Read aloud</a></li>
+            <li><a href="tables.html">Tables</a></li>
+            <li><a href="vocabulary.html">Vocabulary</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="models.html">Models</a></li>
+            <li><a href="settings.html">Settings</a></li>
+            <li><a href="cli.html">Command line</a></li>
+            <li><a href="moving-from-handy.html">Moving from Handy</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <h1>Cleanup</h1>
+      <p>
+        A post-processing provider tidies a transcript after you dictate. The
+        "Local (in-app)" provider uses a small language model that runs on the
+        CPU. A cloud provider is the other choice.
+      </p>
+      <h2>Local</h2>
+      <figure>
+        <picture>
+          <source
+            media="(prefers-color-scheme: dark)"
+            srcset="assets/screens/cleanup-local-dark.webp"
+          />
+          <img
+            src="assets/screens/cleanup-local-light.webp"
+            alt="The Cleanup tab with the Local (in-app) provider. The model is S1-mini by Superwhisper, with Styling set to Semi-formal, Structure to Prose and Context to General, and a status of Not loaded."
+            width="720"
+            height="600"
+          />
+        </picture>
+      </figure>
+      <ul>
+        <li>
+          Runs through a bundled <code>llama-server</code>. Nothing has to be
+          installed or started separately.
+        </li>
+        <li>Transcripts never leave the machine.</li>
+        <li>
+          Five downloadable models are offered, each pinned to a fixed revision,
+          size and SHA-256.
+        </li>
+        <li>
+          S1-mini is driven by Styling, Structure and Context drop-downs. It
+          uses its own fixed prompt.
+        </li>
+        <li>
+          History keeps which model produced each cleaned-up entry and compares
+          it with the raw text.
+        </li>
+        <li>
+          A <strong>Raw Shortcut</strong> sits next to the
+          <strong>Post-processing Shortcut</strong>.
+        </li>
+      </ul>
+      <h2>Cloud</h2>
+      <figure>
+        <picture>
+          <source
+            media="(prefers-color-scheme: dark)"
+            srcset="assets/screens/cleanup-cloud-dark.webp"
+          />
+          <img
+            src="assets/screens/cleanup-cloud-light.webp"
+            alt="The Cleanup tab with a cloud provider. The provider is OpenAI, the API key field is empty, and a selected prompt called Tidy notes is shown with Edit and New prompt buttons."
+            width="720"
+            height="600"
+          />
+        </picture>
+      </figure>
+      <ul>
+        <li>
+          A cloud provider needs your own API key. The page says where
+          dictations are sent for cleanup.
+        </li>
+        <li>
+          With a cloud provider, the model name and the prompt are yours to
+          choose.
+        </li>
+      </ul>
+    </main>
+    <footer class="site">
+      <div class="wrap">
+        <p>
+          Built on <a href="https://github.com/cjpais/Handy">Handy</a> by CJ
+          Pais. MIT licence.
+        </p>
+        <p>
+          <a href="https://github.com/jugrajsingh/vaakora">Vaakora on GitHub</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

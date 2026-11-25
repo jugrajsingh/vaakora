@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Settings - Vaakora</title>
+    <meta name="description" content="Settings in Vaakora" />
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <header class="site">
+      <div class="wrap">
+        <a class="brand" href="index.html">
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/mark-dark.svg"
+            />
+            <img
+              class="mark"
+              src="assets/brand/mark.svg"
+              alt=""
+              width="40"
+              height="40"
+            />
+          </picture>
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcset="assets/brand/wordmark-dark.svg"
+            />
+            <img
+              class="wordmark"
+              src="assets/brand/wordmark-light.svg"
+              alt="Vaakora"
+              width="88"
+              height="28"
+            />
+          </picture>
+        </a>
+        <nav class="site" aria-label="Documentation">
+          <!-- prettier-ignore -->
+          <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="dictation.html">Dictation</a></li>
+            <li><a href="cleanup.html">Cleanup</a></li>
+            <li><a href="read-aloud.html">Read aloud</a></li>
+            <li><a href="tables.html">Tables</a></li>
+            <li><a href="vocabulary.html">Vocabulary</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="models.html">Models</a></li>
+            <li><a href="settings.html" aria-current="page">Settings</a></li>
+            <li><a href="cli.html">Command line</a></li>
+            <li><a href="moving-from-handy.html">Moving from Handy</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <h1>Settings</h1>
+      <p>
+        Settings has three tabs: General, Advanced and About. General holds the
+        shortcuts and the sound options.
+      </p>
+      <figure>
+        <picture>
+          <source
+            media="(prefers-color-scheme: dark)"
+            srcset="assets/screens/settings-dark.webp"
+          />
+          <img
+            src="assets/screens/settings-light.webp"
+            alt="The Settings page, General tab. The Shortcuts group lists Dictate as Ctrl + Alt + Space, Dictate with cleanup as Ctrl + Alt + Shift + Space, Activation, and Read aloud as Super + Alt + R. Each has Reset and Clear buttons. The Sound group below has an Audio feedback switch."
+            width="720"
+            height="600"
+          />
+        </picture>
+      </figure>
+      <ul>
+        <li>
+          <strong>Shortcuts:</strong> Dictate, Dictate with cleanup (when
+          cleanup is on), Activation for dictation shortcuts, and Read aloud.
+        </li>
+        <li>
+          A shortcut can be cleared with its Clear button. Clearing is refused
+          when it would leave no dictation shortcut.
+        </li>
+        <li>
+          A shortcut already assigned to another action is refused with a
+          message naming that action.
+        </li>
+        <li>
+          Version and update state are in About. Update checks are off until a
+          Vaakora release channel exists.
+        </li>
+      </ul>
+      <p>
+        The settings for each job are in its own section:
+        <a href="dictation.html">Dictation</a>,
+        <a href="cleanup.html">Cleanup</a> and
+        <a href="read-aloud.html">Read aloud</a>.
+      </p>
+    </main>
+    <footer class="site">
+      <div class="wrap">
+        <p>
+          Built on <a href="https://github.com/cjpais/Handy">Handy</a> by CJ
+          Pais. MIT licence.
+        </p>
+        <p>
+          <a href="https://github.com/jugrajsingh/vaakora">Vaakora on GitHub</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
