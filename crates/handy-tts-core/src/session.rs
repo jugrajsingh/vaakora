@@ -1451,6 +1451,7 @@ mod tests {
             assert_eq!(&rendered.samples[6240..12240], &[0.25; 6000]);
         }
     }
+    use crate::formatted::tables::TableStyle;
     use crate::playback::PlaybackError;
     use std::rc::Rc;
     #[derive(Default)]
@@ -3288,47 +3289,283 @@ mod tests {
     }
     #[test]
     fn reading_matches_what_the_worker_was_sent() {
-        let source = "First we edit tests/lib.sh in the repository today.\n\nThen we run tests/lib.sh again to check the result.\n\nLast we commit tests/lib.sh and close the task.";
-        for technical in [true, false] {
+        let prose = "First we edit tests/lib.sh in the repository today.\n\nThen we run tests/lib.sh again to check the result.\n\nLast we commit tests/lib.sh and close the task.";
+        for source in [prose, LANES, MULTILINE] {
+            for tables in [TableStyle::NameEach, TableStyle::NamesOnce] {
+                for technical in [true, false] {
+                    let worker = FakeWorker {
+                        rtf: 0.01,
+                        seconds: 1.0,
+                        ..FakeWorker::default()
+                    };
+                    let chosen = Selection {
+                        technical,
+                        tables,
+                        ..selection()
+                    };
+                    let vocabulary = Arc::new(Vocabulary::builtin());
+                    let mut s = Session::with_vocabulary(
+                        source,
+                        chosen,
+                        worker,
+                        FakeOutput::default(),
+                        None,
+                        Some(vocabulary.clone()),
+                    )
+                    .unwrap();
+                    s.play().unwrap();
+                    let mut now = 0.0;
+                    for _ in 0..500 {
+                        step(&mut s, now);
+                        now += 0.1;
+                        if s.queue.state == PlaybackState::Finished {
+                            break;
+                        }
+                    }
+                    assert_eq!(s.queue.state, PlaybackState::Finished);
+                    let prepared: Vec<String> = reading(source, s.selection(), Some(&vocabulary))
+                        .unwrap()
+                        .into_iter()
+                        .map(|aligned| aligned.chunk.text)
+                        .collect();
+                    assert_eq!(
+                        prepared.join(" "),
+                        s.worker.texts.join(" "),
+                        "technical {technical} tables {tables:?} source {source:?}"
+                    );
+                }
+            }
+        }
+    }
+
+    const MULTILINE: &str = include_str!("../tests/fixtures/text/tables/multiline.txt");
+    const LANES: &str = include_str!("../tests/fixtures/text/tables/lanes.txt");
+    /// Task 2's style A reading of `MULTILINE` (`text.rs` `MULTILINE_A`), verbatim.
+    const MULTILINE_A: &str = "Table, 3 columns, 2 rows. Row 1. Lane: B, the walk. Progress: Task B1 committed, working on B2. Owner: Opus. Row 2. Lane: E. Progress: 9 files changed. Owner: gpt-6.1-sol. End of table. Table, 3 columns, 2 rows. Row 1. Lane: B, the walk. Model: Opus. Progress: Task B1 committed (b574c34). Row 2. Lane: E. Model: gpt-6.1-sol. Progress: 9 files changed, unstaged. End of table.";
+
+    /// The UTF-16 range of the lines of `source` from the one starting with `first` to the one
+    /// starting with `last`, line breaks between them included.
+    fn lines_range(source: &str, first: &str, last: &str) -> (u32, u32) {
+        let start = |prefix: &str| {
+            if source.starts_with(prefix) {
+                0
+            } else {
+                source.find(&format!("\n{prefix}")).expect("line present") + 1
+            }
+        };
+        let (from, to) = (start(first), start(last));
+        let to = source[to..].find('\n').map_or(source.len(), |end| to + end);
+        let utf16 = |byte: usize| source[..byte].encode_utf16().count() as u32;
+        (utf16(from), utf16(to))
+    }
+
+    /// Plays `MULTILINE` in style A to the end, technical reading off and then on: the voice is
+    /// sent Task 2's reading, and while each row chunk plays the snapshot reports its row.
+    #[test]
+    fn session_reads_the_table_fixtures() {
+        let rows = [
+            (
+                lines_range(MULTILINE, "│ B, the", "│ walk"),
+                [
+                    "Row 1. Lane: B, the walk.",
+                    "Progress: Task B1 committed, working on B2.",
+                    "Owner: Opus.",
+                ],
+            ),
+            (
+                lines_range(MULTILINE, "│ E ", "│ E "),
+                [
+                    "Row 2. Lane: E.",
+                    "Progress: 9 files changed.",
+                    "Owner: gpt-6.1-sol.",
+                ],
+            ),
+            (
+                lines_range(MULTILINE, "| B, the", "| B, the"),
+                [
+                    "Row 1. Lane: B, the walk.",
+                    "Model: Opus.",
+                    "Progress: Task B1 committed (b574c34).",
+                ],
+            ),
+            (
+                lines_range(MULTILINE, "| E ", "| E "),
+                [
+                    "Row 2. Lane: E.",
+                    "Model: gpt-6.1-sol.",
+                    "Progress: 9 files changed, unstaged.",
+                ],
+            ),
+        ];
+        assert_eq!(rows[0].0, (147, 244));
+        assert_eq!(rows[1].0, (294, 342));
+        let expected: Vec<(&str, (u32, u32))> = rows
+            .iter()
+            .flat_map(|(range, texts)| texts.iter().map(move |text| (*text, *range)))
+            .collect();
+        let vocabulary = Arc::new(Vocabulary::builtin());
+        for (technical, vocabulary) in [(false, None), (true, Some(vocabulary))] {
+            let chosen = Selection {
+                technical,
+                ..selection()
+            };
             let worker = FakeWorker {
                 rtf: 0.01,
                 seconds: 1.0,
                 ..FakeWorker::default()
             };
-            let chosen = Selection {
-                technical,
-                ..selection()
-            };
-            let vocabulary = Arc::new(Vocabulary::builtin());
             let mut s = Session::with_vocabulary(
-                source,
+                MULTILINE,
                 chosen,
                 worker,
                 FakeOutput::default(),
                 None,
-                Some(vocabulary.clone()),
+                vocabulary.clone(),
             )
             .unwrap();
+            // The row range each row chunk must report, by chunk index, in reading order.
+            let mut row_of = std::collections::BTreeMap::new();
+            let mut next = expected.iter();
+            let mut wanted = next.next();
+            for aligned in reading(MULTILINE, s.selection(), vocabulary.as_ref()).unwrap() {
+                if let Some(&(text, range)) = wanted
+                    && aligned.chunk.text == text
+                {
+                    row_of.insert(aligned.chunk.index, (text, range));
+                    wanted = next.next();
+                }
+            }
+            assert_eq!(
+                wanted, None,
+                "technical {technical}: a row chunk is missing"
+            );
             s.play().unwrap();
             let mut now = 0.0;
-            for _ in 0..500 {
+            let mut seen = std::collections::BTreeMap::new();
+            for _ in 0..2000 {
                 step(&mut s, now);
-                now += 0.1;
+                now += 0.05;
+                if s.queue.state == PlaybackState::Playing
+                    && let Some(index) = s.started_sentence
+                    && row_of.contains_key(&index)
+                {
+                    let snapshot = s.snapshot();
+                    seen.entry(index)
+                        .or_insert_with(Vec::new)
+                        .push((snapshot.source_start, snapshot.source_end));
+                }
                 if s.queue.state == PlaybackState::Finished {
                     break;
                 }
             }
             assert_eq!(s.queue.state, PlaybackState::Finished);
-            let prepared: Vec<String> = reading(source, s.selection(), Some(&vocabulary))
-                .unwrap()
-                .into_iter()
-                .map(|aligned| aligned.chunk.text)
-                .collect();
             assert_eq!(
-                prepared.join(" "),
                 s.worker.texts.join(" "),
+                MULTILINE_A,
                 "technical {technical}"
             );
+            for (index, (text, range)) in &row_of {
+                let reported = seen
+                    .get(index)
+                    .unwrap_or_else(|| panic!("{text:?} was never seen playing"));
+                for got in reported {
+                    assert_eq!(got, range, "technical {technical}: while {text:?} plays");
+                }
+            }
+        }
+    }
+
+    /// A table style change while row 2 plays (its first cell, then its second) restarts row 2
+    /// in the new style: the position stays at the row and nothing of row 1 is sent again. The
+    /// first case is the one a chunk-index resume gets wrong (row 2's first chunk in style A
+    /// has the index of row 1's last chunk in style B); the second changes mid-row.
+    #[test]
+    fn table_style_change_mid_table_restarts_the_row() {
+        let intro = "Intro paragraph that is long enough to be its own first chunk.\n\n";
+        let source = format!("{intro}{MULTILINE}");
+        let row_2 = lines_range(&source, "│ E ", "│ E ");
+        for cell in ["Row 2. Lane: E.", "Progress: 9 files changed."] {
+            let mut s = session(&source, 0.01);
+            s.play().unwrap();
+            let mut now = 0.0;
+            let playing = |s: &Session<'_, FakeWorker, FakeOutput>| {
+                s.started_sentence
+                    .and_then(|index| s.metadata.get(&index))
+                    .map(|chunk| chunk.text.clone())
+            };
+            for _ in 0..500 {
+                step(&mut s, now);
+                now += 0.05;
+                if s.queue.state == PlaybackState::Playing && playing(&s).as_deref() == Some(cell) {
+                    break;
+                }
+            }
+            assert_eq!(playing(&s).as_deref(), Some(cell), "{cell:?} never played");
+            assert_eq!(s.snapshot().source_start, row_2.0, "{cell:?}");
+            let requested = s.worker.texts.len();
+            let chosen = Selection {
+                tables: TableStyle::NamesOnce,
+                ..s.selection.clone()
+            };
+            s.select(chosen, true, |_| Ok(())).unwrap();
+            for _ in 0..40 {
+                step(&mut s, now);
+                now += 0.05;
+                if s.queue.playing.is_some() {
+                    break;
+                }
+            }
+            assert!(
+                s.queue.playing.is_some(),
+                "{cell:?}: playback never resumed"
+            );
+            assert_eq!(s.snapshot().source_start, row_2.0, "{cell:?}");
+            for _ in 0..400 {
+                if s.worker.texts[requested..]
+                    .iter()
+                    .any(|text| text.contains("End of table."))
+                {
+                    break;
+                }
+                step(&mut s, now);
+                now += 0.05;
+            }
+            // What was sent after the change, up to the end of the box table.
+            let after: Vec<&str> = s.worker.texts[requested..]
+                .iter()
+                .map(String::as_str)
+                .collect();
+            let end = after
+                .iter()
+                .position(|text| text.contains("End of table."))
+                .unwrap_or_else(|| panic!("{cell:?}: the box table's end was not sent: {after:?}"));
+            let sent = after[..=end].join(" ");
+            assert!(
+                sent.starts_with("Row 2: E; 9 files changed; gpt-6.1-sol."),
+                "{cell:?}: {sent}"
+            );
+            let words: Vec<&str> = sent
+                .split_whitespace()
+                .map(|word| word.trim_end_matches([';', '.', ',', ':']))
+                .collect();
+            assert_eq!(
+                words.iter().filter(|word| **word == "E").count(),
+                1,
+                "{cell:?}: {sent}"
+            );
+            for value in ["9 files changed", "gpt-6.1-sol"] {
+                assert_eq!(
+                    sent.matches(value).count(),
+                    1,
+                    "{cell:?}: {value:?} in {sent}"
+                );
+            }
+            for value in ["B, the", "walk", "Task B1", "working on B2", "Opus"] {
+                assert!(
+                    !sent.contains(value),
+                    "{cell:?}: {value:?} of row 1 in {sent}"
+                );
+            }
         }
     }
     /// Plays `source` with `before` until its second chunk is audible, changes to `after` and

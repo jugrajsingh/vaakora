@@ -656,6 +656,54 @@ mod tests {
         assert!(entries[0].technical);
     }
 
+    /// A stored table read keeps its chunks, and every span still points at one written cell
+    /// word of the source: never a label, a wall or a border.
+    #[test]
+    fn table_reads_keep_their_alignment() {
+        let dir = scratch("table-alignment");
+        let source =
+            include_str!("../../../crates/handy-tts-core/tests/fixtures/text/tables/multiline.txt");
+        let builtin = Arc::new(Vocabulary::builtin());
+        let chunks =
+            prepare_reading(source, false, Some(builtin), TechnicalOptions::default()).unwrap();
+        let history = ReadHistory::open(&dir).unwrap();
+        let record = ReadRecord {
+            chunks: chunks.clone(),
+            ..read(source, NOW)
+        };
+        history
+            .record(&record, 0, || keep(5, ReadHistoryRetention::KeepLimit), NOW)
+            .unwrap();
+        let entries = history.entries().unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].source, source);
+        assert_eq!(entries[0].chunks, chunks);
+        let units: Vec<u16> = source.encode_utf16().collect();
+        let written: Vec<String> = entries[0]
+            .chunks
+            .iter()
+            .flat_map(|aligned| &aligned.words)
+            .map(|span| {
+                String::from_utf16(&units[span.source_start as usize..span.source_end as usize])
+                    .unwrap()
+            })
+            .collect();
+        for word in &written {
+            assert!(
+                !word.is_empty()
+                    && !word.chars().any(|c| c.is_whitespace()
+                        || c == '|'
+                        || ('\u{2500}'..='\u{257F}').contains(&c)),
+                "{word:?} is not one written word"
+            );
+        }
+        assert_eq!(
+            written.join(" "),
+            "B, the walk Task B1 committed, working on B2. Opus E 9 files changed gpt-6.1-sol \
+             B, the walk Opus Task B1 committed (b574c34). E gpt-6.1-sol 9 files changed, unstaged"
+        );
+    }
+
     #[test]
     fn the_store_lives_in_the_app_data_dir() {
         let dir = scratch("location");

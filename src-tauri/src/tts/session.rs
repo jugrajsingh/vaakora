@@ -1616,6 +1616,60 @@ pub(super) mod tests {
             assert!(reading.shutdown());
         }
 
+        const MULTILINE: &str =
+            include_str!("../../../crates/handy-tts-core/tests/fixtures/text/tables/multiline.txt");
+
+        /// A table read from `tts.read` (agent origin) is recorded as the session read it, in
+        /// each table style: the whole reading, and the box table's chunks carry its row ranges
+        /// (UTF-16, as `table_chunks_cover_whole_rows` pins them).
+        #[test]
+        fn table_reads_record_row_chunks() {
+            use handy_tts_core::formatted::tables::TableStyle;
+            let name_each = "Table, 3 columns, 2 rows. Row 1. Lane: B, the walk. Progress: Task B1 committed, working on B2. Owner: Opus. Row 2. Lane: E. Progress: 9 files changed. Owner: gpt-6.1-sol. End of table. Table, 3 columns, 2 rows. Row 1. Lane: B, the walk. Model: Opus. Progress: Task B1 committed (b574c34). Row 2. Lane: E. Model: gpt-6.1-sol. Progress: 9 files changed, unstaged. End of table.";
+            let names_once = "Table, 3 columns, 2 rows. Columns: Lane, Progress, Owner. Row 1: B, the walk; Task B1 committed, working on B2. Opus. Row 2: E; 9 files changed; gpt-6.1-sol. End of table. Table, 3 columns, 2 rows. Columns: Lane, Model, Progress. Row 1: B, the walk; Opus; Task B1 committed (b574c34). Row 2: E; gpt-6.1-sol; 9 files changed, unstaged. End of table.";
+            let (opening, row_1, row_2, closing) = ((0, 97), (147, 244), (294, 342), (342, 391));
+            for (tables, expected) in [
+                (TableStyle::NameEach, name_each),
+                (TableStyle::NamesOnce, names_once),
+            ] {
+                let (engine, _texts) = ToneEngine::new(false);
+                let (history, records) = collect();
+                let chosen = Selection {
+                    tables,
+                    ..technical(true)
+                };
+                let reading = spawn(engine, chosen, history);
+                replace_as(&reading, MULTILINE, ReadOrigin::Agent);
+                let snapshot = next(&records);
+                assert_eq!(snapshot.origin, ReadOrigin::Agent);
+                assert_eq!(&*snapshot.source, MULTILINE);
+                assert_eq!(snapshot.selection.tables, tables);
+                assert_eq!(spoken(&snapshot), expected, "{tables:?}");
+                let chunks = prepare(&snapshot).unwrap();
+                let end = chunks
+                    .iter()
+                    .position(|aligned| aligned.chunk.text == "End of table.")
+                    .unwrap();
+                let mut range = opening;
+                for aligned in &chunks[..=end] {
+                    let text = aligned.chunk.text.as_str();
+                    if text.starts_with("Row 1") {
+                        range = row_1;
+                    } else if text.starts_with("Row 2") {
+                        range = row_2;
+                    } else if text == "End of table." {
+                        range = closing;
+                    }
+                    assert_eq!(
+                        (aligned.chunk.source_start, aligned.chunk.source_end),
+                        range,
+                        "{tables:?}: {text:?}"
+                    );
+                }
+                assert!(reading.shutdown());
+            }
+        }
+
         #[test]
         fn a_read_that_never_plays_is_not_recorded() {
             let (engine, texts) = ToneEngine::new(true);

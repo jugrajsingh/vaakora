@@ -2866,6 +2866,52 @@ mod table_reading {
         }
     }
 
+    /// The whole reading of a small table, literal: labels carry the row range and no span,
+    /// every cell word its own UTF-16 span. `alignment.test.ts` holds the same literal.
+    #[test]
+    fn small_table_aligned_chunks_are_exact() {
+        let chunk = |index: usize, text: &str, start: u32, end: u32, pause_ms: u32| TextChunk {
+            index,
+            text: text.into(),
+            source_start: start,
+            source_end: end,
+            pause_ms,
+        };
+        let span = |source_start, source_end, spoken_start, spoken_end| WordSpan {
+            source_start,
+            source_end,
+            spoken_start,
+            spoken_end,
+        };
+        assert_eq!(
+            prepare_reading(
+                "| A | B |\n|---|---|\n| x y | z |",
+                false,
+                None,
+                TechnicalOptions::default()
+            )
+            .unwrap(),
+            vec![
+                AlignedChunk {
+                    chunk: chunk(0, "Table, 2 columns, 1 row.", 0, 9, 280),
+                    words: vec![],
+                },
+                AlignedChunk {
+                    chunk: chunk(1, "Row 1. A: x y.", 20, 31, 280),
+                    words: vec![span(22, 23, 10, 11), span(24, 25, 12, 13)],
+                },
+                AlignedChunk {
+                    chunk: chunk(2, "B: z.", 20, 31, 280),
+                    words: vec![span(28, 29, 3, 4)],
+                },
+                AlignedChunk {
+                    chunk: chunk(3, "End of table.", 20, 31, 450),
+                    words: vec![],
+                },
+            ]
+        );
+    }
+
     #[test]
     fn labels_have_no_spans_and_cell_words_have_exact_ones() {
         let chunks = read(MULTILINE, None, TableStyle::NameEach);

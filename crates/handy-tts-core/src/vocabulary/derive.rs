@@ -777,6 +777,33 @@ mod tests {
         }
     }
 
+    /// The history compare view hands derive the source between two selected tokens; in a
+    /// single-line table row that slice crosses a wall, which is never read as a word.
+    #[test]
+    fn a_selection_across_table_walls_reads_its_words() {
+        let lanes = include_str!("../../tests/fixtures/text/tables/lanes.txt");
+        let start = lanes.find("Opus").unwrap();
+        let end = start + lanes[start..].find("Task").unwrap() + "Task".len();
+        let written = &lanes[start..end];
+        assert_eq!(written, "Opus        │ Task");
+        let reading = read(
+            written,
+            &Vocabulary::builtin(),
+            "pocket-en",
+            &TechnicalOptions::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            reading
+                .tokens
+                .iter()
+                .map(|token| token.written.as_str())
+                .collect::<Vec<_>>(),
+            ["Opus", "Task"]
+        );
+        assert_eq!(reading.text, "Opus Task.");
+    }
+
     #[test]
     fn spelled_out_word_is_an_acronym() {
         let rule = derived("ZFS", "Z F S").unwrap().rule;

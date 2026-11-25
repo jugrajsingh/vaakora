@@ -87,6 +87,53 @@ assert.equal(mark, "sente");
 console.log("popup presentation: UTF-16/highlight/Buffering assertions passed");
 
 {
+  // table_row_highlight: the reader marks a whole wrapped table row, both of its lines.
+  const multiline = readFileSync(
+    new URL(
+      "../../crates/handy-tts-core/tests/fixtures/text/tables/multiline.txt",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  // Row 1's UTF-16 range as the Rust reader reports it for every chunk of the row.
+  const [rowStart, rowEnd] = [147, 244];
+  const parts = highlightedText(multiline, rowStart, rowEnd);
+  assert.equal(
+    parts.current,
+    "│ B, the   │ Task B1 committed, │ Opus         │\n│ walk     │ working on B2.     │              │",
+  );
+  const lines = multiline.split("\n");
+  assert.ok(lines[2].startsWith("├") && lines[2].endsWith("┤"), lines[2]);
+  assert.equal(parts.before, `${lines.slice(0, 3).join("\n")}\n`);
+  assert.ok(parts.after.startsWith("\n├"), parts.after.slice(0, 8));
+  const html = renderToStaticMarkup(
+    <I18nextProvider i18n={i18next}>
+      <ReadAloudPopup
+        text={multiline}
+        heading={{ model: "Supertonic 3", voice: "alba" }}
+        editing={false}
+        enterEdit={() => {}}
+        snapshot={{
+          ...snapshot,
+          state: "playing",
+          source_start: rowStart,
+          source_end: rowEnd,
+        }}
+        edit={() => {}}
+        toggle={() => {}}
+        close={() => {}}
+        readClipboard={() => {}}
+        models={() => {}}
+      />
+    </I18nextProvider>,
+  );
+  const marks = [...html.matchAll(/<mark[^>]*>(.*?)<\/mark>/gs)];
+  assert.equal(marks.length, 1);
+  assert.equal(marks[0][1], parts.current);
+  console.log("popup presentation: table row highlight assertions passed");
+}
+
+{
   // one_reason_line
   const alertsIn = (html: string) => [
     ...html.matchAll(/<div role="alert"([^>]*)>(.*?)<\/div>/gs),
