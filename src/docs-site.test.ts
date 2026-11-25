@@ -937,6 +937,24 @@ describe("docs checker", () => {
       passes(tree);
     });
 
+    it("text_ignores_a_formatter_wrapped_nav_link", () => {
+      const tree = clean();
+      tree.set(
+        "docs/other.html",
+        bytes(
+          page(
+            "<p>Other</p>",
+            `<nav>
+  <a href="index.html" aria-current="page"
+    >Overview</a
+  >
+</nav>`,
+          ),
+        ),
+      );
+      passes(tree);
+    });
+
     it("text_flags_a_page_without_a_nav", () => {
       const tree = clean();
       tree.set("docs/other.html", bytes(page("<p>Other</p>", "")));

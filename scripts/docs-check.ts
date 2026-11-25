@@ -744,7 +744,7 @@ export const brandProblems: Rule = (tree, brand, sources) => {
   return problems;
 };
 
-/** The first `<nav>` of a page with `aria-current` removed and whitespace collapsed. */
+/** The first `<nav>` of a page with `aria-current` removed and whitespace collapsed, also before a tag's closing `>` (a formatter may wrap `<a ...\n>Text</a\n>`). */
 function navOf(text: string): string | null {
   const m = /<nav\b[^>]*>[\s\S]*?<\/nav>/i.exec(sourceText("x.html", text));
   if (m === null) return null;
@@ -752,6 +752,7 @@ function navOf(text: string): string | null {
     .replace(/\s*aria-current="page"/g, "")
     .replace(/>\s+</g, "><")
     .replace(/\s+/g, " ")
+    .replace(/ (\/?>)/g, "$1")
     .trim();
 }
 
