@@ -480,7 +480,7 @@ describe("settings inventory", () => {
   it("about_shows_the_version_and_the_upstream_base", () => {
     const html = markup(<AboutSettings />);
     const about = en.settings.about;
-    assert.equal(brand.version, "0.3.1");
+    assert.equal(brand.version, "0.3.2");
     const version = html.indexOf(">v" + brand.version + "<");
     const basedOn = html.indexOf(">" + about.basedOn.title + "<");
     const updates = html.indexOf(">" + about.updates.title + "<");
