@@ -150,10 +150,11 @@ A shortcut reads the text you last copied, in a popup that follows along.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screens/settings-dark.webp" />
-  <img src="docs/assets/screens/settings-light.webp" width="720" alt="The Settings page, General tab. The Shortcuts group lists Dictate as Ctrl + Alt + Space, Dictate with cleanup as Ctrl + Alt + Shift + Space, Activation, and Read aloud as Super + Alt + R. Each has Reset and Clear buttons. The Sound group below has an Audio feedback switch." />
+  <img src="docs/assets/screens/settings-light.webp" width="720" alt="The Settings page, General tab. The Shortcuts group lists Dictate as Ctrl + Alt + Space, Dictate with cleanup as Ctrl + Alt + Shift + Space, and Read aloud as Super + Alt + R. Each shortcut has Reset and Clear buttons. Between them, Activation (For dictation shortcuts) is a drop-down set to Auto. The Sound group below has an Audio feedback switch." />
 </picture>
 
-- General holds the shortcuts (**Dictate**, **Dictate with cleanup**, Activation and Read aloud) and the sound options.
+- General holds the shortcuts and the sound options. The three shortcuts are **Dictate**, **Dictate with cleanup** and **Read aloud**, each with Reset and Clear buttons.
+- **Activation** is a drop-down for the dictation shortcuts, with the options Auto (hold to record or tap to toggle), Hold (records while you hold the shortcut) and Toggle (tap to start recording, tap again to stop). Auto is the default.
 - A shortcut already assigned to another action is refused with a message naming that action. See the [Settings page](docs/settings.html).
 
 The full list of changes is in [CHANGELOG.md](CHANGELOG.md). Its new interface strings are translated into the other 26 languages by machine and have not been reviewed by native speakers.
