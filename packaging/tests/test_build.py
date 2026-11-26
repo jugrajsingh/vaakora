@@ -41,7 +41,37 @@ case "$*" in "run tauri"*)
 esac
 """
 WORKING_STAGER = 'set -eu\necho stage >>"$TRACE"\nmkdir -p "$3/usr/lib/Vaakora/tts"\ncp "$1" "$3/usr/lib/Vaakora/tts/vaakora-tts"\n'
-GIT = ("git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false")
+# build.sh's container run: write the three tauri artifacts into the directory mounted at /out.
+FAKE_PODMAN = r"""case "$1" in
+  info) echo true ;;
+  run)
+    out=
+    previous=
+    for argument in "$@"; do
+      if [ "$previous" = -v ]; then
+        case "$argument" in *:/out:*) out=${argument%%:/out:*} ;; esac
+      fi
+      previous=$argument
+    done
+    test -n "$out"
+    for name in Vaakora-0.10.0-1.x86_64.rpm Vaakora_0.10.0_amd64.deb Vaakora_0.10.0_amd64.AppImage; do
+      if [ "$name" != "${SKIP_ARTIFACT:-}" ]; then echo "$name" >"$out/$name"; fi
+    done
+    ;;
+esac
+"""
+# The real arch-package.sh prints its own "built:" line; the stub does the same, so build.sh has to drop it.
+FAKE_ARCH = r"""echo "arch $*" >>"$TRACE"
+if [ "${ARCH_RC:-0}" != 0 ]; then exit "$ARCH_RC"; fi
+version=$(basename "$1" | sed 's/^Vaakora_\(.*\)_amd64\.deb$/\1/')
+echo arch >"$2/vaakora-$version-1-x86_64.pkg.tar.zst"
+echo "built: $2/vaakora-$version-1-x86_64.pkg.tar.zst"
+"""
+FAKE_VERIFY = r"""echo "verify $*" >>"$TRACE"
+case "$1" in *"${VERIFY_FAIL:-no failure}") exit 1 ;; esac
+echo "verified: $1"
+"""
+GIT =("git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false")
 
 
 class BuildTests(unittest.TestCase):
@@ -192,6 +222,84 @@ class BuildTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 2, result.stderr)
         self.assertFalse((repo / "packaging/.work/src").exists())
+
+    def full_build_repo(self) -> "os.PathLike[str]":
+        repo = self.fixture_repo()
+        packaging = repo / "packaging"
+        for name in ("stage-tts.sh", "build-tts-inner.sh"):
+            shutil.copyfile(PACKAGING / name, packaging / name)
+        stubs = {
+            "llama-server.sh": 'mkdir -p "$1"\necho llama >"$1/llama-server"\n',
+            "openvino-runtime.sh": 'mkdir -p "$1/notices"\n',
+            "arch-package.sh": FAKE_ARCH,
+            "verify-package.sh": FAKE_VERIFY,
+        }
+        for name, code in stubs.items():
+            (packaging / name).write_text("#!/bin/sh\nset -eu\n" + code)
+        (repo / "src-tauri/Cargo.toml").write_text('[package]\nname = "vaakora"\nversion = "0.10.0"\n')
+        self.commit(repo, "full build fixture")
+        self.script("podman", FAKE_PODMAN)
+        self.script("rpm", 'echo "vaakora 0.10.0"\n')
+        return repo
+
+    def full_build(self, repo, **environment: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["bash", str(repo / "packaging/build.sh")],
+            capture_output=True,
+            text=True,
+            env={**self.environment, **environment},
+        )
+
+    def test_full_build_wires_arch_and_verifies_every_package(self) -> None:
+        repo = self.full_build_repo()
+        dist = repo / "packaging/dist"
+        rpm = dist / "Vaakora-0.10.0-1.x86_64.rpm"
+        deb = dist / "Vaakora_0.10.0_amd64.deb"
+        arch = dist / "vaakora-0.10.0-1-x86_64.pkg.tar.zst"
+        appimage = dist / "Vaakora_0.10.0_amd64.AppImage"
+        result = self.full_build(repo)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(
+            self.trace.read_text().splitlines(),
+            [f"verify {rpm}", f"verify {deb}", f"arch {deb} {dist}", f"verify {arch}", f"verify {appimage}"],
+        )
+        self.assertEqual(
+            [line for line in result.stdout.splitlines() if line.startswith(("built:", "next:"))],
+            [
+                f"built: {rpm}",
+                f"built: {deb}",
+                f"built: {arch}",
+                f"built: {appimage}",
+                f"next: {repo}/packaging/install-test.sh {dist} 0.10.0",
+                f"next: {repo}/packaging/install.sh",
+            ],
+        )
+        # Each failure stops the run before the next step: the trace ends at the failing call.
+        failures = {
+            "rpm": ({"VERIFY_FAIL": rpm.name}, 1),
+            "deb": ({"VERIFY_FAIL": deb.name}, 2),
+            "arch-package": ({"ARCH_RC": "1"}, 3),
+            "arch": ({"VERIFY_FAIL": arch.name}, 4),
+            "appimage": ({"VERIFY_FAIL": appimage.name}, 5),
+        }
+        for failing, (environment, calls) in failures.items():
+            with self.subTest(failing=failing):
+                self.trace.unlink()
+                result = self.full_build(repo, **environment)
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertNotIn("built:", result.stdout)
+                self.assertEqual(len(self.trace.read_text().splitlines()), calls)
+
+    def test_full_build_refuses_a_missing_deb_or_appimage(self) -> None:
+        repo = self.full_build_repo()
+        for name in ("Vaakora_0.10.0_amd64.deb", "Vaakora_0.10.0_amd64.AppImage"):
+            with self.subTest(missing=name):
+                shutil.rmtree(repo / "packaging/dist", ignore_errors=True)
+                result = self.full_build(repo, SKIP_ARTIFACT=name)
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertIn("refusing: tauri wrote no " + name, result.stdout)
+                self.assertNotIn("built:", result.stdout)
+                self.assertFalse(self.trace.exists())
 
     def test_cargo_failure_prevents_stager_and_tauri_and_removes_stale_staging(
         self,

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the RPM from HEAD of this repository, inside rootless podman.
+# Build and verify the RPM, .deb, Arch package and AppImage from HEAD of this repository, inside rootless podman.
 set -euo pipefail
 
 usage() {
@@ -110,6 +110,23 @@ stdbuf -oL -eL podman run --rm --userns=keep-id "${tty_flag[@]}" \
 
 name="$(sed -n '/^\[package\]/,/^\[/{s/^name = "\(.*\)"/\1/p}' "$SRC/src-tauri/Cargo.toml" | head -1)"
 rpm="$(select_rpm "$DIST" "$name" "$version")"
+deb="$DIST/Vaakora_${version}_amd64.deb"
+appimage="$DIST/Vaakora_${version}_amd64.AppImage"
+for package in "$deb" "$appimage"; do
+  if [[ ! -f "$package" ]]; then
+    echo "refusing: tauri wrote no ${package##*/}" >&2
+    exit 1
+  fi
+done
 bash "$HERE/verify-package.sh" "$rpm"
-echo "built: $rpm"
+bash "$HERE/verify-package.sh" "$deb"
+# arch-package.sh prints its own "built:" line; build.sh prints one per package only after all four are verified.
+bash "$HERE/arch-package.sh" "$deb" "$DIST" | sed -u '/^built: /d'
+arch="$DIST/vaakora-$version-1-x86_64.pkg.tar.zst"
+bash "$HERE/verify-package.sh" "$arch"
+bash "$HERE/verify-package.sh" "$appimage"
+for package in "$rpm" "$deb" "$arch" "$appimage"; do
+  echo "built: $package"
+done
+echo "next: $HERE/install-test.sh $DIST $version"
 echo "next: $HERE/install.sh"

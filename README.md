@@ -232,9 +232,9 @@ Right after the app starts, `vaakora read` can return exit 5 (`tts-unavailable`)
    bun run tauri build
    ```
 
-### Build the Linux RPM
+### Build the Linux packages
 
-This builds from this repository in one step. The details are in [packaging/README.md](packaging/README.md).
+This builds the RPM, `.deb`, Arch package and AppImage from this repository in one step. The details are in [packaging/README.md](packaging/README.md).
 
 1. Commit your changes. The build refuses a dirty tree.
 2. Run the build script:
@@ -243,7 +243,7 @@ This builds from this repository in one step. The details are in [packaging/READ
    packaging/build.sh
    ```
 
-3. Find the RPM in `packaging/dist/`.
+3. Find the packages in `packaging/dist/`.
 
 ## Built on Handy
 
