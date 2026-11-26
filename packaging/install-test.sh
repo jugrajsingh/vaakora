@@ -116,11 +116,10 @@ script_steps=(
 )
 script_body="$(IFS=';'; echo "${script_steps[*]}")"
 
-release="$HERE/.work/script-release"
+release="$logs/release"
 if [[ "$script" -eq 1 ]]; then
-  # A copy, never a link, of exactly the four VERSION files, with a SHA256SUMS over their bare names.
-  rm -rf "$release"
-  mkdir -p "$release"
+  # In this run's logs dir: a copy, never a link, of exactly the four VERSION files, with a SHA256SUMS over their bare names.
+  mkdir "$release"
   for kind in rpm deb arch appimage; do
     cp --reflink=auto "$dist/$(package_file "$kind")" "$release/"
     (cd "$release" && sha256sum "$(package_file "$kind")") >>"$release/SHA256SUMS"

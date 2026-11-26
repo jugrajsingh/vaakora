@@ -10,7 +10,6 @@ from roots import PACKAGING, SCRATCH
 INSTALL_TEST = PACKAGING / "install-test.sh"
 SMOKE = PACKAGING / "install-smoke.sh"
 INSTALLER = PACKAGING.parent / "docs/install.sh"
-RELEASE = PACKAGING / ".work/script-release"
 DIGEST = "sha256:" + "a" * 64
 # (target, image, kind) in matrix order.
 MATRIX = (
@@ -74,7 +73,6 @@ class InstallTestTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         shutil.rmtree(self.scratch)
-        shutil.rmtree(RELEASE, ignore_errors=True)
         for logs in self.logs:
             shutil.rmtree(logs, ignore_errors=True)
 
@@ -95,6 +93,10 @@ class InstallTestTests(unittest.TestCase):
                 self.assertTrue(logs.is_relative_to(PACKAGING / ".work/logs"), logs)
                 self.logs.append(logs)
         return result
+
+    def release(self) -> Path:
+        """The release dir of the last --script run: it lives in that run's logs dir."""
+        return self.logs[-1] / "release"
 
     def calls(self, verb: str) -> list[list[str]]:
         if not self.argv_file.exists():
@@ -212,7 +214,7 @@ class InstallTestTests(unittest.TestCase):
     def test_default_mode_unchanged(self) -> None:
         result = self.run_test()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertFalse(RELEASE.exists())
+        self.assertFalse((self.logs[-1] / "release").exists())
         for call in self.calls("run"):
             self.assertNotIn("-e", call)
             self.assertNotIn("-c", call)
@@ -229,7 +231,7 @@ class InstallTestTests(unittest.TestCase):
         self.assertEqual(len(runs), 13)
         for call in runs:
             mounts = [call[i + 1] for i, argument in enumerate(call) if argument == "-v"]
-            self.assertEqual(mounts, [f"{RELEASE}:/dist:ro,z", f"{INSTALLER}:/install.sh:ro,z", f"{SMOKE}:/smoke.sh:ro,z"])
+            self.assertEqual(mounts, [f"{self.release()}:/dist:ro,z", f"{INSTALLER}:/install.sh:ro,z", f"{SMOKE}:/smoke.sh:ro,z"])
             self.assertEqual(call[:4], ["run", "--rm", "--timeout", "1800"])
             environment = [call[i + 1] for i, argument in enumerate(call) if argument == "-e"]
             self.assertEqual(environment, ["VAAKORA_RELEASE_URL=file:///dist"])
@@ -249,25 +251,37 @@ class InstallTestTests(unittest.TestCase):
             self.assertEqual(call[call.index("-c") - 1 :][0], "bash")
             self.assertEqual(call[call.index("-c") + 2 : call.index("-c") + 4], ["install", kind])
 
+    def test_script_mode_container_command_is_strict_and_runs_the_expected_steps(self) -> None:
+        result = self.run_test("debian-12", "arch", "appimage-arch", script=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for call, kind in zip(self.calls("run"), ("deb", "arch", "appimage")):
+            body = call[call.index("-c") + 1]
+            self.assertTrue(body.startswith("set -eu;"), body)
+            self.assertIn("apt-get install -y --no-install-recommends curl ca-certificates", body)
+            self.assertIn("pacman -Syu --noconfirm --needed curl ca-certificates", body)
+            self.assertIn("dnf install -y ca-certificates", body)
+            if kind == "appimage":
+                self.assertIn("/root/.local/bin/vaakora", body)
+
     def test_script_mode_writes_sums_for_the_four_files(self) -> None:
         # Extra files in DIST_DIR (older releases, another SHA256SUMS) never reach the release dir.
         (self.dist / "Vaakora-0.0.1-1.x86_64.rpm").write_text("old")
         (self.dist / "SHA256SUMS").write_text("stale\n")
         result = self.run_test("arch", script=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(sorted(path.name for path in RELEASE.iterdir()), sorted([*FILES.values(), "SHA256SUMS"]))
+        self.assertEqual(sorted(path.name for path in self.release().iterdir()), sorted([*FILES.values(), "SHA256SUMS"]))
         expected = sorted(
             f"{hashlib.sha256((self.dist / name).read_bytes()).hexdigest()}  {name}" for name in FILES.values()
         )
-        self.assertEqual(sorted((RELEASE / "SHA256SUMS").read_text().splitlines()), expected)
+        self.assertEqual(sorted((self.release() / "SHA256SUMS").read_text().splitlines()), expected)
         for name in FILES.values():
-            self.assertEqual((RELEASE / name).read_bytes(), (self.dist / name).read_bytes())
+            self.assertEqual((self.release() / name).read_bytes(), (self.dist / name).read_bytes())
 
     def test_script_mode_never_links_the_release_to_dist_files(self) -> None:
         result = self.run_test("arch", script=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         for name in FILES.values():
-            self.assertNotEqual((RELEASE / name).stat().st_ino, (self.dist / name).stat().st_ino)
+            self.assertNotEqual((self.release() / name).stat().st_ino, (self.dist / name).stat().st_ino)
 
     def test_script_mode_appimage_targets_pass_flag(self) -> None:
         result = self.run_test(script=True)
