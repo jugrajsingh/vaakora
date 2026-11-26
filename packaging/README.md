@@ -153,6 +153,8 @@ packaging/install.sh [--dry-run]
 
 Picks the newest RPM in `packaging/dist/` whose name and version match this checkout and runs `sudo dnf` install, upgrade, downgrade or reinstall with `--nogpgcheck` (the local RPM is unsigned).
 
+This is the developer installer. The end-user one-line installer is `docs/install.sh` (published at `https://vaakora.jugraj.dev/install.sh`); its tests are `packaging/tests/test_oneline_install.py`.
+
 The package is named `vaakora` and installs `/usr/bin/vaakora` and `/usr/lib/Vaakora/` (with `llm/llama-server` and `tts/vaakora-tts`) plus `/usr/share/licenses/vaakora/LICENSE`.
 
 ### Next to Handy

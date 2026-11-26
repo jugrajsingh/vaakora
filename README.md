@@ -206,7 +206,17 @@ Right after the app starts, `vaakora read` can return exit 5 (`tts-unavailable`)
 
 ## Install
 
-Download the package for your distribution from the [latest release](https://github.com/jugrajsingh/vaakora/releases/latest) on GitHub Releases, together with `SHA256SUMS`, and check it with `sha256sum -c --ignore-missing SHA256SUMS`.
+```bash
+curl -fsSL https://vaakora.jugraj.dev/install.sh | sh
+```
+
+Or with wget: `wget -qO- https://vaakora.jugraj.dev/install.sh | sh`.
+
+The script picks the package for your distribution, checks its checksum, installs it with your package manager and asks for your password through `sudo`; other distributions get the AppImage in `~/.local/bin`.
+
+Run it again to upgrade, and set `VAAKORA_VERSION=0.4.0` to pin a version.
+
+Or install a package by hand: download the package for your distribution from the [latest release](https://github.com/jugrajsingh/vaakora/releases/latest) on GitHub Releases, together with `SHA256SUMS`, and check it with `sha256sum -c --ignore-missing SHA256SUMS`.
 
 | Distribution                                           | File                                 | Install                                               |
 | ------------------------------------------------------ | ------------------------------------ | ----------------------------------------------------- |

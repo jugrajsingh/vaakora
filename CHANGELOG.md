@@ -7,6 +7,7 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 ### Added
 
 - CONTRIBUTING.md, SECURITY.md, issue forms and a pull request template.
+- A one-line installer for Linux x86_64 at https://vaakora.jugraj.dev/install.sh.
 
 ## [0.4.0] - 2026-11-26
 
