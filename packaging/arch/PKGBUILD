@@ -1,6 +1,6 @@
 # Repackages the payload of Vaakora's .deb (built on Ubuntu 22.04) as an Arch package.
 pkgname=vaakora
-pkgver=0.3.2
+pkgver=0.4.0
 pkgrel=1
 pkgdesc='Speech to text and read aloud on your own computer'
 arch=('x86_64')

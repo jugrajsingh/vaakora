@@ -4,6 +4,16 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-26
+
+### Added
+
+- Vaakora is built as a .deb (Debian 12 and 13, Ubuntu 22.04 and newer), an Arch package and an AppImage, next to the RPM (Fedora 44 and 45); each carries the local cleanup server, read aloud and the licences, and each is installed and started in a clean container of every listed release before a release.
+
+### Changed
+
+- All packages are built on Ubuntu 22.04, so they need glibc 2.35 or newer; a check refuses any package with a binary that needs more. The RPM now also requires the ALSA, Vulkan and OpenCL loader libraries and Ayatana's app indicator library, and the .deb depends on ALSA, the Vulkan loader and the OpenCL loader, so GPU transcription and Intel GPU read aloud find them. Read aloud uses Microsoft's ONNX Runtime 1.31.0 library, shipped next to the worker with its licence and notices.
+
 ## [0.3.2] - 2026-11-26
 
 ### Added
@@ -281,6 +291,7 @@ Packaging
 - New Tauri commands: `get_data_import_report` and `dismiss_data_import_report` (the first-start data copy's card), `clear_binding`, `clear_history`, `get_history_clear_summary`, `change_history_compare_view_setting`; the `local_llm` commands for listing, downloading, deleting, selecting and reporting status of models and for the three S1 settings; and the text-to-speech commands `get_tts_models`, `get_tts_devices`, `get_read_aloud_state`, `read_aloud_replace_text`, `read_aloud_play`, `read_aloud_pause`, `read_aloud_stop`, `read_aloud_close`, `set_tts_selection`, `set_tts_model`, `set_tts_run_on`, `download_tts_model`, `cancel_tts_download`, `delete_tts_model`, `set_tts_hf_token` and `preview_tts_voice`.
 - New dependencies: in `src-tauri`, `dirs` 6 (already locked through `tauri`), `thiserror` and the `blocking` feature of `reqwest`, plus the two workspace crates. The workspace adds `ort`, `ndarray`, `rand`, `rand_distr`, `regex`, `unicode-normalization`, `sentencepiece-rs`, `misaki-rs`, `signalsmith-stretch`, `openvino` and `openvino-sys` (runtime-linked), and `handy-tts-core` adds `pulldown-cmark`, `sha2` and `unicode-width` (already locked). Workspace-wide lint settings and a `cargo fmt --all` format script were added, and the lockfile moved to the workspace root.
 - TLS stack (0.3.2): `reqwest` (in `src-tauri` and `handy-tts-core`) and `hf-hub` now use `default-features = false` with `rustls-tls`; `reqwest` keeps `blocking`, `brotli`, `charset`, `deflate`, `gzip`, `http2`, `json`, `stream` and `system-proxy`. `bundle.linux.deb.depends` drops `libssl3t64 | libssl3`.
+- Linux packages (0.4.0), in `tauri.conf.json`: `bundle.linux.deb.depends` gains `libasound2t64 | libasound2`, `libvulkan1` and `ocl-icd-libopencl1 | libopencl1`; `bundle.linux.deb` gains `recommends` (`intel-opencl-icd`, `libze1`, `libze-intel-gpu1`, `wl-clipboard`), and its `files` add `llm-bin` and `tts-bin` at `/usr/lib/Vaakora/llm` and `/usr/lib/Vaakora/tts`; `bundle.linux.rpm.depends` gains `libasound.so.2()(64bit)`, `libvulkan.so.1()(64bit)` and `libOpenCL.so.1()(64bit)`; `bundle.linux.appimage.files` adds `llm-bin`, `tts-bin` and the licence at `/usr/share/licenses/vaakora/LICENSE`.
 - Changed dependency source: `transcribe-cpp` and `transcribe-cpp-sys` come from the transcribe.cpp git repository at revision `35d86179` (v0.4.2 plus three commits) through `[patch.crates-io]` in the workspace `Cargo.toml`; the `src-tauri` requirements stay `0.4.2`.
 - New user data file: `handy-import.json` in the app data directory, the first-start data copy's report (status, items, bytes, source and target paths, error, dismissed).
 - New user data file: `tts-vocabulary.json` in the app data directory, created on first use. The built-in vocabulary is compiled in from `src-tauri/resources/tts/vocabulary.json`, so nothing extra has to be staged for it.
