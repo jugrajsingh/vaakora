@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Runs as root inside a clean distro container (install-test.sh mounts it at /smoke.sh): installs one Vaakora package,
 # then checks that the app, llama-server and the TTS worker start and that every library they load resolves.
+# With --installed it installs nothing: the package is already there (put there by docs/install.sh) and is only checked.
 # Last line: "SMOKE PASS", or "SMOKE FAIL: <reason>" with exit 1.
 # -E carries the ERR trap into functions, so any failing step still ends on a SMOKE FAIL line.
 set -Eeuo pipefail
@@ -11,15 +12,31 @@ fail() {
 }
 trap 'rc=$?; echo "SMOKE FAIL: \"$BASH_COMMAND\" exited $rc"; exit 1' ERR
 
-usage="usage: install-smoke.sh rpm|deb|arch|appimage FILE"
-[[ $# -eq 2 ]] || fail "$usage"
-kind="$1"
-file="$2"
-case "$kind" in
-  rpm | deb | arch | appimage) ;;
-  *) fail "$usage" ;;
-esac
-[[ -f "$file" ]] || fail "no such file: $file"
+installed=0
+if [[ "${1:-}" == --installed ]]; then
+  installed=1
+  shift
+  usage="usage: install-smoke.sh --installed rpm|deb|arch|appimage [FILE] (FILE is required for appimage)"
+  [[ $# -ge 1 && $# -le 2 ]] || fail "$usage"
+  kind="$1"
+  file="${2:-}"
+  case "$kind" in
+    rpm | deb | arch) ;;
+    appimage) [[ -n "$file" ]] || fail "$usage" ;;
+    *) fail "$usage" ;;
+  esac
+  [[ -z "$file" || -f "$file" ]] || fail "no such file: $file"
+else
+  usage="usage: install-smoke.sh rpm|deb|arch|appimage FILE"
+  [[ $# -eq 2 ]] || fail "$usage"
+  kind="$1"
+  file="$2"
+  case "$kind" in
+    rpm | deb | arch | appimage) ;;
+    *) fail "$usage" ;;
+  esac
+  [[ -f "$file" ]] || fail "no such file: $file"
+fi
 
 # shellcheck source=/dev/null
 . /etc/os-release
@@ -49,15 +66,23 @@ root=
 app=(vaakora)
 case "$kind" in
   rpm)
-    dnf install -y --setopt=install_weak_deps=False "$file"
+    if [[ "$installed" -eq 1 ]]; then rpm -q vaakora; else dnf install -y --setopt=install_weak_deps=False "$file"; fi
     ;;
   deb)
-    apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "$file"
+    if [[ "$installed" -eq 1 ]]; then
+      dpkg -s vaakora
+    else
+      apt-get update
+      DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "$file"
+    fi
     ;;
   arch)
-    pacman -Syu --noconfirm
-    pacman -U --noconfirm "$file"
+    if [[ "$installed" -eq 1 ]]; then
+      pacman -Q vaakora
+    else
+      pacman -Syu --noconfirm
+      pacman -U --noconfirm "$file"
+    fi
     ;;
   appimage)
     appimage_baseline

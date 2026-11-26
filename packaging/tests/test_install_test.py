@@ -1,3 +1,4 @@
+import hashlib
 import os
 import shutil
 import subprocess
@@ -8,6 +9,8 @@ from roots import PACKAGING, SCRATCH
 
 INSTALL_TEST = PACKAGING / "install-test.sh"
 SMOKE = PACKAGING / "install-smoke.sh"
+INSTALLER = PACKAGING.parent / "docs/install.sh"
+RELEASE = PACKAGING / ".work/script-release"
 DIGEST = "sha256:" + "a" * 64
 # (target, image, kind) in matrix order.
 MATRIX = (
@@ -60,8 +63,8 @@ class InstallTestTests(unittest.TestCase):
         self.argv_file = self.scratch / "podman-argv"
         self.dist = self.scratch / "dist"
         self.dist.mkdir()
-        for name in FILES.values():
-            (self.dist / name).write_text("package")
+        for kind, name in FILES.items():
+            (self.dist / name).write_text("package " + kind)
         self.environment = {
             **os.environ,
             "PATH": str(self.bin) + ":" + os.environ["PATH"],
@@ -71,13 +74,16 @@ class InstallTestTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         shutil.rmtree(self.scratch)
+        shutil.rmtree(RELEASE, ignore_errors=True)
         for logs in self.logs:
             shutil.rmtree(logs, ignore_errors=True)
 
-    def run_test(self, *targets: str, dist: Path | None = None, **environment: str) -> subprocess.CompletedProcess[str]:
+    def run_test(
+        self, *targets: str, dist: Path | None = None, script: bool = False, **environment: str
+    ) -> subprocess.CompletedProcess[str]:
         """Runs install-test.sh directly (its own mode bit) with VERSION 1.2.3 and remembers its log dir for cleanup."""
         result = subprocess.run(
-            [str(INSTALL_TEST), str(dist or self.dist), "1.2.3", *targets],
+            [str(INSTALL_TEST), *(["--script"] if script else []), str(dist or self.dist), "1.2.3", *targets],
             env={**self.environment, **environment},
             capture_output=True,
             text=True,
@@ -203,6 +209,95 @@ class InstallTestTests(unittest.TestCase):
         expected = [["bash", "/smoke.sh", kind, "/dist/" + FILES[kind]] for _, _, kind in MATRIX]
         self.assertEqual([call[-4:] for call in self.calls("run")], expected)
 
+    def test_default_mode_unchanged(self) -> None:
+        result = self.run_test()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse(RELEASE.exists())
+        for call in self.calls("run"):
+            self.assertNotIn("-e", call)
+            self.assertNotIn("-c", call)
+            self.assertEqual(call[-4:-2], ["bash", "/smoke.sh"])
+
+    def test_script_mode_mounts_release_and_installer(self) -> None:
+        result = self.run_test(script=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(
+            self.verdicts(result),
+            [f"PASS {name} {image}@{DIGEST}" for name, image, _ in MATRIX],
+        )
+        runs = self.calls("run")
+        self.assertEqual(len(runs), 13)
+        for call in runs:
+            mounts = [call[i + 1] for i, argument in enumerate(call) if argument == "-v"]
+            self.assertEqual(mounts, [f"{RELEASE}:/dist:ro,z", f"{INSTALLER}:/install.sh:ro,z", f"{SMOKE}:/smoke.sh:ro,z"])
+            self.assertEqual(call[:4], ["run", "--rm", "--timeout", "1800"])
+            environment = [call[i + 1] for i, argument in enumerate(call) if argument == "-e"]
+            self.assertEqual(environment, ["VAAKORA_RELEASE_URL=file:///dist"])
+            for argument in call:
+                self.assertFalse(argument.startswith(("--volume", "--mount", "--volumes-from", "--cgroups")), argument)
+
+    def test_script_mode_container_runs_installer_twice_then_smokes_what_it_installed(self) -> None:
+        result = self.run_test("debian-12", "appimage-arch", script=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for call, kind in zip(self.calls("run"), ("deb", "appimage")):
+            body = call[call.index("-c") + 1]
+            self.assertEqual(body.count(';sh /install.sh "$@"'), 2, body)
+            self.assertIn("curl", body)
+            self.assertIn("ca-certificates", body)
+            self.assertIn("--installed", body)
+            self.assertNotIn("/dist/", body)
+            self.assertEqual(call[call.index("-c") - 1 :][0], "bash")
+            self.assertEqual(call[call.index("-c") + 2 : call.index("-c") + 4], ["install", kind])
+
+    def test_script_mode_writes_sums_for_the_four_files(self) -> None:
+        # Extra files in DIST_DIR (older releases, another SHA256SUMS) never reach the release dir.
+        (self.dist / "Vaakora-0.0.1-1.x86_64.rpm").write_text("old")
+        (self.dist / "SHA256SUMS").write_text("stale\n")
+        result = self.run_test("arch", script=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(sorted(path.name for path in RELEASE.iterdir()), sorted([*FILES.values(), "SHA256SUMS"]))
+        expected = sorted(
+            f"{hashlib.sha256((self.dist / name).read_bytes()).hexdigest()}  {name}" for name in FILES.values()
+        )
+        self.assertEqual(sorted((RELEASE / "SHA256SUMS").read_text().splitlines()), expected)
+        for name in FILES.values():
+            self.assertEqual((RELEASE / name).read_bytes(), (self.dist / name).read_bytes())
+
+    def test_script_mode_never_links_the_release_to_dist_files(self) -> None:
+        result = self.run_test("arch", script=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for name in FILES.values():
+            self.assertNotEqual((RELEASE / name).stat().st_ino, (self.dist / name).stat().st_ino)
+
+    def test_script_mode_appimage_targets_pass_flag(self) -> None:
+        result = self.run_test(script=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for call, (name, _, kind) in zip(self.calls("run"), MATRIX):
+            tail = call[call.index("-c") + 2 :]
+            if kind == "appimage":
+                self.assertEqual(tail, ["install", "appimage", "--appimage"], name)
+            else:
+                self.assertEqual(tail, ["install", kind], name)
+
+    def test_script_mode_needs_all_four_files_and_is_a_usage_error_without_them(self) -> None:
+        (self.dist / FILES["arch"]).unlink()
+        result = self.run_test("debian-12", script=True)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn(f"missing: {self.dist / FILES['arch']}", result.stderr)
+        result = self.run_test("solaris-11", script=True)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertEqual(self.calls("run"), [])
+        self.assertEqual(self.calls("pull"), [])
+
+    def test_script_mode_failure_fails_the_run_with_a_log(self) -> None:
+        result = self.run_test("debian-12", "arch", script=True, FAIL_IMAGE="docker.io/library/debian:12")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        verdicts = self.verdicts(result)
+        prefix = f"FAIL debian-12 docker.io/library/debian:12@{DIGEST} (log: "
+        self.assertTrue(verdicts[0].startswith(prefix), verdicts[0])
+        self.assertEqual(verdicts[1], f"PASS arch docker.io/library/archlinux:latest@{DIGEST}")
+        self.assertEqual(len(self.calls("run")), 2)
+
     def test_smoke_refuses_bad_arguments_before_doing_anything(self) -> None:
         # Direct invocation on the host: every refusal here happens before the smoke reads /etc/os-release or installs.
         usage = "SMOKE FAIL: usage: install-smoke.sh rpm|deb|arch|appimage FILE"
@@ -250,6 +345,7 @@ class SmokeLddTests(unittest.TestCase):
         lib = self.root / "usr/lib/Vaakora"
         executables = {
             self.scratch / "bin/dnf": "exit 0",
+            self.scratch / "bin/rpm": 'echo "$*" >>"$SMOKE_FIXTURE_ROOT/../rpm-calls"; exit "${RPM_EXIT:-0}"',
             self.scratch / "bin/vaakora": "echo 'Usage: vaakora [OPTIONS]'",
             self.scratch / "bin/ldd": LDD,
             lib / "llm/llama-server": "echo 'version: 1 (fixture)'",
@@ -279,9 +375,9 @@ class SmokeLddTests(unittest.TestCase):
     def tearDown(self) -> None:
         shutil.rmtree(self.scratch)
 
-    def smoke_run(self, **environment: str) -> subprocess.CompletedProcess[str]:
+    def smoke_run(self, *argv: str, **environment: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
-            ["bash", str(self.smoke), "rpm", str(self.package)],
+            ["bash", str(self.smoke), *(argv or ("rpm", str(self.package)))],
             env={**self.environment, **environment},
             capture_output=True,
             text=True,
@@ -324,6 +420,35 @@ class SmokeLddTests(unittest.TestCase):
         lines = result.stdout.splitlines()
         self.assertIn("== ldd: 4 ELF files, 0 unresolved", lines)
         self.assertEqual(lines[-1], "SMOKE PASS")
+
+    def test_installed_mode_checks_the_package_without_installing_it(self) -> None:
+        # dnf would fail the run if the smoke called it; the package is only queried.
+        dnf = self.scratch / "bin/dnf"
+        dnf.write_text("#!/bin/sh\necho dnf was called >&2\nexit 1\n")
+        result = self.smoke_run("--installed", "rpm", LDD_MODE="clean")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(result.stdout.splitlines()[-1], "SMOKE PASS")
+        self.assertEqual((self.scratch / "rpm-calls").read_text(), "-q vaakora\n")
+
+    def test_installed_mode_fails_when_the_package_is_not_installed(self) -> None:
+        result = self.smoke_run("--installed", "rpm", LDD_MODE="clean", RPM_EXIT="1")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertTrue(result.stdout.splitlines()[-1].startswith("SMOKE FAIL: "), result.stdout)
+        self.assertIn("rpm -q vaakora", result.stdout.splitlines()[-1])
+
+    def test_installed_mode_refuses_bad_arguments(self) -> None:
+        usage = "SMOKE FAIL: usage: install-smoke.sh --installed rpm|deb|arch|appimage [FILE] (FILE is required for appimage)"
+        for argv in (
+            ["--installed"],
+            ["--installed", "zip"],
+            ["--installed", "appimage"],
+            ["--installed", "rpm", str(self.package), "extra"],
+        ):
+            result = self.smoke_run(*argv)
+            self.assertEqual(result.returncode, 1, argv)
+            self.assertEqual(result.stdout.splitlines()[-1], usage, argv)
+        result = self.smoke_run("--installed", "appimage", str(self.scratch / "absent"))
+        self.assertEqual(result.stdout.splitlines()[-1], f"SMOKE FAIL: no such file: {self.scratch / 'absent'}")
 
 
 if __name__ == "__main__":

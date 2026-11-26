@@ -119,6 +119,21 @@ Then, with `D` the installed `/usr/lib/Vaakora` (for the AppImage, inside the ex
 
 The log's last line is `SMOKE PASS` or `SMOKE FAIL: <reason>`. The install test runs neither under `systemd-run` nor with `--cgroups=split`: under pueue, split containers fail with crun's "controller 'pids' is not available", and these containers need no memory cap. The packaging tests run `install-test.sh` with a stub `podman` and write their own `install-test-<UTC stamp>` directories under `packaging/.work/logs`, so never run them while an install test runs.
 
+### Script mode
+
+```bash
+packaging/install-test.sh --script <dist-dir> <version> [<target>...]
+```
+
+Same 13 targets, logs, `PASS`/`FAIL` lines and exit code, but the packages are installed by the one-line installer `docs/install.sh` instead of the distribution's tool called directly. `<dist-dir>` must hold all four `<version>` packages (RPM, `.deb`, Arch, AppImage; other files in it are ignored). The test copies those four into `packaging/.work/script-release/` with a `SHA256SUMS` over exactly their four bare names, and mounts that at `/dist` and `docs/install.sh` at `/install.sh`, both read-only, next to `/smoke.sh`; the container gets `VAAKORA_RELEASE_URL=file:///dist`. In each container, as root without a terminal, it:
+
+1. installs `curl` and CA certificates with the distribution's package manager (a clean Debian or Ubuntu image has no `curl`);
+2. runs `sh /install.sh` (`sh /install.sh --appimage` for the `appimage-*` targets; under `sh` this is dash on Debian and Ubuntu, the script's only dash coverage);
+3. runs `sh /install.sh` a second time on the now installed system, which must exit 0;
+4. runs `install-smoke.sh --installed rpm|deb|arch` (it asks the package manager that `vaakora` is installed, installs nothing, then runs the checks above) or, for AppImage targets, `install-smoke.sh --installed appimage /root/.local/bin/vaakora`.
+
+The release dir is rebuilt on every run and never links to `<dist-dir>`.
+
 ## Pins
 
 A sha256, digest or commit mismatch on any input below fails the build. The Ubuntu packages the release image installs with `apt-get` are not pinned beyond the base image digest; crates and bun packages come from `Cargo.lock` and `bun.lock`.
