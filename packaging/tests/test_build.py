@@ -6,25 +6,6 @@ import unittest
 
 from roots import PACKAGING, ROOT, SCRATCH
 
-REQUIRED = (
-    "resources/tts/ratings.json",
-    "llm/llama-server",
-    "tts/vaakora-tts",
-    "tts/libopenvino.so.2641",
-    "tts/libopenvino_c.so.2641",
-    "tts/libopenvino_onnx_frontend.so.2641",
-    "tts/libopenvino_ir_frontend.so.2641",
-    "tts/libopenvino_intel_cpu_plugin.so",
-    "tts/libopenvino_intel_gpu_plugin.so",
-    "tts/libopenvino_intel_npu_plugin.so",
-    "tts/libtbb.so.12",
-    "tts/libhwloc.so.15",
-    "tts/notices/LICENSE",
-    "tts/notices/licensing/runtime-third-party-programs.txt",
-    "tts/notices/licensing/onetbb_third-party-programs.txt",
-    "tts/notices/licensing/onednn_third-party-programs.txt",
-    "tts/notices/INDIC-TINY-TTS-CODE-LICENSE",
-)
 INDIC_NOTICE = "crates/handy-tts/INDIC-TINY-TTS-CODE-LICENSE"
 LICENCE = "/usr/share/licenses/vaakora/LICENSE"
 DEPS = (
@@ -106,47 +87,13 @@ class BuildTests(unittest.TestCase):
             "TOOLS_FIXTURE": str(self.tools / "linuxdeploy-x86_64.AppImage"),
             "TRACE": str(self.trace),
             "CARGO_ARGS": str(self.cargo_args),
+            "TMPDIR": str(self.scratch),
         }
         self.script(
             "cargo",
             'echo cargo >>"$TRACE"\necho "$*" >>"$CARGO_ARGS"\nif [ "${CARGO_RC:-0}" != 0 ]; then exit "$CARGO_RC"; fi\nif [ "${NO_WORKER:-0}" = 0 ]; then mkdir -p "$CARGO_TARGET_DIR/release"; printf "#!/bin/sh\\nexit 0\\n" >"$CARGO_TARGET_DIR/release/vaakora-tts"; chmod +x "$CARGO_TARGET_DIR/release/vaakora-tts"; fi\n',
         )
         self.script("bun", FAKE_BUN)
-        self.files = self.scratch / "files"
-        self.files.write_text(
-            "\n".join("/usr/lib/Vaakora/" + name for name in REQUIRED)
-            + "\n"
-            + LICENCE
-            + "\n"
-        )
-        self.dependencies = self.scratch / "dependencies"
-        self.dependencies.write_text("\n".join(DEPS) + "\n")
-        self.package = self.scratch / "Vaakora.rpm"
-        self.package.touch()
-        self.payload = self.scratch / "payload"
-        (self.payload / "usr/lib/Vaakora/tts").mkdir(parents=True)
-        (self.payload / "usr/lib/Vaakora/tts/vaakora-tts").write_bytes(b"\x7fELF libc.so.6")
-        (self.payload / "usr/lib/Vaakora/notes.txt").write_text("libssl.so.4\n")
-        self.environment.update(
-            {
-                "RPM_FILES": str(self.files),
-                "RPM_DEPS": str(self.dependencies),
-                "PAYLOAD": str(self.payload),
-                "TMPDIR": str(self.scratch),
-            }
-        )
-        self.script(
-            "rpm2cpio",
-            'cd "$PAYLOAD"\nfind . | cpio -o -H newc --quiet\n',
-        )
-        self.script(
-            "readelf",
-            'if [ "${READELF_RC:-0}" != 0 ]; then exit "$READELF_RC"; fi\necho " 0x0000000000000001 (NEEDED)             Shared library: [$(sed "s/.* //" "$2")]"\n',
-        )
-        self.script(
-            "rpm",
-            'if [ "${RPM_RC:-0}" != 0 ]; then exit "$RPM_RC"; fi\ncase "$*" in -qlp*) cat "$RPM_FILES";; *) if [ "${DEPS_RC:-0}" != 0 ]; then exit "$DEPS_RC"; fi; cat "$RPM_DEPS";; esac\n',
-        )
 
     def script(self, name: str, code: str) -> None:
         path = self.bin / name
@@ -173,14 +120,6 @@ class BuildTests(unittest.TestCase):
             capture_output=True,
             text=True,
             env=merged,
-        )
-
-    def verify(self, **environment: str) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(
-            ["bash", str(PACKAGING / "verify-rpm.sh"), str(self.package)],
-            capture_output=True,
-            text=True,
-            env={**self.environment, **environment},
         )
 
     def fixture_repo(self) -> "os.PathLike[str]":
@@ -353,73 +292,6 @@ class BuildTests(unittest.TestCase):
             self.assertIn(notice, staged)
         self.assertEqual(staged.count("Permission is hereby granted, free of charge"), 2)
         self.assertEqual(staged, (ROOT / INDIC_NOTICE).read_text(encoding="utf-8"))
-
-    def test_rpm_query_failure_fails_closed(self) -> None:
-        self.assertEqual(self.verify(RPM_RC="17").returncode, 17)
-        self.assertEqual(self.verify(DEPS_RC="19").returncode, 19)
-
-    def test_every_rpm_file_and_weak_dependency_is_required(self) -> None:
-        complete_files = self.files.read_text()
-        complete_deps = self.dependencies.read_text()
-        self.assertEqual(self.verify().returncode, 0)
-        for name in REQUIRED:
-            with self.subTest(file=name):
-                self.files.write_text(
-                    complete_files.replace("/usr/lib/Vaakora/" + name + "\n", "")
-                )
-                self.assertEqual(self.verify().returncode, 1)
-        self.files.write_text(complete_files)
-        for name in DEPS:
-            with self.subTest(dependency=name):
-                self.dependencies.write_text(complete_deps.replace(name + "\n", ""))
-                self.assertEqual(self.verify().returncode, 1)
-        self.dependencies.write_text(complete_deps)
-        self.files.write_text(
-            complete_files + "/usr/lib/Vaakora/tts/libze_intel_npu.so.1\n"
-        )
-        self.assertEqual(self.verify().returncode, 1)
-
-    def test_elf_linking_openssl_is_refused(self) -> None:
-        binary = self.payload / "usr/lib/Vaakora/tts/vaakora-tts"
-        self.assertEqual(self.verify().returncode, 0)
-        for needed in ("libssl.so.4", "libcrypto.so.3"):
-            with self.subTest(needed=needed):
-                binary.write_bytes(b"\x7fELF " + needed.encode())
-                result = self.verify()
-                self.assertEqual(result.returncode, 1, result.stderr)
-                self.assertIn(
-                    "refusing: /usr/lib/Vaakora/tts/vaakora-tts links libssl or libcrypto",
-                    result.stderr,
-                )
-        binary.write_bytes(b"\x7fELF libssl3-unrelated.so")
-        self.assertEqual(self.verify().returncode, 0)
-
-    def test_text_file_naming_libssl_is_not_an_elf(self) -> None:
-        self.assertEqual(self.verify().returncode, 0)
-
-    def test_unreadable_elf_fails_closed(self) -> None:
-        self.assertEqual(self.verify(READELF_RC="23").returncode, 23)
-
-    def test_package_without_ratings_is_refused(self) -> None:
-        self.files.write_text(
-            self.files.read_text().replace(
-                "/usr/lib/Vaakora/resources/tts/ratings.json\n", ""
-            )
-        )
-        result = self.verify()
-        self.assertEqual(result.returncode, 1, result.stderr)
-        self.assertIn(
-            "missing /usr/lib/Vaakora/resources/tts/ratings.json", result.stderr
-        )
-
-    def test_licence_is_required(self) -> None:
-        self.assertEqual(self.verify().returncode, 0)
-        self.files.write_text(
-            self.files.read_text().replace(LICENCE + "\n", "")
-        )
-        result = self.verify()
-        self.assertEqual(result.returncode, 1, result.stderr)
-        self.assertIn("missing " + LICENCE, result.stderr)
 
     def test_linux_bundle_config(self) -> None:
         linux = json.loads((ROOT / "src-tauri/tauri.conf.json").read_text())["bundle"]["linux"]

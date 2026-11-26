@@ -110,6 +110,6 @@ stdbuf -oL -eL podman run --rm --userns=keep-id "${tty_flag[@]}" \
 
 name="$(sed -n '/^\[package\]/,/^\[/{s/^name = "\(.*\)"/\1/p}' "$SRC/src-tauri/Cargo.toml" | head -1)"
 rpm="$(select_rpm "$DIST" "$name" "$version")"
-bash "$HERE/verify-rpm.sh" "$rpm"
+bash "$HERE/verify-package.sh" "$rpm"
 echo "built: $rpm"
 echo "next: $HERE/install.sh"
