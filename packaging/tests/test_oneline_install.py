@@ -464,7 +464,7 @@ class OnelineInstallTests(unittest.TestCase):
             input=SCRIPT.read_text(),
             capture_output=True,
             text=True,
-            env=self.env,
+            env={**self.env, "FAKE_SUDO_PASSWORD": "1"},
             start_new_session=True,
             preexec_fn=controlling_tty,
         )
@@ -473,6 +473,7 @@ class OnelineInstallTests(unittest.TestCase):
         self.assertEqual(len(install), 1)
         self.assertFalse(install[0].endswith(" -y"), install[0])
         self.assertEqual(self.stdin_log.read_text().split(), ["tty"])
+        self.assertNotIn("sudo -n true", self.calls())
 
     def test_appimage_hints_for_path_and_fuse(self) -> None:
         result = self.run_script("--appimage", extra={"FAKE_NO_FUSE": "1"})
