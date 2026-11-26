@@ -143,7 +143,7 @@ A sha256, digest or commit mismatch on any input below fails the build. The Ubun
 
 The tauri AppImage tools are copied into tauri's cache before it bundles, so tauri runs the pinned copies instead of downloading its own. The TTS worker links that ONNX Runtime dynamically (Microsoft's 1.31.0 build needs glibc 2.28; the prebuilt static one needs 2.38), and the packages ship it next to the worker.
 
-`packaging/llama-server.sh <out-dir> [--cpu ...]` and `packaging/openvino-runtime.sh <dest-dir> [--wheel <file>]` can be run on their own. The OpenVINO wheel and the built binaries are cached under `packaging/.work/`; the llama.cpp git clone lives outside the checkout, in `${XDG_CACHE_HOME:-$HOME/.cache}/vaakora-build/llama.cpp-<commit>`, so the checkout never holds a nested `.git`. The clone and the build directory (`packaging/.work/llama-build-jammy-<commit>-<cpu>`) are keyed by the pinned commit, so moving the pin starts from fresh sources and never trips over what the old pin left behind.
+`packaging/llama-server.sh <out-dir> [--cpu ...]` and `packaging/openvino-runtime.sh <dest-dir> [--wheel <file>]` can be run on their own (`llama-server.sh` after one `build.sh` run has built the `vaakora-build:jammy` image it uses). The OpenVINO wheel and the built binaries are cached under `packaging/.work/`; the llama.cpp git clone lives outside the checkout, in `${XDG_CACHE_HOME:-$HOME/.cache}/vaakora-build/llama.cpp-<commit>`, so the checkout never holds a nested `.git`. The clone and the build directory (`packaging/.work/llama-build-jammy-<commit>-<cpu>`) are keyed by the pinned commit, so moving the pin starts from fresh sources and never trips over what the old pin left behind.
 
 ## Install
 

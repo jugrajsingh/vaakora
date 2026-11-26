@@ -221,7 +221,7 @@ Download the package for your distribution from the [latest release](https://git
 
 ## Platform support
 
-- Linux x86_64: the distributions above, each install-tested in a clean container. Used daily on Fedora 45 (KDE Plasma, Wayland) on an Intel Core Ultra 7 258V.
+- Linux x86_64: the Fedora, Debian, Ubuntu and Arch packages above, each install-tested in a clean container; the AppImage was tested the same way on Fedora 45, Debian 12, Ubuntu 22.04 and Arch. Used daily on Fedora 45 (KDE Plasma, Wayland) on an Intel Core Ultra 7 258V.
 - The device ratings shown in Models, Read aloud were measured on that one machine. Other hardware may rank devices differently.
 - Windows and macOS: coming soon. Local cleanup, read aloud and the command line are not ported yet, so a Windows or macOS build from source runs only the features Vaakora shares with upstream Handy and is untested. People who want to try are welcome and can report what they find.
 - There is one maintainer.
@@ -231,7 +231,7 @@ Download the package for your distribution from the [latest release](https://git
 ### Build from source
 
 1. Install the prerequisites in [BUILD.md](BUILD.md).
-2. Stage the extra build requirements from the "Relationship to upstream" section of [CHANGELOG.md](CHANGELOG.md): a static, CPU-only `llama-server` as `llm-bin/`, and the text-to-speech worker with its OpenVINO libraries as `tts-bin/`. The .deb, .rpm and AppImage bundles install them at `/usr/lib/Vaakora/llm` and `/usr/lib/Vaakora/tts` (`bundle.linux.{deb,rpm,appimage}.files` in `tauri.conf.json`), and the Arch package is repacked from the .deb.
+2. Stage the extra build requirements from the "Relationship to upstream" section of [CHANGELOG.md](CHANGELOG.md): a CPU-only `llama-server` built from source, linked statically except for glibc and the GCC C++ runtime, as `llm-bin/`, and the text-to-speech worker with its OpenVINO libraries as `tts-bin/`. The .deb, .rpm and AppImage bundles install them at `/usr/lib/Vaakora/llm` and `/usr/lib/Vaakora/tts` (`bundle.linux.{deb,rpm,appimage}.files` in `tauri.conf.json`), and the Arch package is repacked from the .deb.
 3. Install the dependencies:
 
    ```bash

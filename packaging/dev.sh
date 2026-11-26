@@ -67,7 +67,7 @@ if ! podman image exists "$IMAGE"; then
   echo "refusing: image $IMAGE missing; build it from the repository root: mkdir -p packaging/.work/dev-image-context && podman build -f packaging/Containerfile -t vaakora-build:fedora45 packaging/.work/dev-image-context" >&2
   exit 1
 fi
-# One cargo target volume shared with build.sh (same image); dev builds land in debug/, release builds in release/.
+# Dev has its own image (vaakora-build:fedora45) and cargo target volume, apart from build.sh's (vaakora-build:jammy, vaakora-jammy-target); dev builds land in debug/, release builds in release/.
 TARGET_VOL=vaakora-target
 for vol in vaakora-cargo vaakora-bun "$TARGET_VOL" vaakora-ortcache; do
   podman volume exists "$vol" || podman volume create "$vol" >/dev/null

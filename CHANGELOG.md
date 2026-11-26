@@ -8,13 +8,13 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 
 ### Added
 
-- Vaakora is built as a .deb (Debian 12 and 13, Ubuntu 22.04 and newer), an Arch package and an AppImage, next to the RPM (Fedora 44 and 45); each carries the local cleanup server, read aloud and the licences, and each is installed and started in a clean container of every listed release before a release.
+- Vaakora is built as a .deb (Debian 12 and 13, Ubuntu 22.04, 24.04, 26.04 and 26.10), an Arch package and an AppImage, next to the RPM (Fedora 44 and 45); each carries the local cleanup server, read aloud and the licences, and each package is installed and started in a clean container of every listed release before a release (the AppImage on Fedora 45, Debian 12, Ubuntu 22.04 and Arch).
 - Documentation: the README now has Install, Platform support (Windows and macOS coming soon) and Contributing sections.
 - Documentation: the docs are published at https://vaakora.jugraj.dev by a GitHub Pages workflow (`.github/workflows/pages.yml`), and the README links to its pages there.
 
 ### Changed
 
-- All packages are built on Ubuntu 22.04, so they need glibc 2.35 or newer; a check refuses any package with a binary that needs more. The RPM now also requires the ALSA, Vulkan and OpenCL loader libraries and Ayatana's app indicator library, and the .deb depends on ALSA, the Vulkan loader and the OpenCL loader, so GPU transcription and Intel GPU read aloud find them. Read aloud uses Microsoft's ONNX Runtime 1.31.0 library, shipped next to the worker with its licence and notices.
+- All packages are built on Ubuntu 22.04, so they need glibc 2.35 or newer; a check refuses any package with a binary that needs more. The RPM now also requires the ALSA, Vulkan and OpenCL loader libraries, and requires Ayatana's app indicator library in place of libappindicator3 (which the 0.3.2 RPM required); the .deb depends on ALSA, the Vulkan loader and the OpenCL loader, so GPU transcription and Intel GPU read aloud find them. Read aloud uses Microsoft's ONNX Runtime 1.31.0 library, shipped next to the worker with its licence and notices.
 
 ## [0.3.2] - 2026-11-26
 
@@ -297,7 +297,7 @@ Packaging
 - Changed dependency source: `transcribe-cpp` and `transcribe-cpp-sys` come from the transcribe.cpp git repository at revision `35d86179` (v0.4.2 plus three commits) through `[patch.crates-io]` in the workspace `Cargo.toml`; the `src-tauri` requirements stay `0.4.2`.
 - New user data file: `handy-import.json` in the app data directory, the first-start data copy's report (status, items, bytes, source and target paths, error, dismissed).
 - New user data file: `tts-vocabulary.json` in the app data directory, created on first use. The built-in vocabulary is compiled in from `src-tauri/resources/tts/vocabulary.json`, so nothing extra has to be staged for it.
-- Build requirements: a static, CPU-only `llama-server` must be staged as `llm-bin/`, and the text-to-speech worker with its OpenVINO libraries as `tts-bin/`. The .deb, .rpm and AppImage bundles install them at `/usr/lib/Vaakora/llm` and `/usr/lib/Vaakora/tts` (`bundle.linux.{deb,rpm,appimage}.files` in `tauri.conf.json`), and the Arch package is repacked from the .deb.
+- Build requirements: a CPU-only `llama-server` built from source, linked statically except for glibc and the GCC C++ runtime, must be staged as `llm-bin/`, and the text-to-speech worker with its OpenVINO libraries as `tts-bin/`. The .deb, .rpm and AppImage bundles install them at `/usr/lib/Vaakora/llm` and `/usr/lib/Vaakora/tts` (`bundle.linux.{deb,rpm,appimage}.files` in `tauri.conf.json`), and the Arch package is repacked from the .deb.
 - The control socket: `lib.rs` starts it in `setup` after the core managers, past the headless return, and `tray.rs` gains `dictation_state` for its `status`; the socket's own code lives in `src-tauri/src/ipc/`. `managers/transcription_jobs.rs` returns a typed error (`AddFileError`) from `transcribe_file`, with the same messages, so `transcribe.file` can tell an unreadable file from a storage failure; the History queue and its events are unchanged.
 - The command line client: `cli.rs` gains `CliArgs.command` (an optional `Command` subcommand, with `args_conflicts_with_subcommands` so the existing flags cannot be mixed with a subcommand) and `main.rs` hands a subcommand to `client::run` right after `CliArgs::parse()`, before the single-instance plugin, GTK or the log plugin start; no existing flag changes. `Command::Agent` (with `AgentAction`) carries `vaakora agent install` and `uninstall`, which `client` handles before it looks for the socket. The client's own code lives in `src-tauri/src/client/` (the skills it installs are compiled in from `src-tauri/src/client/skills/`), with its integration test in `src-tauri/tests/cli_client.rs`.
 - Upstream files that gain hunks, grouped:
