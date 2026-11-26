@@ -22,8 +22,6 @@ use std::time::{Duration, Instant};
 
 /// Dev-only override for the binary path.
 pub const BINARY_ENV: &str = "HANDY_LLAMA_SERVER";
-/// Where the RPM installs the static CPU build.
-pub const INSTALLED_BINARY: &str = concat!(env!("BRAND_INSTALL_DIR"), "/llm/llama-server");
 
 const LOCAL_AUTHORITY: &str = "localhost";
 const HEALTH_POLL: Duration = Duration::from_millis(100);
@@ -454,7 +452,9 @@ impl LlamaServerBackend {
         Self {
             binary_env: std::env::var_os(BINARY_ENV),
             http_authority: LOCAL_AUTHORITY.into(),
-            installed: PathBuf::from(INSTALLED_BINARY),
+            // The static CPU build the package ships; resolved next to the
+            // running binary so an AppImage finds its own copy.
+            installed: crate::brand::install_dir().join("llm/llama-server"),
             data_dir: None,
             runtime_dir: std::env::var_os("XDG_RUNTIME_DIR")
                 .filter(|value| !value.is_empty())
@@ -694,14 +694,9 @@ pub(crate) mod tests {
 
     #[test]
     fn installed_binary_lives_under_the_install_dir() {
-        assert!(
-            INSTALLED_BINARY.starts_with(crate::brand::INSTALL_DIR),
-            "{INSTALLED_BINARY} is not under {}",
-            crate::brand::INSTALL_DIR
-        );
         assert_eq!(
-            INSTALLED_BINARY,
-            format!("{}/llm/llama-server", crate::brand::INSTALL_DIR)
+            LlamaServerBackend::new().installed,
+            crate::brand::install_dir().join("llm/llama-server")
         );
     }
 
