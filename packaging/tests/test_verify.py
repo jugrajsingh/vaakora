@@ -145,7 +145,8 @@ class VerifyTests(unittest.TestCase):
 
     def verify(self, package: Path, environment: dict[str, str], **extra: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
-            ["bash", str(PACKAGING / "verify-package.sh"), str(package)],
+            # Run as documented, without a bash prefix, so a non-executable script fails.
+            [str(PACKAGING / "verify-package.sh"), str(package)],
             capture_output=True,
             text=True,
             env={**self.environment, **environment, **extra},
@@ -254,7 +255,7 @@ class VerifyTests(unittest.TestCase):
         for case, arguments in cases.items():
             with self.subTest(case=case):
                 result = subprocess.run(
-                    ["bash", str(PACKAGING / "verify-package.sh"), *arguments],
+                    [str(PACKAGING / "verify-package.sh"), *arguments],
                     capture_output=True,
                     text=True,
                     env={**self.environment, **environment},
