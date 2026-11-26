@@ -443,7 +443,7 @@ class OnelineInstallTests(unittest.TestCase):
 
     def test_failed_package_manager_hints_at_refresh_and_appimage(self) -> None:
         cases = (
-            ("ID=fedora\n", "dnf", "sudo dnf makecache"),
+            ("ID=fedora\n", "dnf", "sudo dnf makecache --refresh"),
             ("ID=debian\n", "apt", "sudo apt update"),
             ("ID=arch\n", "pacman", "sudo pacman -Syu"),
         )

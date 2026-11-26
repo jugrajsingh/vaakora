@@ -209,7 +209,7 @@ main() {
   start="Start it from your apps menu, or run: vaakora"
   case $kind in
     rpm)
-      run_pm -y dnf install "$pkg" || die "dnf could not install $file; $(retry_hint 'sudo dnf makecache')"
+      run_pm -y dnf install "$pkg" || die "dnf could not install $file; $(retry_hint 'sudo dnf makecache --refresh')"
       remove="sudo dnf remove vaakora"
       ;;
     deb)
