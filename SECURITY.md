@@ -18,6 +18,6 @@ Report it privately through GitHub: open [Report a vulnerability](https://github
 Vaakora runs on your own computer, and its privacy claims are part of what is in scope.
 
 - Vaakora has no telemetry or analytics.
-- Audio and text stay on the machine. The app uses the network for the model downloads you start, and for a cloud cleanup provider if you choose one and give it your own API key.
+- Audio never leaves the machine. Text leaves it only if you choose a cloud cleanup provider and give it your own API key. Apart from that, the app uses the network for the model downloads you start.
 - Vaakora has no update check yet, because no release channel exists. You update by installing a newer package from Releases.
 - The `vaakora` command talks to the running app over a socket that only your user can open.

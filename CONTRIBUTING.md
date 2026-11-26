@@ -19,14 +19,15 @@ For anything large, open an issue first so we can agree on the approach before y
 ## Build and test
 
 - [BUILD.md](BUILD.md) lists the prerequisites and how to build from source.
-- [packaging/README.md](packaging/README.md) covers the Linux packages, the dev loop (`packaging/dev.sh` runs cargo and bun in the build image) and the tests.
+- [packaging/README.md](packaging/README.md) covers the Linux packages, the dev loop (`packaging/dev.sh` runs cargo and bun in the build image) and the packaging tests.
 
 Before you open a pull request, run the checks that apply to your change:
 
-- `cargo fmt --all`, `cargo clippy` and `cargo test` for Rust changes.
+- `cargo fmt --all`, `cargo clippy --workspace --all-targets` and `cargo test --workspace` for Rust changes. The workspace has more crates than the app's default member, so `--workspace` matters.
 - `bun run lint` for frontend changes.
 - `bun run format:check` for formatting.
-- `bun run check:docs` for changes to `docs/`, and `bun run check:brand` for changes to branding.
+- `bun run check:translations` for changes to locale files.
+- `bun run check:docs` for changes to `docs/`, and `bun run check:brand` for changes to branding or to locale file values.
 
 ## Pull requests
 
