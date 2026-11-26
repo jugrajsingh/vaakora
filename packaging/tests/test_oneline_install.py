@@ -441,6 +441,36 @@ class OnelineInstallTests(unittest.TestCase):
         self.assertIn("vaakora: ", result.stderr)
         self.assertNotIn("Vaakora is installed", result.stdout)
 
+    def test_failed_package_manager_hints_at_refresh_and_appimage(self) -> None:
+        cases = (
+            ("ID=fedora\n", "dnf", "sudo dnf makecache"),
+            ("ID=debian\n", "apt", "sudo apt update"),
+            ("ID=arch\n", "pacman", "sudo pacman -Syu"),
+        )
+        for os_release, tool, refresh in cases:
+            with self.subTest(tool):
+                result = self.run_script(os_release=os_release, extra={"FAKE_PM_EXIT": "1"})
+                self.assertEqual(result.returncode, 1)
+                self.assertIn(f"vaakora: {tool} could not install", result.stderr)
+                self.assertIn(f'"{refresh}"', result.stderr)
+                self.assertIn("install.sh | sh -s -- --appimage", result.stderr)
+
+    def test_closing_line_names_how_to_start_it(self) -> None:
+        package = self.run_script()
+        self.assert_installed(package)
+        self.assertEqual(
+            package.stdout.splitlines()[-1],
+            "Vaakora is installed. Start it from your apps menu, or run: vaakora",
+        )
+        self.reset()
+        appimage = self.run_script("--appimage")
+        self.assert_installed(appimage)
+        self.assertEqual(
+            appimage.stdout.splitlines()[-1],
+            "Vaakora is installed. Start it by running: ~/.local/bin/vaakora",
+        )
+        self.assertNotIn("apps menu", appimage.stdout)
+
     def test_package_directory_is_readable_by_the_apt_user(self) -> None:
         self.assert_installed(self.run_script(os_release="ID=ubuntu\n"))
         self.assertEqual(self.modes.read_text().split(), ["755"])

@@ -39,6 +39,10 @@ main() {
       rm -rf "$tmp"
     fi
   }
+  # Appended to a failed package-manager install: stale lists are the usual cause.
+  retry_hint() {
+    printf 'refresh the package lists with "%s" and run this again, or install the AppImage instead: curl -fsSL https://vaakora.jugraj.dev/install.sh | sh -s -- --appimage' "$1"
+  }
   fetch() {
     if [ "$downloader" = curl ]; then
       curl -fsSL "$1" -o "$2"
@@ -202,17 +206,18 @@ main() {
     warn "no graphical session found. Vaakora is a desktop app, so you need a desktop login to start it. Installing anyway."
   fi
 
+  start="Start it from your apps menu, or run: vaakora"
   case $kind in
     rpm)
-      run_pm -y dnf install "$pkg" || die "dnf could not install $file"
+      run_pm -y dnf install "$pkg" || die "dnf could not install $file; $(retry_hint 'sudo dnf makecache')"
       remove="sudo dnf remove vaakora"
       ;;
     deb)
-      run_pm -y apt install "$pkg" || die "apt could not install $file"
+      run_pm -y apt install "$pkg" || die "apt could not install $file; $(retry_hint 'sudo apt update')"
       remove="sudo apt remove vaakora"
       ;;
     arch)
-      run_pm --noconfirm pacman -U "$pkg" || die "pacman could not install $file"
+      run_pm --noconfirm pacman -U "$pkg" || die "pacman could not install $file; $(retry_hint 'sudo pacman -Syu')"
       remove="sudo pacman -R vaakora"
       ;;
     appimage)
@@ -233,11 +238,12 @@ main() {
         say "The AppImage needs FUSE 2 (libfuse2), which is not installed. Install it, or start Vaakora with: vaakora --appimage-extract-and-run"
       fi
       remove="rm ~/.local/bin/vaakora"
+      start="Start it by running: ~/.local/bin/vaakora"
       ;;
   esac
 
   say "To remove it later: $remove"
-  say "Vaakora is installed. Start it from your apps menu, or run: vaakora"
+  say "Vaakora is installed. $start"
 }
 
 main "$@"

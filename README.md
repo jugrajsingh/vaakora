@@ -220,6 +220,8 @@ Run it again to upgrade. To pin a version:
 curl -fsSL https://vaakora.jugraj.dev/install.sh | VAAKORA_VERSION=0.4.0 sh
 ```
 
+The pin is for a fresh install: it does not downgrade a newer version that is already installed.
+
 Image-based systems with a read-only root (Fedora Atomic, Bazzite, Bluefin, SteamOS) get the AppImage too. To force the AppImage on any distribution:
 
 ```bash
@@ -237,7 +239,7 @@ Or install a package by hand: download the package for your distribution from th
 
 - The packages are for x86_64 only.
 - If the AppImage does not start, install FUSE 2 (`libfuse2`) or run it with `--appimage-extract-and-run`.
-- There is no automatic update. To update, install the newer package from Releases the same way.
+- There is no automatic update. Run the install command again to upgrade, or install the newer package from Releases by hand.
 
 ## Platform support
 
