@@ -204,21 +204,33 @@ Right after the app starts, `vaakora read` can return exit 5 (`tts-unavailable`)
 - The Handy folder is only read and is never changed. Quit Handy before dictating, because both apps use the same shortcut.
 - See the [Moving from Handy page](docs/moving-from-handy.html).
 
+## Install
+
+Download the package for your distribution from the [latest release](https://github.com/jugrajsingh/vaakora/releases/latest) on GitHub Releases, together with `SHA256SUMS`, and check it with `sha256sum -c --ignore-missing SHA256SUMS`.
+
+| Distribution                                           | File                                 | Install                                               |
+| ------------------------------------------------------ | ------------------------------------ | ----------------------------------------------------- |
+| Fedora 44 and 45                                       | `Vaakora-0.4.0-1.x86_64.rpm`         | `sudo dnf install ./Vaakora-0.4.0-1.x86_64.rpm`       |
+| Debian 12 and 13, Ubuntu 22.04, 24.04, 26.04 and 26.10 | `Vaakora_0.4.0_amd64.deb`            | `sudo apt install ./Vaakora_0.4.0_amd64.deb`          |
+| Arch Linux                                             | `vaakora-0.4.0-1-x86_64.pkg.tar.zst` | `sudo pacman -U ./vaakora-0.4.0-1-x86_64.pkg.tar.zst` |
+| Other distributions                                    | `Vaakora_0.4.0_amd64.AppImage`       | `chmod +x Vaakora_0.4.0_amd64.AppImage`, then run it  |
+
+- The packages are for x86_64 only.
+- There is no automatic update. To update, install the newer package from Releases the same way.
+
 ## Platform support
 
-- Built and tested on Fedora 44 (KDE Plasma, Wayland) on an Intel Core Ultra 7 258V.
-- Local post-processing needs Unix sockets and uses the Linux parent-death signal to stop `llama-server` if the app dies. The `llama-server` bundling is Linux-only.
-- Read aloud's worker process, its OpenVINO libraries, the parent-death signal and the 1 GiB free-memory check are Linux-only. On other platforms the memory check is skipped. Clipboard capture uses `wl-paste` or `xclip` on Linux.
+- Linux x86_64: the distributions above, each install-tested in a clean container. Used daily on Fedora 45 (KDE Plasma, Wayland) on an Intel Core Ultra 7 258V.
 - The device ratings shown in Models, Read aloud were measured on that one machine. Other hardware may rank devices differently.
-- Windows and macOS are not supported by these features yet.
-- There is one maintainer and no published packages yet.
+- Windows and macOS: coming soon. Local cleanup, read aloud and the command line are not ported yet, so a Windows or macOS build from source runs only the features Vaakora shares with upstream Handy and is untested. People who want to try are welcome and can report what they find.
+- There is one maintainer.
 
 ## Building
 
 ### Build from source
 
 1. Install the prerequisites in [BUILD.md](BUILD.md).
-2. Stage the extra build requirements from the "Relationship to upstream" section of [CHANGELOG.md](CHANGELOG.md): a static, CPU-only `llama-server` as `llm-bin/`, and the text-to-speech worker with its OpenVINO libraries as `tts-bin/`.
+2. Stage the extra build requirements from the "Relationship to upstream" section of [CHANGELOG.md](CHANGELOG.md): a static, CPU-only `llama-server` as `llm-bin/`, and the text-to-speech worker with its OpenVINO libraries as `tts-bin/`. The .deb, .rpm and AppImage bundles install them at `/usr/lib/Vaakora/llm` and `/usr/lib/Vaakora/tts` (`bundle.linux.{deb,rpm,appimage}.files` in `tauri.conf.json`), and the Arch package is repacked from the .deb.
 3. Install the dependencies:
 
    ```bash
@@ -255,6 +267,13 @@ Vaakora began as a fork of [Handy](https://github.com/cjpais/Handy) by CJ Pais, 
 - [UPSTREAM.md](UPSTREAM.md) records the upstream base and what was decided for each upstream commit since.
 - The "Relationship to upstream" section of [CHANGELOG.md](CHANGELOG.md) lists every setting, event, command, dependency and upstream file that Vaakora touches.
 - The models the app can download have their own licences, which the app shows on each model's card.
+
+## Contributing
+
+- Report bugs and send feedback through [GitHub Issues](https://github.com/jugrajsingh/vaakora/issues).
+- Contributions are welcome, especially Linux packaging and distribution (for example a Copr project, an AUR package or other distributions) and Windows and macOS ports.
+- For anything large, open an issue first.
+- There is one maintainer, so replies may take time.
 
 ## Licence
 
