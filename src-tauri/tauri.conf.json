@@ -50,16 +50,33 @@
     },
     "linux": {
       "deb": {
-        "depends": ["libgtk-layer-shell0", "libopenblas0"],
+        "depends": [
+          "libgtk-layer-shell0",
+          "libopenblas0",
+          "libasound2t64 | libasound2",
+          "libvulkan1",
+          "ocl-icd-libopencl1 | libopencl1"
+        ],
+        "recommends": [
+          "intel-opencl-icd",
+          "libze1",
+          "libze-intel-gpu1",
+          "wl-clipboard"
+        ],
         "files": {
           "/usr/lib/Vaakora": "transcribe-libs",
+          "/usr/lib/Vaakora/llm": "llm-bin",
+          "/usr/lib/Vaakora/tts": "tts-bin",
           "/usr/share/licenses/vaakora/LICENSE": "../LICENSE"
         }
       },
       "rpm": {
         "depends": [
           "libgtk-layer-shell.so.0()(64bit)",
-          "libopenblas.so.0()(64bit)"
+          "libopenblas.so.0()(64bit)",
+          "libasound.so.2()(64bit)",
+          "libvulkan.so.1()(64bit)",
+          "libOpenCL.so.1()(64bit)"
         ],
         "compression": {
           "type": "none"
@@ -80,7 +97,10 @@
       "appimage": {
         "bundleMediaFramework": true,
         "files": {
-          "/usr/lib": "transcribe-libs"
+          "/usr/lib": "transcribe-libs",
+          "/usr/lib/Vaakora/llm": "llm-bin",
+          "/usr/lib/Vaakora/tts": "tts-bin",
+          "/usr/share/licenses/vaakora/LICENSE": "../LICENSE"
         }
       }
     },

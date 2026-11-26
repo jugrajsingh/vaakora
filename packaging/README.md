@@ -1,6 +1,6 @@
 # Packaging
 
-Builds the Linux RPM from this repository inside rootless podman. Everything the build needs is here; nothing outside the repository is read.
+Builds the Linux RPM, `.deb` and AppImage from this repository inside rootless podman. Everything the build needs is here; nothing outside the repository is read.
 
 ## Requirements
 
@@ -17,7 +17,7 @@ packaging/build.sh [--stage-only] [--cpu x86-64-v3|native]
 - The version comes from `src-tauri/tauri.conf.json` at `HEAD`.
 - Builds the release image `vaakora-build:jammy` (Ubuntu 22.04, glibc 2.35) from `packaging/Containerfile.jammy` and uses the volumes `vaakora-jammy-cargo`, `vaakora-jammy-bun`, `vaakora-jammy-target` and `vaakora-jammy-ortcache`, apart from the Fedora image and volumes `dev.sh` uses. The first build is cold: expect a long compile.
 - `--cpu x86-64-v3` (default) builds `llama-server` for any CPU with AVX2, FMA and F16C. `--cpu native` tunes it to the build machine and may crash with an illegal instruction on other CPUs.
-- The RPM lands in `packaging/dist/` and `packaging/verify-rpm.sh` checks its contents.
+- The RPM, the `.deb` and the AppImage land in `packaging/dist/`; `packaging/verify-rpm.sh` checks the RPM's contents.
 
 ## Pins
 
