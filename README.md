@@ -272,10 +272,8 @@ Vaakora began as a fork of [Handy](https://github.com/cjpais/Handy) by CJ Pais, 
 ## Contributing
 
 - Report bugs and send feedback through [GitHub Issues](https://github.com/jugrajsingh/vaakora/issues).
-- Contributions are welcome, especially Linux packaging and distribution (for example a Copr project, an AUR package or other distributions) and Windows and macOS ports.
-- For anything large, open an issue first.
-- To help with translations, read [CONTRIBUTING_TRANSLATIONS.md](CONTRIBUTING_TRANSLATIONS.md).
-- There is one maintainer, so replies may take time.
+- Contributions are welcome, especially Linux packaging. Read [CONTRIBUTING.md](CONTRIBUTING.md) first, and [CONTRIBUTING_TRANSLATIONS.md](CONTRIBUTING_TRANSLATIONS.md) to help with translations.
+- To report a security problem, follow [SECURITY.md](SECURITY.md).
 
 ## Licence
 

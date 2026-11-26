@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://vaakora.jugraj.dev
+    about: A page per feature, including install, settings and the command line.
+  - name: Security report
+    url: https://github.com/jugrajsingh/vaakora/security/advisories/new
+    about: Report a vulnerability privately. Do not open a public issue for it.

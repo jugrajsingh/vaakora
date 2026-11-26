@@ -1,0 +1,73 @@
+name: Bug report
+description: Something does not work as it should
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. To report a security problem, use [Report a vulnerability](https://github.com/jugrajsingh/vaakora/security/advisories/new) instead of an issue.
+  - type: input
+    id: version
+    attributes:
+      label: Vaakora version
+      description: Settings, About shows it. If the app is running, `vaakora status` prints it on its first line.
+      placeholder: "0.4.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install Vaakora?
+      options:
+        - RPM
+        - .deb
+        - Arch package
+        - AppImage
+        - Built from source
+    validations:
+      required: true
+  - type: input
+    id: distribution
+    attributes:
+      label: Distribution and version
+      placeholder: Fedora 45
+    validations:
+      required: true
+  - type: input
+    id: desktop
+    attributes:
+      label: Desktop and session
+      placeholder: KDE Plasma, Wayland
+    validations:
+      required: false
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Describe the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Settings, About, Log Directory shows the log folder and has an Open button. Paste the relevant lines.
+      render: shell
+    validations:
+      required: false

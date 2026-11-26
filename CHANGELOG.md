@@ -4,6 +4,10 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 
 ## [Unreleased]
 
+### Added
+
+- CONTRIBUTING.md, SECURITY.md, issue forms and a pull request template.
+
 ## [0.4.0] - 2026-11-26
 
 ### Added
