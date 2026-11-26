@@ -18,7 +18,7 @@ All four are built on Ubuntu 22.04 (glibc 2.35) and each one passes `packaging/v
 ## Requirements
 
 - Fedora host with rootless `podman`, `git`, `jq`, `curl`, `python3`, `rpm`, `rpm2cpio`, `cpio`, `ar`, `tar` with zstd, `readelf`, `od` and `sha256sum`. The host needs no `-devel` packages: every compiler and library lives in the images.
-- Network access on the first run (Ubuntu 22.04 and Arch Linux base images, the pinned toolchain downloads, crates, bun packages, the pinned llama.cpp tag, the pinned OpenVINO wheel and the pinned `fakeroot` package).
+- Network access on the first run (Ubuntu 22.04 and Arch Linux base images, the pinned toolchain downloads, crates, bun packages, the pinned llama.cpp tag, the pinned OpenVINO wheel and the pinned `fakeroot` package), and on every [install test](#install-test) run (target images and distribution packages).
 
 ## Images and volumes
 
@@ -79,7 +79,45 @@ Repacks the `.deb` payload unchanged as `vaakora-<version>-1-x86_64.pkg.tar.zst`
 
 ## Install test
 
-`packaging/install-test.sh`, which `build.sh` prints as the next step, is not in the repository yet.
+```bash
+packaging/install-test.sh <dist-dir> <version> [<target>...]
+```
+
+`build.sh` prints this as its next step. It installs each package in a fresh container of a target distribution (rootless `podman`, one target after another) and runs `packaging/install-smoke.sh` there as root. With no target it runs all 13:
+
+| Target                  | Image                                  | Package  |
+| ----------------------- | -------------------------------------- | -------- |
+| `fedora-44`             | `registry.fedoraproject.org/fedora:44` | RPM      |
+| `fedora-45`             | `registry.fedoraproject.org/fedora:45` | RPM      |
+| `debian-12`             | `docker.io/library/debian:12`          | `.deb`   |
+| `debian-13`             | `docker.io/library/debian:13`          | `.deb`   |
+| `ubuntu-22.04`          | `docker.io/library/ubuntu:22.04`       | `.deb`   |
+| `ubuntu-24.04`          | `docker.io/library/ubuntu:24.04`       | `.deb`   |
+| `ubuntu-26.04`          | `docker.io/library/ubuntu:26.04`       | `.deb`   |
+| `ubuntu-26.10`          | `docker.io/library/ubuntu:26.10`       | `.deb`   |
+| `arch`                  | `docker.io/library/archlinux:latest`   | Arch     |
+| `appimage-fedora-45`    | `registry.fedoraproject.org/fedora:45` | AppImage |
+| `appimage-debian-12`    | `docker.io/library/debian:12`          | AppImage |
+| `appimage-ubuntu-22.04` | `docker.io/library/ubuntu:22.04`       | AppImage |
+| `appimage-arch`         | `docker.io/library/archlinux:latest`   | AppImage |
+
+An unknown target, or a package that a requested target needs and `<dist-dir>` lacks, is a usage error (exit 2) before any container starts. Per target it pulls the image, reads its digest and starts the container with exactly two host paths mounted, both read-only: `<dist-dir>` at `/dist` and `install-smoke.sh` at `/smoke.sh`. It prints `PASS <target> <image>@<digest>` or `FAIL <target> <image>@<digest> (log: <path>)` (`@unknown` when the pull failed), runs every target even after a failure, and exits 1 if any target failed. Each target's full output is in `packaging/.work/logs/install-test-<UTC stamp>/<target>.log`; a container gets at most 1800 s. The containers need network for distribution packages (the package's dependencies and the AppImage baseline). No model is downloaded and nothing runs a model.
+
+The smoke installs the package with the distribution's own tool:
+
+- RPM: `dnf install` with weak dependencies off, so the hard dependencies alone must be enough;
+- `.deb`: `apt-get install --no-install-recommends`;
+- Arch: `pacman -Syu`, then `pacman -U`;
+- AppImage: first the desktop baseline an AppImage leaves to the host (ALSA, Mesa EGL, GL, gbm and drm, fontconfig, freetype, harfbuzz, fribidi, X11 and xcb, expat, zlib, gpg-error, gmp, com_err and the OpenCL loader; the package names per distribution are in `install-smoke.sh`), then the AppImage is extracted and run with `APPIMAGE_EXTRACT_AND_RUN=1` (no FUSE in the container).
+
+Then, with `D` the installed `/usr/lib/Vaakora` (for the AppImage, inside the extracted tree), it proves that:
+
+- `vaakora --help` exits 0 and prints `Usage: vaakora` (the command line is parsed before the window starts, so no display is needed);
+- `D/llm/llama-server --version` exits 0 and prints `version:`;
+- `D/tts/vaakora-tts --list-devices`, in the environment the app gives the worker (`LD_LIBRARY_PATH` and `HANDY_OPENVINO_LIBRARY`), exits 0 and reports OpenVINO 2026.4 with the `CPU` device;
+- `ldd` resolves every library of every ELF under `D` and of `vaakora` itself (for the AppImage, also its transcribe and ggml libraries), so GPU transcription (`libvulkan.so.1`) and Intel GPU read aloud (`libOpenCL.so.1`) do not lose their loaders. Each miss prints `UNRESOLVED <file>: <library> => not found`.
+
+The log's last line is `SMOKE PASS` or `SMOKE FAIL: <reason>`. The install test runs neither under `systemd-run` nor with `--cgroups=split`: under pueue, split containers fail with crun's "controller 'pids' is not available", and these containers need no memory cap. The packaging tests run `install-test.sh` with a stub `podman` and write their own `install-test-<UTC stamp>` directories under `packaging/.work/logs`, so never run them while an install test runs.
 
 ## Pins
 
