@@ -27,12 +27,12 @@ esac
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK="$HERE/.work"
-IMAGE=vaakora-build:fedora45
+IMAGE=vaakora-build:jammy
 LLAMA_TAG=b11260
 LLAMA_COMMIT=e904318a2d3e2382e78c98b4353c5dd569c079f6
 LLAMA_SRC="${XDG_CACHE_HOME:-$HOME/.cache}/vaakora-build/llama.cpp-$LLAMA_COMMIT"
-LLAMA_OUT="$WORK/llm-bin-$LLAMA_COMMIT-$cpu"
-LLAMA_BUILD="$WORK/llama-build-$LLAMA_COMMIT-$cpu"
+LLAMA_OUT="$WORK/llm-bin-jammy-$LLAMA_COMMIT-$cpu"
+LLAMA_BUILD="$WORK/llama-build-jammy-$LLAMA_COMMIT-$cpu"
 
 if [[ ! -x "$LLAMA_OUT/llama-server" ]]; then
   if [[ ! -d "$LLAMA_SRC/.git" ]]; then

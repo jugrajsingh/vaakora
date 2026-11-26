@@ -5,7 +5,7 @@ Builds the Linux RPM from this repository inside rootless podman. Everything the
 ## Requirements
 
 - Fedora host with rootless `podman`, `git`, `jq`, `curl`, `python3`, `rpm` and `sha256sum`. The host needs no `-devel` packages.
-- Network access on the first run (Fedora image, crates, bun packages, the pinned llama.cpp tag and the pinned OpenVINO wheel).
+- Network access on the first run (Ubuntu 22.04 base image, the pinned toolchain downloads, crates, bun packages, the pinned llama.cpp tag and the pinned OpenVINO wheel).
 
 ## Build
 
@@ -15,7 +15,7 @@ packaging/build.sh [--stage-only] [--cpu x86-64-v3|native]
 
 - Refuses a dirty tree: the build archives `HEAD` into `packaging/.work/src` (the commit is recorded in `packaging/.work/src/.vaakora-sha`). Commit first.
 - The version comes from `src-tauri/tauri.conf.json` at `HEAD`.
-- Builds the image `vaakora-build:fedora45` from `packaging/Containerfile` and uses the volumes `vaakora-cargo`, `vaakora-bun`, `vaakora-target` and `vaakora-ortcache`. The first build is cold: expect a long compile.
+- Builds the release image `vaakora-build:jammy` (Ubuntu 22.04, glibc 2.35) from `packaging/Containerfile.jammy` and uses the volumes `vaakora-jammy-cargo`, `vaakora-jammy-bun`, `vaakora-jammy-target` and `vaakora-jammy-ortcache`, apart from the Fedora image and volumes `dev.sh` uses. The first build is cold: expect a long compile.
 - `--cpu x86-64-v3` (default) builds `llama-server` for any CPU with AVX2, FMA and F16C. `--cpu native` tunes it to the build machine and may crash with an illegal instruction on other CPUs.
 - The RPM lands in `packaging/dist/` and `packaging/verify-rpm.sh` checks its contents.
 
@@ -26,7 +26,7 @@ packaging/build.sh [--stage-only] [--cpu x86-64-v3|native]
 | llama.cpp        | tag `b11260`, commit `e904318a2d3e2382e78c98b4353c5dd569c079f6` (refused on a mismatch)                                                                                  | `llama-server.sh`     |
 | OpenVINO runtime | wheel `openvino-2026.4.1-22982-cp313-cp313-manylinux_2_28_x86_64.whl`, sha256 `a9b637846c579d7b81b17b6585e0c7b1947574e8d13cf83d7307ce50cd2c352e` (refused on a mismatch) | `openvino-runtime.sh` |
 
-`packaging/llama-server.sh <out-dir> [--cpu ...]` and `packaging/openvino-runtime.sh <dest-dir> [--wheel <file>]` can be run on their own. The OpenVINO wheel and the built binaries are cached under `packaging/.work/`; the llama.cpp git clone lives outside the checkout, in `${XDG_CACHE_HOME:-$HOME/.cache}/vaakora-build/llama.cpp-<commit>`, so the checkout never holds a nested `.git`. The clone and the build directory (`packaging/.work/llama-build-<commit>-<cpu>`) are keyed by the pinned commit, so moving the pin starts from fresh sources and never trips over what the old pin left behind.
+`packaging/llama-server.sh <out-dir> [--cpu ...]` and `packaging/openvino-runtime.sh <dest-dir> [--wheel <file>]` can be run on their own. The OpenVINO wheel and the built binaries are cached under `packaging/.work/`; the llama.cpp git clone lives outside the checkout, in `${XDG_CACHE_HOME:-$HOME/.cache}/vaakora-build/llama.cpp-<commit>`, so the checkout never holds a nested `.git`. The clone and the build directory (`packaging/.work/llama-build-jammy-<commit>-<cpu>`) are keyed by the pinned commit, so moving the pin starts from fresh sources and never trips over what the old pin left behind.
 
 ## Install
 

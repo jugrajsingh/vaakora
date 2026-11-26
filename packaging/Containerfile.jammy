@@ -1,0 +1,79 @@
+# Release build image: Ubuntu 22.04 (glibc 2.35), the oldest base every supported distro meets.
+FROM docker.io/library/ubuntu:22.04@sha256:b000e69a50ff940390233025e7a337fb8469b509e2334fa4d018ac30f3e18cdb
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential pkg-config cmake git curl ca-certificates unzip xz-utils file patchelf \
+    clang libclang-dev \
+    libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev \
+    libasound2-dev libssl-dev libopenblas-dev libevdev-dev \
+    libgtk-layer-shell-dev libvulkan-dev ocl-icd-libopencl1 \
+    libx11-dev libxtst-dev libxrandr-dev xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Jammy has no glslc, its Vulkan headers are 1.3.204 and ggml-vulkan wants a SPIRV-Headers CMake config; all three come from the LunarG SDK.
+ARG VULKAN_SDK_VERSION=1.4.350.1
+ARG VULKAN_SDK_SHA256=6cce33c7e5383814150c5041820769d93c65a1fd883002e5949b067045a07daa
+RUN curl -fsSL --proto '=https' -o /opt/vulkansdk.tar.xz \
+      "https://sdk.lunarg.com/sdk/download/${VULKAN_SDK_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz" \
+    && echo "${VULKAN_SDK_SHA256}  /opt/vulkansdk.tar.xz" | sha256sum -c - \
+    && mkdir -p /opt/vulkan-sdk \
+    && tar -xJf /opt/vulkansdk.tar.xz -C /opt/vulkan-sdk --strip-components=2 \
+      "${VULKAN_SDK_VERSION}/x86_64/include" "${VULKAN_SDK_VERSION}/x86_64/bin/glslc" \
+      "${VULKAN_SDK_VERSION}/x86_64/share/cmake/SPIRV-Headers" \
+    && rm /opt/vulkansdk.tar.xz
+ENV VULKAN_SDK=/opt/vulkan-sdk
+
+ARG RUSTUP_VERSION=1.29.3
+ARG RUSTUP_SHA256=b1c8cb14e30889e7e2999e6b69e62d9e9b9ffc0f4df8180564d306d9680e6c55
+ARG RUST_VERSION=1.100.0
+ENV RUSTUP_HOME=/opt/rustup
+RUN curl -fsSL --proto '=https' -o /opt/rustup-init \
+      "https://static.rust-lang.org/rustup/archive/${RUSTUP_VERSION}/x86_64-unknown-linux-gnu/rustup-init" \
+    && echo "${RUSTUP_SHA256}  /opt/rustup-init" | sha256sum -c - \
+    && chmod +x /opt/rustup-init \
+    && CARGO_HOME=/opt/cargo /opt/rustup-init -y --no-modify-path --profile minimal \
+      --default-toolchain "${RUST_VERSION}" -c rustfmt -c clippy \
+    && rm /opt/rustup-init && chmod -R a+rX /opt/rustup /opt/cargo
+
+ARG BUN_VERSION=1.4.5
+ARG BUN_SHA256=94559b3b528995a49452f9f2404cec74f2efd7d06e0a000a8cd214b02c3666eb
+RUN curl -fsSL --proto '=https' -o /opt/bun.zip \
+      "https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-linux-x64.zip" \
+    && echo "${BUN_SHA256}  /opt/bun.zip" | sha256sum -c - \
+    && unzip -j /opt/bun.zip bun-linux-x64/bun -d /usr/local/bin \
+    && rm /opt/bun.zip
+
+# tauri's AppImage bundler downloads these unpinned into ~/.cache/tauri when missing; the build copies these in first.
+RUN mkdir -p /opt/tauri-tools && cd /opt/tauri-tools \
+    && curl -fsSL --proto '=https' -o AppRun-x86_64 https://github.com/tauri-apps/binary-releases/releases/download/apprun-old/AppRun-x86_64 \
+    && curl -fsSL --proto '=https' -o linuxdeploy-x86_64.AppImage https://github.com/tauri-apps/binary-releases/releases/download/linuxdeploy/linuxdeploy-x86_64.AppImage \
+    && curl -fsSL --proto '=https' -o linuxdeploy-plugin-gtk.sh https://raw.githubusercontent.com/tauri-apps/linuxdeploy-plugin-gtk/dda522bce37387f1b853d9095713bfaa924c8423/linuxdeploy-plugin-gtk.sh \
+    && curl -fsSL --proto '=https' -o linuxdeploy-plugin-gstreamer.sh https://raw.githubusercontent.com/tauri-apps/linuxdeploy-plugin-gstreamer/2a2e67491c32995a3f279ad0ecbe77abd512b42a/linuxdeploy-plugin-gstreamer.sh \
+    && curl -fsSL --proto '=https' -o linuxdeploy-plugin-appimage.AppImage https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/1-alpha-20250213-1/linuxdeploy-plugin-appimage-x86_64.AppImage \
+    && printf '%s\n' \
+      'f30140a43a0a59e46db21bdefdf749b9e9f2c6946e92afabbacf98b8ae73fb4f  AppRun-x86_64' \
+      'e762bea85c8eb0d4b3508d46e5c1f037f717d0f9303ae3b4aafc8b04991fa1ef  linuxdeploy-x86_64.AppImage' \
+      '7804c9eef13e59bf2783aad9882ef9db8f3f3f9e8d631874b1d348d550a3693f  linuxdeploy-plugin-gtk.sh' \
+      'c107b49d84edbffc6ab226ed1007e0626a4f7aa2c3a36b7782bef62351d49e94  linuxdeploy-plugin-gstreamer.sh' \
+      '992d502a248e14ab185448ddf6f6e7d25558cb84d4623c354c3af350c25fccb3  linuxdeploy-plugin-appimage.AppImage' \
+      | sha256sum -c - \
+    && chmod 0755 /opt/tauri-tools/*
+
+# ort's prebuilt static ONNX Runtime needs glibc 2.38 and GCC 13's libstdc++; Microsoft's own 1.31.0 build (the version ort 2.0.0-rc.15 targets) needs glibc 2.28.
+# vaakora-tts links it dynamically (ORT_LIB_PATH + ORT_PREFER_DYNAMIC_LINK) and the package ships it next to the worker.
+ARG ORT_VERSION=1.31.0
+ARG ORT_NUPKG_SHA256=7e35fdb4f5adb62f01e60798e2e5ed05108f5fbbe1cca03fbcc37903cf7c5e3b
+RUN curl -fsSL --proto '=https' -o /opt/ort.nupkg \
+      "https://api.nuget.org/v3-flatcontainer/microsoft.ml.onnxruntime/${ORT_VERSION}/microsoft.ml.onnxruntime.${ORT_VERSION}.nupkg" \
+    && echo "${ORT_NUPKG_SHA256}  /opt/ort.nupkg" | sha256sum -c - \
+    && mkdir -p /opt/onnxruntime/lib /opt/onnxruntime/notices \
+    && unzip -p /opt/ort.nupkg runtimes/linux-x64/native/libonnxruntime.so > /opt/onnxruntime/lib/libonnxruntime.so.1 \
+    && unzip -j /opt/ort.nupkg LICENSE ThirdPartyNotices.txt -d /opt/onnxruntime/notices \
+    && ln -s libonnxruntime.so.1 /opt/onnxruntime/lib/libonnxruntime.so \
+    && chmod -R a+rX /opt/onnxruntime && rm /opt/ort.nupkg
+ENV ORT_LIB_PATH=/opt/onnxruntime/lib ORT_PREFER_DYNAMIC_LINK=1
+
+RUN useradd -u 1000 -m builder
+ENV PATH="/opt/cargo/bin:${PATH}" TAURI_TOOLS=/opt/tauri-tools CARGO_HOME=/cache/cargo BUN_INSTALL_CACHE_DIR=/cache/bun CARGO_TARGET_DIR=/cache/target
+WORKDIR /src
+USER builder

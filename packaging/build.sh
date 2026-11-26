@@ -32,10 +32,9 @@ WORK="$HERE/.work"
 SRC="$WORK/src"
 DIST="$HERE/dist"
 LOGS="$WORK/logs"
-IMAGE=vaakora-build:fedora45
-# One cargo target volume shared with dev.sh (same image). Changing IMAGE to another Fedora release means removing this volume first:
-# output linked against one release's system libraries must not be reused on another.
-TARGET_VOL=vaakora-target
+IMAGE=vaakora-build:jammy
+# The release image has its own cache volumes (vaakora-jammy-*), apart from dev.sh's: nothing built against Fedora's libraries is reused.
+TARGET_VOL=vaakora-jammy-target
 
 if [[ -n "$(git -C "$REPO" status --porcelain)" ]]; then
   echo "refusing: $REPO is dirty; commit or stash first (the build archives HEAD)" >&2
@@ -71,9 +70,10 @@ if [[ "$(podman info --format '{{.Host.Security.Rootless}}')" != true ]]; then
   exit 1
 fi
 
-podman build -f "$HERE/Containerfile" -t "$IMAGE" "$HERE"
+mkdir -p "$WORK/image-context"
+podman build -f "$HERE/Containerfile.jammy" -t "$IMAGE" "$WORK/image-context"
 
-for vol in vaakora-cargo vaakora-bun "$TARGET_VOL" vaakora-ortcache; do
+for vol in vaakora-jammy-cargo vaakora-jammy-bun "$TARGET_VOL" vaakora-jammy-ortcache; do
   podman volume exists "$vol" || podman volume create "$vol" >/dev/null
 done
 
@@ -102,10 +102,10 @@ stdbuf -oL -eL podman run --rm --userns=keep-id "${tty_flag[@]}" \
   -v "$TTS_RUNTIME:/ov:ro,z" \
   -v "$SRC:/src:z" \
   -v "$DIST:/out:z" \
-  -v vaakora-cargo:/cache/cargo:z \
-  -v vaakora-bun:/cache/bun:z \
+  -v vaakora-jammy-cargo:/cache/cargo:z \
+  -v vaakora-jammy-bun:/cache/bun:z \
   -v "$TARGET_VOL":/cache/target:z \
-  -v vaakora-ortcache:/home/builder/.cache:z \
+  -v vaakora-jammy-ortcache:/home/builder/.cache:z \
   "$IMAGE" bash /kit/build-tts-inner.sh /src /ov /kit/stage-tts.sh /out /ov-notices
 
 name="$(sed -n '/^\[package\]/,/^\[/{s/^name = "\(.*\)"/\1/p}' "$SRC/src-tauri/Cargo.toml" | head -1)"

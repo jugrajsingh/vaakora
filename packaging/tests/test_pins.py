@@ -172,14 +172,14 @@ class LlamaPinTests(unittest.TestCase):
         self.assertTrue(clone.strip().endswith(str(fresh)), clone)
         for name in (f"llama.cpp-{LLAMA_COMMIT}", "llama.cpp"):
             self.assertEqual((self.cache / "vaakora-build" / name / ".fake-commit").read_text().strip(), LLAMA_COMMIT)
-        self.assertTrue((script.parent / f".work/llm-bin-{OTHER_COMMIT}-x86-64-v3/llama-server").is_file())
+        self.assertTrue((script.parent / f".work/llm-bin-jammy-{OTHER_COMMIT}-x86-64-v3/llama-server").is_file())
         self.assertIn(f"llama-server {OTHER_TAG} ({OTHER_COMMIT}", result.stdout)
         self.assertTrue(self.out.joinpath("llama-server").is_file())
 
     def test_each_pin_builds_in_its_own_directory(self) -> None:
         self.pin_head()
         self.assertEqual(self.run_script().returncode, 0)
-        self.assertTrue(any(f"llama-build-{LLAMA_COMMIT}-x86-64-v3" in line for line in self.trace.read_text().splitlines()))
+        self.assertTrue(any(f"llama-build-jammy-{LLAMA_COMMIT}-x86-64-v3" in line for line in self.trace.read_text().splitlines()))
 
     def test_llama_cpu_flags(self) -> None:
         self.pin_head()
@@ -188,7 +188,7 @@ class LlamaPinTests(unittest.TestCase):
         flags = self.cmake_trace.read_text()
         self.assertIn("-DGGML_NATIVE=OFF -DGGML_AVX=ON -DGGML_AVX2=ON -DGGML_FMA=ON -DGGML_F16C=ON", flags)
         self.assertNotIn("-DGGML_NATIVE=ON", flags)
-        self.assertTrue((self.packaging / f".work/llm-bin-{LLAMA_COMMIT}-x86-64-v3/llama-server").is_file())
+        self.assertTrue((self.packaging / f".work/llm-bin-jammy-{LLAMA_COMMIT}-x86-64-v3/llama-server").is_file())
         self.assertTrue((self.out / "llama-server").is_file())
         self.cmake_trace.unlink()
         result = self.run_script("--cpu", "native")
@@ -197,7 +197,7 @@ class LlamaPinTests(unittest.TestCase):
         self.assertIn("-DGGML_NATIVE=ON", flags)
         self.assertNotIn("-DGGML_NATIVE=OFF", flags)
         self.assertNotIn("-DGGML_AVX", flags)
-        self.assertTrue((self.packaging / f".work/llm-bin-{LLAMA_COMMIT}-native/llama-server").is_file())
+        self.assertTrue((self.packaging / f".work/llm-bin-jammy-{LLAMA_COMMIT}-native/llama-server").is_file())
 
     def test_default_cpu_target_is_x86_64_v3_and_is_cached(self) -> None:
         self.pin_head()
