@@ -216,5 +216,115 @@ class InstallTestTests(unittest.TestCase):
             self.assertEqual(result.stdout.splitlines()[-1], reason)
 
 
+# Stub ldd, keyed by file name; exits 0 like real ldd does on a missing symbol version.
+# LDD_MODE: both (default) breaks libplugin.so's symbol version and libmissing.so's library, version only the first,
+# clean nothing.
+LDD = r"""f=$1
+name=${f##*/}
+mode=${LDD_MODE:-both}
+if [ "$mode" != clean ]; then
+  case "$name" in
+    libplugin.so)
+      dep="${f%/*}/libdep.so"
+      echo "$f: $dep: version \`ABI_2' not found (required by $f)"
+      echo "$f: $dep: version \`ABI_2' not found (required by $f)"
+      printf '\tlinux-vdso.so.1 (0x00007f0000000000)\n\tlibdep.so => %s (0x00007f0000001000)\n' "$dep"
+      exit 0 ;;
+    libmissing.so)
+      if [ "$mode" = version ]; then printf '\tlibc.so.6 => /lib64/libc.so.6 (0x00007f0000002000)\n'; exit 0; fi
+      printf '\tlinux-vdso.so.1 (0x00007f0000000000)\n\tlibOpenCL.so.1 => not found\n'
+      exit 0 ;;
+  esac
+fi
+printf '\tlinux-vdso.so.1 (0x00007f0000000000)\n\tlibc.so.6 => /lib64/libc.so.6 (0x00007f0000002000)\n'
+"""
+
+
+class SmokeLddTests(unittest.TestCase):
+    """The smoke's ldd scan, run on a fixture tree through a copy of install-smoke.sh whose only change is its root."""
+
+    def setUp(self) -> None:
+        self.scratch = SCRATCH / "install-smoke-fixture"
+        shutil.rmtree(self.scratch, ignore_errors=True)
+        self.root = self.scratch / "root"
+        lib = self.root / "usr/lib/Vaakora"
+        executables = {
+            self.scratch / "bin/dnf": "exit 0",
+            self.scratch / "bin/vaakora": "echo 'Usage: vaakora [OPTIONS]'",
+            self.scratch / "bin/ldd": LDD,
+            lib / "llm/llama-server": "echo 'version: 1 (fixture)'",
+            lib / "tts/vaakora-tts": """echo '{"openvino":"2026.4.1-fixture","available":["CPU"]}'""",
+        }
+        for path, code in executables.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("#!/bin/sh\nset -eu\n" + code + "\n")
+            path.chmod(0o755)
+        # ELF stand-ins: only the magic matters to the smoke, the stub ldd answers by name.
+        for path in (self.root / "usr/bin/vaakora", lib / "libdep.so", lib / "libplugin.so", lib / "libmissing.so"):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"\x7fELF fixture")
+        smoke = SMOKE.read_text()
+        relocated = smoke.replace("\nroot=\n", '\nroot="$SMOKE_FIXTURE_ROOT"\n')
+        self.assertEqual(relocated.count('root="$SMOKE_FIXTURE_ROOT"'), 1)
+        self.smoke = self.scratch / "install-smoke.sh"
+        self.smoke.write_text(relocated)
+        self.package = self.scratch / "Vaakora-1.2.3-1.x86_64.rpm"
+        self.package.write_text("package")
+        self.environment = {
+            **os.environ,
+            "PATH": str(self.scratch / "bin") + ":" + os.environ["PATH"],
+            "SMOKE_FIXTURE_ROOT": str(self.root),
+        }
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.scratch)
+
+    def smoke_run(self, **environment: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["bash", str(self.smoke), "rpm", str(self.package)],
+            env={**self.environment, **environment},
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+    def test_missing_symbol_version_and_missing_library_fail_the_smoke(self) -> None:
+        result = self.smoke_run()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        plugin = self.root / "usr/lib/Vaakora/libplugin.so"
+        dep = self.root / "usr/lib/Vaakora/libdep.so"
+        missing = self.root / "usr/lib/Vaakora/libmissing.so"
+        version = f"{plugin}: {plugin}: {dep}: version `ABI_2' not found (required by {plugin})"
+        library = f"{missing}: libOpenCL.so.1 => not found"
+        lines = result.stdout.splitlines()
+        # Each file and diagnostic once, though the stub ldd repeats the version line.
+        unresolved = sorted(line for line in lines if line.startswith("UNRESOLVED "))
+        self.assertEqual(unresolved, sorted([f"UNRESOLVED {version}", f"UNRESOLVED {library}"]))
+        self.assertIn("== ldd: 4 ELF files, 2 unresolved", lines)
+        self.assertTrue(lines[-1].startswith("SMOKE FAIL: unresolved libraries: "), lines[-1])
+        self.assertIn(version, lines[-1])
+        self.assertIn(library, lines[-1])
+
+    def test_missing_symbol_version_alone_fails_the_smoke(self) -> None:
+        # The SONAME resolves and ldd exits 0; only the "version ... not found" line tells.
+        result = self.smoke_run(LDD_MODE="version")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        plugin = self.root / "usr/lib/Vaakora/libplugin.so"
+        dep = self.root / "usr/lib/Vaakora/libdep.so"
+        lines = result.stdout.splitlines()
+        self.assertIn("== ldd: 4 ELF files, 1 unresolved", lines)
+        self.assertEqual(
+            lines[-1],
+            f"SMOKE FAIL: unresolved libraries: {plugin}: {plugin}: {dep}: version `ABI_2' not found (required by {plugin})",
+        )
+
+    def test_resolved_libraries_pass_the_smoke(self) -> None:
+        result = self.smoke_run(LDD_MODE="clean")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        lines = result.stdout.splitlines()
+        self.assertIn("== ldd: 4 ELF files, 0 unresolved", lines)
+        self.assertEqual(lines[-1], "SMOKE PASS")
+
+
 if __name__ == "__main__":
     unittest.main()

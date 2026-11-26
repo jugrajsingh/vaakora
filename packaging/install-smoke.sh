@@ -118,18 +118,19 @@ if [[ "$kind" == appimage ]]; then
 fi
 elves=0
 unresolved=()
-# ldd repeats a missing library once per library that needs it; report each file and library once.
+# ldd repeats a diagnostic once per library that needs it; report each file and diagnostic once.
 declare -A seen=()
 for f in "${candidates[@]}"; do
   if [[ "$(od -An -tx1 -N4 "$f" | tr -d ' \n')" != 7f454c46 ]]; then
     continue
   fi
   elves=$((elves + 1))
-  # ldd exits non-zero on a static ELF; only its "not found" lines matter here.
+  # Neither exit status tells: ldd exits non-zero on a static ELF and 0 on a missing symbol version. Every "not found"
+  # line counts: "<lib> => not found" (missing library) and "version `X' not found (required by ...)".
   lines="$(ldd "$f" 2>&1)" || true
   while IFS= read -r line; do
     line="${line#"${line%%[![:space:]]*}"}"
-    if [[ "$line" == *"=> not found"* && -z "${seen["$f: $line"]:-}" ]]; then
+    if [[ "$line" == *"not found"* && -z "${seen["$f: $line"]:-}" ]]; then
       seen["$f: $line"]=1
       echo "UNRESOLVED $f: $line"
       unresolved+=("$f: $line")

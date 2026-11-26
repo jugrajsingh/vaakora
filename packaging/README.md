@@ -115,7 +115,7 @@ Then, with `D` the installed `/usr/lib/Vaakora` (for the AppImage, inside the ex
 - `vaakora --help` exits 0 and prints `Usage: vaakora` (the command line is parsed before the window starts, so no display is needed);
 - `D/llm/llama-server --version` exits 0 and prints `version:`;
 - `D/tts/vaakora-tts --list-devices`, in the environment the app gives the worker (`LD_LIBRARY_PATH` and `HANDY_OPENVINO_LIBRARY`), exits 0 and reports OpenVINO 2026.4 with the `CPU` device;
-- `ldd` resolves every library of every ELF under `D` and of `vaakora` itself (for the AppImage, also its transcribe and ggml libraries), so GPU transcription (`libvulkan.so.1`) and Intel GPU read aloud (`libOpenCL.so.1`) do not lose their loaders. Each miss prints `UNRESOLVED <file>: <library> => not found`.
+- `ldd` resolves every library of every ELF under `D` and of `vaakora` itself (for the AppImage, also its transcribe and ggml libraries), so GPU transcription (`libvulkan.so.1`) and Intel GPU read aloud (`libOpenCL.so.1`) do not lose their loaders. Each miss, a missing library or a missing symbol version (ldd's `version ... not found`), prints `UNRESOLVED <file>: <ldd line>`.
 
 The log's last line is `SMOKE PASS` or `SMOKE FAIL: <reason>`. The install test runs neither under `systemd-run` nor with `--cgroups=split`: under pueue, split containers fail with crun's "controller 'pids' is not available", and these containers need no memory cap. The packaging tests run `install-test.sh` with a stub `podman` and write their own `install-test-<UTC stamp>` directories under `packaging/.work/logs`, so never run them while an install test runs.
 
