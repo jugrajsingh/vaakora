@@ -19,6 +19,14 @@ packaging/build.sh [--stage-only] [--cpu x86-64-v3|native]
 - `--cpu x86-64-v3` (default) builds `llama-server` for any CPU with AVX2, FMA and F16C. `--cpu native` tunes it to the build machine and may crash with an illegal instruction on other CPUs.
 - The RPM, the `.deb` and the AppImage land in `packaging/dist/`; the build runs `packaging/verify-package.sh` on the RPM. `packaging/verify-package.sh <absolute-file>` checks one `.rpm`, `.deb`, `.pkg.tar.zst` or AppImage: it unpacks it under `packaging/.work/` and refuses a missing required file or licence, a bundled NPU driver, a missing weak dependency (RPM and `.deb`), Vaakora's own binaries linking `libssl` or `libcrypto`, and any ELF that needs a glibc symbol version above `GLIBC_2.35`. Host tools: `rpm`, `rpm2cpio`, `cpio`, `ar`, `tar` with zstd, `readelf` and `od`.
 
+## Arch package
+
+```bash
+packaging/arch-package.sh <absolute path of Vaakora_<version>_amd64.deb> <out-dir>
+```
+
+Repacks the `.deb` payload unchanged as `vaakora-<version>-1-x86_64.pkg.tar.zst` in `<out-dir>`, running `makepkg` without network in the image `vaakora-build:arch` (Arch Linux, from `packaging/arch/Containerfile`; building it the first time downloads the pinned base image and `fakeroot`). It refuses any other file name and builds in `packaging/.work/arch-build` from a copy of `packaging/arch/PKGBUILD` with the version and the `.deb`'s sha256 filled in; `makepkg` checks that sha256 before it unpacks the `.deb`. `build.sh` does not call it yet.
+
 ## Pins
 
 | Input            | Pin                                                                                                                                                                      | Script                |

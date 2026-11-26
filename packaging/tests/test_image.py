@@ -4,7 +4,7 @@ import unittest
 
 from roots import PACKAGING
 
-CONTAINERFILES = [PACKAGING / "Containerfile.jammy"]
+CONTAINERFILES = [PACKAGING / "Containerfile.jammy", PACKAGING / "arch/Containerfile"]
 
 
 def instructions(text: str) -> list[str]:

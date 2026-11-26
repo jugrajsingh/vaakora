@@ -1,0 +1,11 @@
+# makepkg image for the Arch package. fakeroot (makepkg needs it as non-root) comes from the Arch Linux Archive, pinned by sha256.
+FROM docker.io/library/archlinux:latest@sha256:375a401bb3c6376b37f40b6dfa25067db37ec78d0b7af67ae6315f43a0184a9d
+ARG FAKEROOT_URL=https://archive.archlinux.org/packages/f/fakeroot/fakeroot-2%3A1.37.2-1-x86_64.pkg.tar.zst
+ARG FAKEROOT_SHA256=32f9007ed57ee5286895c812238d08354d3b6831039f74be057f72d07c3fe067
+RUN curl -fsSL --proto '=https' -o /opt/fakeroot.pkg.tar.zst "$FAKEROOT_URL" \
+    && echo "$FAKEROOT_SHA256  /opt/fakeroot.pkg.tar.zst" | sha256sum -c - \
+    && pacman -U --noconfirm /opt/fakeroot.pkg.tar.zst \
+    && rm /opt/fakeroot.pkg.tar.zst
+RUN useradd -u 1000 -m builder
+USER builder
+WORKDIR /pkg

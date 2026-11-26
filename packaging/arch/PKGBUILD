@@ -1,0 +1,17 @@
+# Repackages the payload of Vaakora's .deb (built on Ubuntu 22.04) as an Arch package.
+pkgname=vaakora
+pkgver=0.3.2
+pkgrel=1
+pkgdesc='Speech to text and read aloud on your own computer'
+arch=('x86_64')
+url='https://github.com/jugrajsingh/vaakora'
+license=('MIT')
+depends=('alsa-lib' 'cairo' 'dbus' 'gcc-libs' 'gdk-pixbuf2' 'glib2' 'glibc' 'gtk-layer-shell' 'gtk3' 'libayatana-appindicator' 'libsoup3' 'ocl-icd' 'openblas' 'vulkan-icd-loader' 'webkit2gtk-4.1')
+optdepends=('wl-clipboard: paste on Wayland' 'intel-compute-runtime: read aloud on Intel GPUs' 'level-zero-loader: read aloud on Intel NPUs')
+options=('!strip' '!debug')
+source=("Vaakora_${pkgver}_amd64.deb")
+sha256sums=('SKIP')
+
+package() {
+  bsdtar -xpf data.tar.* -C "$pkgdir"
+}
