@@ -355,6 +355,33 @@ describe("docs checker", () => {
       );
     });
 
+    it("refs_keeps_site_assets_and_directories_external", () => {
+      flags(
+        addToPage(
+          clean(),
+          `<img src="https://vaakora.jugraj.dev/assets/brand/mark.svg" alt="x">`,
+        ),
+        "refs",
+        "https://vaakora.jugraj.dev/assets/brand/mark.svg is external",
+      );
+      flags(
+        append(
+          clean(),
+          "README.md",
+          "\n![x](https://vaakora.jugraj.dev/assets/brand/mark.svg)\n",
+        ),
+        "refs",
+        "https://vaakora.jugraj.dev/assets/brand/mark.svg is external",
+      );
+      // Not a page link, so it is not resolved against docs/ (that would fail: docs/nowhere does not exist).
+      passes(
+        addToPage(
+          clean(),
+          `<a href="https://vaakora.jugraj.dev/assets/">Assets</a><a href="https://vaakora.jugraj.dev/nowhere/">Nowhere</a>`,
+        ),
+      );
+    });
+
     it("refs_leaves_other_hosts_external", () => {
       passes(
         append(

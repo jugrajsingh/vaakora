@@ -341,23 +341,26 @@ type Resolved =
   | { kind: "bad"; why: string }
   | { kind: "local"; path: string; fragment: string };
 
-/** The published site: a link to it is checked against `docs/`, which is its root. */
-const SITE = "https://vaakora.jugraj.dev/";
+/** A link to a page of the published site: its root or `<name>.html`, with an optional `#anchor`. `docs/` is the site root. */
+const SITE_PAGE =
+  /^https:\/\/vaakora\.jugraj\.dev\/(?:([A-Za-z0-9-]+\.html))?(?:#(.*))?$/;
 
-/** Where `url`, written in `from`, points: another host, a repo path, or nowhere acceptable. */
-function resolveUrl(from: string, url: string): Resolved {
-  let raw = url.trim();
-  const onSite = raw.startsWith(SITE);
-  if (onSite) {
-    raw = raw.slice(SITE.length);
-    if (raw === "" || raw.startsWith("#") || raw.startsWith("?")) {
-      raw = "index.html" + raw;
-    }
+/**
+ * Where `url`, written in `from`, points: another host, a repo path, or nowhere acceptable.
+ * `link` is true for a link (not an image or other asset load); only a link to a page of the
+ * published site is resolved against `docs/`, anything else on that host stays external.
+ */
+function resolveUrl(from: string, url: string, link = false): Resolved {
+  const raw = url.trim();
+  const site = link ? SITE_PAGE.exec(raw) : null;
+  if (site !== null) {
+    return {
+      kind: "local",
+      path: `docs/${site[1] ?? "index.html"}`,
+      fragment: site[2] ?? "",
+    };
   }
-  if (
-    !onSite &&
-    (raw.startsWith("//") || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw))
-  ) {
+  if (raw.startsWith("//") || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)) {
     return { kind: "external" };
   }
   if (raw.startsWith("/")) {
@@ -378,13 +381,11 @@ function resolveUrl(from: string, url: string): Resolved {
   } catch {
     return { kind: "bad", why: "is not a valid URL" };
   }
-  const path = onSite
-    ? posix.normalize(posix.join("docs", decoded))
-    : posix.normalize(posix.join(posix.dirname(from), decoded));
+  const path = posix.normalize(posix.join(posix.dirname(from), decoded));
   if (path === ".." || path.startsWith("../")) {
     return { kind: "bad", why: "leaves the repository" };
   }
-  if ((onSite || from.startsWith("docs/")) && !path.startsWith("docs/")) {
+  if (from.startsWith("docs/") && !path.startsWith("docs/")) {
     return { kind: "bad", why: "leaves docs/" };
   }
   return { kind: "local", path, fragment };
@@ -408,7 +409,7 @@ export const refsProblems: Rule = (tree) => {
   const ids = new Map<string, Set<string>>();
   for (const [path, text] of filesOf(tree, REF_FILE)) {
     for (const ref of collectRefs(path, text)) {
-      const res = resolveUrl(path, ref.url);
+      const res = resolveUrl(path, ref.url, !ref.asset);
       if (res.kind === "external") {
         if (ref.asset) {
           if (!(path === "README.md" && ref.url.startsWith(SHIELDS))) {
@@ -463,7 +464,7 @@ export const orphansProblems: Rule = (tree) => {
   const referenced = new Set<string>();
   for (const [path, text] of filesOf(tree, REF_FILE)) {
     for (const ref of collectRefs(path, text)) {
-      const res = resolveUrl(path, ref.url);
+      const res = resolveUrl(path, ref.url, !ref.asset);
       if (res.kind === "local") referenced.add(res.path);
     }
   }

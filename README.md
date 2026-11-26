@@ -216,6 +216,7 @@ Download the package for your distribution from the [latest release](https://git
 | Other distributions                                    | `Vaakora_0.4.0_amd64.AppImage`       | `chmod +x Vaakora_0.4.0_amd64.AppImage`, then run it  |
 
 - The packages are for x86_64 only.
+- If the AppImage does not start, install FUSE 2 (`libfuse2`) or run it with `--appimage-extract-and-run`.
 - There is no automatic update. To update, install the newer package from Releases the same way.
 
 ## Platform support
