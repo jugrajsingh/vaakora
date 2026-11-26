@@ -10,6 +10,7 @@ This project is built on [Handy](https://github.com/cjpais/Handy) v0.10.1 and do
 
 - Vaakora is built as a .deb (Debian 12 and 13, Ubuntu 22.04 and newer), an Arch package and an AppImage, next to the RPM (Fedora 44 and 45); each carries the local cleanup server, read aloud and the licences, and each is installed and started in a clean container of every listed release before a release.
 - Documentation: the README now has Install, Platform support (Windows and macOS coming soon) and Contributing sections.
+- Documentation: the docs are published at https://vaakora.jugraj.dev by a GitHub Pages workflow (`.github/workflows/pages.yml`), and the README links to its pages there.
 
 ### Changed
 

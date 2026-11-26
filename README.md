@@ -30,9 +30,9 @@
 - **Read aloud:** another shortcut reads the text you copied back to you.
 - **Command line and agents:** a `vaakora` command controls the running app, and optional skills let Claude Code and Codex read aloud when you ask.
 - **Private by default:** audio and text stay on the machine.
-- **Linux desktop app:** built and tested on Fedora 44 (KDE Plasma, Wayland).
+- **Linux desktop app:** used daily on Fedora 45 (KDE Plasma, Wayland); the distributions under Install are install-tested.
 
-The [docs](docs/index.html) have a page per feature.
+The [docs](https://vaakora.jugraj.dev/) have a page per feature.
 
 ## What it does
 
@@ -113,7 +113,7 @@ A shortcut reads the text you last copied, in a popup that follows along.
 </picture>
 
 - Tables in the text you copy are read row by row, each value with its column name, and their borders are not spoken.
-- Choose Name each value or Names once, then rows with the **Tables** setting in Read aloud, Settings. The [Tables page](docs/tables.html) has an example of each.
+- Choose Name each value or Names once, then rows with the **Tables** setting in Read aloud, Settings. The [Tables page](https://vaakora.jugraj.dev/tables.html) has an example of each.
 
 ### Vocabulary
 
@@ -123,7 +123,7 @@ A shortcut reads the text you last copied, in a popup that follows along.
 </picture>
 
 - Change how a word is spoken in Read aloud: correct a reading or add an entry, for all voice models or for one.
-- Entries are kept in `tts-vocabulary.json` in the app data directory. See the [Vocabulary page](docs/vocabulary.html).
+- Entries are kept in `tts-vocabulary.json` in the app data directory. See the [Vocabulary page](https://vaakora.jugraj.dev/vocabulary.html).
 
 ### History
 
@@ -134,7 +134,7 @@ A shortcut reads the text you last copied, in a popup that follows along.
 
 - Dictation history keeps your recordings. A cleaned-up entry says which model produced it and can be compared with the raw text. Clear history removes all unstarred entries and their recordings, and asks first.
 - Read aloud history is text only: the app never keeps audio for a read.
-- Both histories are kept on this computer. See the [History page](docs/history.html).
+- Both histories are kept on this computer. See the [History page](https://vaakora.jugraj.dev/history.html).
 
 ### Models
 
@@ -144,7 +144,7 @@ A shortcut reads the text you last copied, in a popup that follows along.
 </picture>
 
 - Models has three tabs: Dictation, Read aloud and Cleanup. Download a model, choose it, and see its size and licence.
-- Models are downloaded on demand and run on your own computer. See the [Models page](docs/models.html).
+- Models are downloaded on demand and run on your own computer. See the [Models page](https://vaakora.jugraj.dev/models.html).
 
 ### Settings
 
@@ -155,7 +155,7 @@ A shortcut reads the text you last copied, in a popup that follows along.
 
 - General holds the shortcuts and the sound options. The three shortcuts are **Dictate**, **Dictate with cleanup** and **Read aloud**, each with Reset and Clear buttons.
 - **Activation** is a drop-down for the dictation shortcuts, with the options Auto (hold to record or tap to toggle), Hold (records while you hold the shortcut) and Toggle (tap to start recording, tap again to stop). Auto is the default.
-- A shortcut already assigned to another action is refused with a message naming that action. See the [Settings page](docs/settings.html).
+- A shortcut already assigned to another action is refused with a message naming that action. See the [Settings page](https://vaakora.jugraj.dev/settings.html).
 
 The full list of changes is in [CHANGELOG.md](CHANGELOG.md). Its new interface strings are translated into the other 26 languages by machine and have not been reviewed by native speakers.
 
@@ -202,7 +202,7 @@ Right after the app starts, `vaakora read` can return exit 5 (`tts-unavailable`)
 
 - On its first start, when Vaakora has no data folder yet and Handy's settings file exists, Vaakora copies your settings, both histories, recordings, the vocabulary file, models and web storage. Start at login is turned off in the copy, so only one app starts at login.
 - The Handy folder is only read and is never changed. Quit Handy before dictating, because both apps use the same shortcut.
-- See the [Moving from Handy page](docs/moving-from-handy.html).
+- See the [Moving from Handy page](https://vaakora.jugraj.dev/moving-from-handy.html).
 
 ## Install
 
@@ -273,6 +273,7 @@ Vaakora began as a fork of [Handy](https://github.com/cjpais/Handy) by CJ Pais, 
 - Report bugs and send feedback through [GitHub Issues](https://github.com/jugrajsingh/vaakora/issues).
 - Contributions are welcome, especially Linux packaging and distribution (for example a Copr project, an AUR package or other distributions) and Windows and macOS ports.
 - For anything large, open an issue first.
+- To help with translations, read [CONTRIBUTING_TRANSLATIONS.md](CONTRIBUTING_TRANSLATIONS.md).
 - There is one maintainer, so replies may take time.
 
 ## Licence
