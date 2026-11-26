@@ -48,7 +48,12 @@ The package is named `vaakora` and installs `/usr/bin/vaakora` and `/usr/lib/Vaa
 packaging/dev.sh [--mount <host-path>:<container-path>]... [--env NAME=VALUE]... [--device /dev/dri/renderD128] [--device /dev/accel/accel0] <checkout> <command> [args...]
 ```
 
-Runs one command (cargo, bun, ...) in `/src` inside the build image, with its own caches. Mounts are read-only and devices are opt-in. The image must already exist, so run `build.sh` once first.
+Runs one command (cargo, bun, ...) in `/src` inside the build image, with its own caches. Mounts are read-only and devices are opt-in. The dev image `vaakora-build:fedora45` (Fedora, from `packaging/Containerfile`) is separate from the release image `vaakora-build:jammy` that `build.sh` builds, and `build.sh` does not create it. It must already exist; build it once from the repository root with an empty context:
+
+```bash
+mkdir -p packaging/.work/dev-image-context \
+  && podman build -f packaging/Containerfile -t vaakora-build:fedora45 packaging/.work/dev-image-context
+```
 
 ## Brand check of the RPM
 

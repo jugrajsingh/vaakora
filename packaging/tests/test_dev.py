@@ -59,6 +59,25 @@ class DevDevicesTests(unittest.TestCase):
             )
         self.assertEqual(result.returncode, 2)
 
+    def test_missing_dev_image_refusal_names_the_explicit_build_command(self):
+        scratch = SCRATCH / "dev-device-fixtures"
+        scratch.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=scratch) as directory:
+            path = Path(directory)
+            tool = path / "podman"
+            tool.write_text('#!/bin/sh\n[ "$1 $2" = "image exists" ] && exit 1\nexit 0\n')
+            tool.chmod(0o755)
+            result = subprocess.run(
+                [str(PACKAGING / "dev.sh"), str(ROOT), "true"],
+                env=os.environ | {"PATH": str(path) + ":" + os.environ["PATH"]},
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("podman build -f packaging/Containerfile -t vaakora-build:fedora45 packaging/.work/dev-image-context", result.stderr)
+        self.assertNotIn("build.sh", result.stderr)
+
     def test_default_has_no_hardware_access(self):
         result, args = self.run_dev()
         self.assertEqual(result.returncode, 0, result.stderr)
