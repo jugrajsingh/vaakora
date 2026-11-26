@@ -31,7 +31,7 @@ ASSETS = {
 }
 HOST_TOOLS = (
     "basename cat chmod cp cut dirname grep head install ls mkdir mktemp mv "
-    "rm sed sha256sum stat tail tr wc"
+    "rm sed sha256sum stat tail tr true wc"
 ).split()
 
 FAKE_CURL = """#!/bin/sh
@@ -62,6 +62,13 @@ cp "$FAKE_RELEASE/${url##*/}" "$out" || exit 8
 """
 FAKE_SUDO = """#!/bin/sh
 echo "sudo $*" >> "$FAKE_LOG"
+if [ "${1:-}" = -n ]; then
+  if [ -n "${FAKE_SUDO_PASSWORD:-}" ]; then
+    echo "sudo: a password is required" >&2
+    exit 1
+  fi
+  shift
+fi
 exec "$@"
 """
 FAKE_PM = """#!/bin/sh
@@ -123,6 +130,7 @@ class OnelineInstallTests(unittest.TestCase):
         for path in (self.log, self.stdin_log, self.modes):
             path.touch()
         self.os_release = self.scratch / "os-release"
+        self.ostree = self.scratch / "ostree-booted"
         for name in HOST_TOOLS:
             found = shutil.which(name)
             self.assertIsNotNone(found, name)
@@ -148,6 +156,7 @@ class OnelineInstallTests(unittest.TestCase):
             "LANG": "C",
             "WAYLAND_DISPLAY": "wayland-0",
             "VAAKORA_OS_RELEASE": str(self.os_release),
+            "VAAKORA_OSTREE_BOOTED": str(self.ostree),
             "FAKE_LOG": str(self.log),
             "FAKE_STDIN": str(self.stdin_log),
             "FAKE_MODES": str(self.modes),
@@ -261,6 +270,30 @@ class OnelineInstallTests(unittest.TestCase):
         (self.bin / "dnf").unlink()
         self.assert_appimage(self.run_script())
 
+    def test_missing_package_manager_gets_appimage(self) -> None:
+        cases = (
+            ("apt", "ID=debian\n"),
+            ("apt", 'ID=linuxmint\nID_LIKE="ubuntu debian"\n'),
+            ("pacman", "ID=arch\n"),
+            ("pacman", "ID=manjaro\nID_LIKE=arch\n"),
+        )
+        for tool, os_release in cases:
+            with self.subTest(tool=tool, os_release=os_release):
+                self.reset()
+                (self.bin / tool).unlink(missing_ok=True)
+                self.assert_appimage(self.run_script(os_release=os_release))
+
+    def test_image_based_system_gets_appimage(self) -> None:
+        self.ostree.touch()
+        result = self.run_script()
+        self.assert_appimage(result)
+        self.assertIn("read-only root", result.stdout)
+        self.ostree.unlink()
+        self.reset()
+        result = self.run_script(os_release="ID=steamos\nID_LIKE=arch\n")
+        self.assert_appimage(result)
+        self.assertIn("read-only root", result.stdout)
+
     def test_appimage_flag_forces_appimage(self) -> None:
         self.assert_appimage(self.run_script("--appimage"))
 
@@ -283,6 +316,16 @@ class OnelineInstallTests(unittest.TestCase):
         self.assertIn("sudo", result.stderr)
         self.assertEqual(self.called("curl"), [])
 
+    def test_sudo_password_without_a_terminal_refuses_before_download(self) -> None:
+        result = self.run_script(extra={"FAKE_SUDO_PASSWORD": "1"})
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("vaakora: ", result.stderr)
+        self.assertIn("needs a password", result.stderr)
+        self.assertIn("no terminal", result.stderr)
+        self.assertEqual(self.called("curl"), [])
+        self.assertEqual(self.called("dnf"), [])
+        self.assertIn("sudo -n true", self.calls())
+
     def test_default_url_is_latest(self) -> None:
         self.assert_installed(self.run_script())
         self.assertEqual(self.downloads(), [f"{LATEST}/SHA256SUMS", f"{LATEST}/{ASSETS['rpm']}"])
@@ -290,6 +333,12 @@ class OnelineInstallTests(unittest.TestCase):
     def test_version_pins_release(self) -> None:
         self.assert_installed(self.run_script(extra={"VAAKORA_VERSION": "9.9.9"}))
         self.assertEqual(self.downloads(), [f"{PINNED}/SHA256SUMS", f"{PINNED}/{ASSETS['rpm']}"])
+
+    def test_version_accepts_a_leading_v(self) -> None:
+        self.assert_installed(self.run_script(extra={"VAAKORA_VERSION": "v9.9.9"}))
+        self.assertEqual(
+            self.downloads(), [f"{PINNED}/SHA256SUMS", f"{PINNED}/{ASSETS['rpm']}"]
+        )
 
     def test_release_url_overrides(self) -> None:
         base = "https://mirror.example/vaakora"
@@ -317,7 +366,7 @@ class OnelineInstallTests(unittest.TestCase):
         self.assertIn("vaakora: ", result.stderr)
         self.assertIn("checksum", result.stderr)
         self.assertEqual(self.called("dnf"), [])
-        self.assertEqual(self.called("sudo"), [])
+        self.assertEqual(self.called("sudo dnf"), [])
 
     def test_refuses_non_linux_and_non_x86_64(self) -> None:
         result = self.run_script(extra={"FAKE_UNAME_S": "Darwin"})
@@ -361,6 +410,30 @@ class OnelineInstallTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("vaakora: ", result.stderr)
         self.assertEqual(self.called("apt"), [])
+
+    def test_duplicate_sums_entry_refuses(self) -> None:
+        sums = self.release / "SHA256SUMS"
+        extra = "0" * 64 + "  Vaakora-9.9.8-1.x86_64.rpm\n"
+        sums.write_text(sums.read_text() + extra)
+        result = self.run_script()
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("vaakora: ", result.stderr)
+        self.assertIn("more than one", result.stderr)
+        self.assertEqual(self.called("dnf"), [])
+
+    def test_unusable_sums_name_refuses(self) -> None:
+        data = b"outside the temp dir\n"
+        (self.release / "x.x86_64.rpm").write_bytes(data)
+        line = f"{hashlib.sha256(data).hexdigest()}  ../x.x86_64.rpm\n"
+        (self.release / "SHA256SUMS").write_text(line)
+        result = self.run_script()
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("vaakora: ", result.stderr)
+        self.assertIn("unusable file name", result.stderr)
+        self.assertEqual(self.called("dnf"), [])
+        self.assertEqual(self.called("sudo dnf"), [])
+        self.assertEqual(list(self.tmp.iterdir()), [])
+        self.assertFalse((self.scratch / "x.x86_64.rpm").exists())
 
     def test_failed_package_manager_is_reported(self) -> None:
         result = self.run_script(extra={"FAKE_PM_EXIT": "1"})

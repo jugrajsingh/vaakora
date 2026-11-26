@@ -9,11 +9,13 @@
 # Pass --appimage (sh -s -- --appimage when piped) to force the AppImage.
 #
 # Environment:
-#   VAAKORA_VERSION      install this release (for example 0.4.0) instead of the latest
+#   VAAKORA_VERSION      install this release (0.4.0 or v0.4.0) instead of the latest
 #   VAAKORA_RELEASE_URL  download SHA256SUMS and the package from this base URL
 #                        instead of GitHub Releases (mirrors, tests)
 #   VAAKORA_OS_RELEASE   os-release file to read; defaults to /etc/os-release
 #                        (test hook, not for users)
+#   VAAKORA_OSTREE_BOOTED  file whose existence marks an image-based system;
+#                        defaults to /run/ostree-booted (test hook, not for users)
 #
 # Every statement lives inside main, and main is called on the last line, so a
 # download that stops part-way is a syntax error and does nothing.
@@ -30,6 +32,8 @@ main() {
     exit 1
   }
   have() { command -v "$1" >/dev/null 2>&1; }
+  # A terminal can be opened: with curl | sh stdin is the script, so prompts use /dev/tty.
+  have_tty() { (: </dev/tty) 2>/dev/null; }
   cleanup() {
     if [ -n "$tmp" ]; then
       rm -rf "$tmp"
@@ -48,7 +52,7 @@ main() {
   run_pm() {
     flag=$1
     shift
-    if (: </dev/tty) 2>/dev/null; then
+    if have_tty; then
       interactive=1
     else
       interactive=0
@@ -102,6 +106,13 @@ main() {
     os_id=$(sed -n 's/^ID=//p' "$os_release" | head -n 1 | tr -d "\"'" | tr '[:upper:]' '[:lower:]')
     os_like=$(sed -n 's/^ID_LIKE=//p' "$os_release" | head -n 1 | tr -d "\"'" | tr '[:upper:]' '[:lower:]')
   fi
+  # Image-based systems (Fedora Atomic, Bazzite, Bluefin, SteamOS) have a read-only root.
+  if [ -e "${VAAKORA_OSTREE_BOOTED:-/run/ostree-booted}" ] || [ "$os_id" = steamos ]; then
+    if [ "$force_appimage" = 0 ]; then
+      say "This system has a read-only root, so Vaakora is installed as an AppImage."
+    fi
+    force_appimage=1
+  fi
   kind=appimage
   if [ "$force_appimage" = 0 ]; then
     for word in $os_id $os_like; do
@@ -111,11 +122,11 @@ main() {
           break
           ;;
         debian | ubuntu)
-          kind=deb
+          if have apt; then kind=deb; fi
           break
           ;;
         arch)
-          kind=arch
+          if have pacman; then kind=arch; fi
           break
           ;;
       esac
@@ -128,6 +139,10 @@ main() {
   if [ "$kind" != appimage ] && [ "$uid" != 0 ]; then
     have sudo || die "needs sudo (or a root shell) to install a system package; install sudo, or add --appimage to install into ~/.local/bin"
     sudo_cmd=sudo
+    # Without a terminal sudo cannot ask for a password, so fail before downloading anything.
+    if ! have_tty && ! sudo -n true 2>/dev/null; then
+      die "sudo needs a password and there is no terminal to ask for it; run the install command in a terminal, or run it as root"
+    fi
   fi
 
   # Downloader and checksum tool.
@@ -150,7 +165,7 @@ main() {
   if [ -n "${VAAKORA_RELEASE_URL:-}" ]; then
     base=${VAAKORA_RELEASE_URL%/}
   elif [ -n "${VAAKORA_VERSION:-}" ]; then
-    base="$repo_url/releases/download/v$VAAKORA_VERSION"
+    base="$repo_url/releases/download/v${VAAKORA_VERSION#v}"
   else
     base="$repo_url/releases/latest/download"
   fi
