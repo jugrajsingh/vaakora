@@ -341,10 +341,23 @@ type Resolved =
   | { kind: "bad"; why: string }
   | { kind: "local"; path: string; fragment: string };
 
+/** The published site: a link to it is checked against `docs/`, which is its root. */
+const SITE = "https://vaakora.jugraj.dev/";
+
 /** Where `url`, written in `from`, points: another host, a repo path, or nowhere acceptable. */
 function resolveUrl(from: string, url: string): Resolved {
-  const raw = url.trim();
-  if (raw.startsWith("//") || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)) {
+  let raw = url.trim();
+  const onSite = raw.startsWith(SITE);
+  if (onSite) {
+    raw = raw.slice(SITE.length);
+    if (raw === "" || raw.startsWith("#") || raw.startsWith("?")) {
+      raw = "index.html" + raw;
+    }
+  }
+  if (
+    !onSite &&
+    (raw.startsWith("//") || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw))
+  ) {
     return { kind: "external" };
   }
   if (raw.startsWith("/")) {
@@ -365,11 +378,13 @@ function resolveUrl(from: string, url: string): Resolved {
   } catch {
     return { kind: "bad", why: "is not a valid URL" };
   }
-  const path = posix.normalize(posix.join(posix.dirname(from), decoded));
+  const path = onSite
+    ? posix.normalize(posix.join("docs", decoded))
+    : posix.normalize(posix.join(posix.dirname(from), decoded));
   if (path === ".." || path.startsWith("../")) {
     return { kind: "bad", why: "leaves the repository" };
   }
-  if (from.startsWith("docs/") && !path.startsWith("docs/")) {
+  if ((onSite || from.startsWith("docs/")) && !path.startsWith("docs/")) {
     return { kind: "bad", why: "leaves docs/" };
   }
   return { kind: "local", path, fragment };

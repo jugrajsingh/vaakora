@@ -326,6 +326,45 @@ describe("docs checker", () => {
       );
     });
 
+    it("refs_resolves_links_to_the_published_site_against_docs", () => {
+      const withId = addToPage(clean(), `<h2 id="intro">Intro</h2>`);
+      passes(
+        append(
+          withId,
+          "README.md",
+          "\nSee [site](https://vaakora.jugraj.dev/), [page](https://vaakora.jugraj.dev/index.html) and [part](https://vaakora.jugraj.dev/index.html#intro).\n",
+        ),
+      );
+      flags(
+        append(
+          clean(),
+          "README.md",
+          "\nSee [x](https://vaakora.jugraj.dev/missing.html).\n",
+        ),
+        "refs",
+        "https://vaakora.jugraj.dev/missing.html does not exist (docs/missing.html)",
+      );
+      flags(
+        append(
+          clean(),
+          "README.md",
+          "\nSee [x](https://vaakora.jugraj.dev/index.html#nope).\n",
+        ),
+        "refs",
+        "#nope",
+      );
+    });
+
+    it("refs_leaves_other_hosts_external", () => {
+      passes(
+        append(
+          clean(),
+          "README.md",
+          "\nSee [x](https://example.com/missing.html).\n",
+        ),
+      );
+    });
+
     it("refs_allows_shields_only_in_readme", () => {
       passes(clean());
       flags(
